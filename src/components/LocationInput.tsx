@@ -31,7 +31,9 @@ export const LocationInput = ({
         setLoading(true);
         try {
             const result = await searchLocation(query);
-            const locations = result.features.filter((location, index, self) => {
+            const locations = result.features.filter((location: {
+                properties: { name: any; city: any; county: any; countrycode: any; };
+            }, index: any, self: any[]) => {
                 return index === self.findIndex((t) => (
                     t.properties.name === location.properties.name &&
                     t.properties.city === location.properties.city &&

@@ -28,7 +28,7 @@ const AnimatedLayout = ({children, isLoaded}: { children: any, isLoaded: boolean
             initial="centered"
             animate={clientLoaded ? "top" : "centered"}
             variants={containerVariants}
-            transition={{duration: 2, type: "spring", bounce: 0.25}}
+            transition={{duration: 2, type: "spring", bounce: 0.1}}
         >
             {children}
         </motion.div>
