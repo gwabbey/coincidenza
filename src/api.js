@@ -44,6 +44,10 @@ export async function reverseGeocode(lat, lon) {
     return await response.json();
 }
 
+export async function setCookie(name, value) {
+    document.cookie = `${name}=${value}; path=/`;
+}
+
 export async function fetchData(endpoint, options = {}) {
     let url = `https://app-tpl.tndigit.it/gtlservice/${endpoint}`;
 
@@ -105,7 +109,7 @@ export async function getClosestBusStops(userLat, userLon, type = '') {
 
         return stopsWithDistance;
     } catch (error) {
-        console.error("Error fetching bus stops:", error);
+        console.error("Error fetching stops:", error);
         return [];
     }
 }
@@ -139,10 +143,65 @@ export async function getRoute(type, routeId, limit, directionId, refDateTime) {
         };
 
     } catch (error) {
-        console.error("Error fetching bus stops:", error);
+        console.error("Error fetching stops:", error);
         return {
             trips: [],
             details: {},
         };
+    }
+}
+
+export async function getStop(id, type) {
+    try {
+        const params = {
+            type: type,
+            stopId: id,
+            limit: 10,
+            // TODO: use actual date
+            refDateTime: '2024-10-30T14:42:49.235Z'
+        };
+
+        const stops = await fetchData('trips_new', {
+            params,
+        });
+
+        const groupedStops = stops.reduce((acc, current) => {
+            const { routeId } = current;
+
+            if (!acc[routeId]) {
+                acc[routeId] = [];
+            }
+
+            acc[routeId].push(current);
+            return acc;
+        }, {});
+
+        const routePromises = Object.keys(groupedStops).map(async (routeId) => {
+            const routeData = await fetchData('routes', {
+                params: {
+                    type: type,
+                },
+            });
+
+            console.log(routeData);
+
+            const details = routeData.find(route => route.routeId === parseInt(routeId, 10)) || null;
+
+            console.log('details', details);
+
+            return {
+                id: routeId,
+                stops: groupedStops[routeId],
+                details,
+            };
+        });
+
+        const results = await Promise.all(routePromises);
+
+        return results.filter(result => result.details !== null);
+
+    } catch (error) {
+        console.error("Error fetching stop:", error);
+        return [];
     }
 }

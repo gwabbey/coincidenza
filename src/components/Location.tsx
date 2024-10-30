@@ -1,7 +1,7 @@
 'use client';
-import { Button, Flex, Loader } from "@mantine/core";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import {Button, Flex, Loader} from "@mantine/core";
+import {useState} from "react";
+import {setCookie} from "@/api";
 
 export function getUserLocation(): Promise<{ lat: number; lon: number }> {
     return new Promise((resolve, reject) => {
@@ -25,13 +25,13 @@ export function getUserLocation(): Promise<{ lat: number; lon: number }> {
 
 export default function Location() {
     const [loading, setLoading] = useState(false);
-    const router = useRouter();
 
     const handleFetchStops = async () => {
         setLoading(true);
         try {
             const userLocation = await getUserLocation();
-            router.push(`/stops?lat=${userLocation.lat}&lon=${userLocation.lon}`);
+            await setCookie('lat', userLocation.lat);
+            await setCookie('lon', userLocation.lon);
         } catch (error) {
             console.error("Failed to get location", error);
         } finally {
@@ -41,8 +41,8 @@ export default function Location() {
 
     return (
         <Flex justify="center" direction="column" gap="lg">
-            <Button onClick={handleFetchStops}>
-                Grant Location Access
+            <Button onClick={handleFetchStops} disabled={loading}>
+                {loading ? "Fetching Location..." : "Grant Location Access"}
             </Button>
             {loading && <Loader />}
         </Flex>

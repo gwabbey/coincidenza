@@ -1,26 +1,35 @@
-import {getClosestBusStops} from "@/api";
+import Stops from "@/components/Stops";
 import Location from "@/components/Location";
-import {Select} from "@mantine/core";
+import {cookies} from "next/headers";
+import {getClosestBusStops, getStop} from "@/api";
 
-export default async function Page({searchParams}: { searchParams: { lat?: string, lon?: string } }) {
-    const {lat, lon} = searchParams;
+export default async function Page() {
+    const lat = (await cookies()).get('lat');
+    const lon = (await cookies()).get('lon');
 
     if (!lat || !lon) {
-        // TODO: make Location component prettier lol
         return <Location />;
     }
 
-    const latitude = parseFloat(lat);
-    const longitude = parseFloat(lon);
-    const stops = await getClosestBusStops(latitude, longitude);
+    const stops = await getClosestBusStops(parseFloat(lat.value), parseFloat(lon.value));
+
+    const id = (await cookies()).get('id');
+    const type = (await cookies()).get('type');
+
+    let stop;
+    if (id && type) {
+        stop = await getStop(id.value, type.value);
+    }
 
     return (
-        <Select
-            data={stops.map((stop: { stopName: string; stopCode: string; }) => `${stop.stopName} (${stop.stopCode})`)}
-            placeholder="Seleziona una stazione"
-            label="Stazione"
-            limit={15}
-            searchable
-            clearable />
+        <div>
+            <Stops stops={stops} />
+            {stop && stop.length > 0 && (
+                <div>
+                    <h2>Stop Details</h2>
+                    <p>{JSON.stringify(stop)}</p>
+                </div>
+            )}
+        </div>
     );
 }

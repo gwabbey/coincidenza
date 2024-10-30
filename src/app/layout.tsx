@@ -3,7 +3,6 @@
 import '@mantine/core/styles.css';
 
 import {ColorSchemeScript, MantineProvider} from '@mantine/core';
-import {MotionWrapper} from "@/app/MotionWrapper";
 
 export const metadata = {
     title: 'Trentino Trasporti',
@@ -22,9 +21,20 @@ export default function RootLayout({
         </head>
         <body>
         <MantineProvider>
-            <MotionWrapper>
-                {children}
-            </MotionWrapper>
+            <header style={{
+                height: 'auto',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'gold',
+                padding: '8px',
+                zIndex: 1000,
+            }}>
+                I dati utilizzati provengono direttamente da Trentino Trasporti. Eventuali problemi come lentezza, dati
+                mancanti o inesatti non sono di mia responsabilità.
+                Per ulteriori domande o chiarimenti, non esitate a contattarmi.
+            </header>
+            {children}
         </MantineProvider>
         </body>
         </html>
