@@ -103,7 +103,7 @@ export async function getClosestBusStops(userLat, userLon, type = '') {
 
         stopsWithDistance.sort((a, b) => a.distance - b.distance);
 
-        return stopsWithDistance.slice(0, 10);
+        return stopsWithDistance;
     } catch (error) {
         console.error("Error fetching bus stops:", error);
         return [];
@@ -144,22 +144,5 @@ export async function getRoute(type, routeId, limit, directionId, refDateTime) {
             trips: [],
             details: {},
         };
-    }
-}
-
-export async function getDirections(from, to) {
-    try {
-        const params = {
-            from,
-            to,
-        };
-
-        return await fetchData('direction', {
-            params,
-        });
-
-    } catch (error) {
-        console.error("Error fetching bus stops:", error);
-        return [];
     }
 }

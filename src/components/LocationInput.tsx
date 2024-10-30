@@ -1,15 +1,18 @@
 'use client';
+
 import {useCallback, useEffect, useState} from "react";
 import {Autocomplete, ComboboxItem, Loader, OptionsFilter} from "@mantine/core";
 import {useDebouncedValue} from "@mantine/hooks";
 import {searchLocation} from "@/api";
-import {usePathname, useRouter, useSearchParams} from "next/navigation";
+import {useRouter} from 'next/navigation';
+import {updateLocation} from "@/app/actions";
 
 interface Props {
     name: string;
     selected?: string;
     placeholder: string;
     debounceDelay?: number;
+    disabled?: boolean;
 }
 
 export const LocationInput = ({
@@ -17,11 +20,9 @@ export const LocationInput = ({
                                   selected = "",
                                   placeholder,
                                   debounceDelay = 200,
+                                  disabled = false,
                               }: Props) => {
     const router = useRouter();
-    const pathname = usePathname();
-    const searchParams = useSearchParams();
-
     const [value, setValue] = useState(selected);
     const [debouncedValue] = useDebouncedValue(value, debounceDelay);
     const [data, setData] = useState<{ value: string; label: string }[]>([]);
@@ -77,27 +78,28 @@ export const LocationInput = ({
         });
     };
 
-    function onLocationSelect(location: any) {
+    const onLocationSelect = useCallback(async (value: string) => {
+        const location = JSON.parse(value);
         const locationString = `${location.geometry.coordinates[1]},${location.geometry.coordinates[0]}`;
-        const current = new URLSearchParams(searchParams);
-        current.set(name, locationString);
 
-        const search = current.toString();
-        const query = search ? `?${search}` : "";
+        await updateLocation(name, locationString);
+        router.push('/directions');
 
-        router.push(`${pathname}${query}`);
-    }
+    }, [name, router]);
 
     return (
         <Autocomplete
             value={value}
             data={data}
             onChange={setValue}
-            onOptionSubmit={(value) => onLocationSelect(JSON.parse(value))}
+            onOptionSubmit={onLocationSelect}
             rightSection={loading && <Loader size="xs" />}
             placeholder={placeholder}
             size="xl"
-            comboboxProps={{transitionProps: {transition: "fade-up", duration: 200}}}
+            disabled={disabled}
+            comboboxProps={{
+                transitionProps: {transition: "fade-up", duration: 200},
+            }}
             filter={optionsFilter}
             radius="xl"
         />

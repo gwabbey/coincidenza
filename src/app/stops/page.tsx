@@ -1,11 +1,12 @@
 import {getClosestBusStops} from "@/api";
 import Location from "@/components/Location";
-import Stops from "@/components/Stops";
+import {Select} from "@mantine/core";
 
 export default async function Page({searchParams}: { searchParams: { lat?: string, lon?: string } }) {
     const {lat, lon} = searchParams;
 
     if (!lat || !lon) {
+        // TODO: make Location component prettier lol
         return <Location />;
     }
 
@@ -14,6 +15,12 @@ export default async function Page({searchParams}: { searchParams: { lat?: strin
     const stops = await getClosestBusStops(latitude, longitude);
 
     return (
-        <Stops stops={stops} />
+        <Select
+            data={stops.map((stop: { stopName: string; stopCode: string; }) => `${stop.stopName} (${stop.stopCode})`)}
+            placeholder="Seleziona una stazione"
+            label="Stazione"
+            limit={15}
+            searchable
+            clearable />
     );
 }

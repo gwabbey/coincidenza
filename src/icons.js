@@ -11,4 +11,5 @@ export const vehicleIcons = {
     "AIR": "✈️",
     "SCOOTER": "🛴",
     "OTHER": "🚲",
+    undefined: "🚶",
 };
