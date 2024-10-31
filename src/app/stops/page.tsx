@@ -2,6 +2,8 @@ import Stops from "@/components/Stops";
 import Location from "@/components/Location";
 import {cookies} from "next/headers";
 import {getClosestBusStops, getStop} from "@/api";
+import Routes from "@/components/Routes";
+import {Suspense} from "react";
 
 export default async function Page() {
     const lat = (await cookies()).get('lat');
@@ -22,14 +24,19 @@ export default async function Page() {
     }
 
     return (
-        <div>
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '16px',
+        }}>
             <Stops stops={stops} />
-            {stop && stop.length > 0 && (
-                <div>
-                    <h2>Stop Details</h2>
-                    <p>{JSON.stringify(stop)}</p>
-                </div>
-            )}
+            <Suspense fallback={<p>Caricamento...</p>}>
+                {stop && stop.length > 0 && (
+                    <Routes stop={stop} currentStop={id?.value ?? null} />
+                )}
+            </Suspense>
         </div>
     );
 }

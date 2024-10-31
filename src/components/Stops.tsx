@@ -1,5 +1,5 @@
 'use client';
-import {Box, Center, Loader, Select} from "@mantine/core";
+import {Badge, Box, Center, Loader, Select, Title} from "@mantine/core";
 import {useEffect, useState} from "react";
 import {useRouter, useSearchParams} from "next/navigation";
 import {setCookie} from "@/api";
@@ -24,7 +24,7 @@ export default function Stops({stops}: { stops: any[] }) {
             const matchedStop = stopMap[id];
 
             if (matchedStop && matchedStop.type === type) {
-                setValue(`${matchedStop.stopName} (${matchedStop.stopCode})`);
+                setValue(`${matchedStop.stopName} (${matchedStop.stopCode.toString()})`);
                 setSelectedStop(matchedStop);
             } else {
                 setValue(null);
@@ -72,12 +72,18 @@ export default function Stops({stops}: { stops: any[] }) {
                     <Loader />
                 </Center>
             ) : selectedStop && (
-                <Box ta="center">
-                    <h1>{selectedStop.stopName} {selectedStop.town && `(${selectedStop.town})`}</h1>
-                    <div>a {selectedStop.distance > 1 ? `${selectedStop.distance.toFixed(2)} km` : `${(selectedStop.distance * 1000).toFixed(0)} m`} da
-                        te
-                    </div>
-                </Box>
+                <div style={{textAlign: 'center', marginTop: '2rem'}}>
+                    <Title order={1}>{selectedStop.stopName} {selectedStop.town && `(${selectedStop.town})`}</Title>
+                    <Badge size="xl"
+                           color={selectedStop.type === 'E' ? 'blue' : selectedStop.type === 'U' ? 'green' : "white"}>
+                        {selectedStop.type === 'E' ? 'fermata extraurbana' : selectedStop.type === 'U' ? 'fermata urbana' : ""}
+                    </Badge>
+                    {selectedStop.distance > 10 && (
+                        <div>a {selectedStop.distance > 1 ? `${selectedStop.distance.toFixed(2)} km` : `${(selectedStop.distance * 1000).toFixed(0)} m`} da
+                            te
+                        </div>
+                    )}
+                </div>
             )}
         </Box>
     );

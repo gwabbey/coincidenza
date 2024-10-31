@@ -156,9 +156,8 @@ export async function getStop(id, type) {
         const params = {
             type: type,
             stopId: id,
-            limit: 10,
-            // TODO: use actual date
-            refDateTime: '2024-10-30T14:42:49.235Z'
+            limit: 15,
+            refDateTime: new Date().toISOString(),
         };
 
         const stops = await fetchData('trips_new', {
@@ -166,7 +165,7 @@ export async function getStop(id, type) {
         });
 
         const groupedStops = stops.reduce((acc, current) => {
-            const { routeId } = current;
+            const {routeId} = current;
 
             if (!acc[routeId]) {
                 acc[routeId] = [];
@@ -183,11 +182,9 @@ export async function getStop(id, type) {
                 },
             });
 
-            console.log(routeData);
-
             const details = routeData.find(route => route.routeId === parseInt(routeId, 10)) || null;
 
-            console.log('details', details);
+            if (!details) return null;
 
             return {
                 id: routeId,
@@ -196,9 +193,13 @@ export async function getStop(id, type) {
             };
         });
 
-        const results = await Promise.all(routePromises);
+        let results = await Promise.all(routePromises);
 
-        return results.filter(result => result.details !== null);
+        results = results
+            .filter(result => result !== null && result.details !== null)
+            .sort((a, b) => a.details.routeShortName.localeCompare(b.details.routeShortName, 'it', {numeric: true}));
+
+        return results;
 
     } catch (error) {
         console.error("Error fetching stop:", error);
