@@ -1,76 +1,135 @@
 'use client';
-import {Accordion, Alert, Badge, List, Text} from "@mantine/core";
-import {IconAlertCircle} from "@tabler/icons-react";
-import Link from "next/link";
+import {memo} from 'react';
+import {Accordion, Alert, Badge, List, Text} from '@mantine/core';
+import {IconAlertCircle} from '@tabler/icons-react';
+import Link from 'next/link';
+import {Route} from "@/types";
 
-export default function Routes({stop, currentStop}: { stop: any[], currentStop: any }) {
+const RouteItem = memo(({route, currentStop}: { route: Route; currentStop?: string | null }) => {
+    const formatTime = (date: string) => {
+        return new Date(date).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    };
+
+    const getDelayColor = (delay: number | null) => {
+        if (delay === null) return 'gray';
+        if (delay >= 5) return 'red';
+        if (delay >= 2) return 'yellow';
+        if (delay >= 0) return 'green';
+        return 'grape';
+    };
+
     return (
-        <Accordion chevronPosition="right" transitionDuration={500} maw={700} w="100%">
-            {stop.map((route) => (
-                <Accordion.Item key={route.id} value={route.id.toString()}>
-                    <Accordion.Control>
-                        <Badge size="xl" radius="xl" mr="xs"
-                               color={route.details.type === 'U' ? 'green' : 'blue'}>
-                            {route.details.routeShortName}
-                        </Badge>
-                        {route.details.routeLongName}
-                    </Accordion.Control>
-                    <Accordion.Panel>
-                        {route.details.news && route.details.news.map((news: any, index: number) => (
-                            <Alert mb={16} autoContrast variant="light" color="yellow" radius="xl" title={news.header}
-                                   key={index} icon={<IconAlertCircle />}>
-                                {news.details}{" "}
-                                {news.url && (
-                                    <Link href={news.url} target="_blank">
-                                        Dettagli
-                                    </Link>
+        <Accordion.Item value={route.id.toString()}>
+            <Accordion.Control>
+                <Badge
+                    size="xl"
+                    radius="xl"
+                    mr="xs"
+                    color={route.details.type === 'U' ? 'green' : 'blue'}
+                >
+                    {route.details.routeShortName}
+                </Badge>
+                {route.details.routeLongName}
+            </Accordion.Control>
+            <Accordion.Panel>
+                {route.details.news?.map((news, index) => (
+                    <Alert
+                        key={index}
+                        mb={16}
+                        autoContrast
+                        variant="light"
+                        color="yellow"
+                        radius="xl"
+                        title={news.header}
+                        icon={<IconAlertCircle />}
+                    >
+                        {news.details}{" "}
+                        {news.url && (
+                            <Link href={news.url} target="_blank">
+                                Dettagli
+                            </Link>
+                        )}
+                    </Alert>
+                ))}
+
+                <List spacing="xl" size="xl" center icon={<></>}>
+                    {route.stops.map((route, index) => {
+                        const arrivalTime = new Date(route.oraArrivoEffettivaAFermataSelezionata).getTime();
+                        const currentTime = new Date().getTime();
+                        const diffInMinutes = Math.floor(Math.abs(arrivalTime - currentTime) / (1000 * 60));
+
+                        return (
+                            <List.Item key={index}>
+                                <div>
+                                    {`Bus ${route.matricolaBus || ''}`} per <strong>{route.tripHeadsign}</strong>
+                                </div>
+
+                                {route.delay === null && route.lastEventRecivedAt === null && (
+                                    <Text>dati in tempo reale non disponibili</Text>
                                 )}
-                            </Alert>
-                        ))}
-                        <List
-                            spacing="xl"
-                            size="xl"
-                            center
-                            icon={<></>}>
-                            {route.stops.map((stop: any, index: number) => (
-                                <List.Item key={index}>
-                                    <div>{`Bus ${stop.matricolaBus !== null ? stop.matricolaBus : ''}`} per <strong>{stop.tripHeadsign}</strong>
-                                    </div>
-                                    {stop.delay === null && stop.lastEventRecivedAt === null && (
-                                        <Text>dati in tempo reale non disponibili</Text>
-                                    )}
-                                    {stop.delay === null && stop.lastEventRecivedAt !== null && (
-                                        <Text>non ancora partito</Text>
-                                    )}
-                                    {stop.delay !== null && (
-                                        <Text
-                                            c={stop.delay >= 5 ? 'red' : (stop.delay >= 0 && stop.delay < 2) ? 'green' : (stop.delay > 2 && stop.delay < 5) ? 'yellow' : stop.delay < 0 ? 'grape' : 'green'}>
-                                            {stop.delay < 0 ? `${Math.abs(stop.delay)} min in anticipo` : stop.delay > 0 ? `${stop.delay} min in ritardo` : 'in orario'}
-                                        </Text>
-                                    )}
-                                    <Text>
-                                        {stop.stopTimes[stop.stopTimes.length - 1].stopId.toString() === currentStop.toString() ? 'arriva' : 'passa'} alle <strong>{new Date(stop.oraArrivoEffettivaAFermataSelezionata).toLocaleTimeString([], {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                    })}</strong> {stop.delay !== null && stop.delay !== 0 && `invece che alle ${new Date(stop.oraArrivoProgrammataAFermataSelezionata).toLocaleTimeString([], {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                    })}`}
+
+                                {route.delay === null && route.lastEventRecivedAt !== null && (
+                                    <Text>non ancora partito</Text>
+                                )}
+
+                                {route.delay !== null && (
+                                    <Text c={getDelayColor(route.delay)}>
+                                        {route.delay < 0
+                                            ? `${Math.abs(route.delay)} min in anticipo`
+                                            : route.delay > 0
+                                                ? `${route.delay} min in ritardo`
+                                                : 'in orario'}
                                     </Text>
+                                )}
+
+                                <Text>
+                                    {route.stopTimes[route.stopTimes.length - 1].stopId === currentStop
+                                        ? 'arriva'
+                                        : 'passa'} alle <strong>
+                                    {formatTime(route.oraArrivoEffettivaAFermataSelezionata)}
+                                </strong> {diffInMinutes === 0 ? '(adesso)' : `(tra ${diffInMinutes} minut${diffInMinutes === 1 ? 'o' : 'i'})`}
+                                </Text>
+
+                                {route.lastEventRecivedAt && (
                                     <Text c="dimmed" size="xs">
-                                        {stop.lastEventRecivedAt !== null && `Ultimo aggiornamento: ${new Date(stop.lastEventRecivedAt).toLocaleTimeString([], {
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                            day: '2-digit',
-                                            month: '2-digit',
-                                            year: 'numeric',
-                                        }).replace(/,/g, ' - ')}`}
+                                        Ultimo
+                                        aggiornamento: {new Date(route.lastEventRecivedAt).toLocaleTimeString([], {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        day: '2-digit',
+                                        month: '2-digit',
+                                        year: 'numeric',
+                                    }).replace(/,/g, ' - ')}
                                     </Text>
-                                </List.Item>
-                            ))}
-                        </List>
-                    </Accordion.Panel>
-                </Accordion.Item>
+                                )}
+                            </List.Item>
+                        );
+                    })}
+                </List>
+            </Accordion.Panel>
+        </Accordion.Item>
+    );
+});
+
+RouteItem.displayName = 'RouteItem';
+
+export default function Routes({route, currentStop}: { route: Route[]; currentStop?: string | null }) {
+    return (
+        <Accordion
+            chevronPosition="right"
+            transitionDuration={500}
+            maw={700}
+            w="100%"
+        >
+            {route.map((route) => (
+                <RouteItem
+                    key={route.id}
+                    route={route}
+                    currentStop={currentStop}
+                />
             ))}
         </Accordion>
     );

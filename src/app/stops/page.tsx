@@ -34,7 +34,7 @@ export default async function Page() {
             <Stops stops={stops} />
             <Suspense fallback={<p>Caricamento...</p>}>
                 {stop && stop.length > 0 && (
-                    <Routes stop={stop} currentStop={id?.value ?? null} />
+                    <Routes route={stop} currentStop={id?.value ?? null} />
                 )}
             </Suspense>
         </div>

@@ -1,20 +1,34 @@
 'use client';
-import {Badge, Box, Center, Loader, Select, Title} from "@mantine/core";
-import {useEffect, useState} from "react";
-import {useRouter, useSearchParams} from "next/navigation";
-import {setCookie} from "@/api";
+import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useRouter, useSearchParams} from 'next/navigation';
+import {Badge, Box, Center, Loader, Select, Title} from '@mantine/core';
+import {setCookie} from '@/api';
+import {Stop} from '@/types';
 
-export default function Stops({stops}: { stops: any[] }) {
+export default function Stops({stops}: { stops: Stop[] }) {
     const router = useRouter();
     const currentParams = useSearchParams();
     const [value, setValue] = useState<string | null>(null);
-    const [selectedStop, setSelectedStop] = useState<any>(null);
+    const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
     const [loading, setLoading] = useState(true);
+    const [searchQuery, setSearchQuery] = useState('');
 
-    const stopMap = stops.reduce((acc, stop) => {
-        acc[stop.stopId] = stop;
-        return acc;
-    }, {});
+    // Memoize the stop map for efficient lookups
+    const stopMap = useMemo(() => {
+        return stops.reduce((acc, stop) => {
+            acc[stop.stopId] = stop;
+            return acc;
+        }, {} as Record<string, Stop>);
+    }, [stops]);
+
+    // Memoize stop options for the Select component
+    const stopOptions = useMemo(() => {
+        return stops.map((stop) => ({
+            value: `${stop.stopId}-${stop.type}`,
+            label: `${stop.stopName} (${stop.stopCode})`,
+            stop: stop,
+        }));
+    }, [stops]);
 
     useEffect(() => {
         const id = currentParams.get('id');
@@ -22,39 +36,45 @@ export default function Stops({stops}: { stops: any[] }) {
 
         if (id && type) {
             const matchedStop = stopMap[id];
-
             if (matchedStop && matchedStop.type === type) {
-                setValue(`${matchedStop.stopName} (${matchedStop.stopCode.toString()})`);
+                setValue(`${matchedStop.stopId}-${matchedStop.type}`);
                 setSelectedStop(matchedStop);
             } else {
                 setValue(null);
                 setSelectedStop(null);
             }
         }
-
         setLoading(false);
     }, [currentParams, stopMap]);
 
-    const handleStopChange = async (selectedValue: string | null) => {
+    const handleStopChange = useCallback(async (selectedValue: string | null) => {
+        if (!selectedValue) return;
+
         setLoading(true);
         setValue(selectedValue);
-        const selectedStop = stops.find(
-            stop => `${stop.stopName} (${stop.stopCode})` === selectedValue
-        ) || null;
 
-        if (selectedStop) {
-            setSelectedStop(selectedStop);
-            await setCookie('id', selectedStop.stopId);
-            await setCookie('type', selectedStop.type);
-            router.push(`/stops?id=${selectedStop.stopId}&type=${selectedStop.type}`);
+        const option = stopOptions.find(opt => opt.value === selectedValue);
+        if (option) {
+            const stop = option.stop;
+            setSelectedStop(stop);
+
+            try {
+                await Promise.all([
+                    setCookie('id', stop.stopId),
+                    setCookie('type', stop.type)
+                ]);
+                router.push(`/stops?id=${stop.stopId}&type=${stop.type}`);
+            } catch (error) {
+                console.error('Error updating stop:', error);
+            }
         }
         setLoading(false);
-    };
+    }, [stopOptions, router]);
 
     return (
         <Box maw={750} w="100%" mx="auto" mt="xl">
             <Select
-                data={stops.map((stop) => `${stop.stopName} (${stop.stopCode})`)}
+                data={stopOptions}
                 searchable
                 placeholder="Cerca una fermata per nome o codice"
                 label="Fermata"
@@ -65,24 +85,33 @@ export default function Stops({stops}: { stops: any[] }) {
                 value={value}
                 radius="xl"
                 nothingFoundMessage="Nessuna fermata trovata"
+                onSearchChange={setSearchQuery}
+                searchValue={searchQuery}
             />
 
-            {loading ? (
+            {loading && (
                 <Center mt="md">
                     <Loader />
                 </Center>
-            ) : selectedStop && (
-                <div style={{textAlign: 'center', marginTop: '2rem'}}>
-                    <Title order={1}>{selectedStop.stopName} {selectedStop.town && `(${selectedStop.town})`}</Title>
-                    <Badge size="xl"
-                           color={selectedStop.type === 'E' ? 'blue' : selectedStop.type === 'U' ? 'green' : "white"}>
-                        {selectedStop.type === 'E' ? 'fermata extraurbana' : selectedStop.type === 'U' ? 'fermata urbana' : ""}
+            )}
+
+            {selectedStop && (
+                <div className="text-center mt-8">
+                    <Title order={1}>
+                        {selectedStop.stopName}
+                        {selectedStop.town && ` (${selectedStop.town})`}
+                    </Title>
+                    <Badge
+                        size="xl"
+                        color={selectedStop.type === 'E' ? 'blue' : 'green'}
+                    >
+                        {selectedStop.type === 'E' ? 'fermata extraurbana' : 'fermata urbana'}
                     </Badge>
-                    {selectedStop.distance > 10 && (
-                        <div>a {selectedStop.distance > 1 ? `${selectedStop.distance.toFixed(2)} km` : `${(selectedStop.distance * 1000).toFixed(0)} m`} da
-                            te
-                        </div>
-                    )}
+                    <div>
+                        a {selectedStop.distance > 1
+                        ? `${selectedStop.distance.toFixed(2)} km`
+                        : `${(selectedStop.distance * 1000).toFixed(0)} m`} da te
+                    </div>
                 </div>
             )}
         </Box>
