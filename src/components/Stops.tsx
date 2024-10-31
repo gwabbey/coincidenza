@@ -13,7 +13,6 @@ export default function Stops({stops}: { stops: Stop[] }) {
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Memoize the stop map for efficient lookups
     const stopMap = useMemo(() => {
         return stops.reduce((acc, stop) => {
             acc[stop.stopId] = stop;
@@ -21,7 +20,6 @@ export default function Stops({stops}: { stops: Stop[] }) {
         }, {} as Record<string, Stop>);
     }, [stops]);
 
-    // Memoize stop options for the Select component
     const stopOptions = useMemo(() => {
         return stops.map((stop) => ({
             value: `${stop.stopId}-${stop.type}`,
@@ -96,7 +94,7 @@ export default function Stops({stops}: { stops: Stop[] }) {
             )}
 
             {selectedStop && (
-                <div className="text-center mt-8">
+                <div style={{textAlign: 'center', marginTop: '16px'}}>
                     <Title order={1}>
                         {selectedStop.stopName}
                         {selectedStop.town && ` (${selectedStop.town})`}
