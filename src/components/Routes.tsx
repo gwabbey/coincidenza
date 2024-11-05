@@ -7,7 +7,7 @@ import {Route} from "@/types";
 
 const RouteItem = memo(({route, currentStop}: { route: Route; currentStop?: string | null }) => {
     const formatTime = (date: string) => {
-        return new Date(date).toLocaleTimeString([], {
+        return new Date(date).toLocaleTimeString('it-IT', {
             hour: '2-digit',
             minute: '2-digit',
         });
@@ -67,15 +67,13 @@ const RouteItem = memo(({route, currentStop}: { route: Route; currentStop?: stri
                                     {`Bus ${route.matricolaBus || ''}`} per <strong>{route.tripHeadsign}</strong>
                                 </div>
 
-                                {route.delay === null && route.lastEventRecivedAt === null && (
-                                    <Text>dati in tempo reale non disponibili</Text>
-                                )}
-
-                                {route.delay === null && route.lastEventRecivedAt !== null && (
+                                {route.stopTimes[0].arrivalTime > new Date().toLocaleTimeString('en-GB', {hour12: false}).slice(0, 8) ? (
                                     <Text>non ancora partito</Text>
+                                ) : [route.delay, route.lastEventRecivedAt, route.matricolaBus].every(item => item === null) && (
+                                    <Text c="gray">dati in tempo reale non disponibili</Text>
                                 )}
 
-                                {route.delay !== null && (
+                                {route.delay !== null && route.stopTimes[0].arrivalTime < new Date().toLocaleTimeString('en-GB', {hour12: false}).slice(0, 8) && (
                                     <Text c={getDelayColor(route.delay)}>
                                         {route.delay < 0
                                             ? `${Math.abs(route.delay)} min in anticipo`
@@ -86,17 +84,21 @@ const RouteItem = memo(({route, currentStop}: { route: Route; currentStop?: stri
                                 )}
 
                                 <Text>
-                                    {route.stopTimes[route.stopTimes.length - 1].stopId === currentStop
-                                        ? 'arriva'
-                                        : 'passa'} alle <strong>
-                                    {formatTime(route.oraArrivoEffettivaAFermataSelezionata)}
-                                </strong> {diffInMinutes === 0 ? '(adesso)' : `(tra ${diffInMinutes} minut${diffInMinutes === 1 ? 'o' : 'i'})`}
+                                    {route.stopTimes[0].stopId.toString() === currentStop?.toString() && diffInMinutes > 0
+                                        ? 'parte'
+                                        : route.stopTimes[route.stopTimes.length - 1].stopId.toString() === currentStop?.toString()
+                                            ? 'arriva'
+                                            : 'passa'}{' '}
+                                    alle <strong>{formatTime(route.oraArrivoEffettivaAFermataSelezionata)}</strong>{' '}
+                                    {diffInMinutes === 0
+                                        ? '(adesso)'
+                                        : `(tra ${diffInMinutes} minut${diffInMinutes === 1 ? 'o' : 'i'})`}
                                 </Text>
 
                                 {route.lastEventRecivedAt && (
                                     <Text c="dimmed" size="xs">
                                         Ultimo
-                                        aggiornamento: {new Date(route.lastEventRecivedAt).toLocaleTimeString([], {
+                                        aggiornamento: {new Date(route.lastEventRecivedAt).toLocaleTimeString('it-IT', {
                                         hour: '2-digit',
                                         minute: '2-digit',
                                         day: '2-digit',
@@ -116,7 +118,8 @@ const RouteItem = memo(({route, currentStop}: { route: Route; currentStop?: stri
 
 RouteItem.displayName = 'RouteItem';
 
-export default function Routes({route, currentStop}: { route: Route[]; currentStop?: string | null }) {
+export default function Routes({stop, currentStop}: { stop: any[]; currentStop?: string | null }) {
+
     return (
         <Accordion
             chevronPosition="right"
@@ -124,7 +127,7 @@ export default function Routes({route, currentStop}: { route: Route[]; currentSt
             maw={700}
             w="100%"
         >
-            {route.map((route) => (
+            {stop.map((route) => (
                 <RouteItem
                     key={route.id}
                     route={route}

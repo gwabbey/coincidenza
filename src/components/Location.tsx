@@ -5,7 +5,7 @@ import {setCookie} from "@/api";
 
 export function getUserLocation(): Promise<{ lat: number; lon: number }> {
     return new Promise((resolve, reject) => {
-        if (typeof window !== "undefined" && navigator.geolocation) {
+        if (typeof window !== "undefined" && "geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     resolve({
@@ -14,10 +14,29 @@ export function getUserLocation(): Promise<{ lat: number; lon: number }> {
                     });
                 },
                 (error) => {
-                    reject(error);
+                    switch (error.code) {
+                        case error.PERMISSION_DENIED:
+                            reject(new Error("User denied the request for Geolocation."));
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            reject(new Error("Location information is unavailable."));
+                            break;
+                        case error.TIMEOUT:
+                            reject(new Error("The request to get user location timed out."));
+                            break;
+                        default:
+                            reject(new Error("An unknown error occurred."));
+                            break;
+                    }
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0,
                 }
             );
         } else {
+            console.error("Geolocation is not supported or running on the server");
             reject(new Error("Geolocation is not supported or running on the server"));
         }
     });

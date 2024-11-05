@@ -1,49 +1,48 @@
 'use client';
 import {useCallback, useEffect, useMemo, useState} from 'react';
-import {useRouter, useSearchParams} from 'next/navigation';
+import {useRouter} from 'next/navigation';
 import {Badge, Box, Center, Loader, Select, Title} from '@mantine/core';
 import {setCookie} from '@/api';
 import {Stop} from '@/types';
 
-export default function Stops({stops}: { stops: Stop[] }) {
+export default function Stops({stops, id, type}: { stops: Stop[], id?: string, type?: string }) {
     const router = useRouter();
-    const currentParams = useSearchParams();
     const [value, setValue] = useState<string | null>(null);
     const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
     const [loading, setLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
+
+    const selectOptions = useMemo(() => {
+        return stops.map((stop) => ({
+            value: `${stop.stopId}-${stop.type}`,
+            label: `${stop.stopName} (${stop.stopCode})`
+        }));
+    }, [stops]);
 
     const stopMap = useMemo(() => {
         return stops.reduce((acc, stop) => {
-            acc[stop.stopId] = stop;
+            acc[`${stop.stopId}-${stop.type}`] = stop;
             return acc;
         }, {} as Record<string, Stop>);
     }, [stops]);
 
-    const stopOptions = useMemo(() => {
-        return stops.map((stop) => ({
-            value: `${stop.stopId}-${stop.type}`,
-            label: `${stop.stopName} (${stop.stopCode})`,
-            stop: stop,
-        }));
-    }, [stops]);
-
     useEffect(() => {
-        const id = currentParams.get('id');
-        const type = currentParams.get('type');
-
-        if (id && type) {
-            const matchedStop = stopMap[id];
-            if (matchedStop && matchedStop.type === type) {
-                setValue(`${matchedStop.stopId}-${matchedStop.type}`);
-                setSelectedStop(matchedStop);
-            } else {
-                setValue(null);
-                setSelectedStop(null);
+        const fetchStop = async () => {
+            setLoading(true);
+            if (id && type) {
+                const key = `${id}-${type}`;
+                const matchedStop = stopMap[key];
+                if (matchedStop) {
+                    setValue(key);
+                    setSelectedStop(matchedStop);
+                } else {
+                    setValue(null);
+                    setSelectedStop(null);
+                }
             }
-        }
-        setLoading(false);
-    }, [currentParams, stopMap]);
+            setLoading(false);
+        };
+        fetchStop();
+    }, [stopMap, id, type]);
 
     const handleStopChange = useCallback(async (selectedValue: string | null) => {
         if (!selectedValue) return;
@@ -51,28 +50,26 @@ export default function Stops({stops}: { stops: Stop[] }) {
         setLoading(true);
         setValue(selectedValue);
 
-        const option = stopOptions.find(opt => opt.value === selectedValue);
-        if (option) {
-            const stop = option.stop;
+        const stop = stopMap[selectedValue];
+        if (stop) {
             setSelectedStop(stop);
-
             try {
                 await Promise.all([
                     setCookie('id', stop.stopId),
                     setCookie('type', stop.type)
                 ]);
-                router.push(`/stops?id=${stop.stopId}&type=${stop.type}`);
+                router.refresh();
             } catch (error) {
                 console.error('Error updating stop:', error);
             }
         }
         setLoading(false);
-    }, [stopOptions, router]);
+    }, [stopMap, router]);
 
     return (
         <Box maw={750} w="100%" mx="auto" mt="xl">
             <Select
-                data={stopOptions}
+                data={selectOptions}
                 searchable
                 placeholder="Cerca una fermata per nome o codice"
                 label="Fermata"
@@ -83,8 +80,6 @@ export default function Stops({stops}: { stops: Stop[] }) {
                 value={value}
                 radius="xl"
                 nothingFoundMessage="Nessuna fermata trovata"
-                onSearchChange={setSearchQuery}
-                searchValue={searchQuery}
             />
 
             {loading && (
@@ -93,7 +88,7 @@ export default function Stops({stops}: { stops: Stop[] }) {
                 </Center>
             )}
 
-            {selectedStop && (
+            {selectedStop && !loading && (
                 <div style={{textAlign: 'center', marginTop: '16px'}}>
                     <Title order={1}>
                         {selectedStop.stopName}

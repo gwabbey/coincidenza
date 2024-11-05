@@ -5,17 +5,22 @@ export interface Stop {
     type: 'E' | 'U';
     town?: string;
     distance: number;
+    stopLat?: number;
+    stopLon?: number;
 }
 
 export interface RouteDetails {
     type: 'U' | 'E';
+    routeId: number;
     routeShortName: string;
     routeLongName: string;
-    news?: Array<{
-        header: string;
-        details: string;
-        url?: string;
-    }>;
+    news?: RouteNews[];
+}
+
+export interface RouteNews {
+    header: string;
+    details: string;
+    url?: string;
 }
 
 export interface RouteStop {
@@ -23,7 +28,7 @@ export interface RouteStop {
     tripHeadsign: string;
     delay: number | null;
     lastEventRecivedAt: string | null;
-    stopTimes: Array<{ stopId: string }>;
+    stopTimes: Array<{ stopId: string, arrivalTime: string, departureTime: string }>;
     oraArrivoEffettivaAFermataSelezionata: string;
     oraArrivoProgrammataAFermataSelezionata: string;
 }

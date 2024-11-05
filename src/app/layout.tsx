@@ -2,7 +2,7 @@
 // All packages except `@mantine/hooks` require styles imports
 import '@mantine/core/styles.css';
 
-import {ColorSchemeScript, MantineProvider} from '@mantine/core';
+import {ColorSchemeScript, Container, MantineProvider} from '@mantine/core';
 
 export const metadata = {
     title: 'Trentino Trasporti',
@@ -34,7 +34,9 @@ export default function RootLayout({
                 mancanti o inesatti non sono di mia responsabilità.
                 Per ulteriori domande o chiarimenti, non esitate a contattarmi.
             </header>
-            {children}
+            <Container fluid h="100%">
+                {children}
+            </Container>
         </MantineProvider>
         </body>
         </html>

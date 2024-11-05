@@ -1,3 +1,6 @@
+"use server";
+import {cookies} from "next/headers";
+
 function getDistance(lat1, lon1, lat2, lon2) {
     const R = 6371;
     const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -44,8 +47,18 @@ export async function reverseGeocode(lat, lon) {
     return await response.json();
 }
 
-export async function setCookie(name, value) {
-    document.cookie = `${name}=${value}; path=/`;
+export async function setCookie(name, value, options = {}) {
+    const {maxAge = 7 * 24 * 60 * 60, path = '/', secure = false, sameSite = 'Strict'} = options;
+
+    (await cookies()).set({
+        name,
+        value,
+        maxAge,
+        path,
+        secure,
+        sameSite,
+        httpOnly: true,
+    });
 }
 
 export async function fetchData(endpoint, options = {}) {
@@ -175,13 +188,13 @@ export async function getStop(id, type) {
             return acc;
         }, {});
 
-        const routePromises = Object.keys(groupedStops).map(async (routeId) => {
-            const routeData = await fetchData('routes', {
-                params: {
-                    type: type,
-                },
-            });
+        const routeData = await fetchData('routes', {
+            params: {
+                type: type,
+            },
+        });
 
+        const results = Object.keys(groupedStops).map((routeId) => {
             const details = routeData.find(route => route.routeId === parseInt(routeId, 10)) || null;
 
             if (!details) return null;
@@ -191,15 +204,9 @@ export async function getStop(id, type) {
                 stops: groupedStops[routeId],
                 details,
             };
-        });
+        }).filter(result => result !== null && result.details !== null);
 
-        let results = await Promise.all(routePromises);
-
-        results = results
-            .filter(result => result !== null && result.details !== null)
-            .sort((a, b) => a.details.routeShortName.localeCompare(b.details.routeShortName, 'it', {numeric: true}));
-
-        return results;
+        return results.sort((a, b) => a.details.routeShortName.localeCompare(b.details.routeShortName, 'it', {numeric: true}));
 
     } catch (error) {
         console.error("Error fetching stop:", error);
