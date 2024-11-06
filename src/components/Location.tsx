@@ -60,7 +60,7 @@ export default function Location() {
 
     return (
         <Flex justify="center" direction="column" gap="lg">
-            <Button onClick={handleFetchStops} disabled={loading}>
+            <Button onClick={handleFetchStops} disabled={loading} radius={9999}>
                 {loading ? "Fetching Location..." : "Grant Location Access"}
             </Button>
             {loading && <Loader />}

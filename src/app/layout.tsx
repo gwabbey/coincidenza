@@ -17,7 +17,7 @@ export default function RootLayout({
     return (
         <html lang="en">
         <head>
-            <ColorSchemeScript forceColorScheme="dark"/>
+            <ColorSchemeScript forceColorScheme="dark" />
         </head>
         <body>
         <MantineProvider forceColorScheme="dark">
@@ -35,7 +35,7 @@ export default function RootLayout({
                 mancanti o inesatti non sono di mia responsabilità.
                 Per ulteriori domande o chiarimenti, non esitate a contattarmi.
             </header>
-            <Container fluid h="100%">
+            <Container fluid h="100%" py="xl">
                 {children}
             </Container>
         </MantineProvider>

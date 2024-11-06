@@ -1,138 +1,194 @@
 'use client';
-import {memo} from 'react';
-import {Accordion, Alert, Badge, List, Text} from '@mantine/core';
-import {IconAlertCircle} from '@tabler/icons-react';
-import Link from 'next/link';
-import {Route} from "@/types";
+import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useRouter} from 'next/navigation';
+import {Accordion, Anchor, Badge, Box, Center, Group, Loader, Modal, Select, Stack, Title} from '@mantine/core';
+import {getStop, setCookie} from '@/api';
+import {Stop} from '@/types';
+import {RouteItem} from './RouteItem';
+import {useDisclosure} from "@mantine/hooks";
+import Image from "next/image";
 
-const RouteItem = memo(({route, currentStop}: { route: Route; currentStop?: string | null }) => {
-    const formatTime = (date: string) => {
-        return new Date(date).toLocaleTimeString('it-IT', {
-            hour: '2-digit',
-            minute: '2-digit',
-        });
-    };
+export default function Routes({
+                                   stops,
+                                   initialRoutes,
+                                   initialId,
+                                   initialType
+                               }: {
+    stops: Stop[],
+    initialRoutes: any[],
+    initialId?: string,
+    initialType?: string
+}) {
+    const router = useRouter();
+    const [value, setValue] = useState<string | null>(null);
+    const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
+    const [routes, setRoutes] = useState<any[]>(initialRoutes);
+    const [opened, {open, close}] = useDisclosure(false);
 
-    const getDelayColor = (delay: number | null) => {
-        if (delay === null) return 'gray';
-        if (delay >= 5) return 'red';
-        if (delay >= 2) return 'yellow';
-        if (delay >= 0) return 'green';
-        return 'grape';
-    };
+    const selectOptions = useMemo(() => {
+        return stops.map((stop) => ({
+            value: `${stop.stopId}-${stop.type}`,
+            label: `${stop.stopName} (${stop.stopCode})`
+        }));
+    }, [stops]);
+
+    const stopMap = useMemo(() => {
+        return stops.reduce((acc, stop) => {
+            acc[`${stop.stopId}-${stop.type}`] = stop;
+            return acc;
+        }, {} as Record<string, Stop>);
+    }, [stops]);
+
+    useEffect(() => {
+        const initializeState = async () => {
+            if (initialId && initialType) {
+                const key = `${initialId}-${initialType}`;
+                const matchedStop = stopMap[key];
+                if (matchedStop) {
+                    setValue(key);
+                    setSelectedStop(matchedStop);
+                    setRoutes(initialRoutes);
+                } else {
+                    setValue(null);
+                    setSelectedStop(null);
+                    setRoutes([]);
+                }
+            }
+        };
+        initializeState();
+    }, [stopMap, initialId, initialType, initialRoutes]);
+
+    const fetchRoutes = useCallback(async () => {
+        if (selectedStop) {
+            try {
+                const updatedRoutes = await getStop(selectedStop.stopId, selectedStop.type);
+                setRoutes(updatedRoutes);
+            } catch (error) {
+                console.error('Error refreshing routes:', error);
+            }
+        }
+    }, [selectedStop]);
+
+    useEffect(() => {
+        const intervalId = setInterval(fetchRoutes, 15000);
+        return () => clearInterval(intervalId);
+    }, [fetchRoutes]);
+
+    const handleStopChange = useCallback(async (selectedValue: string | null) => {
+        if (!selectedValue) return;
+
+        setValue(selectedValue);
+        setRoutes([]);
+
+        const stop = stopMap[selectedValue];
+        if (stop) {
+            setSelectedStop(stop);
+            try {
+                await Promise.all([
+                    setCookie('id', stop.stopId),
+                    setCookie('type', stop.type)
+                ]);
+                router.refresh();
+
+                const newRoutes = await getStop(stop.stopId, stop.type);
+                setRoutes(newRoutes);
+            } catch (error) {
+                console.error('Error updating stop:', error);
+            }
+        }
+    }, [stopMap, router]);
 
     return (
-        <Accordion.Item value={route.id.toString()}>
-            <Accordion.Control>
-                <Badge
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '16px',
+        }}>
+            <Box maw={750} w="100%" mx="auto" ta="left">
+                <Select
+                    data={selectOptions}
+                    searchable
+                    placeholder="Cerca una fermata per nome o codice"
+                    label="Fermata"
+                    limit={30}
                     size="xl"
+                    allowDeselect={false}
+                    onChange={handleStopChange}
+                    value={value}
                     radius="xl"
-                    mr="xs"
-                    color={route.details.type === 'U' ? 'green' : 'blue'}
-                >
-                    {route.details.routeShortName}
-                </Badge>
-                {route.details.routeLongName}
-            </Accordion.Control>
-            <Accordion.Panel>
-                {route.details.news?.map((news, index) => (
-                    <Alert
-                        key={index}
-                        mb={16}
-                        autoContrast
-                        variant="light"
-                        color="yellow"
-                        radius="xl"
-                        title={news.header}
-                        icon={<IconAlertCircle />}
-                    >
-                        {news.details}{" "}
-                        {news.url && (
-                            <Link href={news.url} target="_blank">
-                                Dettagli
-                            </Link>
-                        )}
-                    </Alert>
-                ))}
-
-                <List spacing="xl" size="xl" center icon={<></>}>
-                    {route.stops.map((route, index) => {
-                        const arrivalTime = new Date(route.oraArrivoEffettivaAFermataSelezionata).getTime();
-                        const currentTime = new Date().getTime();
-                        const diffInMinutes = Math.floor(Math.abs(arrivalTime - currentTime) / (1000 * 60));
-
-                        return (
-                            <List.Item key={index}>
-                                <div>
-                                    {`Bus ${route.matricolaBus || ''}`} per <strong>{route.tripHeadsign}</strong>
-                                </div>
-
-                                {route.stopTimes[0].arrivalTime > new Date().toLocaleTimeString('en-GB', {hour12: false}).slice(0, 8) ? (
-                                    <Text>non ancora partito</Text>
-                                ) : [route.delay, route.lastEventRecivedAt, route.matricolaBus].every(item => item === null) && (
-                                    <Text c="gray">dati in tempo reale non disponibili</Text>
-                                )}
-
-                                {route.delay !== null && route.stopTimes[0].arrivalTime < new Date().toLocaleTimeString('en-GB', {hour12: false}).slice(0, 8) && (
-                                    <Text c={getDelayColor(route.delay)}>
-                                        {route.delay < 0
-                                            ? `${Math.abs(route.delay)} min in anticipo`
-                                            : route.delay > 0
-                                                ? `${route.delay} min in ritardo`
-                                                : 'in orario'}
-                                    </Text>
-                                )}
-
-                                <Text>
-                                    {route.stopTimes[0].stopId.toString() === currentStop?.toString() && diffInMinutes > 0
-                                        ? 'parte'
-                                        : route.stopTimes[route.stopTimes.length - 1].stopId.toString() === currentStop?.toString()
-                                            ? 'arriva'
-                                            : 'passa'}{' '}
-                                    alle <strong>{formatTime(route.oraArrivoEffettivaAFermataSelezionata)}</strong>{' '}
-                                    {diffInMinutes === 0
-                                        ? '(adesso)'
-                                        : `(tra ${diffInMinutes} minut${diffInMinutes === 1 ? 'o' : 'i'})`}
-                                </Text>
-
-                                {route.lastEventRecivedAt && (
-                                    <Text c="dimmed" size="xs">
-                                        Ultimo
-                                        aggiornamento: {new Date(route.lastEventRecivedAt).toLocaleTimeString('it-IT', {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                        day: '2-digit',
-                                        month: '2-digit',
-                                        year: 'numeric',
-                                    }).replace(/,/g, ' - ')}
-                                    </Text>
-                                )}
-                            </List.Item>
-                        );
-                    })}
-                </List>
-            </Accordion.Panel>
-        </Accordion.Item>
-    );
-});
-
-RouteItem.displayName = 'RouteItem';
-
-export default function Routes({stop, currentStop}: { stop: any[]; currentStop?: string | null }) {
-    return (
-        <Accordion
-            chevronPosition="right"
-            transitionDuration={500}
-            maw={700}
-            w="100%"
-        >
-            {stop.map((route) => (
-                <RouteItem
-                    key={route.id}
-                    route={route}
-                    currentStop={currentStop}
+                    nothingFoundMessage="Nessuna fermata trovata"
                 />
-            ))}
-        </Accordion>
+                <Group justify="center" mt="sm">
+                    <Anchor inherit ta="center" onClick={open}>Come trovo il codice di una fermata?</Anchor>
+                </Group>
+
+                {selectedStop && (
+                    <div style={{textAlign: 'center', marginTop: '16px'}}>
+                        <Title order={1}>
+                            {selectedStop.stopName}
+                            {selectedStop.town && ` (${selectedStop.town})`}
+                        </Title>
+                        <Badge
+                            size="xl"
+                            color={selectedStop.type === 'E' ? 'blue' : 'green'}
+                        >
+                            {selectedStop.type === 'E' ? 'fermata extraurbana' : 'fermata urbana'}
+                        </Badge>
+                        <div>
+                            a {selectedStop.distance > 1
+                            ? `${selectedStop.distance.toFixed(2)} km`
+                            : `${(selectedStop.distance * 1000).toFixed(0)} m`} da te
+                        </div>
+                    </div>
+                )}
+
+                {routes.length > 0 && selectedStop ? (
+                    <Accordion
+                        chevronPosition="right"
+                        transitionDuration={500}
+                        maw={750}
+                        w="100%"
+                        mt="xl"
+                    >
+                        {routes.map((route) => (
+                            <RouteItem
+                                key={route.id}
+                                route={route}
+                                currentStop={selectedStop.stopId}
+                            />
+                        ))}
+                    </Accordion>
+                ) : (
+                    <Center mt="xl">
+                        <Loader />
+                    </Center>
+                )}
+            </Box>
+            <Modal opened={opened} onClose={close} title="Come trovo il codice di una fermata?" centered size="xl">
+                <Stack
+                    align="stretch"
+                    justify="flex-start"
+                    gap="md">
+                    <div>
+                        Ogni fermata di Trentino Trasporti ha un <strong>codice univoco</strong>, indicato sui fogli
+                        informativi delle linee. Questo codice può essere utile per distinguere fermate con lo stesso
+                        nome ma situate su <strong>lati opposti della strada</strong>.
+                    </div>
+                    <Group justify="center">
+                        <Image src="/urban-trento.png" alt="Urbano Trento" height={100} width={200} style={{
+                            objectFit: "cover"
+                        }} />
+                        <Image src="/urban-rovereto.png" alt="Urbano Rovereto" height={200} width={200} style={{
+                            objectFit: "cover"
+                        }} />
+                        <Image src="/extraurban.png" alt="Extraurbano" height={100} width={600} style={{
+                            objectFit: "cover"
+                        }} />
+                    </Group>
+                </Stack>
+            </Modal>
+        </div>
     );
 }
