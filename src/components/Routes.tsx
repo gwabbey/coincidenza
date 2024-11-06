@@ -119,7 +119,6 @@ const RouteItem = memo(({route, currentStop}: { route: Route; currentStop?: stri
 RouteItem.displayName = 'RouteItem';
 
 export default function Routes({stop, currentStop}: { stop: any[]; currentStop?: string | null }) {
-
     return (
         <Accordion
             chevronPosition="right"

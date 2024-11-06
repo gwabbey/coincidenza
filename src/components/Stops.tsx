@@ -64,6 +64,7 @@ export default function Stops({stops, id, type}: { stops: Stop[], id?: string, t
             }
         }
         setLoading(false);
+        router.refresh();
     }, [stopMap, router]);
 
     return (

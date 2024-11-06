@@ -2,8 +2,6 @@ import Stops from "@/components/Stops";
 import Location from "@/components/Location";
 import {cookies} from "next/headers";
 import {getClosestBusStops, getStop} from "@/api";
-import {Suspense} from "react";
-import {Center, Loader} from "@mantine/core";
 import Routes from "@/components/Routes";
 
 export default async function Page() {
@@ -32,15 +30,9 @@ export default async function Page() {
             gap: '16px',
         }}>
             <Stops stops={stops} id={id?.value} type={type?.value} />
-            <Suspense fallback={
-                <Center w="100%">
-                    <Loader size="xl" />
-                </Center>
-            }>
-                {stop && stop.length > 0 && (
-                    <Routes stop={stop} currentStop={id?.value ?? null} />
-                )}
-            </Suspense>
+            {stop && stop.length > 0 && (
+                <Routes stop={stop} currentStop={id?.value ?? null} />
+            )}
         </div>
     );
 }

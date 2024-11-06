@@ -17,10 +17,10 @@ export default function RootLayout({
     return (
         <html lang="en">
         <head>
-            <ColorSchemeScript />
+            <ColorSchemeScript forceColorScheme="dark"/>
         </head>
         <body>
-        <MantineProvider>
+        <MantineProvider forceColorScheme="dark">
             <header style={{
                 height: 'auto',
                 display: 'flex',
@@ -29,6 +29,7 @@ export default function RootLayout({
                 backgroundColor: 'gold',
                 padding: '8px',
                 zIndex: 1000,
+                color: 'black',
             }}>
                 I dati utilizzati provengono direttamente da Trentino Trasporti. Eventuali problemi come lentezza, dati
                 mancanti o inesatti non sono di mia responsabilità.
