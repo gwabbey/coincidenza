@@ -58,14 +58,23 @@ export const RouteItem = memo(({route, currentStop}: { route: Route; currentStop
                     return (<Container fluid key={index} fz={{base: 'lg', md: 'xl'}} px={0}>
                         <Grid justify="space-between" align="center">
                             <Grid.Col span="content" mt="sm">
-                                {`Bus ${route.matricolaBus || ''}`} per <br
-                                className="mantine-hidden-from-sm" /><Text fw="bold" truncate={"end"}
-                                                                           fz={{base: 'lg', md: 'xl'}}
-                                                                           w={{
-                                                                               base: 250,
-                                                                               xs: 450,
-                                                                               sm: 650
-                                                                           }}>{route.tripHeadsign}</Text>
+                                <Flex direction="column" wrap={{base: "wrap", sm: "nowrap"}}
+                                      w={{base: 250, xs: 450, sm: 650}}
+                                >
+                                    <Text inherit>
+                                        {`Bus ${route.matricolaBus || ''} per\u00A0`}
+                                    </Text>
+
+                                    <Text
+                                        inherit
+                                        fw="bold"
+                                        truncate="end"
+                                        fz={{base: 'lg', md: 'xl'}}
+                                        w={{base: 250, xs: 450, sm: 650}}
+                                    >
+                                        {route.tripHeadsign}
+                                    </Text>
+                                </Flex>
 
                                 {route.stopTimes[0].arrivalTime > new Date().toLocaleTimeString('en-GB', {hour12: false}).slice(0, 8) ? (
                                     <Text
@@ -98,7 +107,9 @@ export const RouteItem = memo(({route, currentStop}: { route: Route; currentStop
                                 <Flex justify="flex-end" align="center">
                                     <ActionIcon variant="outline" color="gray" size="lg" radius="xl"
                                                 aria-label="Info">
-                                        <IconInfoSmall style={{width: '100%', height: '100%'}} stroke={1.5} />
+                                        <Link href={`/trips/${route.tripId}`}>
+                                            <IconInfoSmall style={{width: '100%', height: '100%'}} stroke={1.5} />
+                                        </Link>
                                     </ActionIcon>
                                 </Flex>
                             </Grid.Col>

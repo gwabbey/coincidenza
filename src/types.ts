@@ -31,6 +31,7 @@ export interface RouteStop {
     stopTimes: Array<{ stopId: string, arrivalTime: string, departureTime: string }>;
     oraArrivoEffettivaAFermataSelezionata: string;
     oraArrivoProgrammataAFermataSelezionata: string;
+    tripId: string;
 }
 
 export interface Route {
