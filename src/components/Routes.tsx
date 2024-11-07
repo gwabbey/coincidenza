@@ -23,6 +23,7 @@ export default function Routes({
     const [value, setValue] = useState<string | null>(null);
     const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
     const [routes, setRoutes] = useState<any[]>(initialRoutes);
+    const [initialLoading, setInitialLoading] = useState(true);  // New state for initial loading
     const [opened, {open, close}] = useDisclosure(false);
 
     const selectOptions = useMemo(() => {
@@ -54,6 +55,7 @@ export default function Routes({
                     setRoutes([]);
                 }
             }
+            setInitialLoading(false);  // End initial loading
         };
         initializeState();
     }, [stopMap, initialId, initialType, initialRoutes]);
@@ -78,6 +80,7 @@ export default function Routes({
         if (!selectedValue) return;
 
         setValue(selectedValue);
+        setInitialLoading(true);  // Show loader for stop change
         setRoutes([]);
 
         const stop = stopMap[selectedValue];
@@ -94,6 +97,8 @@ export default function Routes({
                 setRoutes(newRoutes);
             } catch (error) {
                 console.error('Error updating stop:', error);
+            } finally {
+                setInitialLoading(false);  // Hide loader after loading routes
             }
         }
     }, [stopMap, router]);
@@ -111,16 +116,16 @@ export default function Routes({
                     data={selectOptions}
                     searchable
                     placeholder="Cerca una fermata per nome o codice"
-                    label="Fermata"
                     limit={30}
                     size="xl"
+                    my="sm"
                     allowDeselect={false}
                     onChange={handleStopChange}
                     value={value}
                     radius="xl"
                     nothingFoundMessage="Nessuna fermata trovata"
                 />
-                <Group justify="center" mt="sm">
+                <Group justify="center">
                     <Anchor inherit ta="center" onClick={open}>Come trovo il codice di una fermata?</Anchor>
                 </Group>
 
@@ -144,7 +149,12 @@ export default function Routes({
                     </div>
                 )}
 
-                {routes.length > 0 && selectedStop ? (
+                {initialLoading ? (
+                    <Center mt="xl">
+                        <Loader
+                            color={selectedStop?.type === "U" ? "green" : selectedStop?.type === "E" ? "blue" : "dimmed"} />
+                    </Center>
+                ) : routes.length > 0 && selectedStop ? (
                     <Accordion
                         chevronPosition="right"
                         transitionDuration={500}
@@ -161,8 +171,8 @@ export default function Routes({
                         ))}
                     </Accordion>
                 ) : (
-                    <Center mt="xl">
-                        <Loader />
+                    <Center mt="xl" ta="center">
+                        <div>Nessuna corsa trovata.</div>
                     </Center>
                 )}
             </Box>
@@ -183,7 +193,7 @@ export default function Routes({
                         <Image src="/urban-rovereto.png" alt="Urbano Rovereto" height={200} width={200} style={{
                             objectFit: "cover"
                         }} />
-                        <Image src="/extraurban.png" alt="Extraurbano" height={100} width={600} style={{
+                        <Image src="/extraurban.png" alt="Extraurbano" height={150} width={300} style={{
                             objectFit: "cover"
                         }} />
                     </Group>

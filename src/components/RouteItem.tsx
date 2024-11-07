@@ -63,13 +63,11 @@ export const RouteItem = memo(({route, currentStop}: { route: Route; currentStop
 
                         return (
                             <List.Item key={index}>
-                                <div>
-                                    {`Bus ${route.matricolaBus || ''}`} per <strong>{route.tripHeadsign}</strong>
-                                </div>
+                                {`Bus ${route.matricolaBus || ''}`} per <strong>{route.tripHeadsign}</strong>
 
                                 {route.stopTimes[0].arrivalTime > new Date().toLocaleTimeString('en-GB', {hour12: false}).slice(0, 8) ? (
                                     <Text
-                                        c={isDeparting ? 'green' : ''}>{isDeparting ? 'in partenza' : "non ancora partito"}</Text>
+                                        c={isDeparting ? 'green' : ''}>{isDeparting ? 'in partenza' : 'non ancora partito'}</Text>
                                 ) : [route.delay, route.lastEventRecivedAt, route.matricolaBus].every(item => item === null) && (
                                     <Text c="gray">dati in tempo reale non disponibili</Text>
                                 )}

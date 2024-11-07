@@ -19,7 +19,6 @@ export default async function Page() {
 
     return (
         <Flex
-            gap="xl"
             justify="center"
             direction="column"
             wrap="wrap"

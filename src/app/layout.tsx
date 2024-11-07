@@ -3,6 +3,7 @@
 import '@mantine/core/styles.css';
 
 import {ColorSchemeScript, Container, MantineProvider} from '@mantine/core';
+import Link from "next/link";
 
 export const metadata = {
     title: 'Trentino Trasporti',
@@ -21,7 +22,7 @@ export default function RootLayout({
         </head>
         <body>
         <MantineProvider forceColorScheme="dark">
-            <header style={{
+            {/*<header style={{
                 height: 'auto',
                 display: 'flex',
                 alignItems: 'center',
@@ -31,10 +32,9 @@ export default function RootLayout({
                 zIndex: 1000,
                 color: 'black',
             }}>
-                I dati utilizzati provengono direttamente da Trentino Trasporti. Eventuali problemi come lentezza, dati
-                mancanti o inesatti non sono di mia responsabilità.
-                Per ulteriori domande o chiarimenti, non esitate a contattarmi.
-            </header>
+                I dati utilizzati provengono direttamente da Trentino Trasporti. Per segnalare eventuali problemi o per
+                domande e chiarimenti, contattami all'indirizzo <Link href="mailto:mail@g3b.dev">mail@g3b.dev</Link>.
+            </header>*/}
             <Container fluid h="100%" py="xl">
                 {children}
             </Container>
