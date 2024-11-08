@@ -1,20 +1,21 @@
-import Location from "@/components/Location";
 import {cookies} from "next/headers";
 import {getClosestBusStops, getStop} from "@/api";
 import Routes from "@/components/Routes";
 import {Flex, Title} from "@mantine/core";
 
 export default async function Page() {
-    const lat = (await cookies()).get('lat');
-    const lon = (await cookies()).get('lon');
     const id = (await cookies()).get('id');
     const type = (await cookies()).get('type');
+    const lat = (await cookies()).get('lat');
+    const lon = (await cookies()).get('lon');
+    let stops;
 
     if (!lat || !lon) {
-        return <Location />;
+        stops = await getClosestBusStops(46.072449, 11.119031);
+    } else {
+        stops = await getClosestBusStops(lat.value, lon.value);
     }
 
-    const stops = await getClosestBusStops(parseFloat(lat.value), parseFloat(lon.value));
     const initialRoutes = id && type ? await getStop(id.value, type.value) : [];
 
     if (!stops) {

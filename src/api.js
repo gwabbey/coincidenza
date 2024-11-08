@@ -47,6 +47,10 @@ export async function reverseGeocode(lat, lon) {
     return await response.json();
 }
 
+export async function getCookie(name) {
+    return (await cookies()).get(name);
+}
+
 export async function setCookie(name, value, options = {}) {
     const {maxAge = 7 * 24 * 60 * 60, path = '/', secure = false, sameSite = 'Strict'} = options;
 
