@@ -213,3 +213,44 @@ export async function getStop(id, type) {
         return [];
     }
 }
+
+export async function getTrip(id) {
+    try {
+        const trip = await fetchData(`trips/${id}`);
+        const stops = await fetchData('stops', {
+            params: {
+                type: trip.type
+            }
+        });
+        const routes = await fetchData('routes', {
+            params: {
+                type: trip.type
+            }
+        });
+
+        const stopNameLookup = stops.reduce((acc, stop) => {
+            acc[stop.stopId] = stop.stopName;
+            return acc;
+        }, {});
+
+        const updatedStopTimes = trip.stopTimes.map(stopTime => ({
+            ...stopTime,
+            stopName: stopNameLookup[stopTime.stopId] || 'Fermata sconosciuta'
+        }));
+
+        const routeDetails = routes.find(route => route.routeId === trip.routeId);
+
+        return {
+            ...trip,
+            stopTimes: updatedStopTimes,
+            route: routeDetails || null
+        };
+    } catch (error) {
+        console.error("Error fetching trip:", error);
+        return {
+            id,
+            stopTimes: [],
+            route: null
+        };
+    }
+}

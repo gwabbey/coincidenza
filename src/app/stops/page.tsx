@@ -23,6 +23,7 @@ export default async function Page() {
             direction="column"
             wrap="wrap"
             ta="center"
+            gap="md"
         >
             <Title order={1} maw={750} w="100%" mx="auto">
                 Cerca fermata

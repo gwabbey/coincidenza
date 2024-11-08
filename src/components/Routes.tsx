@@ -23,7 +23,7 @@ export default function Routes({
     const [value, setValue] = useState<string | null>(null);
     const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
     const [routes, setRoutes] = useState<any[]>(initialRoutes);
-    const [initialLoading, setInitialLoading] = useState(true);  // New state for initial loading
+    const [initialLoading, setInitialLoading] = useState(true);
     const [opened, {open, close}] = useDisclosure(false);
 
     const selectOptions = useMemo(() => {
@@ -55,7 +55,7 @@ export default function Routes({
                     setRoutes([]);
                 }
             }
-            setInitialLoading(false);  // End initial loading
+            setInitialLoading(false);
         };
         initializeState();
     }, [stopMap, initialId, initialType, initialRoutes]);
@@ -80,7 +80,7 @@ export default function Routes({
         if (!selectedValue) return;
 
         setValue(selectedValue);
-        setInitialLoading(true);  // Show loader for stop change
+        setInitialLoading(true);
         setRoutes([]);
 
         const stop = stopMap[selectedValue];
@@ -98,7 +98,7 @@ export default function Routes({
             } catch (error) {
                 console.error('Error updating stop:', error);
             } finally {
-                setInitialLoading(false);  // Hide loader after loading routes
+                setInitialLoading(false);
             }
         }
     }, [stopMap, router]);

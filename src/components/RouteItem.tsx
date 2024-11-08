@@ -3,22 +3,9 @@ import {Route} from "@/types";
 import {Accordion, ActionIcon, Alert, Badge, Container, Flex, Grid, Text} from "@mantine/core";
 import {IconAlertCircle, IconInfoSmall} from "@tabler/icons-react";
 import Link from "next/link";
+import {formatTime, getDelayColor} from "@/utils";
 
 export const RouteItem = memo(({route, currentStop}: { route: Route; currentStop?: string | null }) => {
-    const formatTime = (date: string) => {
-        return new Date(date).toLocaleTimeString('it-IT', {
-            hour: '2-digit', minute: '2-digit',
-        });
-    };
-
-    const getDelayColor = (delay: number | null) => {
-        if (delay === null) return 'gray';
-        if (delay >= 10) return 'red';
-        if (delay >= 5) return 'yellow';
-        if (delay >= 0) return 'green';
-        return 'grape';
-    };
-
     return (<Accordion.Item value={route.id.toString()}>
         <Accordion.Control>
             <Badge
@@ -108,7 +95,7 @@ export const RouteItem = memo(({route, currentStop}: { route: Route; currentStop
                                     <ActionIcon variant="outline" color="gray" size="lg" radius="xl"
                                                 aria-label="Info">
                                         <Link href={`/trips/${route.tripId}`}>
-                                            <IconInfoSmall style={{width: '100%', height: '100%'}} stroke={1.5} />
+                                            <IconInfoSmall stroke={1.5} size={36} color="white" />
                                         </Link>
                                     </ActionIcon>
                                 </Flex>
