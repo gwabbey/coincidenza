@@ -68,7 +68,7 @@ const getLocationName = async (coords: string) => {
 };
 
 export default async function Page() {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const from = cookieStore.get('from')?.value || '';
     const to = cookieStore.get('to')?.value || '';
 
@@ -81,11 +81,6 @@ export default async function Page() {
         <Flex
             mih="100vh"
             py="xl"
-            style={{
-                backgroundImage: "linear-gradient(to bottom right, rgb(0, 0, 255, 0.5), rgb(255, 0, 255, 0.5))",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-            }}
             gap="xl"
             align="center"
             direction="column"
@@ -104,7 +99,7 @@ export default async function Page() {
                     />
                 </Title>
                 <div style={{
-                    borderLeft: "3px solid purple",
+                    borderLeft: "2px solid gray",
                     height: "50px",
                 }} />
                 <Title order={1} maw={750} w="100%">
