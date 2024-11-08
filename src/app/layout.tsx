@@ -3,7 +3,6 @@
 import '@mantine/core/styles.css';
 
 import {ColorSchemeScript, Container, MantineProvider} from '@mantine/core';
-import Link from "next/link";
 
 export const metadata = {
     title: 'Trentino Trasporti',
@@ -16,12 +15,12 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="en">
+        <html lang="en" suppressHydrationWarning>
         <head>
-            <ColorSchemeScript forceColorScheme="dark" />
+            <ColorSchemeScript defaultColorScheme="auto" />
         </head>
         <body>
-        <MantineProvider forceColorScheme="dark">
+        <MantineProvider defaultColorScheme="auto">
             {/*<header style={{
                 height: 'auto',
                 display: 'flex',
