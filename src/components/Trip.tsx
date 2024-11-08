@@ -88,7 +88,7 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
                 <Stack gap={0}>
                     <Text fz={{base: "lg", sm: "xl"}} fw="bold" ta={{base: "left", sm: "center"}}
                           w={{base: 230, xs: 450, md: "100%"}} truncate>
-                        {isDeparting ? "--" : trip.stopTimes[activeIndex].stopName}
+                        {trip.stopTimes.length > 0 ? trip.stopTimes[activeIndex]?.stopName : "--"}
                     </Text>
                     {!isDeparting && !trip.stopTimes[activeIndex] && (
                         <Text fz={{base: "lg", sm: "xl"}} fw="bold" ta={{base: "left", sm: "center"}} truncate>
