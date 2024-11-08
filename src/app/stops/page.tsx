@@ -17,6 +17,10 @@ export default async function Page() {
     const stops = await getClosestBusStops(parseFloat(lat.value), parseFloat(lon.value));
     const initialRoutes = id && type ? await getStop(id.value, type.value) : [];
 
+    if (!stops) {
+        return "Connessione persa."
+    }
+
     return (
         <Flex
             justify="center"

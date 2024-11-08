@@ -123,7 +123,7 @@ export async function getClosestBusStops(userLat, userLon, type = '') {
         return stopsWithDistance;
     } catch (error) {
         console.error("Error fetching stops:", error);
-        return [];
+        return null;
     }
 }
 
@@ -157,10 +157,7 @@ export async function getRoute(type, routeId, limit, directionId, refDateTime) {
 
     } catch (error) {
         console.error("Error fetching stops:", error);
-        return {
-            trips: [],
-            details: {},
-        };
+        return [];
     }
 }
 
@@ -247,10 +244,6 @@ export async function getTrip(id) {
         };
     } catch (error) {
         console.error("Error fetching trip:", error);
-        return {
-            id,
-            stopTimes: [],
-            route: null
-        };
+        return null;
     }
 }

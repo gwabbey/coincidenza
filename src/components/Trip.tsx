@@ -129,7 +129,7 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
                                 fontWeight: index === activeIndex ? 'bold' : 'normal',
                             },
                         }}
-                        key={stop.stopId}
+                        key={index}
                         title={stop.stopName || `Stop ${stop.stopId}`}
                         bullet={index === activeIndex ? <IconBus size={16} /> : <IconMapPin size={16} />}
                     >
@@ -150,7 +150,7 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
                                     })}
                                 </Text>
                             }
-                            {index > activeIndex &&
+                            {index >= activeIndex &&
                                 <Text size="sm" fw="bold" c={getDelayColor(trip.delay)}>
                                     {new Date(new Date(`2000-01-01T${stop.arrivalTime.replace(/^24:/, '00:')}`).getTime() + (trip.delay * 60 * 1000)).toLocaleTimeString('it-IT', {
                                         hour: '2-digit',

@@ -9,5 +9,9 @@ export default async function Page({
     const id = (await params).id;
     const trip = await getTrip(id);
 
+    if (!trip) {
+        return "Connessione persa.";
+    }
+
     return <Trip trip={trip} tripId={id} />;
 }
