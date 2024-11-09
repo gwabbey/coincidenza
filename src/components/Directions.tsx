@@ -3,8 +3,6 @@ import {Button, Card, Divider, Flex, Text} from "@mantine/core";
 import {motion} from "framer-motion";
 import {useEffect, useState} from "react";
 import {vehicleIcons} from "@/icons";
-import Link from "next/link";
-import {clearCookies} from "@/app/directions/actions";
 
 export default function Directions({directions}: { directions: any }) {
     const [activePage, setActivePage] = useState(0);
@@ -30,10 +28,6 @@ export default function Directions({directions}: { directions: any }) {
         >
             {filteredRoutes.length > 0 ? (
                 <Flex direction="column" gap="lg" align="center" my={16}>
-                    <Link href="/directions" onClick={() => clearCookies()} passHref>
-                        go back
-                    </Link>
-
                     <Flex wrap="wrap" gap="xs" justify="center">
                         {filteredRoutes.map((route: any, index: number) => (
                             <Button
