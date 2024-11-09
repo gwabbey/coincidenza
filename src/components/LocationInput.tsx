@@ -5,7 +5,6 @@ import {Autocomplete, ComboboxItem, Loader, OptionsFilter} from "@mantine/core";
 import {useDebouncedValue} from "@mantine/hooks";
 import {searchLocation} from "@/api";
 import {useRouter} from 'next/navigation';
-import {updateLocation} from "@/app/actions";
 
 interface Props {
     name: string;
@@ -82,10 +81,9 @@ export const LocationInput = ({
         const location = JSON.parse(value);
         const locationString = `${location.geometry.coordinates[1]},${location.geometry.coordinates[0]}`;
 
-        await updateLocation(name, locationString);
         router.push('/directions');
 
-    }, [name, router]);
+    }, [router]);
 
     return (
         <Autocomplete
