@@ -34,7 +34,10 @@ export function Monitor({monitor}: { monitor: any }) {
             </Table.Thead>
         ) : (
             <Table.Thead>
-                <Table.Th c="dimmed" fz="xl" ta="center" py="xl">Nessun treno in partenza.</Table.Th>
+                <Table.Tr>
+                    <Table.Th c="dimmed" fz="xl" ta="center" py="xl">Nessun treno in partenza.
+                    </Table.Th>
+                </Table.Tr>
             </Table.Thead>
         )}
         <Table.Tbody>{rows}</Table.Tbody>
