@@ -11,8 +11,8 @@ export default async function Page({
     const id = (await params).id;
     const monitor = await getStationMonitor(id);
 
-    if (!monitor) {
-        return "Dati non disponibili."
+    if (!monitor || !(stations as Record<string, string>)[id]) {
+        return "Stazione non trovata."
     }
 
     return (

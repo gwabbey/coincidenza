@@ -48,8 +48,6 @@ export async function GET(request) {
             }
         });
 
-        console.log(alerts)
-
         return new Response(JSON.stringify({trains, alerts}), {
             status: 200,
             headers: {'Content-Type': 'application/json'},
