@@ -1,0 +1,13 @@
+networks:
+  web:
+    external: true
+
+services:
+  trasporti:
+    container_name: trasporti
+    build: .
+    restart: always
+    ports:
+      - "3003:3003"
+    networks:
+      - web
