@@ -251,3 +251,13 @@ export async function getTrip(id) {
         return null;
     }
 }
+
+export async function getStationMonitor(id) {
+    const response = await fetch(`http://localhost:3000/api/monitor?id=${id}`);
+
+    if (!response.ok) {
+        throw new Error(`Fetch error: ${response.status}`);
+    }
+
+    return await response.json();
+}

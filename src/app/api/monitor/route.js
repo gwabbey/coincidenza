@@ -10,6 +10,8 @@ export async function GET(request) {
 
         const trains = [];
 
+        const alerts = $('#barraInfoStazioneId > div').find('div[class="marqueeinfosupp"] div').text();
+
         $('#bodyTabId > tr').each((index, element) => {
             const company = $(element).find('td[id="RVettore"] img').attr('alt');
             const category = $(element).find('td[id="RCategoria"] img').attr('src');
@@ -46,7 +48,9 @@ export async function GET(request) {
             }
         });
 
-        return new Response(JSON.stringify(trains), {
+        console.log(alerts)
+
+        return new Response(JSON.stringify({trains, alerts}), {
             status: 200,
             headers: {'Content-Type': 'application/json'},
         });
