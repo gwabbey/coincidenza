@@ -5,6 +5,7 @@ import '@mantine/notifications/styles.css';
 
 import {ColorSchemeScript, Container, MantineProvider} from '@mantine/core';
 import {Notifications} from '@mantine/notifications';
+import {Header} from "@/components/Header";
 
 export const metadata = {
     title: 'Trentino Trasporti',
@@ -19,25 +20,13 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning>
         <head>
-            <ColorSchemeScript defaultColorScheme="auto" />
+            <ColorSchemeScript defaultColorScheme="dark" />
         </head>
         <body>
-        <MantineProvider defaultColorScheme="auto">
+        <MantineProvider defaultColorScheme="dark">
             <Notifications />
-            {/*<header style={{
-                height: 'auto',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: 'gold',
-                padding: '8px',
-                zIndex: 1000,
-                color: 'black',
-            }}>
-                I dati utilizzati provengono direttamente da Trentino Trasporti. Per segnalare eventuali problemi o per
-                domande e chiarimenti, contattami all'indirizzo <Link href="mailto:mail@g3b.dev">mail@g3b.dev</Link>.
-            </header>*/}
-            <Container fluid h="100%" py="xl">
+            <Header />
+            <Container fluid h="100%" pb="xl">
                 {children}
             </Container>
         </MantineProvider>

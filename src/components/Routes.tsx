@@ -214,7 +214,7 @@ export default function Routes({
                             aria-label="La mia posizione"
                             onClick={handleFetchStops}
                         >
-                            <IconGps stroke={1} size={36} color="white" />
+                            <IconGps stroke={1} size={36} />
                         </ActionIcon>
                     }
                     value={value}

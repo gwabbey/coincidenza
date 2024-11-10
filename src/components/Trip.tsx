@@ -1,13 +1,32 @@
 'use client';
 
 import {useEffect, useState} from 'react';
-import {Badge, Divider, Flex, Group, Paper, Stack, Text, Timeline, Title, useMantineTheme} from "@mantine/core";
+import {
+    ActionIcon,
+    Affix,
+    Alert,
+    Badge,
+    Divider,
+    Flex,
+    Group,
+    Paper,
+    Stack,
+    Text,
+    Timeline,
+    Title,
+    Transition,
+    useMantineColorScheme,
+    useMantineTheme
+} from "@mantine/core";
 import {getDelayColor} from "@/utils";
 import {getTrip} from "@/api";
-import {IconBus, IconMapPin} from "@tabler/icons-react";
+import {IconAlertTriangle, IconArrowUp, IconBus, IconMapPin} from "@tabler/icons-react";
+import {useWindowScroll} from "@mantine/hooks";
 
 export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: string }) {
     const theme = useMantineTheme();
+    const {colorScheme} = useMantineColorScheme();
+    const [scroll, scrollTo] = useWindowScroll();
     const [trip, setTrip] = useState(initialTrip);
 
     useEffect(() => {
@@ -88,7 +107,12 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
                 direction="column"
                 wrap="wrap"
                 gap={{base: "sm", sm: "md"}}
-                style={{position: "sticky", top: 0, backgroundColor: theme.colors.dark[7], zIndex: 1}}>
+                style={{
+                    position: "sticky",
+                    top: 0,
+                    backgroundColor: colorScheme === "dark" ? theme.colors.dark[7] : "white",
+                    zIndex: 1
+                }}>
                 <Divider my="xs" />
 
                 <Flex justify={{base: "space-between", sm: "center"}} align="center"
@@ -114,7 +138,7 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
                     </Stack>
                     {trip.delay !== null && (
                         <Badge
-                            variant="outline"
+                            variant={colorScheme === "dark" ? "outline" : "filled"}
                             size={trip.delay == 0 ? "lg" : "xl"}
                             radius="sm"
                             mt={{base: 0, sm: "md"}}
@@ -128,6 +152,13 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
 
                 <Divider my="xs" />
             </Flex>
+
+            {Math.floor((new Date().getTime() - new Date(trip.lastEventRecivedAt).getTime()) / (1000 * 60)) > 5 && (
+                <Alert variant="filled" color="yellow" radius="xl" title="Attenzione" fw="bold" ta="left" mx="auto"
+                       icon={<IconAlertTriangle />}>
+                    L'autobus non è stato rilevato per più di 5 minuti.
+                </Alert>
+            )}
 
             <Timeline active={activeIndex} bulletSize={24} lineWidth={2} color={trip.type === 'U' ? 'green' : 'blue'}
                       mx={{base: 0, sm: "auto"}}>
@@ -171,6 +202,16 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
                     </Timeline.Item>
                 ))}
             </Timeline>
+            <Affix position={{bottom: 20, right: 20}}>
+                <Transition transition="slide-up" mounted={scroll.y > 0}>
+                    {(transitionStyles) => (
+                        <ActionIcon variant="filled" size="xl" radius="xl" style={transitionStyles}
+                                    onClick={() => scrollTo({y: 0})}>
+                            <IconArrowUp style={{width: '70%', height: '70%'}} stroke={1.5} />
+                        </ActionIcon>
+                    )}
+                </Transition>
+            </Affix>
         </Flex>
     );
 }

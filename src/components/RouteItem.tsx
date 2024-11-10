@@ -1,11 +1,12 @@
 import {memo} from "react";
 import {Route} from "@/types";
-import {Accordion, ActionIcon, Alert, Badge, Container, Flex, Grid, Text} from "@mantine/core";
-import {IconAlertCircle, IconInfoSmall} from "@tabler/icons-react";
+import {Accordion, ActionIcon, Alert, Badge, Container, Flex, Grid, Text, useMantineColorScheme} from "@mantine/core";
+import {IconAlertCircle, IconInfoCircle} from "@tabler/icons-react";
 import Link from "next/link";
 import {formatTime, getDelayColor} from "@/utils";
 
 export const RouteItem = memo(({route, currentStop}: { route: Route; currentStop?: string | null }) => {
+    const {colorScheme} = useMantineColorScheme();
     return (<Accordion.Item value={route.id.toString()}>
         <Accordion.Control>
             <Badge
@@ -93,10 +94,11 @@ export const RouteItem = memo(({route, currentStop}: { route: Route; currentStop
                             </Grid.Col>
                             <Grid.Col span="content">
                                 <Flex justify="flex-end" align="center">
-                                    <ActionIcon variant="outline" color="gray" size="lg" radius="xl"
+                                    <ActionIcon variant="transparent" size="lg" radius="xl"
                                                 aria-label="Info">
                                         <Link href={`/trips/${route.tripId}`}>
-                                            <IconInfoSmall stroke={1.5} size={36} color="white" />
+                                            <IconInfoCircle stroke={1.25} size={36}
+                                                            color={colorScheme === "dark" ? "white" : "black"} />
                                         </Link>
                                     </ActionIcon>
                                 </Flex>
