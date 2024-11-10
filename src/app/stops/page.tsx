@@ -10,9 +10,7 @@ export default async function Page() {
     const lon = (await cookies()).get('lon');
     let stops;
 
-    if (!lat || !lon) {
-        stops = await getClosestBusStops(46.072449, 11.119031);
-    } else {
+    if (lat && lon) {
         stops = await getClosestBusStops(lat.value, lon.value);
     }
 

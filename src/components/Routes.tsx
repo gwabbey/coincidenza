@@ -7,7 +7,9 @@ import {
     Anchor,
     Badge,
     Box,
+    Button,
     Center,
+    Flex,
     Group,
     Loader,
     Modal,
@@ -22,6 +24,34 @@ import {useDisclosure} from '@mantine/hooks';
 import Image from 'next/image';
 import {IconGps} from '@tabler/icons-react';
 import {notifications} from "@mantine/notifications";
+
+const popularStops = [
+    {
+        id: "0001",
+        name: 'Stazione di Trento',
+        type: 'E',
+    },
+    {
+        id: "1127",
+        name: 'Stazione di Rovereto',
+        type: 'E',
+    },
+    {
+        id: "1146",
+        name: 'Autostazione Riva del Garda',
+        type: 'E',
+    },
+    {
+        id: "20125p",
+        name: 'Piazza Dante',
+        type: 'U',
+    },
+    {
+        id: "10121",
+        name: 'Corso Rosmini Posta',
+        type: 'U',
+    },
+]
 
 export default function Routes({
                                    stops,
@@ -262,7 +292,7 @@ export default function Routes({
                             }
                         />
                     </Center>
-                ) : routes.length > 0 && selectedStop ? (
+                ) : selectedStop && routes.length > 0 ? (
                     <Accordion
                         chevronPosition="right"
                         transitionDuration={500}
@@ -278,10 +308,44 @@ export default function Routes({
                             />
                         ))}
                     </Accordion>
-                ) : (
+                ) : selectedStop && routes.length === 0 ? (
                     <Center mt="xl" ta="center">
                         <div>Nessuna corsa trovata.</div>
                     </Center>
+                ) : (
+                    <Stack
+                        bg="var(--mantine-color-body)"
+                        align="center"
+                        justify="flex-start"
+                        gap="md"
+                        mt="xl"
+                    >
+                        <Title order={3}>Fermate popolari</Title>
+                        <Flex
+                            gap="xl"
+                            justify="center"
+                            align="center"
+                            direction="row"
+                            wrap="wrap"
+                        >
+                            {popularStops.map((stop, index) => (
+                                <Button
+                                    key={index}
+                                    variant={"outline"}
+                                    radius="xl"
+                                    size="md"
+                                    color={stop.type === 'U' ? 'green' : stop.type === 'E' ? 'blue' : 'dimmed'}
+                                    onClick={async () => {
+                                        await setCookie('id', stop.id);
+                                        await setCookie('type', stop.type);
+                                        router.refresh();
+                                    }}
+                                >
+                                    {stop.name}
+                                </Button>
+                            ))}
+                        </Flex>
+                    </Stack>
                 )}
             </Box>
             <Modal

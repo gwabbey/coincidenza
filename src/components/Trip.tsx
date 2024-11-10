@@ -153,7 +153,7 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
                 <Divider my="xs" />
             </Flex>
 
-            {Math.floor((new Date().getTime() - new Date(trip.lastEventRecivedAt).getTime()) / (1000 * 60)) > 5 && (
+            {trip.stopTimes[activeIndex] && Math.floor((new Date().getTime() - new Date(trip.lastEventRecivedAt).getTime()) / (1000 * 60)) > 5 && (
                 <Alert variant="filled" color="yellow" radius="xl" title="Attenzione" fw="bold" ta="left" mx="auto"
                        icon={<IconAlertTriangle />}>
                     L'autobus non è stato rilevato per più di 5 minuti.
@@ -173,32 +173,36 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
                         title={stop.stopName || `Stop ${stop.stopId}`}
                         bullet={index === activeIndex ? <IconBus size={16} /> : <IconMapPin size={16} />}
                     >
-                        <Group gap="xs">
-                            {index <= activeIndex &&
-                                <Text c="dimmed" size="sm">
-                                    {new Date(new Date(`2000-01-01 ${stop.departureTime}`).getTime()).toLocaleTimeString('it-IT', {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                    })}
-                                </Text>
-                            }
-                            {index > activeIndex && trip.delay && trip.delay !== 0 &&
-                                <Text c="dimmed" size="sm" td="line-through">
-                                    {new Date(new Date(`2000-01-01T${stop.departureTime.replace(/^24:/, '00:')}`).getTime()).toLocaleTimeString('it-IT', {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                    })}
-                                </Text>
-                            }
-                            {index > activeIndex &&
-                                <Text size="sm" fw="bold" c={getDelayColor(trip.delay)}>
-                                    {new Date(new Date(`2000-01-01T${stop.arrivalTime.replace(/^24:/, '00:')}`).getTime() + (trip.delay * 60 * 1000)).toLocaleTimeString('it-IT', {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                    })}
-                                </Text>
-                            }
-                        </Group>
+                        {stop.departureTime ? (
+                            <Group gap="xs">
+                                {index <= activeIndex &&
+                                    <Text c="dimmed" size="sm">
+                                        {new Date(new Date(`2000-01-01 ${stop.departureTime}`).getTime()).toLocaleTimeString('it-IT', {
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        })}
+                                    </Text>
+                                }
+                                {index > activeIndex && trip.delay && trip.delay !== 0 &&
+                                    <Text c="dimmed" size="sm" td="line-through">
+                                        {new Date(new Date(`2000-01-01T${stop.departureTime.replace(/^24:/, '00:')}`).getTime()).toLocaleTimeString('it-IT', {
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        })}
+                                    </Text>
+                                }
+                                {index > activeIndex &&
+                                    <Text size="sm" fw="bold" c={getDelayColor(trip.delay)}>
+                                        {new Date(new Date(`2000-01-01T${stop.arrivalTime.replace(/^24:/, '00:')}`).getTime() + (trip.delay * 60 * 1000)).toLocaleTimeString('it-IT', {
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        })}
+                                    </Text>
+                                }
+                            </Group>
+                        ) : (
+                            <Text size="sm">--</Text>
+                        )}
                     </Timeline.Item>
                 ))}
             </Timeline>
