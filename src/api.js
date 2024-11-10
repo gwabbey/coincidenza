@@ -270,18 +270,12 @@ export async function getStationMonitor(id) {
             const delay = $(element).find('td[id="RRitardo"]').text().trim() || 'Nessuno';
             const platform = $(element).find('td[id="RBinario"] div').text().trim();
             const departing = $(element).find('td[id="RExLampeggio"] img').length > 0;
-            const stops = $(element).find('.FermateSuccessivePopupStyle .testoinfoaggiuntive').first().text().trim();
-            let additionalInfo = $(element).find('.FermateSuccessivePopupStyle .testoinfoaggiuntive').last().text().trim();
 
             if (!id) {
                 return;
             }
 
-            if (stops === additionalInfo) {
-                additionalInfo = {}
-            }
-
-            if (trainNumber && destination && departureTime && platform) {
+            if (trainNumber && destination && departureTime) {
                 trains.push({
                     company,
                     category,
@@ -291,8 +285,6 @@ export async function getStationMonitor(id) {
                     delay,
                     platform,
                     departing,
-                    stops,
-                    additionalInfo,
                 });
             }
         });

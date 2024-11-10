@@ -26,7 +26,7 @@ export default async function Page({
             <Title order={1} maw={750} w="100%" mx="auto">
                 Partenze da {(stations as Record<string, string>)[id]}
             </Title>
-            <Monitor monitor={monitor} />
+            <Monitor monitor={monitor} id={id} />
         </Flex>
     );
 }
