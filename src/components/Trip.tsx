@@ -108,7 +108,7 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
                                 Ultimo aggiornamento: {new Date(trip.lastEventRecivedAt).toLocaleTimeString('it-IT', {
                                 hour: '2-digit',
                                 minute: '2-digit',
-                            }).replace(/,/g, ' ')}
+                            }).replace(/,/g, ' ')}<br />{trip.matricolaBus && `Bus ${trip.matricolaBus}`}
                             </Text>
                         )}
                     </Stack>
