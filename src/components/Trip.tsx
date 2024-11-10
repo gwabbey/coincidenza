@@ -1,12 +1,13 @@
 'use client';
 
 import {useEffect, useState} from 'react';
-import {Badge, Divider, Flex, Group, Paper, Stack, Text, Timeline, Title} from "@mantine/core";
+import {Badge, Divider, Flex, Group, Paper, Stack, Text, Timeline, Title, useMantineTheme} from "@mantine/core";
 import {getDelayColor} from "@/utils";
 import {getTrip} from "@/api";
 import {IconBus, IconMapPin} from "@tabler/icons-react";
 
 export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: string }) {
+    const theme = useMantineTheme();
     const [trip, setTrip] = useState(initialTrip);
 
     useEffect(() => {
@@ -81,44 +82,52 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
                 </Paper>
             </Flex>
 
-            <Divider my="xs" />
 
-            <Flex justify={{base: "space-between", sm: "center"}} align="center"
-                  direction={{base: 'row', sm: 'column'}}>
-                <Stack gap={0}>
-                    <Text fz={{base: "lg", sm: "xl"}} fw="bold" ta={{base: "left", sm: "center"}}
-                          w={{base: 230, xs: 450, md: "100%"}} truncate>
-                        {trip.stopTimes.length > 0 ? trip.stopTimes[activeIndex]?.stopName : "--"}
-                    </Text>
-                    {!isDeparting && !trip.stopTimes[activeIndex] && (
-                        <Text fz={{base: "lg", sm: "xl"}} fw="bold" ta={{base: "left", sm: "center"}} truncate>
-                            Dati in tempo reale non disponibili
+            <Flex
+                justify="center"
+                direction="column"
+                wrap="wrap"
+                gap={{base: "sm", sm: "md"}}
+                style={{position: "sticky", top: 0, backgroundColor: theme.colors.dark[7], zIndex: 1}}>
+                <Divider my="xs" />
+
+                <Flex justify={{base: "space-between", sm: "center"}} align="center"
+                      direction={{base: 'row', sm: 'column'}}>
+                    <Stack gap={0}>
+                        <Text fz={{base: "lg", sm: "xl"}} fw="bold" ta={{base: "left", sm: "center"}}
+                              w={{base: 230, xs: 450, md: "100%"}} truncate>
+                            {trip.stopTimes.length > 0 && !isDeparting ? trip.stopTimes[activeIndex]?.stopName : "--"}
                         </Text>
+                        {!isDeparting && !trip.stopTimes[activeIndex] && (
+                            <Text fz={{base: "lg", sm: "xl"}} fw="bold" ta={{base: "left", sm: "center"}} truncate>
+                                Dati in tempo reale non disponibili
+                            </Text>
+                        )}
+                        {trip.lastEventRecivedAt && (
+                            <Text fz={{base: "xs", sm: "sm"}} c="dimmed" ta={{base: "left", sm: "center"}}>
+                                Ultimo aggiornamento: {new Date(trip.lastEventRecivedAt).toLocaleTimeString('it-IT', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                            }).replace(/,/g, ' ')}
+                            </Text>
+                        )}
+                    </Stack>
+                    {trip.delay !== null && (
+                        <Badge
+                            variant="outline"
+                            size={trip.delay == 0 ? "lg" : "xl"}
+                            radius="sm"
+                            mt={{base: 0, sm: "md"}}
+                            color={getDelayColor(trip.delay)}
+                        >
+                            {trip.delay < 0 ? '' : trip.delay > 0 ? '+' : 'in orario'}
+                            {trip.delay !== 0 && `${trip.delay} min`}
+                        </Badge>
                     )}
-                    {trip.lastEventRecivedAt && (
-                        <Text fz={{base: "xs", sm: "sm"}} c="dimmed" ta={{base: "left", sm: "center"}}>
-                            Ultimo aggiornamento: {new Date(trip.lastEventRecivedAt).toLocaleTimeString('it-IT', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                        }).replace(/,/g, ' ')}
-                        </Text>
-                    )}
-                </Stack>
-                {trip.delay !== null && (
-                    <Badge
-                        variant="outline"
-                        size={trip.delay == 0 ? "lg" : "xl"}
-                        radius="sm"
-                        mt={{base: 0, sm: "md"}}
-                        color={getDelayColor(trip.delay)}
-                    >
-                        {trip.delay < 0 ? '' : trip.delay > 0 ? '+' : 'in orario'}
-                        {trip.delay !== 0 && `${trip.delay} min`}
-                    </Badge>
-                )}
+                </Flex>
+
+                <Divider my="xs" />
             </Flex>
-
-            <Divider my="xs" />
 
             <Timeline active={activeIndex} bulletSize={24} lineWidth={2} color={trip.type === 'U' ? 'green' : 'blue'}
                       mx={{base: 0, sm: "auto"}}>
