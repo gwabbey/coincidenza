@@ -3,7 +3,7 @@ import {useCallback, useEffect, useState} from "react";
 import {Autocomplete, ComboboxItem, Loader, OptionsFilter} from "@mantine/core";
 import {useDebouncedValue} from "@mantine/hooks";
 import {useRouter} from 'next/navigation';
-import stations from "./stations.json";
+import stations from './stations.json';
 
 interface Props {
     selected?: string;
@@ -27,7 +27,7 @@ export const TrainStationInput = ({
     const fetchData = useCallback(async (query: string) => {
         setLoading(true);
         try {
-            const filteredStations = Object.entries(stations).filter(([name]) =>
+            const filteredStations = Object.entries(stations as Record<string, string>).filter(([_, name]) =>
                 name.toLowerCase().includes(query.toLowerCase())
             );
             const stationList = filteredStations.map(([id, name]) => ({
