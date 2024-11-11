@@ -1,6 +1,6 @@
 'use client';
 import {useCallback, useEffect, useState} from "react";
-import {Autocomplete, ComboboxItem, Loader, OptionsFilter} from "@mantine/core";
+import {Autocomplete, Box, ComboboxItem, Loader, OptionsFilter} from "@mantine/core";
 import {useDebouncedValue} from "@mantine/hooks";
 import {useRouter} from 'next/navigation';
 import stations from './stations.json';
@@ -50,35 +50,27 @@ export const TrainStationInput = ({
         fetchData(debouncedValue);
     }, [debouncedValue, fetchData]);
 
-    const optionsFilter: OptionsFilter = ({options, search}) => {
-        const splitSearch = search.toLowerCase().trim().split(" ");
-        return (options as ComboboxItem[]).filter((option) => {
-            const words = option.label.toLowerCase().trim().split(" ");
-            return splitSearch.every((searchWord) =>
-                words.some((word) => word.includes(searchWord))
-            );
-        });
-    };
-
     const onStationSelect = useCallback(async (value: string) => {
         router.push(`/trains/departures/${value}`);
     }, [router]);
 
     return (
-        <Autocomplete
-            value={value}
-            data={data}
-            onChange={setValue}
-            onOptionSubmit={onStationSelect}
-            rightSection={loading && <Loader size="xs" />}
-            placeholder={placeholder}
-            size="xl"
-            disabled={disabled}
-            comboboxProps={{
-                transitionProps: {transition: "fade-up", duration: 200},
-            }}
-            filter={optionsFilter}
-            radius="xl"
-        />
+        <Box maw={750} w="100%" mx="auto" ta="left">
+            <Autocomplete
+                value={value}
+                data={data}
+                onChange={setValue}
+                onOptionSubmit={onStationSelect}
+                rightSection={loading && <Loader size="xs" />}
+                placeholder={placeholder}
+                size="xl"
+                disabled={disabled}
+                comboboxProps={{
+                    transitionProps: {transition: "fade-up", duration: 200},
+                }}
+                radius="xl"
+                limit={30}
+            />
+        </Box>
     );
 };

@@ -16,10 +16,6 @@ export default async function Page() {
 
     const initialRoutes = id && type ? await getStop(id.value, type.value) : [];
 
-    if (!stops) {
-        return "Connessione persa."
-    }
-
     return (
         <Flex
             justify="center"
