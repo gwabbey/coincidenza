@@ -69,27 +69,76 @@ export async function setCookie(name, value, options = {}) {
 }
 
 export async function fetchData(endpoint, options = {}) {
-    let url = `https://app-tpl.tndigit.it/gtlservice/${endpoint}`;
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY = 1000;
+    const TIMEOUT = 5000;
 
-    if (options.params) {
-        const searchParams = new URLSearchParams(options.params);
-        url += `?${searchParams.toString()}`;
+    const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    async function attemptFetch(retryCount = 0) {
+        try {
+            let url = `https://app-tpl.tndigit.it/gtlservice/${endpoint}`;
+
+            if (options.params) {
+                const searchParams = new URLSearchParams(options.params);
+                url += `?${searchParams.toString()}`;
+            }
+
+            const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
+
+            const response = await axios.get(url, {
+                httpsAgent: proxyAgent,
+                timeout: TIMEOUT,
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "it.tndigit.mit",
+                    Authorization: `Basic ${btoa(
+                        `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
+                    )}`,
+                },
+            });
+
+            return response.data;
+
+        } catch (error) {
+            const retryableErrors = [
+                'ECONNRESET',
+                'ETIMEDOUT',
+                'ECONNABORTED',
+                'ENETUNREACH',
+                'ECONNREFUSED',
+                'EPIPE',
+            ];
+
+            const shouldRetry = (
+                retryCount < MAX_RETRIES &&
+                (error.code && retryableErrors.includes(error.code) ||
+                    error.response?.status >= 500 ||  // Server errors
+                    error.code === 'ECONNABORTED' ||  // Timeout
+                    !error.response)                  // Network errors
+            );
+
+            if (shouldRetry) {
+                console.warn(`Attempt ${retryCount + 1} failed, retrying in ${RETRY_DELAY}ms...`, {
+                    error: error.message,
+                    endpoint,
+                    retryCount: retryCount + 1
+                });
+
+                await sleep(RETRY_DELAY * (retryCount + 1));
+                return attemptFetch(retryCount + 1);
+            }
+
+            console.error('Request failed after all retry attempts', {
+                error: error.message,
+                endpoint,
+                retryCount
+            });
+            throw error;
+        }
     }
 
-    const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
-
-    const response = await axios.get(url, {
-        httpsAgent: proxyAgent,
-        headers: {
-            "Content-Type": "application/json",
-            "X-Requested-With": "it.tndigit.mit",
-            Authorization: `Basic ${btoa(
-                `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
-            )}`,
-        },
-    });
-
-    return await response.data;
+    return attemptFetch();
 }
 
 export async function getClosestBusStops(userLat, userLon, type = '') {
