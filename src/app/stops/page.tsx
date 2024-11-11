@@ -12,6 +12,8 @@ export default async function Page() {
 
     if (lat && lon) {
         stops = await getClosestBusStops(lat.value, lon.value);
+    } else {
+        stops = await getClosestBusStops(46.07121658325195, 11.11913776397705);
     }
 
     const initialRoutes = id && type ? await getStop(id.value, type.value) : [];
