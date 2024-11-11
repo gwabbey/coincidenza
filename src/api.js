@@ -98,6 +98,18 @@ export async function fetchData(endpoint, options = {}) {
                 },
             });
 
+            const isEmptyArray = Array.isArray(response.data) && response.data.length === 0;
+            const shouldRetryEmptyResponse = isEmptyArray && options.expectData === true;
+
+            if (shouldRetryEmptyResponse && retryCount < MAX_RETRIES) {
+                console.warn(`Received empty array when expecting data, retrying (attempt ${retryCount + 1})...`, {
+                    endpoint,
+                    retryCount: retryCount + 1
+                });
+                await sleep(RETRY_DELAY * (retryCount + 1));
+                return attemptFetch(retryCount + 1);
+            }
+
             return response.data;
 
         } catch (error) {
@@ -113,9 +125,9 @@ export async function fetchData(endpoint, options = {}) {
             const shouldRetry = (
                 retryCount < MAX_RETRIES &&
                 (error.code && retryableErrors.includes(error.code) ||
-                    error.response?.status >= 500 ||  // Server errors
-                    error.code === 'ECONNABORTED' ||  // Timeout
-                    !error.response)                  // Network errors
+                    error.response?.status >= 500 ||
+                    error.code === 'ECONNABORTED' ||
+                    !error.response)
             );
 
             if (shouldRetry) {
