@@ -11,3 +11,6 @@ services:
       - "3003:3003"
     networks:
       - web
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
