@@ -6,6 +6,8 @@ services:
   trasporti:
     container_name: trasporti
     build: .
+    env_file:
+      - .env
     restart: always
     ports:
       - "3003:3003"
