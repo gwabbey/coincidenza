@@ -37,7 +37,7 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
             } catch (error) {
                 console.error('Failed to fetch trip update:', error);
             }
-        }, 15000);
+        }, 30000);
 
         return () => clearInterval(interval);
     }, [tripId]);
