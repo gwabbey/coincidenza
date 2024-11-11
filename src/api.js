@@ -1,10 +1,8 @@
 "use server";
-import 'global-agent/bootstrap';
 import {cookies} from "next/headers";
 import * as cheerio from 'cheerio';
 import axios from "axios";
-
-global.GLOBAL_AGENT.HTTP_PROXY = "http://RFdoVqkPvR8Zluy:osIAl6q6STsmeyv@64.43.99.162:48157"
+import {HttpsProxyAgent} from "https-proxy-agent";
 
 function getDistance(lat1, lon1, lat2, lon2) {
     const R = 6371;
@@ -78,22 +76,18 @@ export async function fetchData(endpoint, options = {}) {
         url += `?${searchParams.toString()}`;
     }
 
+    const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
+
     const response = await axios.get(url, {
-        ...options,
+        httpsAgent: proxyAgent,
         headers: {
             "Content-Type": "application/json",
             "X-Requested-With": "it.tndigit.mit",
             Authorization: `Basic ${btoa(
                 `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
             )}`,
-            ...options.headers,
         },
     });
-
-    if (response.status !== 200) {
-        console.log('ok');
-        throw new Error(`Fetch error: ${response.status}`);
-    }
 
     return await response.data;
 }
@@ -181,7 +175,7 @@ export async function getStop(id, type) {
         };
 
         const stops = await fetchData('trips_new', {
-            params,
+            params
         });
 
         const groupedStops = stops.reduce((acc, current) => {

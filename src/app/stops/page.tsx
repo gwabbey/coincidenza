@@ -9,6 +9,7 @@ export default async function Page() {
     const lat = (await cookies()).get('lat');
     const lon = (await cookies()).get('lon');
     let stops;
+    let routes;
 
     if (lat && lon) {
         stops = await getClosestBusStops(lat.value, lon.value);
@@ -16,7 +17,9 @@ export default async function Page() {
         stops = await getClosestBusStops(46.07121658325195, 11.11913776397705);
     }
 
-    const initialRoutes = id && type ? await getStop(id.value, type.value) : [];
+    if (id && type) {
+        routes = await getStop(id.value, type.value);
+    }
 
     return (
         <Flex
@@ -31,7 +34,7 @@ export default async function Page() {
             </Title>
             <Routes
                 stops={stops}
-                initialRoutes={initialRoutes}
+                initialRoutes={routes || []}
                 initialId={id?.value}
                 initialType={type?.value}
             />
