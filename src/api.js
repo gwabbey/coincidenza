@@ -1,4 +1,5 @@
 "use server";
+import 'global-agent/bootstrap';
 import {cookies} from "next/headers";
 import * as cheerio from 'cheerio';
 
