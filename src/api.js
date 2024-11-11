@@ -2,6 +2,7 @@
 import 'global-agent/bootstrap';
 import {cookies} from "next/headers";
 import * as cheerio from 'cheerio';
+global.GLOBAL_AGENT.HTTP_PROXY = "http://RFdoVqkPvR8Zluy:osIAl6q6STsmeyv@64.43.99.162:48157"
 
 function getDistance(lat1, lon1, lat2, lon2) {
     const R = 6371;
