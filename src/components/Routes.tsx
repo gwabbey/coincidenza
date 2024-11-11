@@ -27,27 +27,27 @@ import {notifications} from "@mantine/notifications";
 
 const popularStops = [
     {
-        id: "0001",
+        id: 1,
         name: 'Stazione di Trento',
         type: 'E',
     },
     {
-        id: "1127",
+        id: 1127,
         name: 'Stazione di Rovereto',
         type: 'E',
     },
     {
-        id: "1146",
+        id: 1146,
         name: 'Autostazione Riva del Garda',
         type: 'E',
     },
     {
-        id: "20125p",
+        id: 247,
         name: 'Piazza Dante',
         type: 'U',
     },
     {
-        id: "10121",
+        id: 1284,
         name: 'Corso Rosmini Posta',
         type: 'U',
     },
@@ -336,9 +336,7 @@ export default function Routes({
                                     size="md"
                                     color={stop.type === 'U' ? 'green' : stop.type === 'E' ? 'blue' : 'dimmed'}
                                     onClick={async () => {
-                                        await setCookie('id', stop.id);
-                                        await setCookie('type', stop.type);
-                                        router.refresh();
+                                        await handleStopChange(`${stop.id}-${stop.type}`)
                                     }}
                                 >
                                     {stop.name}
