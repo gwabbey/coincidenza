@@ -74,6 +74,7 @@ export async function fetchData(endpoint, options = {}) {
     if (options.params) {
         const searchParams = new URLSearchParams(options.params);
         url += `?${searchParams.toString()}`;
+        console.log(url);
     }
 
     const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
@@ -84,31 +85,20 @@ export async function fetchData(endpoint, options = {}) {
             headers: {
                 "Content-Type": "application/json",
                 "X-Requested-With": "it.tndigit.mit",
-                Authorization: `Basic ${btoa(
+                Authorization: `Basic ${Buffer.from(
                     `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
-                )}`,
+                ).toString("base64")}`,
             },
         });
-
-        if (!Array.isArray(response.data)) {
-            console.error(`Unexpected data format for ${endpoint}:`, response.data);
-            throw new Error(`Invalid data format for ${endpoint}`);
-        }
-
         return response.data;
-
     } catch (error) {
-        console.error(`fetchData error for ${endpoint}:`, error.message || error);
-        throw error;
+        throw new Error("general data fetch error: ", error.message);
     }
 }
 
 export async function getClosestBusStops(userLat, userLon, type = '') {
     try {
-        const params = {
-            lat: userLat,
-            lon: userLon,
-        };
+        const params = {};
 
         if (type) {
             params.type = type;
@@ -137,118 +127,78 @@ export async function getClosestBusStops(userLat, userLon, type = '') {
 
         return stopsWithDistance;
     } catch (error) {
-        throw new Error(`Error getClosestBusStops: ${error}`);
-    }
-}
-
-export async function getRoute(type, routeId, limit, directionId, refDateTime) {
-    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-    try {
-        const params = {
-            type,
-            routeId,
-            limit,
-            directionId,
-            refDateTime,
-        };
-
-        let details;
-
-        if (type === 'E') {
-            details = await fetch(`https://www.trentinotrasporti.it/api/extraurbano/linee/${routeId}`).then(response => response.json());
-        } else {
-            details = await fetch(`https://www.trentinotrasporti.it/api/urbano/linee/${routeId}`).then(response => response.json());
-        }
-
-        const trips = await fetchData('trips_new', {
-            params,
-        });
-
-        return {
-            trips: trips,
-            details: details,
-        };
-
-    } catch (error) {
-        throw new Error("Error fetching route:", error);
-    }
-}
-
-async function fetchWithRetry(endpoint, params, retries = 3) {
-    for (let i = 0; i < retries; i++) {
-        try {
-            return await fetchData(endpoint, { params });
-        } catch (error) {
-            if (i === retries - 1) throw error;
-            console.warn(`Retrying ${endpoint} request... (${i + 1})`);
-        }
+        throw new Error("closest stops fetch error: ", error.message);
     }
 }
 
 export async function getStop(id, type) {
     try {
         const params = {
-            type,
+            type: type,
             stopId: id,
-            limit: 15,
+            limit: 10,
             refDateTime: new Date().toISOString(),
         };
 
-        const [stops = [], routeData = []] = await Promise.all([
-            fetchWithRetry('trips_new', params),
-            fetchWithRetry('routes', { type }),
-        ]);
+        const stops = await fetchData('trips_new', {
+            params
+        });
 
         const groupedStops = stops.reduce((acc, current) => {
-            const { routeId } = current;
-            if (!acc[routeId]) acc[routeId] = [];
+            const {routeId} = current;
+
+            if (!acc[routeId]) {
+                acc[routeId] = [];
+            }
+
             acc[routeId].push(current);
             return acc;
         }, {});
 
-        const routeDataMap = routeData.reduce((acc, route) => {
-            acc[route.routeId] = route;
-            return acc;
-        }, {});
+        const routeData = await fetchData('routes', {
+            params: {
+                type: type,
+            },
+        });
 
-        const results = Object.keys(groupedStops)
-            .map((routeId) => {
-                const details = routeDataMap[parseInt(routeId, 10)] || null;
-                if (!details) return null;
-                return {
-                    id: routeId,
-                    stops: groupedStops[routeId],
-                    details,
-                };
-            })
-            .filter((result) => result !== null);
+        const results = Object.keys(groupedStops).map((routeId) => {
+            const details = routeData.find(route => route.routeId === parseInt(routeId, 10)) || null;
 
-        console.log("getStop success");
+            if (!details) return null;
 
-        return results.sort((a, b) =>
-            a.details.routeShortName.localeCompare(b.details.routeShortName, "it", {
-                numeric: true,
-            })
-        );
+            return {
+                id: routeId,
+                stops: groupedStops[routeId],
+                details,
+            };
+        }).filter(result => result !== null && result.details !== null);
+
+        return results.sort((a, b) => a.details.routeShortName.localeCompare(b.details.routeShortName, 'it', {numeric: true}));
+
     } catch (error) {
-        console.error("getStop error:", error.message || error);
-        throw new Error("Error fetching stop data.");
+        throw new Error("stop fetch error: ", error.message);
     }
+}
+
+let stopsCache = null;
+let stopsCacheTimestamp = 0;
+const STOPS_CACHE_EXPIRY = 15 * 60 * 1000;
+
+async function getStopsData(type) {
+    const now = Date.now();
+    if (stopsCache && now - stopsCacheTimestamp < STOPS_CACHE_EXPIRY) {
+        return stopsCache;
+    }
+    stopsCache = await fetchData('stops', {params: {type}});
+    stopsCacheTimestamp = now;
+    return stopsCache;
 }
 
 export async function getTrip(id) {
     try {
         const trip = await fetchData(`trips/${id}`);
-        const stops = await fetchData('stops', {
-            params: {
-                type: trip.type
-            }
-        });
-        const routes = await fetchData('routes', {
-            params: {
-                type: trip.type
-            }
-        });
+        const stops = await getStopsData(trip.type);
+        const routes = await fetchData('routes', {params: {type: trip.type}});
 
         const stopNameLookup = stops.reduce((acc, stop) => {
             acc[stop.stopId] = stop.stopName;
@@ -268,8 +218,7 @@ export async function getTrip(id) {
             route: routeDetails || null
         };
     } catch (error) {
-        console.error("Error fetching trip:", error);
-        return null;
+        throw new Error("trip fetch error:", error.message);
     }
 }
 
@@ -311,7 +260,40 @@ export async function getStationMonitor(id) {
 
         return {trains, alerts};
     } catch (error) {
-        console.error("Error fetching stop:", error);
-        return null;
+        throw new Error("monitor fetch error: ", error.message);
+    }
+}
+
+
+export async function getRoute(type, routeId, limit, directionId, refDateTime) {
+    process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
+    try {
+        const params = {
+            type,
+            routeId,
+            limit,
+            directionId,
+            refDateTime,
+        };
+
+        let details;
+
+        if (type === 'E') {
+            details = await fetch(`https://www.trentinotrasporti.it/api/extraurbano/linee/${routeId}`).then(response => response.json());
+        } else {
+            details = await fetch(`https://www.trentinotrasporti.it/api/urbano/linee/${routeId}`).then(response => response.json());
+        }
+
+        const trips = await fetchData('trips_new', {
+            params,
+        });
+
+        return {
+            trips: trips,
+            details: details,
+        };
+
+    } catch (error) {
+        throw new Error("Error fetching route:", error);
     }
 }

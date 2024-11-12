@@ -208,6 +208,7 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
                 <Transition transition="slide-up" mounted={scroll.y > 0}>
                     {(transitionStyles) => (
                         <ActionIcon variant="filled" size="xl" radius="xl" style={transitionStyles}
+                                    color={trip.type === 'U' ? 'green' : 'blue'}
                                     onClick={() => scrollTo({y: 0})}>
                             <IconArrowUp style={{width: '70%', height: '70%'}} stroke={1.5} />
                         </ActionIcon>

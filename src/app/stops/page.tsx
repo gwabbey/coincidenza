@@ -1,24 +1,27 @@
-import {cookies} from "next/headers";
-import {getClosestBusStops, getStop} from "@/api";
+import { cookies } from "next/headers";
+import { getClosestBusStops, getStop } from "@/api";
 import Routes from "@/components/Routes";
-import {Flex, Title} from "@mantine/core";
+import { Flex, Title } from "@mantine/core";
 
 export default async function Page() {
-    const id = (await cookies()).get('id');
-    const type = (await cookies()).get('type');
-    const lat = (await cookies()).get('lat');
-    const lon = (await cookies()).get('lon');
+    const [id, type, lat, lon] = await Promise.all([
+        cookies().then((cookies) => cookies.get('id')?.value),
+        cookies().then((cookies) => cookies.get('type')?.value),
+        cookies().then((cookies) => cookies.get('lat')?.value),
+        cookies().then((cookies) => cookies.get('lon')?.value),
+    ]);
+
     let stops;
     let routes;
 
     if (lat && lon) {
-        stops = await getClosestBusStops(lat.value, lon.value);
+        stops = await getClosestBusStops(lat, lon);
     } else {
         stops = await getClosestBusStops(46.07121658325195, 11.11913776397705);
     }
 
     if (id && type) {
-        routes = await getStop(id.value, type.value);
+        routes = await getStop(id, type);
     }
 
     return (
@@ -35,8 +38,8 @@ export default async function Page() {
             <Routes
                 stops={stops}
                 initialRoutes={routes || []}
-                initialId={id?.value}
-                initialType={type?.value}
+                initialId={id}
+                initialType={type}
             />
         </Flex>
     );
