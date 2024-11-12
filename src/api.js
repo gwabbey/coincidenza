@@ -80,6 +80,7 @@ export async function fetchData(endpoint, options = {}) {
 
     const response = await axios.get(url, {
         httpsAgent: proxyAgent,
+        timeout: 10000,
         headers: {
             "Content-Type": "application/json",
             "X-Requested-With": "it.tndigit.mit",
