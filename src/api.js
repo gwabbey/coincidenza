@@ -168,71 +168,81 @@ export async function getRoute(type, routeId, limit, directionId, refDateTime) {
     }
 }
 
+const cache = new Map();
+
 export async function getStop(id, type) {
+    const cacheKey = `${id}-${type}`;
+    const now = Date.now();
+
+    if (cache.has(cacheKey)) {
+        const {timestamp, data} = cache.get(cacheKey);
+
+        if (now - timestamp < 60 * 10000) {
+            return data;
+        }
+    }
+
     try {
         const params = {
-            type: type,
+            type,
             stopId: id,
             limit: 15,
             refDateTime: new Date().toISOString(),
         };
 
-        const stops = await fetchData('trips_new', {
-            params
-        });
+        const stops = await fetchData('trips_new', {params});
 
         const groupedStops = stops.reduce((acc, current) => {
             const {routeId} = current;
-
-            if (!acc[routeId]) {
-                acc[routeId] = [];
-            }
-
+            if (!acc[routeId]) acc[routeId] = [];
             acc[routeId].push(current);
             return acc;
         }, {});
 
-        const routeData = await fetchData('routes', {
-            params: {
-                type: type,
-            },
-        });
+        const routeData = await fetchData('routes', {params: {type}});
 
         const results = Object.keys(groupedStops).map((routeId) => {
             const details = routeData.find(route => route.routeId === parseInt(routeId, 10)) || null;
-
             if (!details) return null;
-
             return {
                 id: routeId,
                 stops: groupedStops[routeId],
                 details,
             };
-        }).filter(result => result !== null && result.details !== null);
+        }).filter(result => result && result.details);
 
-        return results.sort((a, b) => a.details.routeShortName.localeCompare(b.details.routeShortName, 'it', {numeric: true}));
+        const sortedResults = results.sort((a, b) => a.details.routeShortName.localeCompare(b.details.routeShortName, 'it', {numeric: true}));
+
+        cache.set(cacheKey, {timestamp: now, data: sortedResults});
+
+        return sortedResults;
 
     } catch (error) {
         console.error("Error fetching stop:", error);
-        return [];
+        return null;
     }
 }
+
+let stopsCache = {};
+let routesCache = {};
 
 export async function getTrip(id) {
     try {
         const trip = await fetchData(`trips/${id}`);
-        const stops = await fetchData('stops', {
-            params: {
-                type: trip.type
-            }
-        });
-        const routes = await fetchData('routes', {
-            params: {
-                type: trip.type
-            }
-        });
 
-        const stopNameLookup = stops.reduce((acc, stop) => {
+        if (!stopsCache[trip.type]) {
+            stopsCache[trip.type] = await fetchData('stops', {
+                params: {type: trip.type}
+            });
+        }
+
+        if (!routesCache[trip.type]) {
+            routesCache[trip.type] = await fetchData('routes', {
+                params: {type: trip.type}
+            });
+        }
+
+        const stopNameLookup = stopsCache[trip.type].reduce((acc, stop) => {
             acc[stop.stopId] = stop.stopName;
             return acc;
         }, {});
@@ -242,7 +252,7 @@ export async function getTrip(id) {
             stopName: stopNameLookup[stopTime.stopId] || 'Fermata sconosciuta'
         }));
 
-        const routeDetails = routes.find(route => route.routeId === trip.routeId);
+        const routeDetails = routesCache[trip.type].find(route => route.routeId === trip.routeId);
 
         return {
             ...trip,
