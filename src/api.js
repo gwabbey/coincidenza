@@ -84,17 +84,22 @@ export async function fetchData(endpoint, options = {}) {
             headers: {
                 "Content-Type": "application/json",
                 "X-Requested-With": "it.tndigit.mit",
-                Authorization: `Basic ${Buffer.from(
+                Authorization: `Basic ${btoa(
                     `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
-                ).toString("base64")}`,
+                )}`,
             },
         });
-        console.log("fetchData success");
+
+        if (!Array.isArray(response.data)) {
+            console.error(`Unexpected data format for ${endpoint}:`, response.data);
+            throw new Error(`Invalid data format for ${endpoint}`);
+        }
+
         return response.data;
+
     } catch (error) {
-        console.log("fetchData error")
-        console.error("Error fetching data:", error.response?.status, error.message);
-        throw new Error("Data fetching failed");
+        console.error(`fetchData error for ${endpoint}:`, error.message || error);
+        throw error;
     }
 }
 
@@ -169,6 +174,17 @@ export async function getRoute(type, routeId, limit, directionId, refDateTime) {
     }
 }
 
+async function fetchWithRetry(endpoint, params, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            return await fetchData(endpoint, { params });
+        } catch (error) {
+            if (i === retries - 1) throw error;
+            console.warn(`Retrying ${endpoint} request... (${i + 1})`);
+        }
+    }
+}
+
 export async function getStop(id, type) {
     try {
         const params = {
@@ -179,15 +195,12 @@ export async function getStop(id, type) {
         };
 
         const [stops = [], routeData = []] = await Promise.all([
-            fetchData('trips_new', {params}),
-            fetchData('routes', {params: {type}}),
+            fetchWithRetry('trips_new', params),
+            fetchWithRetry('routes', { type }),
         ]);
 
-        if (!Array.isArray(stops)) throw new Error("Invalid data format for stops");
-        if (!Array.isArray(routeData)) throw new Error("Invalid data format for routes");
-
         const groupedStops = stops.reduce((acc, current) => {
-            const {routeId} = current;
+            const { routeId } = current;
             if (!acc[routeId]) acc[routeId] = [];
             acc[routeId].push(current);
             return acc;
