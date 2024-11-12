@@ -33,7 +33,7 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
         const interval = setInterval(async () => {
             const updatedTrip = await getTrip(tripId);
             setTrip(updatedTrip);
-        }, 30000);
+        }, 15000);
 
         return () => clearInterval(interval);
     }, [tripId]);

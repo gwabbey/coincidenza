@@ -124,7 +124,7 @@ export default function Routes({
     }, [selectedStop]);
 
     useEffect(() => {
-        const intervalId = setInterval(fetchRoutes, 30000);
+        const intervalId = setInterval(fetchRoutes, 15000);
         return () => clearInterval(intervalId);
     }, [fetchRoutes]);
 
