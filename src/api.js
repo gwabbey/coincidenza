@@ -68,7 +68,7 @@ export async function setCookie(name, value, options = {}) {
     });
 }
 
-export async function fetchData(endpoint, options = {}, maxRetries = 3) {
+export async function fetchData(endpoint, options = {}) {
     let url = `https://app-tpl.tndigit.it/gtlservice/${endpoint}`;
 
     if (options.params) {
@@ -77,29 +77,22 @@ export async function fetchData(endpoint, options = {}, maxRetries = 3) {
     }
 
     const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
-    const headers = {
-        "Content-Type": "application/json",
-        "X-Requested-With": "it.tndigit.mit",
-        Authorization: `Basic ${btoa(
-            `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
-        )}`,
-    };
 
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        try {
-            const response = await axios.get(url, {
-                httpsAgent: proxyAgent,
-                headers,
-            });
-            return response.data;
-        } catch (error) {
-            if (attempt < maxRetries && (error.code === "ECONNABORTED" || error.response?.status === 502)) {
-                console.warn(`Attempt ${attempt} failed. Retrying...`);
-            } else {
-                throw error;
-            }
-        }
-    }
+    const response = await axios.get(url, {
+        httpsAgent: proxyAgent,
+        headers: {
+            "Content-Type": "application/json",
+            "X-Requested-With": "it.tndigit.mit",
+            Authorization: `Basic ${btoa(
+                `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
+            )}`,
+        },
+    });
+
+    console.log('status: ', response.status);
+    console.log('status text: ', response.statusText);
+
+    return await response.data;
 }
 
 export async function getClosestBusStops(userLat, userLon, type = '') {
