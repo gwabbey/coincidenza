@@ -76,11 +76,11 @@ export async function fetchData(endpoint, options = {}) {
         url += `?${searchParams.toString()}`;
     }
 
-    const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
+    // const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
 
     try {
         const response = await axios.get(url, {
-            httpsAgent: proxyAgent,
+            // httpsAgent: proxyAgent,
             headers: {
                 "Content-Type": "application/json",
                 "X-Requested-With": "it.tndigit.mit",
