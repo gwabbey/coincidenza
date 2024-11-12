@@ -32,7 +32,9 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
     useEffect(() => {
         const interval = setInterval(async () => {
             const updatedTrip = await getTrip(tripId);
-            setTrip(updatedTrip);
+            if (updatedTrip) {
+                setTrip(updatedTrip);
+            }
         }, 15000);
 
         return () => clearInterval(interval);
