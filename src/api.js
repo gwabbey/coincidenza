@@ -70,7 +70,7 @@ export async function setCookie(name, value, options = {}) {
 
 const MAX_RETRIES = 5;
 
-async function fetchData(endpoint, options = {}) {
+export async function fetchData(endpoint, options = {}) {
     let url = `https://app-tpl.tndigit.it/gtlservice/${endpoint}`;
     let retryCount = 0;
 
