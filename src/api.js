@@ -172,52 +172,51 @@ export async function getRoute(type, routeId, limit, directionId, refDateTime) {
 export async function getStop(id, type) {
     try {
         const params = {
-            type: type,
+            type,
             stopId: id,
             limit: 15,
             refDateTime: new Date().toISOString(),
         };
 
-        const stops = await fetchData('trips_new', {
-            params
-        });
+        const [stops, routeData] = await Promise.all([
+            fetchData('trips_new', { params }),
+            fetchData('routes', { params: { type } }),
+        ]);
 
         const groupedStops = stops.reduce((acc, current) => {
-            const {routeId} = current;
-
-            if (!acc[routeId]) {
-                acc[routeId] = [];
-            }
-
+            const { routeId } = current;
+            if (!acc[routeId]) acc[routeId] = [];
             acc[routeId].push(current);
             return acc;
         }, {});
 
-        const routeData = await fetchData('routes', {
-            params: {
-                type: type,
-            },
-        });
+        const routeDataMap = routeData.reduce((acc, route) => {
+            acc[route.routeId] = route;
+            return acc;
+        }, {});
 
-        const results = Object.keys(groupedStops).map((routeId) => {
-            const details = routeData.find(route => route.routeId === parseInt(routeId, 10)) || null;
-
-            if (!details) return null;
-
-            return {
-                id: routeId,
-                stops: groupedStops[routeId],
-                details,
-            };
-        }).filter(result => result !== null && result.details !== null);
+        const results = Object.keys(groupedStops)
+            .map((routeId) => {
+                const details = routeDataMap[parseInt(routeId, 10)] || null;
+                if (!details) return null;
+                return {
+                    id: routeId,
+                    stops: groupedStops[routeId],
+                    details,
+                };
+            })
+            .filter((result) => result !== null);
 
         console.log("getStop success");
 
-        return results.sort((a, b) => a.details.routeShortName.localeCompare(b.details.routeShortName, 'it', {numeric: true}));
-
+        return results.sort((a, b) =>
+            a.details.routeShortName.localeCompare(b.details.routeShortName, "it", {
+                numeric: true,
+            })
+        );
     } catch (error) {
-        console.log("getStop error", error.response?.status);
-        throw new Error("Error fetching stop:", error.message);
+        console.error("getStop error:", error.message || error);
+        throw new Error("Error fetching stop data.");
     }
 }
 
