@@ -124,7 +124,7 @@ export default function Routes({
     }, [selectedStop]);
 
     useEffect(() => {
-        const intervalId = setInterval(fetchRoutes, 5000);
+        const intervalId = setInterval(fetchRoutes, 30000);
         return () => clearInterval(intervalId);
     }, [fetchRoutes]);
 
@@ -138,33 +138,23 @@ export default function Routes({
         const stop = stopMap[selectedValue];
         if (stop) {
             setSelectedStop(stop);
-            try {
-                await Promise.all([
-                    setCookie('id', stop.stopId),
-                    setCookie('type', stop.type),
-                ]);
-                router.refresh();
+            await Promise.all([
+                setCookie('id', stop.stopId),
+                setCookie('type', stop.type),
+            ]);
+            router.refresh();
 
-                const newRoutes = await getStop(stop.stopId, stop.type);
-                setRoutes(newRoutes);
-            } catch (error) {
-                console.error('Error updating stop:', error);
-            } finally {
-                setInitialLoading(false);
-            }
+            const newRoutes = await getStop(stop.stopId, stop.type);
+            setRoutes(newRoutes);
+            setInitialLoading(false);
         }
     }, [stopMap, router]);
 
     const handleFetchStops = useCallback(async () => {
-        try {
-            const userLocation = await getUserLocation();
-            await setCookie('lat', userLocation.lat);
-            await setCookie('lon', userLocation.lon);
-            router.refresh();
-        } catch (error) {
-            console.error('Failed to get location', error);
-        } finally {
-        }
+        const userLocation = await getUserLocation();
+        await setCookie('lat', userLocation.lat);
+        await setCookie('lon', userLocation.lon);
+        router.refresh();
     }, [router]);
 
     function getUserLocation(): Promise<{ lat: number; lon: number }> {

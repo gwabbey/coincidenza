@@ -31,12 +31,8 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
 
     useEffect(() => {
         const interval = setInterval(async () => {
-            try {
-                const updatedTrip = await getTrip(tripId);
-                setTrip(updatedTrip);
-            } catch (error) {
-                console.error('Failed to fetch trip update:', error);
-            }
+            const updatedTrip = await getTrip(tripId);
+            setTrip(updatedTrip);
         }, 30000);
 
         return () => clearInterval(interval);

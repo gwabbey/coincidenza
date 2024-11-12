@@ -68,6 +68,9 @@ export async function setCookie(name, value, options = {}) {
     });
 }
 
+const MAX_RETRIES = 5;
+const RETRY_DELAY_MS = 5000;
+
 export async function fetchData(endpoint, options = {}) {
     let url = `https://app-tpl.tndigit.it/gtlservice/${endpoint}`;
 
@@ -78,21 +81,34 @@ export async function fetchData(endpoint, options = {}) {
 
     const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
 
-    const response = await axios.get(url, {
-        httpsAgent: proxyAgent,
-        headers: {
-            "Content-Type": "application/json",
-            "X-Requested-With": "it.tndigit.mit",
-            Authorization: `Basic ${btoa(
-                `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
-            )}`,
-        },
-    });
+    let retries = 0;
+    let response;
 
-    console.log(response.status)
-    console.log(response.statusText)
+    while (retries < MAX_RETRIES) {
+        try {
+            response = await axios.get(url, {
+                httpsAgent: proxyAgent,
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "it.tndigit.mit",
+                    Authorization: `Basic ${btoa(
+                        `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
+                    )}`,
+                },
+            });
 
-    return await response.data;
+            return await response.data;
+        } catch (error) {
+            retries++;
+
+            if (retries === MAX_RETRIES || !error.response || error.response.status < 500) {
+                throw error;
+            }
+
+            console.error(`Retrying fetch, attempt ${retries}/${MAX_RETRIES}:`, error);
+            await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+        }
+    }
 }
 
 export async function getClosestBusStops(userLat, userLon, type = '') {
