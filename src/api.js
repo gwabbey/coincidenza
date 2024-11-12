@@ -68,12 +68,26 @@ export async function setCookie(name, value, options = {}) {
     });
 }
 
+const responseCache = new Map();
+
 export async function fetchData(endpoint, options = {}) {
     const MAX_RETRIES = 3;
     const RETRY_DELAY = 1000;
     const TIMEOUT = 5000;
 
     const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    const cacheKey = getCacheKey(endpoint, options.params);
+
+    const isValidResponse = (data) => {
+        if (data === null || data === undefined) return false;
+        return !(Array.isArray(data) && data.length === 0);
+
+    };
+
+    function getCacheKey(endpoint, params) {
+        if (!params) return endpoint;
+        return `${endpoint}-${JSON.stringify(params)}`;
+    }
 
     async function attemptFetch(retryCount = 0) {
         try {
@@ -98,11 +112,20 @@ export async function fetchData(endpoint, options = {}) {
                 },
             });
 
-            const isEmptyArray = Array.isArray(response.data) && response.data.length === 0;
-            const shouldRetryEmptyResponse = isEmptyArray && options.expectData === true;
+            if (isValidResponse(response.data)) {
+                responseCache.set(cacheKey, response.data);
+                return response.data;
+            }
 
-            if (shouldRetryEmptyResponse && retryCount < MAX_RETRIES) {
-                console.warn(`Received empty array when expecting data, retrying (attempt ${retryCount + 1})...`, {
+            if (responseCache.has(cacheKey)) {
+                console.warn(`Received invalid response, using cached data for ${endpoint}`, {
+                    retryCount
+                });
+                return responseCache.get(cacheKey);
+            }
+
+            if (retryCount < MAX_RETRIES) {
+                console.warn(`Received invalid response, retrying (attempt ${retryCount + 1})...`, {
                     endpoint,
                     retryCount: retryCount + 1
                 });
@@ -110,9 +133,16 @@ export async function fetchData(endpoint, options = {}) {
                 return attemptFetch(retryCount + 1);
             }
 
-            return response.data;
+            throw new Error('Failed to get valid response after all retries');
 
         } catch (error) {
+            if (responseCache.has(cacheKey)) {
+                console.warn(`Request failed, using cached data for ${endpoint}`, {
+                    error: error.message
+                });
+                return responseCache.get(cacheKey);
+            }
+
             const retryableErrors = [
                 'ECONNRESET',
                 'ETIMEDOUT',
@@ -141,13 +171,24 @@ export async function fetchData(endpoint, options = {}) {
                 return attemptFetch(retryCount + 1);
             }
 
-            console.error('Request failed after all retry attempts', {
+            console.error('Request failed after all retry attempts with no cached data', {
                 error: error.message,
                 endpoint,
                 retryCount
             });
             throw error;
         }
+    }
+
+    if (responseCache.has(cacheKey)) {
+        attemptFetch().catch(error => {
+            console.warn('Background fetch failed', {
+                error: error.message,
+                endpoint
+            });
+        });
+
+        return responseCache.get(cacheKey);
     }
 
     return attemptFetch();
