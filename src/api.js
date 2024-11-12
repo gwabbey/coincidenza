@@ -68,31 +68,45 @@ export async function setCookie(name, value, options = {}) {
     });
 }
 
-export async function fetchData(endpoint, options = {}) {
+const MAX_RETRIES = 5;
+
+async function fetchData(endpoint, options = {}) {
     let url = `https://app-tpl.tndigit.it/gtlservice/${endpoint}`;
+    let retryCount = 0;
 
-    if (options.params) {
-        const searchParams = new URLSearchParams(options.params);
-        url += `?${searchParams.toString()}`;
-    }
+    while (retryCount < MAX_RETRIES) {
+        try {
+            if (options.params) {
+                const searchParams = new URLSearchParams(options.params);
+                url += `?${searchParams.toString()}`;
+            }
 
-    // const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
+            const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
 
-    try {
-        const response = await axios.get(url, {
-            // httpsAgent: proxyAgent,
-            headers: {
-                "Content-Type": "application/json",
-                "X-Requested-With": "it.tndigit.mit",
-                Authorization: `Basic ${Buffer.from(
-                    `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
-                ).toString("base64")}`,
-            },
-        });
-        return response.data;
-    } catch (error) {
-        console.error("Error fetching data:", error.response?.status, error.message);
-        throw new Error("Data fetching failed");
+            const response = await axios.get(url, {
+                httpsAgent: proxyAgent,
+                timeout: 10000,
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "it.tndigit.mit",
+                    Authorization: `Basic ${Buffer.from(
+                        `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
+                    ).toString("base64")}`,
+                },
+            });
+
+            return response.data;
+        } catch (error) {
+            console.error("Error fetching data:", error.response?.status, error.message);
+
+            if (error.code === 'ECONNABORTED' && retryCount < MAX_RETRIES - 1) {
+                console.log(`Retrying request (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+                retryCount++;
+                continue;
+            }
+
+            throw new Error("Data fetching failed");
+        }
     }
 }
 
