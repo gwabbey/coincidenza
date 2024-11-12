@@ -91,7 +91,6 @@ export async function fetchData(endpoint, options = {}) {
 
     console.log(response.status)
     console.log(response.statusText)
-    console.log(await response.data)
 
     return await response.data;
 }
