@@ -178,13 +178,16 @@ export async function getStop(id, type) {
             refDateTime: new Date().toISOString(),
         };
 
-        const [stops, routeData] = await Promise.all([
-            fetchData('trips_new', { params }),
-            fetchData('routes', { params: { type } }),
+        const [stops = [], routeData = []] = await Promise.all([
+            fetchData('trips_new', {params}),
+            fetchData('routes', {params: {type}}),
         ]);
 
+        if (!Array.isArray(stops)) throw new Error("Invalid data format for stops");
+        if (!Array.isArray(routeData)) throw new Error("Invalid data format for routes");
+
         const groupedStops = stops.reduce((acc, current) => {
-            const { routeId } = current;
+            const {routeId} = current;
             if (!acc[routeId]) acc[routeId] = [];
             acc[routeId].push(current);
             return acc;
