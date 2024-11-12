@@ -30,7 +30,7 @@ export async function searchLocation(query) {
     const response = await fetch(url);
 
     if (!response.ok) {
-        throw new Error(`Fetch error: ${response.status}`);
+        console.error(`Fetch error: ${response.status}`);
     }
 
     return await response.json();
@@ -44,7 +44,7 @@ export async function reverseGeocode(lat, lon) {
     const response = await fetch(url);
 
     if (!response.ok) {
-        throw new Error(`Fetch error: ${response.status}`);
+        console.error(`Fetch error: ${response.status}`);
     }
 
     return await response.json();
@@ -92,7 +92,7 @@ export async function fetchData(endpoint, options = {}) {
         });
         return response.data;
     } catch (error) {
-        throw new Error("general data fetch error: ", error.message);
+        console.error("general data fetch error: ", error.message);
     }
 }
 
@@ -127,7 +127,7 @@ export async function getClosestBusStops(userLat, userLon, type = '') {
 
         return stopsWithDistance;
     } catch (error) {
-        throw new Error("closest stops fetch error: ", error.message);
+        console.error("closest stops fetch error: ", error.message);
     }
 }
 
@@ -176,7 +176,7 @@ export async function getStop(id, type) {
         return results.sort((a, b) => a.details.routeShortName.localeCompare(b.details.routeShortName, 'it', {numeric: true}));
 
     } catch (error) {
-        throw new Error("stop fetch error: ", error.message);
+        console.error("stop fetch error: ", error.message);
     }
 }
 
@@ -218,7 +218,7 @@ export async function getTrip(id) {
             route: routeDetails || null
         };
     } catch (error) {
-        throw new Error("trip fetch error:", error.message);
+        console.error("trip fetch error:", error.message);
     }
 }
 
@@ -260,7 +260,7 @@ export async function getStationMonitor(id) {
 
         return {trains, alerts};
     } catch (error) {
-        throw new Error("monitor fetch error: ", error.message);
+        console.error("monitor fetch error: ", error.message);
     }
 }
 
@@ -294,6 +294,6 @@ export async function getRoute(type, routeId, limit, directionId, refDateTime) {
         };
 
     } catch (error) {
-        throw new Error("Error fetching route:", error);
+        console.error("Error fetching route:", error);
     }
 }
