@@ -116,7 +116,9 @@ export default function Routes({
         if (selectedStop) {
             try {
                 const updatedRoutes = await getStop(selectedStop.stopId, selectedStop.type);
-                setRoutes(updatedRoutes);
+                if (updatedRoutes) {
+                    setRoutes(updatedRoutes);
+                }
             } catch (error) {
                 console.error('Error refreshing routes:', error);
             }
@@ -145,7 +147,9 @@ export default function Routes({
             router.refresh();
 
             const newRoutes = await getStop(stop.stopId, stop.type);
-            setRoutes(newRoutes);
+            if (newRoutes) {
+                setRoutes(newRoutes);
+            }
             setInitialLoading(false);
         }
     }, [stopMap, router]);
