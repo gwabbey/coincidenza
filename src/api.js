@@ -189,16 +189,35 @@ async function getStopsData(type) {
     if (stopsCache && now - stopsCacheTimestamp < STOPS_CACHE_EXPIRY) {
         return stopsCache;
     }
-    stopsCache = await fetchData('stops', {params: {type}});
-    stopsCacheTimestamp = now;
-    return stopsCache;
+    try {
+        if (!type) {
+            console.error("missing type parameter for stops data.");
+        }
+        stopsCache = await fetchData('stops', {params: {type}});
+        stopsCacheTimestamp = now;
+        return stopsCache;
+    } catch (error) {
+        console.error("cache stops fetch error: ", error.message);
+    }
 }
 
 export async function getTrip(id) {
     try {
         const trip = await fetchData(`trips/${id}`);
+
+        if (!trip || !trip.type || !trip.stopTimes) {
+            console.error("invalid or incomplete trip data.");
+        }
+
         const stops = await getStopsData(trip.type);
+        if (!Array.isArray(stops)) {
+            console.error("stops data is not an array.");
+        }
+
         const routes = await fetchData('routes', {params: {type: trip.type}});
+        if (!Array.isArray(routes)) {
+            console.error("routes data is not an array.");
+        }
 
         const stopNameLookup = stops.reduce((acc, stop) => {
             acc[stop.stopId] = stop.stopName;
@@ -207,7 +226,7 @@ export async function getTrip(id) {
 
         const updatedStopTimes = trip.stopTimes.map(stopTime => ({
             ...stopTime,
-            stopName: stopNameLookup[stopTime.stopId] || 'Fermata sconosciuta'
+            stopName: stopNameLookup[stopTime.stopId] || 'Fermata sconosciuta',
         }));
 
         const routeDetails = routes.find(route => route.routeId === trip.routeId);
@@ -215,10 +234,10 @@ export async function getTrip(id) {
         return {
             ...trip,
             stopTimes: updatedStopTimes,
-            route: routeDetails || null
+            route: routeDetails || null,
         };
     } catch (error) {
-        console.error("trip fetch error:", error.message);
+        console.error("trip fetch error: ", error.message);
     }
 }
 
