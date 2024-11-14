@@ -1,83 +1,37 @@
 'use client';
-import {useCallback, useEffect, useMemo, useState} from 'react';
-import {useRouter} from 'next/navigation';
-import {
-    Accordion,
-    ActionIcon,
-    Anchor,
-    Badge,
-    Box,
-    Button,
-    Center,
-    Flex,
-    Group,
-    Loader,
-    Modal,
-    Select,
-    Stack,
-    Title,
-} from '@mantine/core';
-import {getCookie, getStop, setCookie} from '@/api';
-import {Stop} from '@/types';
-import {RouteItem} from './RouteItem';
-import {useDisclosure} from '@mantine/hooks';
-import Image from 'next/image';
-import {IconGps} from '@tabler/icons-react';
-import {notifications} from "@mantine/notifications";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Accordion, Anchor, Box, Center, Group, Loader } from '@mantine/core';
+import { getCookie, getStop, setCookie } from '@/api';
+import { Stop } from '@/types';
+import { RouteItem } from './RouteItem';
+import { useDisclosure } from '@mantine/hooks';
+import { notifications } from "@mantine/notifications";
+import { StopSearch } from './stops/stop-search';
+import { StopInfo } from './stops/stop-info';
+import { PopularStops } from './stops/popular-stops';
+import { HelpModal } from './stops/help-modal';
 
-const popularStops = [
-    {
-        id: 1,
-        name: 'Stazione di Trento',
-        type: 'E',
-    },
-    {
-        id: 1127,
-        name: 'Stazione di Rovereto',
-        type: 'E',
-    },
-    {
-        id: 1146,
-        name: 'Autostazione Riva del Garda',
-        type: 'E',
-    },
-    {
-        id: 247,
-        name: 'Piazza Dante',
-        type: 'U',
-    },
-    {
-        id: 1284,
-        name: 'Corso Rosmini Posta',
-        type: 'U',
-    },
-]
-
-export default function Routes({
-                                   stops,
-                                   initialRoutes,
-                                   initialId,
-                                   initialType,
-                               }: {
+interface RoutesProps {
     stops: Stop[];
     initialRoutes: any[];
     initialId?: string;
     initialType?: string;
-}) {
+}
+
+export function Routes({
+    stops,
+    initialRoutes,
+    initialId,
+    initialType,
+}: RoutesProps) {
     const router = useRouter();
     const [value, setValue] = useState<string | null>(null);
     const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
     const [routes, setRoutes] = useState<any[]>(initialRoutes);
     const [initialLoading, setInitialLoading] = useState(true);
-    const [opened, {open, close}] = useDisclosure(false);
+    const [opened, { open, close }] = useDisclosure(false);
     const [userLocation, setUserLocation] = useState(false);
-
-    const selectOptions = useMemo(() => {
-        return stops.map((stop) => ({
-            value: `${stop.stopId}-${stop.type}`,
-            label: `${stop.stopName} (${stop.stopCode})`,
-        }));
-    }, [stops]);
 
     const stopMap = useMemo(() => {
         return stops.reduce((acc, stop) => {
@@ -140,11 +94,7 @@ export default function Routes({
         const stop = stopMap[selectedValue];
         if (stop) {
             setSelectedStop(stop);
-            await Promise.all([
-                setCookie('id', stop.stopId),
-                setCookie('type', stop.type),
-            ]);
-            router.refresh();
+            router.push(`/stops?id=${stop.stopId}&type=${stop.type}`);
 
             const newRoutes = await getStop(stop.stopId, stop.type);
             if (newRoutes) {
@@ -211,95 +161,31 @@ export default function Routes({
     }
 
     return (
-        <div
-            style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '16px',
-            }}
-        >
+        <div className="flex flex-col items-center justify-center gap-4">
             <Box maw={750} w="100%" mx="auto" ta="left">
-                <Select
-                    data={selectOptions}
-                    searchable
-                    placeholder="Cerca una fermata per nome o codice"
-                    limit={30}
-                    size="xl"
-                    my="sm"
-                    allowDeselect={false}
-                    onChange={handleStopChange}
-                    rightSectionPointerEvents="all"
-                    rightSection={
-                        <ActionIcon
-                            variant="transparent"
-                            size="xl"
-                            aria-label="La mia posizione"
-                            onClick={handleFetchStops}
-                        >
-                            <IconGps stroke={1} size={36} />
-                        </ActionIcon>
-                    }
+                <StopSearch
+                    stops={stops}
                     value={value}
-                    radius="xl"
-                    nothingFoundMessage="Nessuna fermata trovata"
+                    onStopChange={handleStopChange}
+                    onLocationRequest={handleFetchStops}
                 />
+
                 <Group justify="center">
                     <Anchor inherit ta="center" onClick={open}>
                         Come trovo il codice di una fermata?
                     </Anchor>
                 </Group>
 
-                {selectedStop && (
-                    <div style={{textAlign: 'center', marginTop: '16px'}}>
-                        <Title order={1}>
-                            {selectedStop.stopName}
-                            {selectedStop.town && ` (${selectedStop.town})`}
-                        </Title>
-                        <Badge
-                            size="xl"
-                            color={selectedStop.type === 'E' ? 'blue' : 'green'}
-                        >
-                            {selectedStop.type === 'E' ? 'fermata extraurbana' : 'fermata urbana'}
-                        </Badge>
-                        {userLocation && (
-                            <div>
-                                a {selectedStop.distance > 1
-                                ? `${selectedStop.distance.toFixed(2)} km`
-                                : `${(selectedStop.distance * 1000).toFixed(0)} m`}{' '}
-                                da te
-                            </div>
-                        )}
-                    </div>
-                )}
+                {selectedStop && <StopInfo stop={selectedStop} userLocation={userLocation} />}
 
                 {initialLoading ? (
                     <Center mt="xl">
-                        <Loader
-                            color={
-                                selectedStop?.type === 'U'
-                                    ? 'green'
-                                    : selectedStop?.type === 'E'
-                                        ? 'blue'
-                                        : 'dimmed'
-                            }
-                        />
+                        <Loader color={selectedStop?.type === 'U' ? 'green' : 'blue'} />
                     </Center>
                 ) : selectedStop && routes.length > 0 ? (
-                    <Accordion
-                        chevronPosition="right"
-                        transitionDuration={500}
-                        maw={750}
-                        w="100%"
-                        mt="xl"
-                    >
+                    <Accordion chevronPosition="right" transitionDuration={500} maw={750} w="100%" mt="xl">
                         {routes.map((route) => (
-                            <RouteItem
-                                key={route.id}
-                                route={route}
-                                currentStop={selectedStop.stopId}
-                            />
+                            <RouteItem key={route.id} route={route} currentStop={selectedStop.stopId} />
                         ))}
                     </Accordion>
                 ) : selectedStop && routes.length === 0 ? (
@@ -307,83 +193,11 @@ export default function Routes({
                         <div>Nessuna corsa trovata.</div>
                     </Center>
                 ) : (
-                    <Stack
-                        bg="var(--mantine-color-body)"
-                        align="center"
-                        justify="flex-start"
-                        gap="md"
-                        mt="xl"
-                    >
-                        <Title order={3}>Fermate popolari</Title>
-                        <Flex
-                            gap="xl"
-                            justify="center"
-                            align="center"
-                            direction="row"
-                            wrap="wrap"
-                        >
-                            {popularStops.map((stop, index) => (
-                                <Button
-                                    key={index}
-                                    variant={"outline"}
-                                    radius="xl"
-                                    size="md"
-                                    color={stop.type === 'U' ? 'green' : stop.type === 'E' ? 'blue' : 'dimmed'}
-                                    onClick={async () => {
-                                        await handleStopChange(`${stop.id}-${stop.type}`)
-                                    }}
-                                >
-                                    {stop.name}
-                                </Button>
-                            ))}
-                        </Flex>
-                    </Stack>
+                    <PopularStops onStopSelect={(value) => handleStopChange(value)} />
                 )}
             </Box>
-            <Modal
-                opened={opened}
-                onClose={close}
-                title="Come trovo il codice di una fermata?"
-                centered
-                size="xl"
-            >
-                <Stack align="stretch" justify="flex-start" gap="md">
-                    <div>
-                        Ogni fermata di Trentino Trasporti ha un <strong>codice univoco</strong>, indicato sui fogli
-                        informativi delle linee. Questo codice può essere utile per distinguere fermate con lo stesso
-                        nome ma situate su <strong>lati opposti della strada</strong>.
-                    </div>
-                    <Group justify="center">
-                        <Image
-                            src="/urban-trento.png"
-                            alt="Urbano Trento"
-                            height={100}
-                            width={200}
-                            style={{
-                                objectFit: 'cover',
-                            }}
-                        />
-                        <Image
-                            src="/urban-rovereto.png"
-                            alt="Urbano Rovereto"
-                            height={200}
-                            width={200}
-                            style={{
-                                objectFit: 'cover',
-                            }}
-                        />
-                        <Image
-                            src="/extraurban.png"
-                            alt="Extraurbano"
-                            height={150}
-                            width={300}
-                            style={{
-                                objectFit: 'cover',
-                            }}
-                        />
-                    </Group>
-                </Stack>
-            </Modal>
+
+            <HelpModal opened={opened} onClose={close} />
         </div>
     );
 }
