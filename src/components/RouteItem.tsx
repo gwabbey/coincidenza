@@ -50,18 +50,12 @@ export const RouteItem = memo(({ route, currentStop }: { route: Route; currentSt
                                 <Flex direction="column" wrap={{ base: "wrap", sm: "nowrap" }}
                                     w={{ base: 250, xs: 450, sm: 650 }}
                                 >
-                                    <Text inherit>
-                                        {`Bus ${route.matricolaBus || ''} per\u00A0`}
-                                    </Text>
-
                                     <Text
                                         inherit
                                         fw="bold"
-                                        truncate="end"
                                         fz={{ base: 'lg', md: 'xl' }}
-                                        w={{ base: 250, xs: 450, sm: 650 }}
                                     >
-                                        {route.tripHeadsign}
+                                        → {route.tripHeadsign}
                                     </Text>
                                 </Flex>
 
@@ -86,7 +80,7 @@ export const RouteItem = memo(({ route, currentStop }: { route: Route; currentSt
                                     aggiornamento: {new Date(route.lastEventRecivedAt).toLocaleTimeString('it-IT', {
                                         hour: '2-digit',
                                         minute: '2-digit'
-                                    }).replace(/,/g, ' - ')}
+                                    }).replace(/,/g, ' - ')} ({route.matricolaBus && `bus ${route.matricolaBus}`})
                                 </Text>)}
                             </Grid.Col>
                             <Grid.Col span="content">

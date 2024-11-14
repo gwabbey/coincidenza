@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect, useState} from 'react';
+import { useEffect, useState } from 'react';
 import {
     ActionIcon,
     Affix,
@@ -18,14 +18,14 @@ import {
     useMantineColorScheme,
     useMantineTheme
 } from "@mantine/core";
-import {getDelayColor} from "@/utils";
-import {getTrip} from "@/api";
-import {IconAlertTriangle, IconArrowUp, IconBus, IconMapPin} from "@tabler/icons-react";
-import {useWindowScroll} from "@mantine/hooks";
+import { getDelayColor } from "@/utils";
+import { getTrip } from "@/api";
+import { IconAlertTriangle, IconArrowUp, IconBus, IconMapPin } from "@tabler/icons-react";
+import { useWindowScroll } from "@mantine/hooks";
 
-export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: string }) {
+export default function Trip({ trip: initialTrip, tripId }: { trip: any, tripId: string }) {
     const theme = useMantineTheme();
-    const {colorScheme} = useMantineColorScheme();
+    const { colorScheme } = useMantineColorScheme();
     const [scroll, scrollTo] = useWindowScroll();
     const [trip, setTrip] = useState(initialTrip);
 
@@ -71,7 +71,7 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
             ta="center"
             gap="md"
         >
-            <Flex justify="center" align="center" direction={{base: 'column', sm: 'row'}}>
+            <Flex justify="center" align="center" direction={{ base: 'column', sm: 'row' }}>
                 <Badge
                     size="xl"
                     radius="xl"
@@ -85,7 +85,7 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
                 </Title>
             </Flex>
 
-            <Flex justify="center" align="center" my="md" direction={{base: 'column', sm: 'row'}} visibleFrom="sm">
+            <Flex justify="center" align="center" my="md" direction={{ base: 'column', sm: 'row' }} visibleFrom="sm">
                 <Paper shadow="xl" radius="xl" p="md" withBorder>
                     <Text fw="bold">{trip.stopTimes[0].stopName}</Text>
                     <Text>{trip.stopTimes[0].arrivalTime.replace(/^24:/, '00:').slice(0, 5)}</Text>
@@ -104,7 +104,7 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
                 justify="center"
                 direction="column"
                 wrap="wrap"
-                gap={{base: "sm", sm: "md"}}
+                gap={{ base: "sm", sm: "md" }}
                 style={{
                     position: "sticky",
                     top: 0,
@@ -113,24 +113,24 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
                 }}>
                 <Divider my="xs" />
 
-                <Flex justify={{base: "space-between", sm: "center"}} align="center"
-                      direction={{base: 'row', sm: 'column'}}>
+                <Flex justify={{ base: "space-between", sm: "center" }} align="center"
+                    direction={{ base: 'row', sm: 'column' }}>
                     <Stack gap={0}>
-                        <Text fz={{base: "lg", sm: "xl"}} fw="bold" ta={{base: "left", sm: "center"}}
-                              w={{base: 230, xs: 450, md: "100%"}} truncate>
+                        <Text fz={{ base: "lg", sm: "xl" }} fw="bold" ta={{ base: "left", sm: "center" }}
+                            w={{ base: 230, xs: 450, md: "100%" }} truncate>
                             {trip.stopTimes.length > 0 && !isDeparting ? trip.stopTimes[activeIndex]?.stopName : "--"}
                         </Text>
                         {!isDeparting && !trip.stopTimes[activeIndex] && (
-                            <Text fz={{base: "lg", sm: "xl"}} fw="bold" ta={{base: "left", sm: "center"}} truncate>
+                            <Text fz={{ base: "lg", sm: "xl" }} fw="bold" ta={{ base: "left", sm: "center" }} truncate>
                                 Dati in tempo reale non disponibili
                             </Text>
                         )}
                         {trip.lastEventRecivedAt && (
-                            <Text fz={{base: "xs", sm: "sm"}} c="dimmed" ta={{base: "left", sm: "center"}}>
+                            <Text fz={{ base: "xs", sm: "sm" }} c="dimmed" ta={{ base: "left", sm: "center" }}>
                                 Ultimo aggiornamento: {new Date(trip.lastEventRecivedAt).toLocaleTimeString('it-IT', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                            }).replace(/,/g, ' ')}<br />{trip.matricolaBus && `Bus ${trip.matricolaBus}`}
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                }).replace(/,/g, ' ')} ({trip.matricolaBus && `bus ${trip.matricolaBus}`})
                             </Text>
                         )}
                     </Stack>
@@ -139,7 +139,7 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
                             variant={colorScheme === "dark" ? "outline" : "filled"}
                             size={trip.delay == 0 ? "lg" : "xl"}
                             radius="sm"
-                            mt={{base: 0, sm: "md"}}
+                            mt={{ base: 0, sm: "md" }}
                             color={getDelayColor(trip.delay)}
                         >
                             {trip.delay < 0 ? '' : trip.delay > 0 ? '+' : 'in orario'}
@@ -153,13 +153,13 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
 
             {trip.stopTimes[activeIndex] && Math.floor((new Date().getTime() - new Date(trip.lastEventRecivedAt).getTime()) / (1000 * 60)) > 5 && (
                 <Alert variant="filled" color="yellow" radius="xl" title="Attenzione" fw="bold" ta="left" mx="auto"
-                       icon={<IconAlertTriangle />}>
+                    icon={<IconAlertTriangle />}>
                     L'autobus non è stato rilevato per più di 5 minuti.
                 </Alert>
             )}
 
             <Timeline active={activeIndex} bulletSize={24} lineWidth={2} color={trip.type === 'U' ? 'green' : 'blue'}
-                      mx={{base: 0, sm: "auto"}}>
+                mx={{ base: 0, sm: "auto" }}>
                 {trip.stopTimes.map((stop: any, index: number) => (
                     <Timeline.Item
                         styles={{
@@ -204,13 +204,13 @@ export default function Trip({trip: initialTrip, tripId}: { trip: any, tripId: s
                     </Timeline.Item>
                 ))}
             </Timeline>
-            <Affix position={{bottom: 20, right: 20}}>
+            <Affix position={{ bottom: 20, right: 20 }}>
                 <Transition transition="slide-up" mounted={scroll.y > 0}>
                     {(transitionStyles) => (
                         <ActionIcon variant="filled" size="xl" radius="xl" style={transitionStyles}
-                                    color={trip.type === 'U' ? 'green' : 'blue'}
-                                    onClick={() => scrollTo({y: 0})}>
-                            <IconArrowUp style={{width: '70%', height: '70%'}} stroke={1.5} />
+                            color={trip.type === 'U' ? 'green' : 'blue'}
+                            onClick={() => scrollTo({ y: 0 })}>
+                            <IconArrowUp style={{ width: '70%', height: '70%' }} stroke={1.5} />
                         </ActionIcon>
                     )}
                 </Transition>

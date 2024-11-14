@@ -28,8 +28,8 @@ export function PopularStops({ onStopSelect }: PopularStopsProps) {
     useEffect(() => {
         const loadRecentStops = async () => {
             const recentStopsCookie = await getCookie('recentStops')
-            if (recentStopsCookie?.value) {
-                setRecentStops(JSON.parse(recentStopsCookie.value))
+            if (recentStopsCookie) {
+                setRecentStops(JSON.parse(recentStopsCookie))
             }
         }
         loadRecentStops()
