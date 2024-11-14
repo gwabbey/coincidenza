@@ -42,12 +42,6 @@ export function Routes({
 
     useEffect(() => {
         const initializeState = async () => {
-            const lat = await getCookie('lat');
-            const lon = await getCookie('lon');
-            if (!lat || !lon) {
-                await handleFetchStops();
-            }
-
             if (initialId && initialType) {
                 const key = `${initialId}-${initialType}`;
                 const matchedStop = stopMap[key];
@@ -87,35 +81,21 @@ export function Routes({
     const handleStopChange = useCallback(async (selectedValue: string | null) => {
         if (!selectedValue) return;
 
-        setValue(selectedValue);
-        setInitialLoading(true);
-        setRoutes([]);
-
         const stop = stopMap[selectedValue];
-        if (stop) {
-            setSelectedStop(stop);
-            router.push(`/stops?id=${stop.stopId}&type=${stop.type}`);
+        const recentStops = JSON.parse(await getCookie('recentStops') || '[]');
+        const newStop = {
+            id: parseInt(stop.stopId),
+            name: stop.stopName,
+            type: stop.type
+        };
 
-            const recentStops = JSON.parse(await getCookie('recentStops') || '[]');
-            const newStop = {
-                id: parseInt(stop.stopId),
-                name: stop.stopName,
-                type: stop.type
-            };
+        const updatedStops = [
+            newStop,
+            ...recentStops.filter((s: any) => s.id !== newStop.id).slice(0, 4)
+        ];
 
-            const updatedStops = [
-                newStop,
-                ...recentStops.filter((s: any) => s.id !== newStop.id).slice(0, 4)
-            ];
-
-            await setCookie('recentStops', JSON.stringify(updatedStops));
-
-            const newRoutes = await getStop(stop.stopId, stop.type);
-            if (newRoutes) {
-                setRoutes(newRoutes);
-            }
-            setInitialLoading(false);
-        }
+        await setCookie('recentStops', JSON.stringify(updatedStops));
+        router.push(`/stops?id=${stop.stopId}&type=${stop.type}`);
     }, [stopMap, router]);
 
     const handleFetchStops = useCallback(async () => {
