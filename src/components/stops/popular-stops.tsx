@@ -1,6 +1,8 @@
 'use client'
 
 import { Button, Flex, Stack, Title } from '@mantine/core'
+import { useEffect, useState } from 'react'
+import { getCookie } from '@/api'
 
 interface PopularStop {
     id: number
@@ -8,7 +10,7 @@ interface PopularStop {
     type: string
 }
 
-const popularStops: PopularStop[] = [
+const defaultStops: PopularStop[] = [
     { id: 1, name: 'Stazione di Trento', type: 'E' },
     { id: 1127, name: 'Stazione di Rovereto', type: 'E' },
     { id: 1146, name: 'Autostazione Riva del Garda', type: 'E' },
@@ -21,6 +23,20 @@ interface PopularStopsProps {
 }
 
 export function PopularStops({ onStopSelect }: PopularStopsProps) {
+    const [recentStops, setRecentStops] = useState<PopularStop[]>([])
+
+    useEffect(() => {
+        const loadRecentStops = async () => {
+            const recentStopsCookie = await getCookie('recentStops')
+            if (recentStopsCookie?.value) {
+                setRecentStops(JSON.parse(recentStopsCookie.value))
+            }
+        }
+        loadRecentStops()
+    }, [])
+
+    const displayStops = recentStops.length > 0 ? recentStops : defaultStops
+
     return (
         <Stack
             align="center"
@@ -28,7 +44,9 @@ export function PopularStops({ onStopSelect }: PopularStopsProps) {
             gap="md"
             mt="xl"
         >
-            <Title order={3}>Fermate popolari</Title>
+            <Title order={3}>
+                {recentStops.length > 0 ? 'Fermate recenti' : 'Fermate popolari'}
+            </Title>
             <Flex
                 gap="xl"
                 justify="center"
@@ -36,7 +54,7 @@ export function PopularStops({ onStopSelect }: PopularStopsProps) {
                 direction="row"
                 wrap="wrap"
             >
-                {popularStops.map((stop) => (
+                {displayStops.map((stop) => (
                     <Button
                         key={stop.id}
                         variant="outline"

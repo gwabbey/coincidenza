@@ -19,7 +19,7 @@ function getDistance(lat1, lon1, lat2, lon2) {
 }
 
 export async function getCookie(name) {
-    return (await cookies()).get(name);
+    return (await cookies()).get(name)?.value;
 }
 
 export async function setCookie(name, value, options = {}) {

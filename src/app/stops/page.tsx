@@ -6,7 +6,10 @@ import { Flex, Title } from "@mantine/core";
 export default async function Page({
     searchParams,
 }: {
-    searchParams: { id?: string; type?: string }
+    searchParams: {
+        id?: string;
+        type?: string;
+    };
 }) {
     const [lat, lon] = await Promise.all([
         cookies().then((cookies) => cookies.get('lat')?.value),

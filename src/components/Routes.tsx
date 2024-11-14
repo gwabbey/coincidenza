@@ -96,6 +96,20 @@ export function Routes({
             setSelectedStop(stop);
             router.push(`/stops?id=${stop.stopId}&type=${stop.type}`);
 
+            const recentStops = JSON.parse(await getCookie('recentStops') || '[]');
+            const newStop = {
+                id: parseInt(stop.stopId),
+                name: stop.stopName,
+                type: stop.type
+            };
+
+            const updatedStops = [
+                newStop,
+                ...recentStops.filter((s: any) => s.id !== newStop.id).slice(0, 4)
+            ];
+
+            await setCookie('recentStops', JSON.stringify(updatedStops));
+
             const newRoutes = await getStop(stop.stopId, stop.type);
             if (newRoutes) {
                 setRoutes(newRoutes);
@@ -149,7 +163,6 @@ export function Routes({
                     },
                     {
                         enableHighAccuracy: true,
-                        timeout: 10000,
                         maximumAge: 0,
                     }
                 );
@@ -180,7 +193,7 @@ export function Routes({
 
                 {initialLoading ? (
                     <Center mt="xl">
-                        <Loader color={selectedStop?.type === 'U' ? 'green' : 'blue'} />
+                        <Loader color={selectedStop?.type === 'U' ? 'green' : selectedStop?.type === 'E' ? 'green' : 'dimmed'} />
                     </Center>
                 ) : selectedStop && routes.length > 0 ? (
                     <Accordion chevronPosition="right" transitionDuration={500} maw={750} w="100%" mt="xl">

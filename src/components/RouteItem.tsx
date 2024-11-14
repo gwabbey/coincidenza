@@ -1,12 +1,12 @@
-import {memo} from "react";
-import {Route} from "@/types";
-import {Accordion, ActionIcon, Alert, Badge, Container, Flex, Grid, Text, useMantineColorScheme} from "@mantine/core";
-import {IconAlertCircle, IconInfoCircle} from "@tabler/icons-react";
+import { memo } from "react";
+import { Route } from "@/types";
+import { Accordion, ActionIcon, Alert, Badge, Container, Flex, Grid, Text, useMantineColorScheme } from "@mantine/core";
+import { IconAlertCircle, IconInfoCircle } from "@tabler/icons-react";
 import Link from "next/link";
-import {formatTime, getDelayColor} from "@/utils";
+import { formatTime, getDelayColor } from "@/utils";
 
-export const RouteItem = memo(({route, currentStop}: { route: Route; currentStop?: string | null }) => {
-    const {colorScheme} = useMantineColorScheme();
+export const RouteItem = memo(({ route, currentStop }: { route: Route; currentStop?: string | null }) => {
+    const { colorScheme } = useMantineColorScheme();
     return (<Accordion.Item value={route.id.toString()}>
         <Accordion.Control>
             <Badge
@@ -44,11 +44,11 @@ export const RouteItem = memo(({route, currentStop}: { route: Route; currentStop
                     const isDeparting = route.delay === 0 && route.lastEventRecivedAt && route.stopTimes[0].stopId.toString() === currentStop?.toString() &&
                         diffInMinutes < 5
 
-                    return (<Container fluid key={index} fz={{base: 'lg', md: 'xl'}} px={0}>
+                    return (<Container fluid key={index} fz={{ base: 'lg', md: 'xl' }} px={0}>
                         <Grid justify="space-between" align="center">
                             <Grid.Col span="content" mt="sm">
-                                <Flex direction="column" wrap={{base: "wrap", sm: "nowrap"}}
-                                      w={{base: 250, xs: 450, sm: 650}}
+                                <Flex direction="column" wrap={{ base: "wrap", sm: "nowrap" }}
+                                    w={{ base: 250, xs: 450, sm: 650 }}
                                 >
                                     <Text inherit>
                                         {`Bus ${route.matricolaBus || ''} per\u00A0`}
@@ -58,19 +58,19 @@ export const RouteItem = memo(({route, currentStop}: { route: Route; currentStop
                                         inherit
                                         fw="bold"
                                         truncate="end"
-                                        fz={{base: 'lg', md: 'xl'}}
-                                        w={{base: 250, xs: 450, sm: 650}}
+                                        fz={{ base: 'lg', md: 'xl' }}
+                                        w={{ base: 250, xs: 450, sm: 650 }}
                                     >
                                         {route.tripHeadsign}
                                     </Text>
                                 </Flex>
 
-                                {route.stopTimes[0].arrivalTime > new Date().toLocaleTimeString('en-GB', {hour12: false}).slice(0, 8) ? (
+                                {route.stopTimes[0].arrivalTime > new Date().toLocaleTimeString('en-GB', { hour12: false }).slice(0, 8) ? (
                                     <Text
                                         c={isDeparting ? 'green' : ''}>{isDeparting ? 'in partenza' : 'non ancora partito'}</Text>) : [route.delay, route.lastEventRecivedAt, route.matricolaBus].every(item => item === null) && (
-                                    <Text c="gray">dati in tempo reale non disponibili</Text>)}
+                                            <Text c="gray">dati in tempo reale non disponibili</Text>)}
 
-                                {route.delay !== null && route.stopTimes[0].arrivalTime < new Date().toLocaleTimeString('en-GB', {hour12: false}).slice(0, 8) && (
+                                {route.delay !== null && route.stopTimes[0].arrivalTime < new Date().toLocaleTimeString('en-GB', { hour12: false }).slice(0, 8) && (
                                     <Text c={getDelayColor(route.delay)}>
                                         {route.delay < 0 ? `${Math.abs(route.delay)} min in anticipo` : route.delay > 0 ? `${route.delay} min in ritardo` : 'in orario'}
                                     </Text>)}
@@ -84,21 +84,18 @@ export const RouteItem = memo(({route, currentStop}: { route: Route; currentStop
                                 {route.lastEventRecivedAt && (<Text c="dimmed" size="xs">
                                     Ultimo
                                     aggiornamento: {new Date(route.lastEventRecivedAt).toLocaleTimeString('it-IT', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    day: '2-digit',
-                                    month: '2-digit',
-                                    year: 'numeric',
-                                }).replace(/,/g, ' - ')}
+                                        hour: '2-digit',
+                                        minute: '2-digit'
+                                    }).replace(/,/g, ' - ')}
                                 </Text>)}
                             </Grid.Col>
                             <Grid.Col span="content">
                                 <Flex justify="flex-end" align="center">
                                     <ActionIcon variant="transparent" size="lg" radius="xl"
-                                                aria-label="Info">
+                                        aria-label="Info">
                                         <Link href={`/trips/${route.tripId}`}>
                                             <IconInfoCircle stroke={1.25} size={36}
-                                                            color={colorScheme === "dark" ? "white" : "black"} />
+                                                color={colorScheme === "dark" ? "white" : "black"} />
                                         </Link>
                                     </ActionIcon>
                                 </Flex>
