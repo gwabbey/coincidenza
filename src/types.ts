@@ -32,6 +32,7 @@ export interface RouteStop {
     oraArrivoEffettivaAFermataSelezionata: string;
     oraArrivoProgrammataAFermataSelezionata: string;
     tripId: string;
+    type: string;
 }
 
 export interface Route {
@@ -44,4 +45,40 @@ export interface PopularStop {
     id: number;
     name: string;
     type: string;
+}
+
+export interface Trip {
+    cableway: {
+        routeId: number;
+        descrizione: string;
+        type: string;
+        descrColor: string;
+    } | null;
+    corsaPiuVicinaADataRiferimento: boolean;
+    delay: number;
+    directionId: number;
+    indiceCorsaInLista: number;
+    lastEventRecivedAt: string;
+    lastSequenceDetection: number;
+    matricolaBus: number;
+    oraArrivoEffettivaAFermataSelezionata: string | null;
+    oraArrivoProgrammataAFermataSelezionata: string | null;
+    routeId: number;
+    stopLast: number;
+    stopNext: number;
+    stopTimes: Array<{
+        arrivalTime: string;
+        departureTime: string;
+        stopId: number;
+        stopSequence: number;
+        tripId: string;
+        type: string;
+        stopName: string;
+    }>;
+    totaleCorseInLista: number;
+    tripHeadsign: string;
+    tripId: string;
+    type: string;
+    wheelchairAccessible: number;
+    route: RouteDetails;
 }

@@ -87,11 +87,11 @@ export async function fetchData(endpoint, options = {}) {
         console.log(url);
     }
 
-    const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
+    // const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
 
     try {
         const response = await axios.get(url, {
-            httpsAgent: proxyAgent,
+            // httpsAgent: proxyAgent,
             timeout: 10000,
             headers: {
                 "Content-Type": "application/json",
@@ -176,11 +176,12 @@ export async function getStop(id, type) {
     }
 }
 
-export async function getTrip(id) {
+export async function getTrip(id, type) {
     try {
-        const trip = await fetchData(`trips/${id}`);
-
-        const routes = await fetchData('routes', { params: { type: trip.type } });
+        const [trip, routes] = await Promise.all([
+            fetchData(`trips/${id}`),
+            fetchData('routes', { params: { type } })
+        ]);
 
         const stopMap = new Map(
             stops.map(stop => [stop.stopId, stop.stopName])

@@ -22,8 +22,9 @@ import { getDelayColor } from "@/utils";
 import { getTrip } from "@/api";
 import { IconAlertTriangle, IconArrowUp, IconBus, IconMapPin } from "@tabler/icons-react";
 import { useWindowScroll } from "@mantine/hooks";
+import { Trip as TripProps } from '@/types';
 
-export default function Trip({ trip: initialTrip, tripId }: { trip: any, tripId: string }) {
+export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
     const theme = useMantineTheme();
     const { colorScheme } = useMantineColorScheme();
     const [scroll, scrollTo] = useWindowScroll();
@@ -31,16 +32,16 @@ export default function Trip({ trip: initialTrip, tripId }: { trip: any, tripId:
 
     useEffect(() => {
         const interval = setInterval(async () => {
-            const updatedTrip = await getTrip(tripId);
+            const updatedTrip = await getTrip(trip.tripId, trip.type);
             if (updatedTrip) {
                 setTrip(updatedTrip);
             }
         }, 15000);
 
         return () => clearInterval(interval);
-    }, [tripId]);
+    }, [trip]);
 
-    const activeIndex = trip.stopTimes.findIndex((stop: { stopId: string; }) => stop.stopId === trip.stopLast);
+    const activeIndex = trip.stopTimes.findIndex((stop: { stopId: number }) => stop.stopId === trip.stopLast);
     const isDeparting = trip.delay === 0 && trip.lastEventRecivedAt && activeIndex === -1;
 
     const calculateDuration = (arrival: string, departure: string) =>

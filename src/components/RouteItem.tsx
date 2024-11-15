@@ -87,7 +87,7 @@ export const RouteItem = memo(({ route, currentStop }: { route: Route; currentSt
                                 <Flex justify="flex-end" align="center">
                                     <ActionIcon variant="transparent" size="lg" radius="xl"
                                         aria-label="Info">
-                                        <Link href={`/trips/${route.tripId}`}>
+                                        <Link href={`/trips/${route.tripId}:${route.type}`}>
                                             <IconInfoCircle stroke={1.25} size={36}
                                                 color={colorScheme === "dark" ? "white" : "black"} />
                                         </Link>
