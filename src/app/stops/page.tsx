@@ -3,6 +3,7 @@ import { getClosestBusStops, getStop } from "@/api";
 import { Routes } from "@/components/Routes";
 import { Flex, Title } from "@mantine/core";
 import { Suspense } from "react";
+import { Stop } from "@/types";
 
 export default async function Page({
     searchParams,
@@ -22,9 +23,15 @@ export default async function Page({
     let routes;
 
     if (lat && lon) {
-        stops = await getClosestBusStops(lat, lon);
+        stops = (await getClosestBusStops(lat, lon)).map((stop: Stop) => ({
+            ...stop,
+            stopId: String(stop.stopId)
+        }));
     } else {
-        stops = await getClosestBusStops(46.07121658325195, 11.11913776397705);
+        stops = (await getClosestBusStops(46.07121658325195, 11.11913776397705)).map((stop: Stop) => ({
+            ...stop,
+            stopId: String(stop.stopId)
+        }));
     }
 
     const { id, type } = await searchParams;
