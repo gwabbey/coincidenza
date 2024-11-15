@@ -153,6 +153,9 @@ export async function getStop(id, type) {
             })
         ]);
 
+        console.log("stops", stops);
+        console.log("routeData", routeData);
+
         if (!Array.isArray(stops) || !Array.isArray(routeData)) {
             throw new Error('Invalid response format');
         }
