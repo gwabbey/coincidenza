@@ -103,11 +103,17 @@ export async function fetchData(endpoint, options = {}) {
                     ...options.headers
                 }
             });
+            console.log("response status", response.status);
+            console.log("response status text", response.statusText);
             return response.data;
         } catch (error) {
             if (error.code === 'ECONNABORTED' && retries > 0) {
+                console.log("response status", error.status);
+                console.log("response status text", error.statusText);
                 return fetchWithRetry(retries - 1);
             }
+            console.log("response status", error.status);
+            console.log("response status text", error.statusText);
             console.error(`Error in fetchData: ${error.message}`);
             throw new Error("trentino trasporti data fetch error: ", error.message);
         }
@@ -149,11 +155,6 @@ export async function getStop(id, type) {
             }),
             fetchData('routes', { params: { type } })
         ]);
-
-        if (!Array.isArray(stops) || !Array.isArray(routeData)) {
-            console.log(stops, routeData);
-            throw new Error('Invalid response format');
-        }
 
         const routeMap = new Map(routeData.map(route => [parseInt(route.routeId, 10), route]));
         const routeGroups = stops.reduce((groups, stop) => {
