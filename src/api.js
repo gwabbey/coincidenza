@@ -45,13 +45,18 @@ export async function searchLocation(query) {
         return [];
     }
 
-    const response = await fetch(url);
+    try {
+        const response = await fetch(url);
 
-    if (!response.ok) {
-        throw new Error(`Fetch error: ${response.status}`);
+        if (!response.ok) {
+            throw new Error(`Fetch error: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error(`Error in searchLocation: ${error.message}`);
+        throw error;
     }
-
-    return await response.json();
 }
 
 export async function reverseGeocode(lat, lon) {
@@ -59,13 +64,18 @@ export async function reverseGeocode(lat, lon) {
     url.searchParams.append("lat", lat);
     url.searchParams.append("lon", lon);
 
-    const response = await fetch(url);
+    try {
+        const response = await fetch(url);
 
-    if (!response.ok) {
-        throw new Error(`Fetch error: ${response.status}`);
+        if (!response.ok) {
+            throw new Error(`Fetch error: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error(`Error in reverseGeocode: ${error.message}`);
+        throw error;
     }
-
-    return await response.json();
 }
 
 export async function fetchData(endpoint, options = {}) {
@@ -94,6 +104,7 @@ export async function fetchData(endpoint, options = {}) {
         });
         return response.data;
     } catch (error) {
+        console.error(`Error in fetchData: ${error.message}`);
         throw new Error("trentino trasporti data fetch error: ", error.message);
     }
 }
@@ -109,10 +120,10 @@ export async function getClosestBusStops(userLat, userLon) {
 
         return stopsWithDistance.sort((a, b) => a.distance - b.distance);
     } catch (error) {
+        console.error(`Error in getClosestBusStops: ${error.message}`);
         throw new Error("closest stops fetch error: " + error.message);
     }
 }
-
 
 export async function getStop(id, type) {
     try {
@@ -158,6 +169,7 @@ export async function getStop(id, type) {
         );
 
     } catch (error) {
+        console.error(`Error in getStop: ${error.message}`);
         throw new Error("stop fetch error: " + error.message);
     }
 }
@@ -186,6 +198,7 @@ export async function getTrip(id) {
             route: routeDetails
         };
     } catch (error) {
+        console.error(`Error in getTrip: ${error.message}`);
         throw new Error("trip fetch error: " + error.message);
     }
 }
@@ -228,10 +241,10 @@ export async function getStationMonitor(id) {
 
         return { trains, alerts };
     } catch (error) {
+        console.error(`Error in getStationMonitor: ${error.message}`);
         throw new Error("monitor fetch error: ", error.message);
     }
 }
-
 
 export async function getRoute(type, routeId, limit, directionId, refDateTime) {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
@@ -262,6 +275,7 @@ export async function getRoute(type, routeId, limit, directionId, refDateTime) {
         };
 
     } catch (error) {
+        console.error(`Error in getRoute: ${error.message}`);
         throw new Error("Error fetching route:", error);
     }
 }
