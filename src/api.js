@@ -90,7 +90,7 @@ export async function fetchData(endpoint, options = {}) {
     const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
 
     try {
-        const response = await axios.get(url, {
+        return await axios.get(url, {
             httpsAgent: proxyAgent,
             timeout: 10000,
             responseType: 'json',
@@ -103,7 +103,6 @@ export async function fetchData(endpoint, options = {}) {
                 ...options.headers
             }
         });
-        return response.data;
     } catch (error) {
         console.error(`Error in fetchData: ${error.message}`);
         throw new Error("trentino trasporti data fetch error: ", error.message);
@@ -130,84 +129,60 @@ export async function getClosestBusStops(userLat, userLon) {
 
 export async function getStop(id, type) {
     try {
-        if (!id || !type) {
-            throw new Error('Missing required parameters');
-        }
+        if (!id || !type) throw new Error('Missing required parameters');
 
-        // Fetch stops and routes in parallel
         const stopsPromise = fetchData('trips_new', {
             params: {
                 type,
                 stopId: id,
                 limit: 15,
                 refDateTime: new Date().toISOString(),
-            },
-        });
+            }
+        }).then(response => response.data);
 
         const routeDataPromise = fetchData('routes', {
-            params: { type },
-        });
+            params: { type }
+        }).then(response => response.data);
 
         const [stops, routeData] = await Promise.all([
             stopsPromise.catch(error => {
-                console.error('Failed to fetch stops:', error.message);
                 throw new Error(`Failed to fetch stops: ${error.message}`);
             }),
             routeDataPromise.catch(error => {
-                console.error('Failed to fetch routes:', error.message);
                 throw new Error(`Failed to fetch routes: ${error.message}`);
-            }),
+            })
         ]);
 
-        // Check for valid data
-        if (!Array.isArray(stops)) {
-            console.error('Invalid stops response:', stops);
-            throw new Error('Invalid stops format');
-        }
-        if (!Array.isArray(routeData)) {
-            console.error('Invalid routeData response:', routeData);
-            throw new Error('Invalid routes format');
+        if (!Array.isArray(stops) || !Array.isArray(routeData)) {
+            throw new Error('Invalid response format');
         }
 
-        // Map routeData to a lookup table
         const routeMap = new Map(
-            routeData.map(route => {
-                if (!route.routeId) {
-                    console.error('Invalid route format:', route);
-                    throw new Error('Route data missing routeId');
-                }
-                return [parseInt(route.routeId, 10), route];
-            })
+            routeData.map(route => [parseInt(route.routeId, 10), route])
         );
 
-        // Group stops by their routeId
         const routeGroups = new Map();
+
         for (const stop of stops) {
             const routeId = parseInt(stop.routeId, 10);
             const routeDetails = routeMap.get(routeId);
 
-            if (!routeDetails) {
-                console.warn(`No route details found for routeId ${routeId}`);
-                continue;
-            }
+            if (!routeDetails) continue;
 
             if (!routeGroups.has(routeId)) {
                 routeGroups.set(routeId, {
                     id: routeId,
                     stops: [stop],
-                    details: routeDetails,
+                    details: routeDetails
                 });
             } else {
                 routeGroups.get(routeId).stops.push(stop);
             }
         }
 
-        // Convert grouped data to an array and sort by routeShortName
-        const result = Array.from(routeGroups.values()).sort((a, b) =>
-            a.details.routeShortName.localeCompare(b.details.routeShortName, 'it', { numeric: true })
-        );
-
-        return result;
+        return Array.from(routeGroups.values())
+            .sort((a, b) => a.details.routeShortName
+                .localeCompare(b.details.routeShortName, 'it', { numeric: true }));
 
     } catch (error) {
         console.error(`Error in getStop: ${error.message}`);
@@ -218,8 +193,8 @@ export async function getStop(id, type) {
 export async function getTrip(id, type) {
     try {
         const [trip, routes] = await Promise.all([
-            fetchData(`trips/${id}`),
-            fetchData('routes', { params: { type } })
+            fetchData(`trips/${id}`).then(response => response.data),
+            fetchData('routes', { params: { type } }).then(response => response.data)
         ]);
 
         const stopMap = new Map(
