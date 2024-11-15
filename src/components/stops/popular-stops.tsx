@@ -1,14 +1,7 @@
 'use client'
 
 import { Button, Flex, Stack, Title } from '@mantine/core'
-import { useEffect, useState } from 'react'
-import { getCookie } from '@/api'
-
-interface PopularStop {
-    id: number
-    name: string
-    type: string
-}
+import { PopularStop } from '@/types'
 
 const defaultStops: PopularStop[] = [
     { id: 1, name: 'Stazione di Trento', type: 'E' },
@@ -22,19 +15,7 @@ interface PopularStopsProps {
     onStopSelect: (value: string) => void
 }
 
-export function PopularStops({ onStopSelect }: PopularStopsProps) {
-    const [recentStops, setRecentStops] = useState<PopularStop[]>([])
-
-    useEffect(() => {
-        const loadRecentStops = async () => {
-            const recentStopsCookie = await getCookie('recentStops')
-            if (recentStopsCookie) {
-                setRecentStops(JSON.parse(recentStopsCookie))
-            }
-        }
-        loadRecentStops()
-    }, [])
-
+export function PopularStops({ onStopSelect, recentStops }: PopularStopsProps & { recentStops: PopularStop[] }) {
     const displayStops = recentStops.length > 0 ? recentStops : defaultStops
 
     return (

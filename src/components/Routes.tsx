@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Accordion, Anchor, Box, Center, Group, Loader } from '@mantine/core';
 import { getCookie, getStop, setCookie } from '@/api';
-import { Stop } from '@/types';
+import { PopularStop, Stop } from '@/types';
 import { RouteItem } from './RouteItem';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from "@mantine/notifications";
@@ -14,6 +14,7 @@ import { HelpModal } from './stops/help-modal';
 
 interface RoutesProps {
     stops: Stop[];
+    recentStops: PopularStop[];
     initialRoutes: any[];
     initialId?: string;
     initialType?: string;
@@ -21,6 +22,7 @@ interface RoutesProps {
 
 export function Routes({
     stops,
+    recentStops,
     initialRoutes,
     initialId,
     initialType,
@@ -186,7 +188,7 @@ export function Routes({
                         <div>Nessuna corsa trovata.</div>
                     </Center>
                 ) : (
-                    <PopularStops onStopSelect={(value) => handleStopChange(value)} />
+                    <PopularStops onStopSelect={(value) => handleStopChange(value)} recentStops={recentStops} />
                 )}
             </Box>
 

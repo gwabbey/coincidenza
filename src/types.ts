@@ -39,3 +39,9 @@ export interface Route {
     details: RouteDetails;
     stops: RouteStop[];
 }
+
+export interface PopularStop {
+    id: number;
+    name: string;
+    type: string;
+}

@@ -111,14 +111,12 @@ export async function fetchData(endpoint, options = {}) {
 
 export async function getClosestBusStops(userLat, userLon) {
     try {
-        const busStops = await fetchData('stops');
-
-        const stopsWithDistance = busStops.map(stop => ({
+        const busStops = await fetchData('stops').then(busStops => busStops.map(stop => ({
             ...stop,
             distance: getDistance(userLat, userLon, stop.stopLat, stop.stopLon),
-        }));
+        }))).then(stopsWithDistance => stopsWithDistance.sort((a, b) => a.distance - b.distance));
 
-        return stopsWithDistance.sort((a, b) => a.distance - b.distance);
+        return busStops;
     } catch (error) {
         console.error(`Error in getClosestBusStops: ${error.message}`);
         throw new Error("closest stops fetch error: " + error.message);

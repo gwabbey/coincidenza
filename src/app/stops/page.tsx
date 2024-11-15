@@ -12,9 +12,10 @@ export default async function Page({
         type?: string;
     }>;
 }) {
-    const [lat, lon] = await Promise.all([
+    const [lat, lon, recentStops] = await Promise.all([
         cookies().then((cookies) => cookies.get('lat')?.value),
         cookies().then((cookies) => cookies.get('lon')?.value),
+        cookies().then((cookies) => cookies.get('recentStops')?.value),
     ]);
 
     let stops;
@@ -33,24 +34,25 @@ export default async function Page({
     }
 
     return (
-        <Suspense fallback={<div>Loading...</div>}>
-            <Flex
-                justify="center"
-                direction="column"
-                wrap="wrap"
-                ta="center"
-                gap="md"
-            >
-                <Title order={1} maw={750} w="100%" mx="auto">
-                    Cerca fermata
-                </Title>
+        <Flex
+            justify="center"
+            direction="column"
+            wrap="wrap"
+            ta="center"
+            gap="md"
+        >
+            <Title order={1} maw={750} w="100%" mx="auto">
+                Cerca fermata
+            </Title>
+            <Suspense fallback={<div>Loading...</div>}>
                 <Routes
                     stops={stops}
+                    recentStops={JSON.parse(recentStops ?? '[]')}
                     initialRoutes={routes ?? []}
                     initialId={id}
                     initialType={type}
                 />
-            </Flex>
-        </Suspense>
+            </Suspense>
+        </Flex>
     );
 }
