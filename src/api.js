@@ -109,26 +109,16 @@ export async function fetchData(endpoint, options = {}) {
     }
 }
 
+import stops from "./stops.json";
+
 export async function getClosestBusStops(userLat, userLon) {
     try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-
-        const busStops = await fetchData('stops', { signal: controller.signal });
-        clearTimeout(timeoutId);
-
-        console.log("busStops: ", busStops)
-
-        const stopsWithDistance = busStops.map(stop => ({
+        const stopsWithDistance = stops.map(stop => ({
             ...stop,
             distance: getDistance(userLat, userLon, stop.stopLat, stop.stopLon),
         }));
 
-        console.log("stopsWithDistance: ", stopsWithDistance)
-
         const sortedStops = stopsWithDistance.sort((a, b) => a.distance - b.distance);
-
-        console.log("sortedStops: ", sortedStops)
 
         return sortedStops;
     } catch (error) {
@@ -190,10 +180,7 @@ export async function getTrip(id) {
     try {
         const trip = await fetchData(`trips/${id}`);
 
-        const [stops, routes] = await Promise.all([
-            fetchData('stops', { params: { type: trip.type } }),
-            fetchData('routes', { params: { type: trip.type } })
-        ]);
+        const routes = await fetchData('routes', { params: { type: trip.type } });
 
         const stopMap = new Map(
             stops.map(stop => [stop.stopId, stop.stopName])
