@@ -87,11 +87,11 @@ export async function fetchData(endpoint, options = {}) {
         console.log(url);
     }
 
-    // const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
+    const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
 
     try {
         const response = await axios.get(url, {
-            // httpsAgent: proxyAgent,
+            httpsAgent: proxyAgent,
             timeout: 10000,
             headers: {
                 "Content-Type": "application/json",
