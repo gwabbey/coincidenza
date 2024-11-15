@@ -2,11 +2,11 @@ export interface Stop {
     stopId: number;
     stopName: string;
     stopCode: string;
-    type: 'E' | 'U';
-    town?: string;
+    type: string;
+    town?: string | null;
     distance: number;
-    stopLat?: number;
-    stopLon?: number;
+    stopLat?: number | null;
+    stopLon?: number | null;
 }
 
 export interface RouteDetails {
