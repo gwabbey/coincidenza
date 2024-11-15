@@ -5,7 +5,7 @@ import { IconAlertCircle, IconInfoCircle } from "@tabler/icons-react";
 import Link from "next/link";
 import { formatTime, getDelayColor } from "@/utils";
 
-export const RouteItem = memo(({ route, currentStop }: { route: Route; currentStop?: string | null }) => {
+export const RouteItem = memo(({ route, currentStop }: { route: Route; currentStop?: number | null }) => {
     const { colorScheme } = useMantineColorScheme();
     return (<Accordion.Item value={route.id.toString()}>
         <Accordion.Control>

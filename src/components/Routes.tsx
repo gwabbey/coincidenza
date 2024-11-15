@@ -86,7 +86,7 @@ export function Routes({
         const stop = stopMap[selectedValue];
         const recentStops = JSON.parse(await getCookie('recentStops') || '[]');
         const newStop = {
-            id: parseInt(stop.stopId),
+            id: stop.stopId,
             name: stop.stopName,
             type: stop.type
         };

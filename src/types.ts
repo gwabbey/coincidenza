@@ -1,5 +1,5 @@
 export interface Stop {
-    stopId: string;
+    stopId: number;
     stopName: string;
     stopCode: string;
     type: 'E' | 'U';

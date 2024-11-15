@@ -19,19 +19,13 @@ export default async function Page({
         cookies().then((cookies) => cookies.get('recentStops')?.value),
     ]);
 
-    let stops;
+    let stops: Stop[];
     let routes;
 
     if (lat && lon) {
-        stops = (await getClosestBusStops(lat, lon)).map((stop: Stop) => ({
-            ...stop,
-            stopId: String(stop.stopId)
-        }));
+        stops = await getClosestBusStops(lat, lon);
     } else {
-        stops = (await getClosestBusStops(46.07121658325195, 11.11913776397705)).map((stop: Stop) => ({
-            ...stop,
-            stopId: String(stop.stopId)
-        }));
+        stops = await getClosestBusStops(46.07121658325195, 11.11913776397705);
     }
 
     const { id, type } = await searchParams;
