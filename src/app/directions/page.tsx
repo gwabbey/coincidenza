@@ -1,8 +1,8 @@
-import {Box, Flex, Title} from '@mantine/core';
-import {LocationInput} from "@/components/LocationInput";
-import {fetchData, reverseGeocode} from "@/api";
+import { Box, Flex, Title } from '@mantine/core';
+import { LocationInput } from "@/components/LocationInput";
+import { fetchData, reverseGeocode } from "@/api";
 import Directions from "@/components/Directions";
-import {cookies} from 'next/headers';
+import { cookies } from 'next/headers';
 
 export const dynamic = "force-dynamic";
 
@@ -12,8 +12,8 @@ const getDirections = async (from: string, to: string) => {
     }
 
     const directions = await fetchData('direction', {
-        params: {from, to}
-    });
+        params: { from, to }
+    }).then(response => response.data);
 
     directions.routes = await Promise.all(directions.routes.map(async (route: any) => {
         if (!route.transitDetails?.line?.agencies) {
@@ -34,7 +34,7 @@ const getDirections = async (from: string, to: string) => {
             params: {
                 type: isUrban ? 'U' : 'E',
             }
-        });
+        }).then(response => response.data);
 
         const routeId = details.routes.find((detailRoute: any) =>
             detailRoute.routeShortName === route.legs[0].steps[0].transitDetails.line.shortName
