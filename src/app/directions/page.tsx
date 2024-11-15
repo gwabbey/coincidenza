@@ -13,7 +13,7 @@ const getDirections = async (from: string, to: string) => {
 
     const directions = await fetchData('direction', {
         params: { from, to }
-    }).then(response => response.data);
+    });
 
     directions.routes = await Promise.all(directions.routes.map(async (route: any) => {
         if (!route.transitDetails?.line?.agencies) {

@@ -90,10 +90,9 @@ export async function fetchData(endpoint, options = {}) {
     const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
 
     try {
-        return await axios.get(url, {
+        const response = await axios.get(url, {
             httpsAgent: proxyAgent,
             timeout: 10000,
-            responseType: 'json',
             headers: {
                 "Content-Type": "application/json",
                 "X-Requested-With": "it.tndigit.mit",
@@ -103,6 +102,7 @@ export async function fetchData(endpoint, options = {}) {
                 ...options.headers
             }
         });
+        return response.data;
     } catch (error) {
         console.error(`Error in fetchData: ${error.message}`);
         throw new Error("trentino trasporti data fetch error: ", error.message);
@@ -131,30 +131,22 @@ export async function getStop(id, type) {
     try {
         if (!id || !type) throw new Error('Missing required parameters');
 
-        const stopsPromise = fetchData('trips_new', {
+        const stops = await fetchData('trips_new', {
             params: {
                 type,
                 stopId: id,
                 limit: 15,
                 refDateTime: new Date().toISOString(),
             }
-        }).then(response => response.data);
+        }).catch(error => {
+            throw new Error(`Failed to fetch stops: ${error.message}`);
+        });
 
-        const routeDataPromise = fetchData('routes', {
+        const routeData = await fetchData('routes', {
             params: { type }
-        }).then(response => response.data);
-
-        const [stops, routeData] = await Promise.all([
-            stopsPromise.catch(error => {
-                throw new Error(`Failed to fetch stops: ${error.message}`);
-            }),
-            routeDataPromise.catch(error => {
-                throw new Error(`Failed to fetch routes: ${error.message}`);
-            })
-        ]);
-
-        console.log("stops", stops);
-        console.log("routeData", routeData);
+        }).catch(error => {
+            throw new Error(`Failed to fetch routes: ${error.message}`);
+        });
 
         if (!Array.isArray(stops) || !Array.isArray(routeData)) {
             throw new Error('Invalid response format');
@@ -196,8 +188,8 @@ export async function getStop(id, type) {
 export async function getTrip(id, type) {
     try {
         const [trip, routes] = await Promise.all([
-            fetchData(`trips/${id}`).then(response => response.data),
-            fetchData('routes', { params: { type } }).then(response => response.data)
+            fetchData(`trips/${id}`),
+            fetchData('routes', { params: { type } })
         ]);
 
         const stopMap = new Map(
