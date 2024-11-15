@@ -117,11 +117,18 @@ export async function getClosestBusStops(userLat, userLon) {
         const busStops = await fetchData('stops', { signal: controller.signal });
         clearTimeout(timeoutId);
 
+        console.log("busStops: ", busStops)
+
         const stopsWithDistance = busStops.map(stop => ({
             ...stop,
             distance: getDistance(userLat, userLon, stop.stopLat, stop.stopLon),
         }));
+
+        console.log("stopsWithDistance: ", stopsWithDistance)
+
         const sortedStops = stopsWithDistance.sort((a, b) => a.distance - b.distance);
+
+        console.log("sortedStops: ", sortedStops)
 
         return sortedStops;
     } catch (error) {
