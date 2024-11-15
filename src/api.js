@@ -130,60 +130,84 @@ export async function getClosestBusStops(userLat, userLon) {
 
 export async function getStop(id, type) {
     try {
-        if (!id || !type) throw new Error('Missing required parameters');
+        if (!id || !type) {
+            throw new Error('Missing required parameters');
+        }
 
+        // Fetch stops and routes in parallel
         const stopsPromise = fetchData('trips_new', {
             params: {
                 type,
                 stopId: id,
                 limit: 15,
                 refDateTime: new Date().toISOString(),
-            }
+            },
         });
 
         const routeDataPromise = fetchData('routes', {
-            params: { type }
+            params: { type },
         });
 
         const [stops, routeData] = await Promise.all([
             stopsPromise.catch(error => {
+                console.error('Failed to fetch stops:', error.message);
                 throw new Error(`Failed to fetch stops: ${error.message}`);
             }),
             routeDataPromise.catch(error => {
+                console.error('Failed to fetch routes:', error.message);
                 throw new Error(`Failed to fetch routes: ${error.message}`);
-            })
+            }),
         ]);
 
-        if (!Array.isArray(stops) || !Array.isArray(routeData)) {
-            throw new Error('Invalid response format');
+        // Check for valid data
+        if (!Array.isArray(stops)) {
+            console.error('Invalid stops response:', stops);
+            throw new Error('Invalid stops format');
+        }
+        if (!Array.isArray(routeData)) {
+            console.error('Invalid routeData response:', routeData);
+            throw new Error('Invalid routes format');
         }
 
+        // Map routeData to a lookup table
         const routeMap = new Map(
-            routeData.map(route => [parseInt(route.routeId, 10), route])
+            routeData.map(route => {
+                if (!route.routeId) {
+                    console.error('Invalid route format:', route);
+                    throw new Error('Route data missing routeId');
+                }
+                return [parseInt(route.routeId, 10), route];
+            })
         );
 
+        // Group stops by their routeId
         const routeGroups = new Map();
-
         for (const stop of stops) {
             const routeId = parseInt(stop.routeId, 10);
             const routeDetails = routeMap.get(routeId);
 
-            if (!routeDetails) continue;
+            if (!routeDetails) {
+                console.warn(`No route details found for routeId ${routeId}`);
+                continue;
+            }
 
             if (!routeGroups.has(routeId)) {
                 routeGroups.set(routeId, {
                     id: routeId,
                     stops: [stop],
-                    details: routeDetails
+                    details: routeDetails,
                 });
             } else {
                 routeGroups.get(routeId).stops.push(stop);
             }
         }
 
-        return Array.from(routeGroups.values())
-            .sort((a, b) => a.details.routeShortName
-                .localeCompare(b.details.routeShortName, 'it', { numeric: true }));
+        // Convert grouped data to an array and sort by routeShortName
+        const result = Array.from(routeGroups.values()).sort((a, b) =>
+            a.details.routeShortName.localeCompare(b.details.routeShortName, 'it', { numeric: true })
+        );
+
+        return result;
 
     } catch (error) {
         console.error(`Error in getStop: ${error.message}`);
