@@ -1,18 +1,17 @@
 'use client';
-import {Button, Card, Divider, Flex, Text} from "@mantine/core";
-import {motion} from "framer-motion";
-import {useEffect, useState} from "react";
-import {vehicleIcons} from "@/icons";
+import { Button, Card, Divider, Flex, Text } from "@mantine/core";
+import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
+import { vehicleIcons } from "@/icons";
+import MapComponent from "./map";
 
-export default function Directions({directions}: { directions: any }) {
+export default function Directions({ directions }: { directions: any }) {
     const [activePage, setActivePage] = useState(0);
-    const [filteredRoutes, setFilteredRoutes] = useState(directions.routes);
-
-    useEffect(() => {
-        setFilteredRoutes(filteredRoutes.filter((route: any) =>
+    const [filteredRoutes, setFilteredRoutes] = useState(() =>
+        directions.routes.filter((route: any) =>
             route.legs[0].steps.some((step: any) => step.travelMode !== 'WALKING')
-        ));
-    }, [filteredRoutes]);
+        )
+    );
 
     return (
         <motion.div
@@ -22,9 +21,9 @@ export default function Directions({directions}: { directions: any }) {
                 alignItems: "center",
                 justifyContent: "center",
             }}
-            initial={{y: 20, opacity: 0}}
-            animate={{y: 0, opacity: 1}}
-            transition={{ease: "easeInOut", duration: 1, delay: 0.5}}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ ease: "easeInOut", duration: 1, delay: 0.5 }}
         >
             {filteredRoutes.length > 0 ? (
                 <Flex direction="column" gap="lg" align="center" my={16}>
@@ -60,7 +59,7 @@ export default function Directions({directions}: { directions: any }) {
                                 key={index}
                                 direction="column"
                                 align="center"
-                                style={{minWidth: 80}}
+                                style={{ minWidth: 80 }}
                             >
                                 <Text size="xl">
                                     {vehicleIcons[step.transitDetails?.line?.vehicle?.type as keyof typeof vehicleIcons]}
@@ -84,15 +83,15 @@ export default function Directions({directions}: { directions: any }) {
                                     width: "100%",
                                     height: "100%",
                                 }}
-                                initial={{y: 20, opacity: 0}}
-                                animate={{y: 0, opacity: 1}}
-                                exit={{y: -20, opacity: 0}}
-                                transition={{ease: "easeInOut", duration: 0.5}}
+                                initial={{ y: 20, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                exit={{ y: -20, opacity: 0 }}
+                                transition={{ ease: "easeInOut", duration: 0.5 }}
                             >
                                 <Card
                                     shadow="xl"
                                     padding="lg"
-                                    radius="md"
+                                    radius="xl"
                                     withBorder
                                     opacity={step.travelMode === "WALKING" ? 0.8 : 1}
                                 >
@@ -100,7 +99,7 @@ export default function Directions({directions}: { directions: any }) {
                                         <Text fw={"bold"} size="xl">
                                             {vehicleIcons[
                                                 (step.transitDetails?.line?.vehicle?.type) as keyof typeof vehicleIcons
-                                                ]}
+                                            ]}
                                             &nbsp;
                                             {step.htmlInstructions.replace(
                                                 "bus",
@@ -119,22 +118,22 @@ export default function Directions({directions}: { directions: any }) {
                                             <div className="flex flex-col gap-y-2">
                                                 <Text size={"xl"}>
                                                     Partenza alle{" "}<strong>
-                                                    {new Date(
-                                                        step.transitDetails.departureTime.millis
-                                                    ).toLocaleTimeString([], {
-                                                        hour: "2-digit",
-                                                        minute: "2-digit",
-                                                    })}{" "}</strong>
+                                                        {new Date(
+                                                            step.transitDetails.departureTime.millis
+                                                        ).toLocaleTimeString([], {
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                        })}{" "}</strong>
                                                     da {step.transitDetails.departureStop.name}
                                                 </Text>
                                                 <Text size={"xl"}>
                                                     Arrivo alle{" "}<strong>
-                                                    {new Date(
-                                                        step.transitDetails.arrivalTime.millis
-                                                    ).toLocaleTimeString([], {
-                                                        hour: "2-digit",
-                                                        minute: "2-digit",
-                                                    })}{" "}</strong>
+                                                        {new Date(
+                                                            step.transitDetails.arrivalTime.millis
+                                                        ).toLocaleTimeString([], {
+                                                            hour: "2-digit",
+                                                            minute: "2-digit",
+                                                        })}{" "}</strong>
                                                     a {step.transitDetails.arrivalStop.name}
                                                 </Text>
                                             </div>
@@ -150,14 +149,18 @@ export default function Directions({directions}: { directions: any }) {
 
                     <Divider size="lg" my="lg" w="100%" c="pink" />
 
-                    <Card shadow="xl" padding="lg" radius="md" withBorder w="100%">
+                    <Card shadow="xl" padding="0" radius="xl" withBorder w="100%">
+                        <MapComponent encodedPolyline={filteredRoutes[activePage].overviewPolyline.encodedPath} />
+                    </Card>
+
+                    <Card shadow="xl" padding="lg" radius="xl" withBorder w="100%">
                         <Text size={"xl"}>
                             Viaggio di{" "}
                             {filteredRoutes[activePage].legs[0].distance.humanReadable} (
                             {filteredRoutes[activePage].legs[0].duration.humanReadable})
                         </Text>
                     </Card>
-                    <Card shadow="xl" padding="lg" radius="md" withBorder w="100%">
+                    <Card shadow="xl" padding="lg" radius="xl" withBorder w="100%">
                         {filteredRoutes[activePage].legs[0].departureTime && (
                             <Text size={"xl"}>
                                 <strong>Partenza</strong> alle{" "}
@@ -173,7 +176,7 @@ export default function Directions({directions}: { directions: any }) {
                             </Text>
                         )}
                     </Card>
-                    <Card shadow="xl" padding="lg" radius="md" withBorder w="100%">
+                    <Card shadow="xl" padding="lg" radius="xl" withBorder w="100%">
                         <Text size={"xl"}>
                             <strong>Arrivo</strong> alle{" "}
                             <strong>

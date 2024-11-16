@@ -1,10 +1,10 @@
 'use client';
 
-import {useCallback, useEffect, useState} from "react";
-import {Autocomplete, ComboboxItem, Loader, OptionsFilter} from "@mantine/core";
-import {useDebouncedValue} from "@mantine/hooks";
-import {searchLocation} from "@/api";
-import {useRouter} from 'next/navigation';
+import { useCallback, useEffect, useState } from "react";
+import { Autocomplete, ComboboxItem, Loader, OptionsFilter } from "@mantine/core";
+import { useDebouncedValue } from "@mantine/hooks";
+import { searchLocation, setCookie } from "@/api";
+import { useRouter } from 'next/navigation';
 
 interface Props {
     name: string;
@@ -15,12 +15,12 @@ interface Props {
 }
 
 export const LocationInput = ({
-                                  name,
-                                  selected = "",
-                                  placeholder,
-                                  debounceDelay = 200,
-                                  disabled = false,
-                              }: Props) => {
+    name,
+    selected = "",
+    placeholder,
+    debounceDelay = 200,
+    disabled = false,
+}: Props) => {
     const router = useRouter();
     const [value, setValue] = useState(selected);
     const [debouncedValue] = useDebouncedValue(value, debounceDelay);
@@ -67,7 +67,7 @@ export const LocationInput = ({
         fetchData(debouncedValue);
     }, [debouncedValue, fetchData]);
 
-    const optionsFilter: OptionsFilter = ({options, search}) => {
+    const optionsFilter: OptionsFilter = ({ options, search }) => {
         const splitSearch = search.toLowerCase().trim().split(" ");
         return (options as ComboboxItem[]).filter((option) => {
             const words = option.label.toLowerCase().trim().split(" ");
@@ -81,8 +81,8 @@ export const LocationInput = ({
         const location = JSON.parse(value);
         const locationString = `${location.geometry.coordinates[1]},${location.geometry.coordinates[0]}`;
 
-        router.push('/directions');
-
+        await setCookie(name, locationString);
+        router.refresh();
     }, [router]);
 
     return (
@@ -96,7 +96,7 @@ export const LocationInput = ({
             size="xl"
             disabled={disabled}
             comboboxProps={{
-                transitionProps: {transition: "fade-up", duration: 200},
+                transitionProps: { transition: "fade-up", duration: 200 },
             }}
             filter={optionsFilter}
             radius="xl"

@@ -77,44 +77,41 @@ export default async function Page() {
 
     const directions = await getDirections(from, to);
 
-    return (
-        <Flex
-            mih="100vh"
-            py="xl"
-            gap="xl"
-            align="center"
-            direction="column"
-            wrap="wrap"
-        >
-            <Box w="100%" style={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-            }}>
-                <Title order={1} maw={750} w="100%">
-                    <LocationInput
-                        placeholder="Partenza"
-                        name="from"
-                        selected={fromName}
-                    />
-                </Title>
-                <div style={{
-                    borderLeft: "2px solid gray",
-                    height: "50px",
-                }} />
-                <Title order={1} maw={750} w="100%">
-                    <LocationInput
-                        placeholder="Arrivo"
-                        name="to"
-                        selected={toName}
-                    />
-                </Title>
+    return (<Flex
+        mih="100vh"
+        py="xl"
+        gap="xl"
+        align="center"
+        direction="column"
+        wrap="wrap"
+    >
+        <Box w="100%" style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+        }}>
+            <Title order={1} maw={750} w="100%">
+                <LocationInput
+                    placeholder="Partenza"
+                    name="from"
+                    selected={fromName} />
+            </Title>
+            <div style={{
+                borderLeft: "2px solid gray",
+                height: "50px",
+            }} />
+            <Title order={1} maw={750} w="100%">
+                <LocationInput
+                    placeholder="Arrivo"
+                    name="to"
+                    selected={toName} />
+            </Title>
+        </Box>
+        {directions && directions.routes.length > 0 && (
+            <Box maw={750} w="100%">
+                <Directions directions={directions} />
             </Box>
-            {directions && directions.routes.length > 0 && (
-                <Box maw={750} w="100%">
-                    <Directions directions={directions} />
-                </Box>
-            )}
-        </Flex>
+        )}
+    </Flex>
     );
 }
