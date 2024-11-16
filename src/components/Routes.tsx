@@ -76,7 +76,7 @@ export function Routes({
     }, [selectedStop]);
 
     useEffect(() => {
-        const intervalId = setInterval(fetchRoutes, 15000);
+        const intervalId = setInterval(fetchRoutes, parseInt(process.env.AUTO_REFRESH || '10000'));
         return () => clearInterval(intervalId);
     }, [fetchRoutes]);
 

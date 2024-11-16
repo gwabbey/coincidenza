@@ -38,7 +38,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
             if (updatedTrip) {
                 setTrip(updatedTrip);
             }
-        }, 10000);
+        }, parseInt(process.env.AUTO_REFRESH || '10000'));
 
         return () => clearInterval(interval);
     }, [trip]);
