@@ -185,7 +185,7 @@ export async function getTrip(id, type) {
         ]);
 
         const stopMap = new Map(
-            stops.map(stop => [stop.stopId, stop.stopName])
+            stops.filter(stop => stop.type === type).map(stop => [stop.stopId, stop.stopName])
         );
 
         const routeDetails = routes.find(route => route.routeId === trip.routeId) || null;
