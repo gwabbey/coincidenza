@@ -1,5 +1,13 @@
 import { getTrip } from "@/api";
 import Trip from "@/components/Trip";
+import { Title } from "@mantine/core";
+import { Center } from "@mantine/core";
+
+function Error({ error }: { error: string }) {
+    return <Center>
+        <Title order={1} my="xl">{error}</Title>
+    </Center>
+}
 
 export default async function Page({ params }: {
     params: Promise<{ id: string }>
@@ -8,11 +16,11 @@ export default async function Page({ params }: {
     const trip = await getTrip(id, type);
 
     if (!trip) {
-        return <div>Corsa non trovata</div>;
+        return <Error error="Corsa non trovata" />;
     }
 
-    if (!type.includes('E') && !type.includes('U')) {
-        return <div>Corsa non trovata</div>;
+    if (!type || !type.includes('E') && !type.includes('U')) {
+        return <Error error="Corsa non valida" />;
     }
 
     return <Trip trip={trip} />;

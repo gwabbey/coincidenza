@@ -188,7 +188,7 @@ export async function getTrip(id, type) {
             stops.filter(stop => stop.type === type).map(stop => [stop.stopId, stop.stopName])
         );
 
-        const routeDetails = routes.find(route => route.routeId === trip.routeId) || null;
+        const routeDetails = routes.find(route => route.routeId === trip.routeId);
 
         return {
             ...trip,
@@ -199,8 +199,7 @@ export async function getTrip(id, type) {
             route: routeDetails
         };
     } catch (error) {
-        console.error(`Error in getTrip: ${error.message}`);
-        throw new Error("trip fetch error: " + error.message);
+        return null;
     }
 }
 

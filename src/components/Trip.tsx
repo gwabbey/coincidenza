@@ -5,6 +5,7 @@ import {
     ActionIcon,
     Affix,
     Alert,
+    Anchor,
     Badge,
     Divider,
     Flex,
@@ -20,9 +21,10 @@ import {
 } from "@mantine/core";
 import { getDelayColor } from "@/utils";
 import { getTrip } from "@/api";
-import { IconAlertTriangle, IconArrowUp, IconBus, IconMapPin } from "@tabler/icons-react";
+import { IconAlertTriangleFilled, IconArrowUp, IconBus, IconMapPin } from "@tabler/icons-react";
 import { useWindowScroll } from "@mantine/hooks";
 import { Trip as TripProps } from '@/types';
+import Link from 'next/link';
 
 export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
     const theme = useMantineTheme();
@@ -36,7 +38,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
             if (updatedTrip) {
                 setTrip(updatedTrip);
             }
-        }, 15000);
+        }, 10000);
 
         return () => clearInterval(interval);
     }, [trip]);
@@ -127,12 +129,17 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                             </Text>
                         )}
                         {trip.lastEventRecivedAt && (
-                            <Text fz={{ base: "xs", sm: "sm" }} c="dimmed" ta={{ base: "left", sm: "center" }}>
-                                Ultimo aggiornamento: {new Date(trip.lastEventRecivedAt).toLocaleTimeString('it-IT', {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                }).replace(/,/g, ' ')} ({trip.matricolaBus && `bus ${trip.matricolaBus}`})
-                            </Text>
+                            <Flex direction="row" gap={4} justify={{ base: "flex-start", sm: "center" }}>
+                                {trip.stopTimes[activeIndex] && Math.floor((new Date().getTime() - new Date(trip.lastEventRecivedAt).getTime()) / (1000 * 60)) > 5 && trip.stopTimes[activeIndex].stopId !== trip.stopLast && (
+                                    <IconAlertTriangleFilled color="orange" size={16} />
+                                )}
+                                <Text fz={{ base: "xs", sm: "sm" }} c="dimmed">
+                                    Ultimo rilevamento: {new Date(trip.lastEventRecivedAt).toLocaleTimeString('it-IT', {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                    }).replace(/,/g, ' ')} ({trip.matricolaBus && `bus ${trip.matricolaBus}`})
+                                </Text>
+                            </Flex>
                         )}
                     </Stack>
                     {trip.delay !== null && (
@@ -152,13 +159,6 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                 <Divider my="xs" />
             </Flex>
 
-            {trip.stopTimes[activeIndex] && Math.floor((new Date().getTime() - new Date(trip.lastEventRecivedAt).getTime()) / (1000 * 60)) > 5 && (
-                <Alert variant="filled" color="yellow" radius="xl" title="Attenzione" fw="bold" ta="left" mx="auto"
-                    icon={<IconAlertTriangle />}>
-                    L'autobus non è stato rilevato per più di 5 minuti.
-                </Alert>
-            )}
-
             <Timeline active={activeIndex} bulletSize={24} lineWidth={2} color={trip.type === 'U' ? 'green' : 'blue'}
                 mx={{ base: 0, sm: "auto" }}>
                 {trip.stopTimes.map((stop: any, index: number) => (
@@ -169,7 +169,11 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                             },
                         }}
                         key={index}
-                        title={stop.stopName || `Stop ${stop.stopId}`}
+                        title={
+                            <Text component={Link} href={`/stops/${stop.stopId}`} inherit>
+                                {stop.stopName}
+                            </Text>
+                        }
                         bullet={index === activeIndex ? <IconBus size={16} /> : <IconMapPin size={16} />}
                     >
                         {stop.departureTime ? (

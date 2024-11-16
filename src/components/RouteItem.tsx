@@ -76,8 +76,7 @@ export const RouteItem = memo(({ route, currentStop }: { route: Route; currentSt
                                 </Text>
 
                                 {route.lastEventRecivedAt && (<Text c="dimmed" size="xs">
-                                    Ultimo
-                                    aggiornamento: {new Date(route.lastEventRecivedAt).toLocaleTimeString('it-IT', {
+                                    Ultimo rilevamento: {new Date(route.lastEventRecivedAt).toLocaleTimeString('it-IT', {
                                         hour: '2-digit',
                                         minute: '2-digit'
                                     }).replace(/,/g, ' - ')} ({route.matricolaBus && `bus ${route.matricolaBus}`})
