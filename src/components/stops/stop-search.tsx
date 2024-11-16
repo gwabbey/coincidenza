@@ -1,6 +1,6 @@
 'use client'
 
-import { ActionIcon, Select } from '@mantine/core'
+import { ActionIcon, Box, Select, Stack, Text } from '@mantine/core'
 import { IconGps } from '@tabler/icons-react'
 import { Stop } from '@/types'
 
@@ -20,6 +20,8 @@ export function StopSearch({
     const selectOptions = stops.map((stop) => ({
         value: `${stop.stopId}-${stop.type}`,
         label: `${stop.stopName} (${stop.stopCode})`,
+        routes: stop.routes.map((route) => route.routeShortName).join(', '),
+        type: stop.type
     }))
 
     return (
@@ -45,6 +47,31 @@ export function StopSearch({
                 </ActionIcon>
             }
             value={value}
+            renderOption={(props) => {
+                const option = props.option as typeof selectOptions[number]
+                return (
+                    <Stack
+                        align="start"
+                        justify="center"
+                        gap={0}
+                        pos="relative"
+                        pl="sm"
+                    >
+                        <Box
+                            pos="absolute"
+                            left={0}
+                            h="100%"
+                            w="4px"
+                            style={{
+                                borderRadius: 9999,
+                            }}
+                            bg={option.type === 'U' ? 'green' : option.type === 'E' ? 'blue' : 'dimmed'}
+                        />
+                        <Text size="xl">{option.label}</Text>
+                        <Text size="sm" c="dimmed">{option.routes}</Text>
+                    </Stack>
+                )
+            }}
             radius="xl"
             nothingFoundMessage="Nessuna fermata trovata"
         />

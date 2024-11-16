@@ -7,6 +7,7 @@ export interface Stop {
     distance: number;
     stopLat?: number | null;
     stopLon?: number | null;
+    routes: RouteDetails[];
 }
 
 export interface RouteDetails {
