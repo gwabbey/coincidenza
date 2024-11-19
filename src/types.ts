@@ -16,6 +16,7 @@ export interface RouteDetails {
     routeShortName: string;
     routeLongName: string;
     news?: RouteNews[];
+    cableway: Cableway | null;
 }
 
 export interface RouteNews {
@@ -48,13 +49,15 @@ export interface PopularStop {
     type: string;
 }
 
+export interface Cableway {
+    routeId: number;
+    descrizione: string;
+    type: string;
+    descrColor: string;
+}
+
 export interface Trip {
-    cableway: {
-        routeId: number;
-        descrizione: string;
-        type: string;
-        descrColor: string;
-    } | null;
+    cableway: Cableway | null;
     corsaPiuVicinaADataRiferimento: boolean;
     delay: number;
     directionId: number;

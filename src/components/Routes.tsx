@@ -97,7 +97,7 @@ export function Routes({
         ];
 
         await setCookie('recentStops', JSON.stringify(updatedStops));
-        router.push(`/stops?id=${stop.stopId}&type=${stop.type}`);
+        router.push(`/bus?id=${stop.stopId}&type=${stop.type}`);
     }, [stopMap, router]);
 
     const handleFetchStops = useCallback(async () => {

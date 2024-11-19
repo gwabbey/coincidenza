@@ -1,5 +1,32 @@
-import {redirect} from "next/navigation";
+import Link from "next/link";
+import { Button, Stack } from "@mantine/core";
+import { IconBus, IconTrain } from "@tabler/icons-react";
+
+const links = [
+    { href: "/bus", label: "Cerca fermata autobus", icon: IconBus },
+    { href: "/trains", label: "Cerca stazione ferroviaria", icon: IconTrain },
+]
 
 export default function Page() {
-    redirect('/stops');
+    return (
+        <div>
+            <Stack
+                mt="xl"
+                align="center"
+                justify="start"
+                gap="xl"
+            >
+                {links.map((link) => (
+                    <Button variant="gradient"
+                        gradient={{ from: 'violet', to: 'indigo', deg: 90 }}
+                        radius="xl" size="xl" maw={750} w="100%" leftSection={<link.icon />} justify="start"
+                        component={Link}
+                        href={link.href}
+                    >
+                        {link.label}
+                    </Button>
+                ))}
+            </Stack>
+        </div>
+    )
 }
