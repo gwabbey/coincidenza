@@ -1,6 +1,7 @@
 "use server";
 import axios from "axios";
 import * as cheerio from 'cheerio';
+import HttpsProxyAgent from 'https-proxy-agent';
 import { cookies } from "next/headers";
 
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -85,14 +86,14 @@ export async function fetchData(endpoint, options = {}) {
         url += `?${searchParams.toString()}`;
     }
 
-    // const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
+    const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
     const maxRetries = 5;
     let attempts = 0;
 
     while (attempts < maxRetries) {
         try {
             const response = await axios.get(url, {
-                // httpsAgent: proxyAgent,
+                httpsAgent: proxyAgent,
                 headers: {
                     "Accept": "application/json",
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
