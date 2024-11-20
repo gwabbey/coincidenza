@@ -15,7 +15,7 @@ export interface RouteDetails {
     routeId: number;
     routeShortName: string;
     routeLongName: string;
-    news?: RouteNews[];
+    news?: RouteNews[] | null;
     cableway?: Cableway | null;
 }
 
