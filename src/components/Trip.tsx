@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { getTrip } from "@/api";
+import { Trip as TripProps } from '@/types';
+import { getDelayColor } from "@/utils";
 import {
     ActionIcon,
     Affix,
-    Alert,
-    Anchor,
     Badge,
     Divider,
     Flex,
@@ -20,13 +20,10 @@ import {
     useMantineColorScheme,
     useMantineTheme
 } from "@mantine/core";
-import { getDelayColor } from "@/utils";
-import { getTrip } from "@/api";
-import { IconAlertTriangleFilled, IconArrowUp, IconBus, IconMapPin } from "@tabler/icons-react";
 import { useWindowScroll } from "@mantine/hooks";
-import { Trip as TripProps } from '@/types';
+import { IconAlertTriangleFilled, IconArrowUp, IconBus, IconMapPin } from "@tabler/icons-react";
 import Link from 'next/link';
-import { a } from 'framer-motion/client';
+import { useEffect, useState } from 'react';
 
 export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
     const theme = useMantineTheme();

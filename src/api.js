@@ -1,8 +1,7 @@
 "use server";
-import { cookies } from "next/headers";
-import * as cheerio from 'cheerio';
 import axios from "axios";
-import { HttpsProxyAgent } from "https-proxy-agent";
+import * as cheerio from 'cheerio';
+import { cookies } from "next/headers";
 
 function getDistance(lat1, lon1, lat2, lon2) {
     const R = 6371;
@@ -100,9 +99,9 @@ export async function fetchData(endpoint, options = {}) {
                     "X-Requested-With": "it.tndigit.mit",
                     Authorization: `Basic ${Buffer.from(
                         `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
-                    ).toString("base64")}`,
-                    ...options.headers
-                }
+                    ).toString("base64")}`
+                },
+                cache: 'no-cache'
             });
 
             if (response.status === 200 && response.data) {
@@ -244,6 +243,54 @@ export async function getStationMonitor(id) {
         throw new Error("monitor fetch error: ", error.message);
     }
 }
+
+export async function getDirections(from, to) {
+    if (!from || !to) {
+        return null;
+    }
+
+    const directions = await fetchData('direction', {
+        params: { from, to }
+    });
+
+    directions.routes = await Promise.all(directions.routes.map(async (route) => {
+        if (!route.transitDetails?.line?.agencies) {
+            return route;
+        }
+
+        for (const agency of route.transitDetails?.line?.agencies) {
+            if (agency.name !== "Trentino trasporti esercizio S.p.A.") {
+                return route;
+            }
+        }
+
+        const isUrban = route.legs[0].steps.some((step) =>
+            step.transitDetails?.line?.shortName?.length < 4
+        );
+
+        const details = await fetchData('routes', {
+            params: {
+                type: isUrban ? 'U' : 'E',
+            }
+        });
+
+        const routeId = details.routes.find((detailRoute) =>
+            detailRoute.routeShortName === route.legs[0].steps[0].transitDetails.line.shortName
+        )?.routeId;
+
+        if (!routeId) {
+            return route;
+        }
+
+        return {
+            ...route,
+            routeId,
+        };
+    }));
+
+    return directions;
+};
+
 
 export async function getRoute(type, routeId, limit, directionId, refDateTime) {
     process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";

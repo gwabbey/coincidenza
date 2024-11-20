@@ -1,57 +1,7 @@
-import { Box, Flex, Title } from '@mantine/core';
-import { LocationInput } from "@/components/LocationInput";
-import { fetchData, reverseGeocode } from "@/api";
+import { getDirections, reverseGeocode } from "@/api";
 import Directions from "@/components/Directions";
+import { Box, Flex } from '@mantine/core';
 import { cookies } from 'next/headers';
-
-export const dynamic = "force-dynamic";
-
-const getDirections = async (from: string, to: string) => {
-    if (!from || !to) {
-        return null;
-    }
-
-    const directions = await fetchData('direction', {
-        params: { from, to }
-    });
-
-    directions.routes = await Promise.all(directions.routes.map(async (route: any) => {
-        if (!route.transitDetails?.line?.agencies) {
-            return route;
-        }
-
-        for (const agency of route.transitDetails?.line?.agencies) {
-            if (agency.name !== "Trentino trasporti esercizio S.p.A.") {
-                return route;
-            }
-        }
-
-        const isUrban = route.legs[0].steps.some((step: any) =>
-            step.transitDetails?.line?.shortName?.length < 4
-        );
-
-        const details = await fetchData('routes', {
-            params: {
-                type: isUrban ? 'U' : 'E',
-            }
-        }).then(response => response.data);
-
-        const routeId = details.routes.find((detailRoute: any) =>
-            detailRoute.routeShortName === route.legs[0].steps[0].transitDetails.line.shortName
-        )?.routeId;
-
-        if (!routeId) {
-            return route;
-        }
-
-        return {
-            ...route,
-            routeId,
-        };
-    }));
-
-    return directions;
-};
 
 const getLocationName = async (coords: string) => {
     if (!coords) return "";
@@ -68,14 +18,15 @@ const getLocationName = async (coords: string) => {
 };
 
 export default async function Page() {
-    const cookieStore = await cookies();
-    const from = cookieStore.get('from')?.value || '';
-    const to = cookieStore.get('to')?.value || '';
+    const [fromCookie, toCookie] = await Promise.all([
+        cookies().then((cookies) => cookies.get('from')?.value),
+        cookies().then((cookies) => cookies.get('to')?.value),
+    ]);
 
-    const fromName = await getLocationName(from);
-    const toName = await getLocationName(to);
+    const from = await getLocationName(fromCookie || '');
+    const to = await getLocationName(toCookie || '');
 
-    const directions = await getDirections(from, to);
+    const directions = await getDirections(fromCookie || '', toCookie || '');
 
     return (<Flex
         mih="100vh"
@@ -85,31 +36,9 @@ export default async function Page() {
         direction="column"
         wrap="wrap"
     >
-        <Box w="100%" style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-        }}>
-            <Title order={1} maw={750} w="100%">
-                <LocationInput
-                    placeholder="Partenza"
-                    name="from"
-                    selected={fromName} />
-            </Title>
-            <div style={{
-                borderLeft: "2px solid gray",
-                height: "50px",
-            }} />
-            <Title order={1} maw={750} w="100%">
-                <LocationInput
-                    placeholder="Arrivo"
-                    name="to"
-                    selected={toName} />
-            </Title>
-        </Box>
         {directions && directions.routes.length > 0 && (
             <Box maw={750} w="100%">
-                <Directions directions={directions} />
+                <Directions directions={directions} from={from} to={to} />
             </Box>
         )}
     </Flex>
