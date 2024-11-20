@@ -1,14 +1,17 @@
 'use client';
 import { vehicleIcons } from "@/icons";
-import { Anchor, Box, Button, Card, Divider, Flex, Grid, Stack, Text, Timeline, Title } from "@mantine/core";
+import { Anchor, Button, Card, Divider, Flex, Grid, Stack, Text, Timeline, Title } from "@mantine/core";
 import { IconMapPin } from "@tabler/icons-react";
 import MapComponent from "./map";
 
 import { searchLocation, setCookie } from "@/api";
+import { Stop } from "@/types";
 import { Autocomplete, ComboboxItem, Loader, OptionsFilter } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from "react";
+
+export const dynamic = 'force-dynamic';
 
 interface Props {
     name: string;
@@ -16,6 +19,7 @@ interface Props {
     placeholder: string;
     debounceDelay?: number;
     disabled?: boolean;
+    onLoadingChange?: (isLoading: boolean) => void;
 }
 
 export const LocationInput = ({
@@ -108,32 +112,33 @@ export const LocationInput = ({
     );
 };
 
-export default function Directions({ directions, from, to }: { directions: any, from: string, to: string }) {
+export default function Directions({ directions, from, to, stops }: { directions: any, from: string, to: string, stops: Stop[] }) {
     const [activePage, setActivePage] = useState(0);
+    const getStopName = (stopId: number, type: string) => {
+        const stop = stops.find((stop) => stop.stopId === stopId && stop.type === type);
+        return stop?.stopName || "Fermata sconosciuta";
+    };
 
     return (
         <div>
-            <Flex direction="column" align="center" w="100%" mb="xl">
+            <Stack align="center" w="100%" mb="xl" gap={0}>
                 <Title order={1} maw={750} w="100%">
                     <LocationInput
                         placeholder="Partenza"
                         name="from"
                         selected={from} />
                 </Title>
-                <div style={{
-                    borderLeft: "2px solid gray",
-                    height: "50px",
-                }} />
+                <Divider orientation="vertical" mx="auto" h={32} />
                 <Title order={1} maw={750} w="100%">
                     <LocationInput
                         placeholder="Arrivo"
                         name="to"
                         selected={to} />
                 </Title>
-            </Flex>
+            </Stack>
 
             {directions.routes.length > 0 ? (
-                <Flex direction="column" gap="lg" align="center" my={16}>
+                <Stack gap="lg" align="center" my={16}>
                     <Grid justify="center" align="center">
                         {directions.routes.map((route: any, index: number) => {
                             const changes = route.legs[0].steps.filter((step: any) => step.travelMode !== 'WALKING').length - 1;
@@ -177,7 +182,7 @@ export default function Directions({ directions, from, to }: { directions: any, 
                     >
                         {directions.routes[activePage].legs[0].steps.map((step: any, index: number) => (
                             <Stack
-                                key={index}
+                                key={`preview-${index}}`}
                                 align="center"
                                 justify="flex-start"
                                 gap={0}
@@ -197,10 +202,10 @@ export default function Directions({ directions, from, to }: { directions: any, 
                         ))}
                     </Flex>
 
-                    {directions.routes[activePage].legs[0].steps.map(
-                        (step: any, index: number) => (
+                    {directions.routes[activePage].legs[0].steps.map((step: any, index: number) => (
+                        <>
                             <Card
-                                key={index}
+                                key={`step-${index}`}
                                 w="100%"
                                 h="100%"
                                 shadow="xl"
@@ -213,8 +218,7 @@ export default function Directions({ directions, from, to }: { directions: any, 
                                     <Text fw={"bold"} size="xl">
                                         {vehicleIcons[
                                             (step.transitDetails?.line?.vehicle?.type) as keyof typeof vehicleIcons
-                                        ]}
-                                        &nbsp;
+                                        ]}{" "}
                                         {step.htmlInstructions.replace(
                                             "Autobus",
                                             `Bus ${step.transitDetails?.line?.shortName ?? ""}`
@@ -228,30 +232,33 @@ export default function Directions({ directions, from, to }: { directions: any, 
                                             {step.transitDetails.line.name}
                                         </Text>
                                     )}
+                                    {step.trip && (
+                                        <Text size="md">
+                                            non ancora partito da {getStopName(step.trip.stopTimes[0]?.stopId, step.trip.type)}
+                                        </Text>
+                                    )}
                                     {step.transitDetails && (
-                                        <Box my="sm">
-                                            <Timeline bulletSize={24}
-                                                lineWidth={2}
-                                                color={step.transitDetails.type === 'U' ? 'green' : step.transitDetails.type === 'E' ? 'blue' : 'dimmed'}>
-                                                <Timeline.Item title={step.transitDetails.departureStop.name}
-                                                    bullet={<IconMapPin size={16} />}
-                                                >
-                                                    {new Date(
-                                                        step.transitDetails.departureTime.millis
-                                                    ).toLocaleTimeString('it-IT', {
-                                                        hour: "2-digit",
-                                                        minute: "2-digit",
-                                                    })}</Timeline.Item>
-                                                <Timeline.Item title={step.transitDetails.arrivalStop.name}
-                                                    bullet={<IconMapPin size={16} />}>
-                                                    {new Date(
-                                                        step.transitDetails.arrivalTime.millis
-                                                    ).toLocaleTimeString('it-IT', {
-                                                        hour: "2-digit",
-                                                        minute: "2-digit",
-                                                    })}</Timeline.Item>
-                                            </Timeline>
-                                        </Box>
+                                        <Timeline bulletSize={24} my="sm"
+                                            lineWidth={2}
+                                            color={step.transitDetails.type === 'U' ? 'green' : step.transitDetails.type === 'E' ? 'blue' : 'dimmed'}>
+                                            <Timeline.Item title={step.transitDetails.departureStop.name}
+                                                bullet={<IconMapPin size={16} />}
+                                            >
+                                                {new Date(
+                                                    step.transitDetails.departureTime.millis
+                                                ).toLocaleTimeString('it-IT', {
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                })}</Timeline.Item>
+                                            <Timeline.Item title={step.transitDetails.arrivalStop.name}
+                                                bullet={<IconMapPin size={16} />}>
+                                                {new Date(
+                                                    step.transitDetails.arrivalTime.millis
+                                                ).toLocaleTimeString('it-IT', {
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                })}</Timeline.Item>
+                                        </Timeline>
                                     )}
                                     <Text size="md" c="dimmed">
                                         {step.distance.humanReadable} - {step.duration.humanReadable}
@@ -260,7 +267,7 @@ export default function Directions({ directions, from, to }: { directions: any, 
                                         <Text size="md" c="dimmed">
                                             Servizio di{" "}
                                             {step.transitDetails.line.agencies.map((agency: any, index: number) => (
-                                                <span key={agency.name}>
+                                                <span key={`agency-${index}`}>
                                                     <Anchor href={agency.url} inherit target="_blank">
                                                         {agency.name}
                                                     </Anchor>
@@ -271,10 +278,38 @@ export default function Directions({ directions, from, to }: { directions: any, 
                                     )}
                                 </Card.Section>
                             </Card>
-                        )
+
+                            {step.transitDetails &&
+                                directions.routes[activePage].legs[0].steps[index + 1].transitDetails && (
+                                    <Card
+                                        key={index}
+                                        shadow="xl"
+                                        padding="xs"
+                                        radius="xl"
+                                        withBorder
+                                    >
+                                        <Text size="md" c="dimmed" ta="center">
+                                            cambio di{" "}
+                                            {(() => {
+                                                const currentArrivalTime = step.transitDetails.arrivalTime.millis;
+                                                const nextDepartureTime = directions.routes[activePage].legs[0].steps[index + 1].transitDetails.departureTime.millis;
+                                                const differenceInMinutes = Math.floor((nextDepartureTime - currentArrivalTime) / (1000 * 60));
+
+                                                const hours = Math.floor(differenceInMinutes / 60);
+                                                const minutes = differenceInMinutes % 60;
+
+                                                return hours > 0
+                                                    ? `${hours} ora${hours > 1 ? 'e' : ''} ${minutes > 0 ? ` e ${minutes} min` : ''}`
+                                                    : `${minutes} min`;
+                                            })()}
+                                        </Text>
+                                    </Card>
+                                )}
+                        </>
+                    )
                     )}
 
-                    <Divider size="lg" my="lg" w="100%" c="pink" />
+                    <Divider size="lg" my="lg" w="100%" />
 
                     <Card shadow="xl" padding="0" radius="xl" withBorder w="100%">
                         <MapComponent encodedPolyline={directions.routes[activePage].overviewPolyline.encodedPath} />
@@ -319,14 +354,11 @@ export default function Directions({ directions, from, to }: { directions: any, 
                             </Text>
                         </Card>
                     )}
-                </Flex>) : (
-                <Flex direction="column" gap="lg" align="center" my={16}>
-                    <Text size="xl">
-                        Nessun percorso trovato :(
-                    </Text>
-                </Flex>
-            )
-            }
+                </Stack>) : (
+                <Text size="xl" mt="xl" ta="center">
+                    Nessun percorso trovato
+                </Text>
+            )}
         </div >
     );
 }

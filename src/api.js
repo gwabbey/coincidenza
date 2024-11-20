@@ -1,7 +1,6 @@
 "use server";
 import axios from "axios";
 import * as cheerio from 'cheerio';
-import HttpsProxyAgent from 'https-proxy-agent';
 import { cookies } from "next/headers";
 
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -86,14 +85,16 @@ export async function fetchData(endpoint, options = {}) {
         url += `?${searchParams.toString()}`;
     }
 
-    const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
+    console.log(url);
+
+    // const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
     const maxRetries = 5;
     let attempts = 0;
 
     while (attempts < maxRetries) {
         try {
             const response = await axios.get(url, {
-                httpsAgent: proxyAgent,
+                // httpsAgent: proxyAgent,
                 headers: {
                     "Accept": "application/json",
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -245,7 +246,7 @@ export async function getStationMonitor(id) {
     }
 }
 
-export async function getDirections(from, to) {
+export async function getDirections(from, to, details) {
     if (!from || !to) {
         return null;
     }
@@ -255,38 +256,46 @@ export async function getDirections(from, to) {
     });
 
     directions.routes = await Promise.all(directions.routes.map(async (route) => {
-        if (!route.transitDetails?.line?.agencies) {
-            return route;
-        }
-
-        for (const agency of route.transitDetails?.line?.agencies) {
-            if (agency.name !== "Trentino trasporti esercizio S.p.A.") {
-                return route;
+        route.legs[0].steps = await Promise.all(route.legs[0].steps.map(async (step) => {
+            if (!step.transitDetails) {
+                return step;
             }
-        }
 
-        const isUrban = route.legs[0].steps.some((step) =>
-            step.transitDetails?.line?.shortName?.length < 4
-        );
-
-        const details = await fetchData('routes', {
-            params: {
-                type: isUrban ? 'U' : 'E',
+            for (const agency of step.transitDetails.line.agencies) {
+                if (agency.name !== "Trentino trasporti esercizio S.p.A.") {
+                    return step;
+                }
             }
-        });
 
-        const routeId = details.routes.find((detailRoute) =>
-            detailRoute.routeShortName === route.legs[0].steps[0].transitDetails.line.shortName
-        )?.routeId;
+            const isUrban = step.transitDetails?.line?.shortName?.length < 4;
 
-        if (!routeId) {
-            return route;
-        }
+            const routeId = details.find((detailRoute) =>
+                detailRoute.routeLongName === step.transitDetails.line.name
+            )?.routeId;
 
-        return {
-            ...route,
-            routeId,
-        };
+            if (!routeId) {
+                return step;
+            }
+
+            const trips = await fetchData('trips_new', {
+                params: {
+                    routeId,
+                    type: isUrban ? 'U' : 'E',
+                    limit: 1,
+                    refDateTime: new Date(step.transitDetails.departureTime.millis).toISOString(),
+                }
+            });
+
+            const trip = trips.find((trip) => trip.corsaPiuVicinaADataRiferimento === true);
+
+            return {
+                ...step,
+                routeId,
+                trip,
+            };
+        }));
+
+        return route;
     }));
 
     return directions;

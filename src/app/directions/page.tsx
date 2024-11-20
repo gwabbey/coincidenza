@@ -1,7 +1,10 @@
-import { getDirections, reverseGeocode } from "@/api";
+import { fetchData, getDirections, reverseGeocode } from "@/api";
 import Directions from "@/components/Directions";
-import { Box, Flex } from '@mantine/core';
+import stops from "@/stops.json";
+import { Stop } from "@/types";
+import { Box, Flex, Loader, Title } from '@mantine/core';
 import { cookies } from 'next/headers';
+import { Suspense } from "react";
 
 const getLocationName = async (coords: string) => {
     if (!coords) return "";
@@ -23,24 +26,33 @@ export default async function Page() {
         cookies().then((cookies) => cookies.get('to')?.value),
     ]);
 
-    const from = await getLocationName(fromCookie || '');
-    const to = await getLocationName(toCookie || '');
+    const [from, to] = await Promise.all([
+        getLocationName(fromCookie || ''),
+        getLocationName(toCookie || ''),
+    ]);
 
-    const directions = await getDirections(fromCookie || '', toCookie || '');
+    const details = await fetchData('routes');
 
-    return (<Flex
-        mih="100vh"
-        py="xl"
-        gap="xl"
-        align="center"
-        direction="column"
-        wrap="wrap"
-    >
-        {directions && directions.routes.length > 0 && (
-            <Box maw={750} w="100%">
-                <Directions directions={directions} from={from} to={to} />
-            </Box>
-        )}
-    </Flex>
+    const directions = await getDirections(fromCookie || '', toCookie || '', details);
+
+    return (
+        <Flex
+            justify="center"
+            direction="column"
+            wrap="wrap"
+            align="center"
+            gap="md"
+        >
+            <Title order={1} maw={750} w="100%" mx="auto" ta="center">
+                Cerca itinerario
+            </Title>
+            <Suspense fallback={<Loader size="xl" />}>
+                {directions && (
+                    <Box maw={750} w="100%">
+                        <Directions directions={directions} from={from} to={to} stops={stops as Stop[]} />
+                    </Box>
+                )}
+            </Suspense>
+        </Flex>
     );
 }

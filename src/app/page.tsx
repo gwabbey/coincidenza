@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { Button, Stack } from "@mantine/core";
 import { IconBus, IconTrain } from "@tabler/icons-react";
+import Link from "next/link";
 
 const links = [
     { href: "/bus", label: "Cerca fermata autobus", icon: IconBus },
@@ -16,8 +16,9 @@ export default function Page() {
                 justify="start"
                 gap="xl"
             >
-                {links.map((link) => (
+                {links.map((link, index) => (
                     <Button variant="gradient"
+                        key={index}
                         gradient={{ from: 'violet', to: 'indigo', deg: 90 }}
                         radius="xl" size="xl" maw={750} w="100%" leftSection={<link.icon />} justify="start"
                         component={Link}
