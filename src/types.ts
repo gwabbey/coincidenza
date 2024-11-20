@@ -11,12 +11,12 @@ export interface Stop {
 }
 
 export interface RouteDetails {
-    type: 'U' | 'E';
+    type: string;
     routeId: number;
     routeShortName: string;
     routeLongName: string;
     news?: RouteNews[];
-    cableway: Cableway | null;
+    cableway?: Cableway | null;
 }
 
 export interface RouteNews {
