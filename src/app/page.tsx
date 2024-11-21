@@ -1,8 +1,9 @@
 import { Button, Stack } from "@mantine/core";
-import { IconBus, IconTrain } from "@tabler/icons-react";
+import { IconBus, IconRoute, IconTrain } from "@tabler/icons-react";
 import Link from "next/link";
 
 const links = [
+    { href: "/directions", label: "Cerca itinerario", icon: IconRoute },
     { href: "/bus", label: "Cerca fermata autobus", icon: IconBus },
     { href: "/trains", label: "Cerca stazione ferroviaria", icon: IconTrain },
 ]

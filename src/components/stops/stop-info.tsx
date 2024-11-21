@@ -1,7 +1,7 @@
 'use client'
 
-import { Badge, Container, Title } from '@mantine/core'
 import { Stop } from '@/types'
+import { Badge, Container, Title } from '@mantine/core'
 
 interface StopInfoProps {
     stop: Stop
@@ -23,9 +23,9 @@ export function StopInfo({ stop, userLocation }: StopInfoProps) {
             </Badge>
             {userLocation && (
                 <div>
-                    a {stop.distance > 1
+                    a {stop.distance && stop.distance > 1
                         ? `${stop.distance.toFixed(2)} km`
-                        : `${(stop.distance * 1000).toFixed(0)} m`}{' '}
+                        : `${((stop.distance ? stop.distance : 0) * 1000).toFixed(0)} m`}{' '}
                     da te
                 </div>
             )}

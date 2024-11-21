@@ -4,7 +4,7 @@ export interface Stop {
     stopCode: string;
     type: string;
     town?: string | null;
-    distance: number;
+    distance: number | null;
     stopLat?: number | null;
     stopLon?: number | null;
     routes: RouteDetails[];
