@@ -1,5 +1,6 @@
 "use server";
 import * as cheerio from 'cheerio';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { cookies } from "next/headers";
 
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -86,12 +87,14 @@ export async function fetchData(endpoint, options = {}) {
 
     console.log(url);
 
+    const proxy = new HttpsProxyAgent(process.env.PROXY_AGENT);
     const maxRetries = 5;
     let attempts = 0;
 
     while (attempts < maxRetries) {
         try {
-            const response = await fetch(url, {
+            const response = await axios.get(url, {
+                proxy,
                 headers: {
                     "Accept": "application/json",
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -103,7 +106,7 @@ export async function fetchData(endpoint, options = {}) {
             });
 
             if (response && response.status === 200) {
-                return await response.json();
+                return response.data;
             }
         } catch (error) {
             console.error(`Error in fetchData attempt ${attempts + 1}: ${error.message}`);
@@ -115,6 +118,7 @@ export async function fetchData(endpoint, options = {}) {
     }
 }
 
+import axios from 'axios';
 import stops from "./stops.json";
 
 export async function getClosestBusStops(userLat, userLon) {

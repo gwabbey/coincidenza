@@ -6,18 +6,11 @@ import '@mantine/notifications/styles.css';
 import { Header } from "@/components/Header";
 import { ColorSchemeScript, Container, MantineProvider } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
-import { ProxyAgent, setGlobalDispatcher } from "undici";
 
 export const metadata = {
     title: 'Trentino Trasporti',
     description: '',
 };
-
-
-if (process.env.PROXY_AGENT) {
-    const proxyAgent = new ProxyAgent(process.env.PROXY_AGENT);
-    setGlobalDispatcher(proxyAgent);
-}
 
 export default function RootLayout({
     children,
