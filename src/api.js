@@ -85,16 +85,16 @@ export async function fetchData(endpoint, options = {}) {
         url += `?${searchParams.toString()}`;
     }
 
-    console.log(url);
+    // console.log(url);
 
-    const proxy = new HttpsProxyAgent(process.env.PROXY_AGENT);
+    const httpsAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
     const maxRetries = 5;
     let attempts = 0;
 
     while (attempts < maxRetries) {
         try {
             const response = await axios.get(url, {
-                proxy,
+                httpsAgent,
                 headers: {
                     "Accept": "application/json",
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
