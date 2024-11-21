@@ -1,13 +1,14 @@
 'use client';
 import { vehicleIcons } from "@/icons";
 import { Anchor, Button, Card, Divider, Flex, Grid, Stack, Text, Timeline, Title } from "@mantine/core";
-import { IconMapPin } from "@tabler/icons-react";
+import { IconLiveView, IconMapPin } from "@tabler/icons-react";
 import MapComponent from "./map";
 
 import { searchLocation, setCookie } from "@/api";
 import { Stop } from "@/types";
 import { Autocomplete, ComboboxItem, Loader, OptionsFilter } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
+import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useState } from "react";
 
@@ -138,12 +139,12 @@ export default function Directions({ directions, from, to, stops }: { directions
             </Stack>
 
             {directions.routes.length > 0 ? (
-                <Stack gap="lg" align="center" my={16}>
+                <Stack key={`page-${activePage}`} gap="lg" align="center" my={16}>
                     <Grid justify="center" align="center">
                         {directions.routes.map((route: any, index: number) => {
                             const changes = route.legs[0].steps.filter((step: any) => step.travelMode !== 'WALKING').length - 1;
                             return (
-                                <Grid.Col key={index} span="content">
+                                <Grid.Col key={`button-${index}`} span="content">
                                     <Button
                                         p={8}
                                         variant={activePage === index ? "filled" : "outline"}
@@ -202,6 +203,12 @@ export default function Directions({ directions, from, to, stops }: { directions
                         ))}
                     </Flex>
 
+                    <Text size="md" c="dimmed" ta="center">
+                        viaggio di{" "}
+                        {directions.routes[activePage].legs[0].distance.humanReadable} (
+                        {directions.routes[activePage].legs[0].duration.humanReadable})
+                    </Text>
+
                     {directions.routes[activePage].legs[0].steps.map((step: any, index: number) => (
                         <>
                             <Card
@@ -240,7 +247,7 @@ export default function Directions({ directions, from, to, stops }: { directions
                                     {step.transitDetails && (
                                         <Timeline bulletSize={24} my="sm"
                                             lineWidth={2}
-                                            color={step.transitDetails.type === 'U' ? 'green' : step.transitDetails.type === 'E' ? 'blue' : 'dimmed'}>
+                                            color={step.trip && step.trip.type === 'U' ? 'green' : step.trip && step.trip.type === 'E' ? 'blue' : 'dimmed'}>
                                             <Timeline.Item title={step.transitDetails.departureStop.name}
                                                 bullet={<IconMapPin size={16} />}
                                             >
@@ -263,6 +270,14 @@ export default function Directions({ directions, from, to, stops }: { directions
                                     <Text size="md" c="dimmed">
                                         {step.distance.humanReadable} - {step.duration.humanReadable}
                                     </Text>
+                                    {step.trip && (
+                                        <Button variant="gradient" my="sm"
+                                            gradient={{ from: 'violet', to: 'indigo', deg: 90 }}
+                                            radius="xl" size="xl" maw={750} w="100%" leftSection={<IconLiveView size={24} />} justify="start"
+                                            component={Link} href={`/trips/${step.trip.tripId}:${step.trip.type}`}>
+                                            dati in tempo reale
+                                        </Button>
+                                    )}
                                     {step.transitDetails && step.transitDetails.line.agencies && step.transitDetails.line.agencies.length > 0 && (
                                         <Text size="md" c="dimmed">
                                             Servizio di{" "}
@@ -309,19 +324,12 @@ export default function Directions({ directions, from, to, stops }: { directions
                     )
                     )}
 
-                    <Divider size="lg" my="lg" w="100%" />
+                    <Divider size="sm" my="lg" w="100%" />
 
                     <Card shadow="xl" padding="0" radius="xl" withBorder w="100%">
                         <MapComponent encodedPolyline={directions.routes[activePage].overviewPolyline.encodedPath} />
                     </Card>
 
-                    <Card shadow="xl" padding="lg" radius="xl" withBorder w="100%">
-                        <Text size={"xl"}>
-                            Viaggio di{" "}
-                            {directions.routes[activePage].legs[0].distance.humanReadable} (
-                            {directions.routes[activePage].legs[0].duration.humanReadable})
-                        </Text>
-                    </Card>
                     {directions.routes[activePage].legs[0].departureTime && (
                         <Card shadow="xl" padding="lg" radius="xl" withBorder w="100%">
                             <Text size={"xl"}>

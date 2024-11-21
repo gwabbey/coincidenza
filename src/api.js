@@ -1,8 +1,7 @@
 "use server";
-import axios from "axios";
 import * as cheerio from 'cheerio';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { cookies } from "next/headers";
-
 function getDistance(lat1, lon1, lat2, lon2) {
     const R = 6371;
     const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -87,14 +86,14 @@ export async function fetchData(endpoint, options = {}) {
 
     console.log(url);
 
-    // const proxyAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
+    const proxy = new HttpsProxyAgent(process.env.PROXY_AGENT);
     const maxRetries = 5;
     let attempts = 0;
 
     while (attempts < maxRetries) {
         try {
-            const response = await axios.get(url, {
-                // httpsAgent: proxyAgent,
+            const response = await fetch(url, {
+                proxy,
                 headers: {
                     "Accept": "application/json",
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -103,11 +102,10 @@ export async function fetchData(endpoint, options = {}) {
                         `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
                     ).toString("base64")}`
                 },
-                cache: 'no-cache'
             });
 
-            if (response.status === 200 && response.data) {
-                return response.data;
+            if (response && response.status === 200) {
+                return await response.json();
             }
         } catch (error) {
             console.error(`Error in fetchData attempt ${attempts + 1}: ${error.message}`);
