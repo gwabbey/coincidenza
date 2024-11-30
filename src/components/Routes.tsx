@@ -1,16 +1,16 @@
 'use client';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Accordion, Anchor, Box, Center, Group, Loader } from '@mantine/core';
 import { getCookie, getStop, setCookie } from '@/api';
 import { PopularStop, Stop } from '@/types';
-import { RouteItem } from './RouteItem';
+import { Accordion, Anchor, Box, Center, Group, Loader } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from "@mantine/notifications";
-import { StopSearch } from './stops/stop-search';
-import { StopInfo } from './stops/stop-info';
-import { PopularStops } from './stops/popular-stops';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { RouteItem } from './RouteItem';
 import { HelpModal } from './stops/help-modal';
+import { PopularStops } from './stops/popular-stops';
+import { StopInfo } from './stops/stop-info';
+import { StopSearch } from './stops/stop-search';
 
 interface RoutesProps {
     stops: Stop[];

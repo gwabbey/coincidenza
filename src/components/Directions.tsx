@@ -1,18 +1,17 @@
 'use client';
 import { vehicleIcons } from "@/icons";
-import { Anchor, Button, Card, Divider, Flex, Grid, Stack, Text, Timeline, Title } from "@mantine/core";
+import { Anchor, Box, Button, Card, Divider, Flex, Grid, Stack, Text, Timeline, Title } from "@mantine/core";
 import { IconLiveView, IconMapPin } from "@tabler/icons-react";
+import 'dayjs/locale/it';
 import MapComponent from "./map";
 
-import { searchLocation, setCookie } from "@/api";
-import { Stop } from "@/types";
+import { searchLocation } from "@/api";
 import { Autocomplete, ComboboxItem, Loader, OptionsFilter } from "@mantine/core";
+import { DatesProvider, TimeInput } from "@mantine/dates";
 import { useDebouncedValue } from "@mantine/hooks";
 import Link from "next/link";
-import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from "react";
-
-export const dynamic = 'force-dynamic';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Props {
     name: string;
@@ -86,13 +85,21 @@ export const LocationInput = ({
         });
     };
 
+    const searchParams = useSearchParams();
+
     const onLocationSelect = useCallback(async (value: string) => {
         const location = JSON.parse(value);
         const locationString = `${location.geometry.coordinates[1]},${location.geometry.coordinates[0]}`;
+        const params = new URLSearchParams(searchParams.toString());
 
-        await setCookie(name, locationString);
-        router.refresh();
-    }, [router]);
+        if (params.has(name)) {
+            params.set(name, locationString);
+        } else {
+            params.append(name, locationString);
+        }
+
+        router.push(`/directions?${params.toString()}`);
+    }, [router, searchParams]);
 
     return (
         <Autocomplete
@@ -113,12 +120,29 @@ export const LocationInput = ({
     );
 };
 
-export default function Directions({ directions, from, to, stops }: { directions: any, from: string, to: string, stops: Stop[] }) {
+export default function Directions({ directions, from, to }: { directions: any, from: string, to: string }) {
     const [activePage, setActivePage] = useState(0);
-    const getStopName = (stopId: number, type: string) => {
-        const stop = stops.find((stop) => stop.stopId === stopId && stop.type === type);
-        return stop?.stopName || "Fermata sconosciuta";
-    };
+    const router = useRouter();
+    const searchParams = useSearchParams();
+
+    const [time, setTime] = useState(() => {
+        const existingTimeParam = new Date(searchParams?.get('time') || new Date()).toLocaleString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        return existingTimeParam;
+    });
+    const ref = useRef<HTMLInputElement>(null);
+
+    const handleTimeChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        const newTime = event.currentTarget.value;
+        setTime(newTime);
+
+        const today = new Date();
+        const [hours, minutes] = newTime.split(":").map(Number);
+        const isoString = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hours, minutes).toISOString();
+        const params = new URLSearchParams(searchParams?.toString() || "");
+
+        params.set('time', isoString);
+        router.push(`?${params.toString()}`, { scroll: false });
+    }, [router, searchParams]);
 
     return (
         <div>
@@ -136,15 +160,28 @@ export default function Directions({ directions, from, to, stops }: { directions
                         name="to"
                         selected={to} />
                 </Title>
+                <Box h={32} />
+                <Title order={1} maw={750} w="100%">
+                    <DatesProvider settings={{ locale: 'it', firstDayOfWeek: 1, weekendDays: [0], timezone: 'Europe/Rome' }}>
+                        <TimeInput
+                            value={time}
+                            onChange={handleTimeChange}
+                            onFocus={() => ref.current?.showPicker()}
+                            ref={ref}
+                            size="xl"
+                            radius="xl"
+                        />
+                    </DatesProvider>
+                </Title>
             </Stack>
 
-            {directions.routes.length > 0 ? (
-                <Stack key={`page-${activePage}`} gap="lg" align="center" my={16}>
+            {directions && directions.routes.length > 0 ? (
+                <Stack gap="lg" align="center" my={16}>
                     <Grid justify="center" align="center">
                         {directions.routes.map((route: any, index: number) => {
                             const changes = route.legs[0].steps.filter((step: any) => step.travelMode !== 'WALKING').length - 1;
                             return (
-                                <Grid.Col key={`button-${index}`} span="content">
+                                <Grid.Col span="content">
                                     <Button
                                         p={8}
                                         variant={activePage === index ? "filled" : "outline"}
@@ -183,7 +220,6 @@ export default function Directions({ directions, from, to, stops }: { directions
                     >
                         {directions.routes[activePage].legs[0].steps.map((step: any, index: number) => (
                             <Stack
-                                key={`preview-${index}}`}
                                 align="center"
                                 justify="flex-start"
                                 gap={0}
@@ -212,7 +248,6 @@ export default function Directions({ directions, from, to, stops }: { directions
                     {directions.routes[activePage].legs[0].steps.map((step: any, index: number) => (
                         <>
                             <Card
-                                key={`step-${index}`}
                                 w="100%"
                                 h="100%"
                                 shadow="xl"
@@ -233,15 +268,8 @@ export default function Directions({ directions, from, to, stops }: { directions
                                     </Text>
                                     {step.transitDetails && (
                                         <Text size="md" c="dimmed">
-                                            {step.transitDetails.line.vehicle.type === "BUS"
-                                                ? "Linea"
-                                                : step.transitDetails.line.vehicle.name}{" "}
+                                            {step.transitDetails.line.vehicle.type === "BUS" && "Linea "}
                                             {step.transitDetails.line.name}
-                                        </Text>
-                                    )}
-                                    {step.trip && (
-                                        <Text size="md">
-                                            non ancora partito da {getStopName(step.trip.stopTimes[0]?.stopId, step.trip.type)}
                                         </Text>
                                     )}
                                     {step.transitDetails && (
@@ -282,7 +310,7 @@ export default function Directions({ directions, from, to, stops }: { directions
                                         <Text size="md" c="dimmed">
                                             Servizio di{" "}
                                             {step.transitDetails.line.agencies.map((agency: any, index: number) => (
-                                                <span key={`agency-${index}`}>
+                                                <span>
                                                     <Anchor href={agency.url} inherit target="_blank">
                                                         {agency.name}
                                                     </Anchor>
@@ -297,7 +325,6 @@ export default function Directions({ directions, from, to, stops }: { directions
                             {step.transitDetails &&
                                 directions.routes[activePage].legs[0].steps[index + 1].transitDetails && (
                                     <Card
-                                        key={index}
                                         shadow="xl"
                                         padding="xs"
                                         radius="xl"
@@ -314,7 +341,7 @@ export default function Directions({ directions, from, to, stops }: { directions
                                                 const minutes = differenceInMinutes % 60;
 
                                                 return hours > 0
-                                                    ? `${hours} ora${hours > 1 ? 'e' : ''} ${minutes > 0 ? ` e ${minutes} min` : ''}`
+                                                    ? `${hours} or${hours > 1 ? 'e' : 'a'} ${minutes > 0 ? ` e ${minutes} min` : ''}`
                                                     : `${minutes} min`;
                                             })()}
                                         </Text>

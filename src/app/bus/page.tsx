@@ -1,9 +1,9 @@
-import { cookies } from "next/headers";
 import { getClosestBusStops, getStop } from "@/api";
 import { Routes } from "@/components/Routes";
-import { Flex, Title } from "@mantine/core";
-import { Suspense } from "react";
 import { Stop } from "@/types";
+import { Flex, Title } from "@mantine/core";
+import { cookies } from "next/headers";
+import { Suspense } from "react";
 
 export default async function Page({
     searchParams,

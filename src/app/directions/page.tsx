@@ -1,9 +1,6 @@
 import { fetchData, getDirections, reverseGeocode } from "@/api";
 import Directions from "@/components/Directions";
-import stops from "@/stops.json";
-import { Stop } from "@/types";
 import { Box, Flex, Loader, Title } from '@mantine/core';
-import { cookies } from 'next/headers';
 import { Suspense } from "react";
 
 const getLocationName = async (coords: string) => {
@@ -20,20 +17,17 @@ const getLocationName = async (coords: string) => {
         .join(", ") || coords;
 };
 
-export default async function Page() {
-    const [fromCookie, toCookie] = await Promise.all([
-        cookies().then((cookies) => cookies.get('from')?.value),
-        cookies().then((cookies) => cookies.get('to')?.value),
-    ]);
+export default async function Page({ searchParams }: { searchParams: Promise<{ from: string; to: string; time: string }> }) {
+    const { from, to, time } = await searchParams;
 
-    const [from, to] = await Promise.all([
-        getLocationName(fromCookie || ''),
-        getLocationName(toCookie || ''),
+    const [fromName, toName] = await Promise.all([
+        getLocationName(from),
+        getLocationName(to),
     ]);
 
     const details = await fetchData('routes');
 
-    const directions = await getDirections(fromCookie || '', toCookie || '', details);
+    const directions = await getDirections(from, to, time, details);
 
     return (
         <Flex
@@ -47,11 +41,9 @@ export default async function Page() {
                 Cerca itinerario
             </Title>
             <Suspense fallback={<Loader size="xl" />}>
-                {directions && (
-                    <Box maw={750} w="100%">
-                        <Directions directions={directions} from={from} to={to} stops={stops as Stop[]} />
-                    </Box>
-                )}
+                <Box maw={750} w="100%">
+                    <Directions directions={directions} from={fromName} to={toName} />
+                </Box>
             </Suspense>
         </Flex>
     );

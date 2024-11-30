@@ -246,13 +246,13 @@ export async function getStationMonitor(id) {
     }
 }
 
-export async function getDirections(from, to, details) {
-    if (!from || !to) {
+export async function getDirections(from, to, time, details) {
+    if (!from || !to || !time) {
         return null;
     }
 
     const directions = await fetchData('direction', {
-        params: { from, to }
+        params: { from, to, refDateTime: time }
     });
 
     directions.routes = await Promise.all(directions.routes.map(async (route) => {
@@ -281,12 +281,12 @@ export async function getDirections(from, to, details) {
                 params: {
                     routeId,
                     type: isUrban ? 'U' : 'E',
-                    limit: 1,
+                    limit: 5,
                     refDateTime: new Date(step.transitDetails.departureTime.millis).toISOString(),
                 }
             });
 
-            const trip = trips.find((trip) => trip.corsaPiuVicinaADataRiferimento === true);
+            const trip = trips.find((trip) => trip.tripHeadsign === step.htmlInstructions.split('verso ')[1] && trip.corsaPiuVicinaADataRiferimento == true);
 
             return {
                 ...step,

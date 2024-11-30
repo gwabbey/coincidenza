@@ -1,7 +1,6 @@
 import { getTrip } from "@/api";
 import Trip from "@/components/Trip";
-import { Title } from "@mantine/core";
-import { Center } from "@mantine/core";
+import { Center, Title } from "@mantine/core";
 
 function Error({ error }: { error: string }) {
     return <Center>
