@@ -1,11 +1,11 @@
 'use client'
 
-import { Button, Flex, Stack, Title } from '@mantine/core'
 import { PopularStop } from '@/types'
+import { Button, Flex, Stack, Title } from '@mantine/core'
 
 const defaultStops: PopularStop[] = [
     { id: 1, name: 'Stazione di Trento', type: 'E' },
-    { id: 1127, name: 'Stazione di Rovereto', type: 'E' },
+    { id: 1865, name: 'Rovereto Via Paoli', type: 'E' },
     { id: 1146, name: 'Autostazione Riva del Garda', type: 'E' },
     { id: 247, name: 'Piazza Dante', type: 'U' },
     { id: 1284, name: 'Corso Rosmini Posta', type: 'U' },
