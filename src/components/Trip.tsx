@@ -25,11 +25,13 @@ import { IconAlertTriangleFilled, IconArrowUp, IconBus, IconMapPin } from "@tabl
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
+export default function Trip({ trip: initialTrip, routes }: { trip: TripProps, routes: any[] }) {
     const theme = useMantineTheme();
     const { colorScheme } = useMantineColorScheme();
     const [scroll, scrollTo] = useWindowScroll();
     const [trip, setTrip] = useState(initialTrip);
+
+    const route = routes.find(route => route.routeId === trip.routeId);
 
     useEffect(() => {
         const interval = setInterval(async () => {
@@ -80,7 +82,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                     mr="xs"
                     color={trip.type === 'U' ? 'green' : 'blue'}
                 >
-                    {trip.route.routeShortName}
+                    {route.routeShortName}
                 </Badge>
                 <Title order={2}>
                     {trip.stopTimes[0].stopName} → {trip.stopTimes[trip.stopTimes.length - 1].stopName}
@@ -235,7 +237,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                                     }
                                     {isFutureStop &&
                                         <Text size="sm" fw="bold" c={getDelayColor(trip.delay)}>
-                                            {new Date(new Date(`2000-01-01T${stop.arrivalTime.replace(/^24:/, '00:')}`).getTime() + (trip.delay * 60 * 1000)).toLocaleTimeString('it-IT', {
+                                            {new Date(new Date(`2000-01-01T${stop.departureTime.replace(/^24:/, '00:')}`).getTime() + (trip.delay * 60 * 1000)).toLocaleTimeString('it-IT', {
                                                 hour: '2-digit',
                                                 minute: '2-digit',
                                             })}

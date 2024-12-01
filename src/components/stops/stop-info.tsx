@@ -11,7 +11,7 @@ interface StopInfoProps {
 export function StopInfo({ stop, userLocation }: StopInfoProps) {
     return (
         <Container mt="sm" ta="center">
-            <Title order={1}>
+            <Title order={2}>
                 {stop.stopName}
                 {stop.town && ` (${stop.town})`}
             </Title>

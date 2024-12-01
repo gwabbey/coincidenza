@@ -1,4 +1,4 @@
-import { getTrip } from "@/api";
+import { getRoutes, getTrip } from "@/api";
 import Trip from "@/components/Trip";
 import { Center, Title } from "@mantine/core";
 
@@ -13,6 +13,7 @@ export default async function Page({ params }: {
 }) {
     const [id, type] = (await params).id.split('%3A');
     const trip = await getTrip(id, type);
+    const routes = await getRoutes(type);
 
     if (!trip) {
         return <Error error="Corsa non trovata" />;
@@ -22,5 +23,5 @@ export default async function Page({ params }: {
         return <Error error="Corsa non valida" />;
     }
 
-    return <Trip trip={trip} />;
+    return <Trip trip={trip} routes={routes} />;
 }

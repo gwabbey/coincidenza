@@ -3,7 +3,6 @@ import { Routes } from "@/components/Routes";
 import { Stop } from "@/types";
 import { Flex, Title } from "@mantine/core";
 import { cookies } from "next/headers";
-import { Suspense } from "react";
 
 export default async function Page({
     searchParams,
@@ -45,15 +44,13 @@ export default async function Page({
             <Title order={1} maw={750} w="100%" mx="auto">
                 Cerca fermata
             </Title>
-            <Suspense fallback={<div>Loading...</div>}>
-                <Routes
-                    stops={stops}
-                    recentStops={JSON.parse(recentStops ?? '[]')}
-                    initialRoutes={routes ?? []}
-                    initialId={id}
-                    initialType={type}
-                />
-            </Suspense>
+            <Routes
+                stops={stops}
+                recentStops={JSON.parse(recentStops ?? '[]')}
+                initialRoutes={routes ?? []}
+                initialId={id}
+                initialType={type}
+            />
         </Flex>
     );
 }

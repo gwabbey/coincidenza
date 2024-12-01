@@ -85,7 +85,7 @@ export async function fetchData(endpoint, options = {}) {
         url += `?${searchParams.toString()}`;
     }
 
-    // console.log(url);
+    console.log(url);
 
     const httpsAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
     const maxRetries = 5;
@@ -103,6 +103,7 @@ export async function fetchData(endpoint, options = {}) {
                         `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
                     ).toString("base64")}`
                 },
+                signal: AbortSignal.timeout(10 * 1000)
             });
 
             if (response && response.status === 200) {
@@ -177,18 +178,17 @@ export async function getStop(id, type) {
     }
 }
 
+export async function getRoutes(type) {
+    return fetchData('routes', { params: { type } });
+}
+
 export async function getTrip(id, type) {
     try {
-        const [trip, routes] = await Promise.all([
-            fetchData(`trips/${id}`),
-            fetchData('routes', { params: { type } })
-        ]);
+        const trip = await fetchData(`trips/${id}`);
 
         const stopMap = new Map(
             stops.filter(stop => stop.type === type).map(stop => [stop.stopId, stop.stopName])
         );
-
-        const routeDetails = routes.find(route => route.routeId === trip.routeId);
 
         return {
             ...trip,
@@ -196,7 +196,6 @@ export async function getTrip(id, type) {
                 ...stopTime,
                 stopName: stopMap.get(stopTime.stopId) || 'Fermata sconosciuta'
             })),
-            route: routeDetails
         };
     } catch (error) {
         return null;

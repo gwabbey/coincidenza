@@ -84,5 +84,4 @@ export interface Trip {
     tripId: string;
     type: string;
     wheelchairAccessible: number;
-    route: RouteDetails;
 }
