@@ -1,7 +1,9 @@
 "use server";
+import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { cookies } from "next/headers";
+import stops from "./stops.json";
 
 function getDistance(lat1, lon1, lat2, lon2) {
     const R = 6371;
@@ -85,8 +87,6 @@ export async function fetchData(endpoint, options = {}) {
         url += `?${searchParams.toString()}`;
     }
 
-    console.log(url);
-
     const httpsAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
     const maxRetries = 5;
     let attempts = 0;
@@ -106,6 +106,8 @@ export async function fetchData(endpoint, options = {}) {
                 signal: AbortSignal.timeout(10 * 1000)
             });
 
+            console.log(url);
+
             if (response && response.status === 200) {
                 return response.data;
             }
@@ -118,9 +120,6 @@ export async function fetchData(endpoint, options = {}) {
         attempts++;
     }
 }
-
-import axios from 'axios';
-import stops from "./stops.json";
 
 export async function getClosestBusStops(userLat, userLon) {
     try {
@@ -138,7 +137,60 @@ export async function getClosestBusStops(userLat, userLon) {
     }
 }
 
+const CACHE_DURATION = 5 * 60 * 1000;
+
+class RouteCache {
+    static instance;
+    cache = new Map();
+
+    constructor() { }
+
+    static getInstance() {
+        if (!RouteCache.instance) {
+            RouteCache.instance = new RouteCache();
+        }
+        return RouteCache.instance;
+    }
+
+    async getRoutes(type, fetchFunction) {
+        const cachedRoutes = this.cache.get(type);
+        const now = Date.now();
+
+        if (cachedRoutes && (now - cachedRoutes.timestamp) < CACHE_DURATION) {
+            return cachedRoutes.data;
+        }
+
+        try {
+            const freshRoutes = await fetchFunction(type);
+
+            this.cache.set(type, {
+                data: freshRoutes,
+                timestamp: now
+            });
+
+            return freshRoutes;
+        } catch (error) {
+            if (cachedRoutes) {
+                console.warn(`Route fetch failed for type ${type}. Using stale cache.`);
+                return cachedRoutes.data;
+            }
+
+            throw error;
+        }
+    }
+
+    clearCache(type) {
+        if (type) {
+            this.cache.delete(type);
+        } else {
+            this.cache.clear();
+        }
+    }
+}
+
 export async function getStop(id, type) {
+    const routeCache = RouteCache.getInstance();
+
     try {
         const [stops, routeData] = await Promise.all([
             fetchData('trips_new', {
@@ -149,7 +201,7 @@ export async function getStop(id, type) {
                     refDateTime: new Date().toISOString(),
                 }
             }),
-            fetchData('routes', { params: { type } })
+            routeCache.getRoutes(type, getRoutes)
         ]);
 
         const routeMap = new Map(routeData.map(route => [parseInt(route.routeId, 10), route]));
@@ -179,7 +231,13 @@ export async function getStop(id, type) {
 }
 
 export async function getRoutes(type) {
-    return fetchData('routes', { params: { type } });
+    const routes = await fetchData('routes', {
+        params: {
+            type,
+        }
+    });
+
+    return routes;
 }
 
 export async function getTrip(id, type) {
@@ -285,7 +343,7 @@ export async function getDirections(from, to, time, details) {
                 }
             });
 
-            const trip = trips.find((trip) => trip.tripHeadsign === step.htmlInstructions.split('verso ')[1] && trip.corsaPiuVicinaADataRiferimento == true);
+            const trip = trips.find((trip) => trip.tripHeadsign === step.htmlInstructions.split('verso ')[1].trim() && trip.corsaPiuVicinaADataRiferimento == true);
 
             return {
                 ...step,
