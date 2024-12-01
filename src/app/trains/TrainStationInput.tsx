@@ -1,8 +1,8 @@
 'use client';
-import {useCallback, useEffect, useState} from "react";
-import {Autocomplete, Box, ComboboxItem, Loader, OptionsFilter} from "@mantine/core";
-import {useDebouncedValue} from "@mantine/hooks";
-import {useRouter} from 'next/navigation';
+import { Autocomplete, Box, Loader } from "@mantine/core";
+import { useDebouncedValue } from "@mantine/hooks";
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from "react";
 import stations from './stations.json';
 
 interface Props {
@@ -13,11 +13,11 @@ interface Props {
 }
 
 export const TrainStationInput = ({
-                                      selected = "",
-                                      placeholder,
-                                      debounceDelay = 200,
-                                      disabled = false,
-                                  }: Props) => {
+    selected = "",
+    placeholder,
+    debounceDelay = 200,
+    disabled = false,
+}: Props) => {
     const router = useRouter();
     const [value, setValue] = useState(selected);
     const [debouncedValue] = useDebouncedValue(value, debounceDelay);
@@ -51,7 +51,7 @@ export const TrainStationInput = ({
     }, [debouncedValue, fetchData]);
 
     const onStationSelect = useCallback(async (value: string) => {
-        router.push(`/trains/departures/${value}`);
+        router.push(`/trains/${value}`);
     }, [router]);
 
     return (
@@ -66,7 +66,7 @@ export const TrainStationInput = ({
                 size="xl"
                 disabled={disabled}
                 comboboxProps={{
-                    transitionProps: {transition: "fade-up", duration: 200},
+                    transitionProps: { transition: "fade-up", duration: 200 },
                 }}
                 radius="xl"
                 limit={30}

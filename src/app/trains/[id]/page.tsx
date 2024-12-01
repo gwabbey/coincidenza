@@ -1,11 +1,11 @@
-import {getStationMonitor} from "@/api";
-import {Monitor} from "./Monitor";
-import {Flex, Title} from "@mantine/core";
+import { getStationMonitor } from "@/api";
+import { Flex, Title } from "@mantine/core";
 import stations from "../stations.json";
+import { Monitor } from "./Monitor";
 
 export default async function Page({
-                                       params,
-                                   }: {
+    params,
+}: {
     params: Promise<{ id: string }>
 }) {
     const id = (await params).id;

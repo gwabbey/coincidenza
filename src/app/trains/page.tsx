@@ -1,5 +1,5 @@
-import {Flex, Title} from "@mantine/core";
-import {TrainStationInput} from "./TrainStationInput";
+import { Flex, Title } from "@mantine/core";
+import { TrainStationInput } from "./TrainStationInput";
 
 export default function Page() {
     return (
