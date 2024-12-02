@@ -94,7 +94,7 @@ export async function fetchData(endpoint, options = {}) {
     while (attempts < maxRetries) {
         try {
             const response = await axios.get(url, {
-                httpsAgent,
+                // httpsAgent,
                 headers: {
                     "Accept": "application/json",
                     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -334,16 +334,11 @@ export async function getDirections(from, to, time, details) {
                 return step;
             }
 
-            const trips = await fetchData('trips_new', {
-                params: {
-                    routeId,
-                    type: isUrban ? 'U' : 'E',
-                    limit: 5,
-                    refDateTime: new Date(step.transitDetails.departureTime.millis).toISOString(),
-                }
-            });
+            if (!step.transitDetails.tripId) {
+                return step;
+            }
 
-            const trip = trips.find((trip) => trip.tripHeadsign === step.htmlInstructions.split('verso ')[1].trim() && trip.corsaPiuVicinaADataRiferimento == true);
+            const trip = await getTrip(step.transitDetails.tripId, isUrban ? 'U' : 'E');
 
             return {
                 ...step,

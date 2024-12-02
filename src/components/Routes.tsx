@@ -206,7 +206,7 @@ export function Routes({
                     Ordina per:
                     <Select
                         data={[
-                            { value: 'time', label: 'Tempo' },
+                            { value: 'time', label: 'Orario' },
                             { value: 'line', label: 'Linea' },
                         ]}
                         value={sort}

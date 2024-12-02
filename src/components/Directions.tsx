@@ -218,7 +218,7 @@ export default function Directions({ directions, from, to }: { directions: any, 
                         gap="lg"
                         w="100%"
                     >
-                        {directions.routes[activePage].legs[0].steps.map((step: any, index: number) => (
+                        {directions.routes[activePage].legs[0].steps.map((step: any) => (
                             <Stack
                                 align="center"
                                 justify="flex-start"

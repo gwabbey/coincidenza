@@ -1,7 +1,6 @@
 import { fetchData, getDirections, reverseGeocode } from "@/api";
 import Directions from "@/components/Directions";
-import { Box, Flex, Loader, Title } from '@mantine/core';
-import { Suspense } from "react";
+import { Box, Flex, Title } from '@mantine/core';
 
 const getLocationName = async (coords: string) => {
     if (!coords) return "";
@@ -27,7 +26,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ f
 
     const details = await fetchData('routes');
 
-    const directions = await getDirections(from, to, time, details);
+    const directions = await getDirections(from, to, time || new Date().toISOString(), details);
 
     return (
         <Flex
@@ -40,11 +39,9 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ f
             <Title order={1} maw={750} w="100%" mx="auto" ta="center">
                 Cerca itinerario
             </Title>
-            <Suspense fallback={<Loader size="xl" />}>
-                <Box maw={750} w="100%">
-                    <Directions directions={directions} from={fromName} to={toName} />
-                </Box>
-            </Suspense>
+            <Box maw={750} w="100%">
+                <Directions directions={directions} from={fromName} to={toName} />
+            </Box>
         </Flex>
     );
 }

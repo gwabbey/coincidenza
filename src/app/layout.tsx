@@ -9,7 +9,7 @@ import { ColorSchemeScript, Container, MantineProvider } from '@mantine/core';
 import { Notifications } from '@mantine/notifications';
 
 export const metadata = {
-    title: 'Trentino Trasporti',
+    title: 'trasporti.g3b.dev',
     description: '',
 };
 
