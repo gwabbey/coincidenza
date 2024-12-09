@@ -1,8 +1,8 @@
 'use client';
-import { Autocomplete, Box, Loader } from "@mantine/core";
+import { Autocomplete, Box } from "@mantine/core";
 import { useDebouncedValue } from "@mantine/hooks";
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import stations from './stations.json';
 
 interface Props {
@@ -22,37 +22,22 @@ export const TrainStationInput = ({
     const [value, setValue] = useState(selected);
     const [debouncedValue] = useDebouncedValue(value, debounceDelay);
     const [data, setData] = useState<{ value: string; label: string }[]>([]);
-    const [loading, setLoading] = useState(false);
-
-    const fetchData = useCallback(async (query: string) => {
-        setLoading(true);
-        try {
-            const filteredStations = Object.entries(stations as Record<string, string>).filter(([_, name]) =>
-                name.toLowerCase().includes(query.toLowerCase())
-            );
-            const stationList = filteredStations.map(([id, name]) => ({
-                value: id,
-                label: name,
-            }));
-            setData(stationList);
-        } catch (error) {
-            console.error("Error fetching station data:", error);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
 
     useEffect(() => {
         if (!debouncedValue) {
             setData([]);
             return;
         }
-        fetchData(debouncedValue);
-    }, [debouncedValue, fetchData]);
+        const filteredStations = Object.entries(stations as Record<string, string>)
+            .filter(([_, name]) => name.toLowerCase().includes(debouncedValue.toLowerCase()))
+            .map(([id, name]) => ({ value: id, label: name }));
+        setData(filteredStations);
+    }, [debouncedValue]);
 
-    const onStationSelect = useCallback(async (value: string) => {
+    const onStationSelect = (value: string) => {
+        console.log(value);
         router.push(`/trains/${value}`);
-    }, [router]);
+    };
 
     return (
         <Box maw={750} w="100%" mx="auto" ta="left">
@@ -61,7 +46,6 @@ export const TrainStationInput = ({
                 data={data}
                 onChange={setValue}
                 onOptionSubmit={onStationSelect}
-                rightSection={loading && <Loader size="xs" />}
                 placeholder={placeholder}
                 size="xl"
                 disabled={disabled}
