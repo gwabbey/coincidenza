@@ -1,8 +1,8 @@
 'use client'
 
+import { Stop } from '@/types'
 import { ActionIcon, Box, Select, Stack, Text } from '@mantine/core'
 import { IconGps } from '@tabler/icons-react'
-import { Stop } from '@/types'
 
 interface StopSearchProps {
     stops: Stop[]
@@ -36,11 +36,12 @@ export function StopSearch({
             onChange={onStopChange}
             disabled={stops.length === 0}
             rightSectionPointerEvents="all"
+            onFocus={onLocationRequest}
             rightSection={
                 <ActionIcon
                     variant="transparent"
                     size="xl"
-                    aria-label="La mia posizione"
+                    aria-label="La tua posizione"
                     onClick={onLocationRequest}
                 >
                     <IconGps stroke={1} size={36} />

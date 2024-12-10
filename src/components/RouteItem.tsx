@@ -1,9 +1,9 @@
-import { memo } from "react";
 import { Route } from "@/types";
+import { formatTime, getDelayColor } from "@/utils";
 import { Accordion, ActionIcon, Alert, Badge, Container, Flex, Grid, Text, useMantineColorScheme } from "@mantine/core";
 import { IconAlertCircle, IconInfoCircle } from "@tabler/icons-react";
 import Link from "next/link";
-import { formatTime, getDelayColor } from "@/utils";
+import { memo } from "react";
 
 export const RouteItem = memo(({ route, currentStop }: { route: Route; currentStop?: number | null }) => {
     const { colorScheme } = useMantineColorScheme();

@@ -15,6 +15,8 @@ import { PopularStops } from './stops/popular-stops';
 import { StopInfo } from './stops/stop-info';
 import { StopSearch } from './stops/stop-search';
 
+export const revalidate = 0;
+
 interface RoutesProps {
     stops: Stop[];
     recentStops: PopularStop[];
@@ -299,9 +301,6 @@ export function Routes({
                                                     <Text size="sm" c={getDelayColor(trip.delay)}>
                                                         {trip.delay < 0 ? `${Math.abs(trip.delay)} min in anticipo` : trip.delay > 0 ? `${trip.delay} min in ritardo` : 'in orario'}
                                                     </Text>)}
-                                                {trip.matricolaBus && <Text size="sm" c="dimmed">
-                                                    &nbsp;(bus {trip.matricolaBus})
-                                                </Text>}
                                             </Group>
                                         </Stack>
                                     </Group>

@@ -71,7 +71,7 @@ export function Monitor({ monitor: initialMonitor, id }: { monitor: any, id: str
                             )}
                         </Table.Td>
                         <Table.Td>{train.trainNumber}</Table.Td>
-                        <Table.Td tt="capitalize">{train.destination.toLowerCase()}</Table.Td>
+                        <Table.Td tt="capitalize">{train.destination?.toLowerCase() || ''}</Table.Td>
                         <Table.Td>{train.departureTime}</Table.Td>
                         <Table.Td tt="capitalize">{train.delay !== "Nessuno" && train.delay}</Table.Td>
                         <Table.Td>{train.platform}</Table.Td>

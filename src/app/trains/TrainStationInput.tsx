@@ -35,7 +35,6 @@ export const TrainStationInput = ({
     }, [debouncedValue]);
 
     const onStationSelect = (value: string) => {
-        console.log(value);
         router.push(`/trains/${value}`);
     };
 
