@@ -137,60 +137,15 @@ export async function getClosestBusStops(userLat, userLon) {
     }
 }
 
-const CACHE_DURATION = 5 * 60 * 1000;
-
-class RouteCache {
-    static instance;
-    cache = new Map();
-
-    constructor() { }
-
-    static getInstance() {
-        if (!RouteCache.instance) {
-            RouteCache.instance = new RouteCache();
+export async function getRoutes(type) {
+    return await fetchData('routes', {
+        params: {
+            type,
         }
-        return RouteCache.instance;
-    }
-
-    async getRoutes(type, fetchFunction) {
-        const cachedRoutes = this.cache.get(type);
-        const now = Date.now();
-
-        if (cachedRoutes && (now - cachedRoutes.timestamp) < CACHE_DURATION) {
-            return cachedRoutes.data;
-        }
-
-        try {
-            const freshRoutes = await fetchFunction(type);
-
-            this.cache.set(type, {
-                data: freshRoutes,
-                timestamp: now
-            });
-
-            return freshRoutes;
-        } catch (error) {
-            if (cachedRoutes) {
-                console.warn(`Route fetch failed for type ${type}. Using stale cache.`);
-                return cachedRoutes.data;
-            }
-
-            throw error;
-        }
-    }
-
-    clearCache(type) {
-        if (type) {
-            this.cache.delete(type);
-        } else {
-            this.cache.clear();
-        }
-    }
+    });
 }
 
 export async function getStop(id, type) {
-    const routeCache = RouteCache.getInstance();
-
     try {
         const [stops, routeData] = await Promise.all([
             fetchData('trips_new', {
@@ -199,14 +154,17 @@ export async function getStop(id, type) {
                     stopId: id,
                     limit: 15,
                     refDateTime: new Date().toISOString(),
-                }
+                },
             }),
-            routeCache.getRoutes(type, getRoutes)
+            getRoutes(type),
         ]);
 
-        const routeMap = new Map(routeData.map(route => [parseInt(route.routeId, 10), route]));
+        const routeMap = new Map(
+            routeData.map((route) => [Number(route.routeId), route])
+        );
+
         const routeGroups = stops.reduce((groups, stop) => {
-            const routeId = parseInt(stop.routeId, 10);
+            const routeId = Number(stop.routeId);
             const routeDetails = routeMap.get(routeId);
 
             if (routeDetails) {
@@ -223,21 +181,10 @@ export async function getStop(id, type) {
         return Array.from(routeGroups.values()).sort((a, b) =>
             a.details.routeShortName.localeCompare(b.details.routeShortName, 'it', { numeric: true })
         );
-
     } catch (error) {
         console.error(`Error in getStop: ${error.message}`);
-        throw new Error(`stop fetch error: ${error.message}`);
+        throw new Error(`Failed to fetch stop data: ${error.message}`);
     }
-}
-
-export async function getRoutes(type) {
-    const routes = await fetchData('routes', {
-        params: {
-            type,
-        }
-    });
-
-    return routes;
 }
 
 export async function getTrip(id, type) {
