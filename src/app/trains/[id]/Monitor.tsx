@@ -21,7 +21,7 @@ export function Monitor({ monitor: initialMonitor, id }: { monitor: any, id: str
             } catch (error) {
                 console.error('Failed to refresh monitor data:', error);
             }
-        }, 30000);
+        }, parseInt(process.env.AUTO_REFRESH || '10000'));
 
         return () => clearInterval(intervalId);
     }, [id]);
