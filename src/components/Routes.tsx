@@ -65,7 +65,7 @@ export function Routes({
     const fetchRoutes = useCallback(async () => {
         if (selectedStop) {
             try {
-                const updatedRoutes = await getStop(selectedStop.stopId, selectedStop.type);
+                const updatedRoutes = await getStop(selectedStop.stopId, selectedStop.type, initialRoutes);
                 setRoutes(updatedRoutes || []);
             } catch (error) {
                 console.error('Error refreshing routes:', error);
@@ -126,39 +126,11 @@ export function Routes({
     }
 
     const [sort, setSort] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('sort') || 'time' : 'time'));
-    const [view, setView] = useState(() => {
-        const isPassingStop = routes.every((route: any) =>
-            route.stops.every((trip: any) => {
-                const isFirstStopCurrentStop = trip.stopTimes[0].stopId.toString() === selectedStop?.stopId.toString();
-                const isLastStopCurrentStop = trip.stopTimes[trip.stopTimes.length - 1].stopId.toString() === selectedStop?.stopId.toString();
-                return !isFirstStopCurrentStop && !isLastStopCurrentStop;
-            })
-        );
-
-        return isPassingStop ? 'departures' :
-            (typeof window !== 'undefined' ? localStorage.getItem('view') || 'departures' : 'departures');
-    });
-
-    useEffect(() => {
-        const isPassingStop = routes.every((route: any) =>
-            route.stops.every((trip: any) => {
-                const isFirstStopCurrentStop = trip.stopTimes[0].stopId.toString() === selectedStop?.stopId.toString();
-                const isLastStopCurrentStop = trip.stopTimes[trip.stopTimes.length - 1].stopId.toString() === selectedStop?.stopId.toString();
-                return !isFirstStopCurrentStop && !isLastStopCurrentStop;
-            })
-        );
-
-        if (isPassingStop) {
-            setView('departures');
-        } else if (typeof window !== 'undefined') {
-            setView(localStorage.getItem('view') || 'departures');
-        }
-    }, [selectedStop, routes]);
+    const [view, setView] = useState("departures");
 
     useEffect(() => {
         if (typeof window !== 'undefined') localStorage.setItem('sort', sort);
-        if (typeof window !== 'undefined') localStorage.setItem('view', view);
-    }, [sort, view]);
+    }, [sort]);
 
     const calculateMinutesToArrival = (trip: any) => {
         const now = new Date();
@@ -293,10 +265,9 @@ export function Routes({
                                                 {view === 'departures' ? trip.tripHeadsign : stopMap[`${trip.stopTimes[0].stopId}-${trip.type}`]?.stopName}
                                             </Text>
                                             <Group gap={0}>
-                                                {trip.stopTimes[0].arrivalTime > new Date().toLocaleTimeString('en-GB', { hour12: false }).slice(0, 8) ? (
+                                                {trip.stopTimes[0].arrivalTime > new Date().toLocaleTimeString('en-GB', { hour12: false }).slice(0, 8) && (
                                                     <Text size="sm"
-                                                        c={trip.isDeparting ? 'green' : 'dimmed'}>{trip.isDeparting ? 'in partenza' : 'non ancora partito'}</Text>) : [trip.delay, trip.lastEventRecivedAt, trip.matricolaBus].every(item => item === null) && (
-                                                            <Text size="sm" c="dimmed">dati in tempo reale non disponibili</Text>)}
+                                                        c={trip.isDeparting ? 'green' : 'dimmed'}>{trip.isDeparting ? 'in partenza' : 'non ancora partito'}</Text>)}
                                                 {trip.delay !== null && trip.stopTimes[0].arrivalTime < new Date().toLocaleTimeString('en-GB', { hour12: false }).slice(0, 8) && (
                                                     <Text size="sm" c={getDelayColor(trip.delay)}>
                                                         {trip.delay < 0 ? `${Math.abs(trip.delay)} min in anticipo` : trip.delay > 0 ? `${trip.delay} min in ritardo` : 'in orario'}

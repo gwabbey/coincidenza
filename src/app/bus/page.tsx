@@ -1,4 +1,4 @@
-import { getClosestBusStops, getStop } from "@/api";
+import { getClosestBusStops, getRoutes, getStop } from "@/api";
 import { Routes } from "@/components/Routes";
 import { Stop } from "@/types";
 import { Flex, Title } from "@mantine/core";
@@ -18,19 +18,21 @@ export default async function Page({
         cookies().then((cookies) => cookies.get('recentStops')?.value),
     ]);
 
-    let stops: Stop[];
-    let routes;
+    let closestStops: Stop[];
+    let stop;
 
     if (lat && lon) {
-        stops = await getClosestBusStops(lat, lon);
+        closestStops = await getClosestBusStops(lat, lon);
     } else {
-        stops = await getClosestBusStops(46.07121658325195, 11.11913776397705);
+        closestStops = await getClosestBusStops(46.07121658325195, 11.11913776397705);
     }
 
     const { id, type } = await searchParams;
 
+    const routes = await getRoutes(type);
+
     if (id && type) {
-        routes = await getStop(id, type);
+        stop = await getStop(id, type, routes);
     }
 
     return (
@@ -45,9 +47,9 @@ export default async function Page({
                 Cerca fermata
             </Title>
             <Routes
-                stops={stops}
+                stops={closestStops}
                 recentStops={JSON.parse(recentStops ?? '[]')}
-                initialRoutes={routes ?? []}
+                initialRoutes={stop ?? []}
                 initialId={id}
                 initialType={type}
             />

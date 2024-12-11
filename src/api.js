@@ -138,29 +138,30 @@ export async function getClosestBusStops(userLat, userLon) {
 }
 
 export async function getRoutes(type) {
+    if (!type) {
+        return await fetchData('routes');
+    }
+
     return await fetchData('routes', {
         params: {
-            type,
+            type
         }
     });
 }
 
-export async function getStop(id, type) {
+export async function getStop(id, type, routes) {
     try {
-        const [stops, routeData] = await Promise.all([
-            fetchData('trips_new', {
-                params: {
-                    type,
-                    stopId: id,
-                    limit: 15,
-                    refDateTime: new Date().toISOString(),
-                },
-            }),
-            getRoutes(type),
-        ]);
+        const stops = await fetchData('trips_new', {
+            params: {
+                type,
+                stopId: id,
+                limit: 15,
+                refDateTime: new Date().toISOString(),
+            },
+        });
 
         const routeMap = new Map(
-            routeData.map((route) => [Number(route.routeId), route])
+            routes.map((route) => [Number(route.routeId), route])
         );
 
         const routeGroups = stops.reduce((groups, stop) => {
