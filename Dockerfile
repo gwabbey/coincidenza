@@ -3,7 +3,7 @@ WORKDIR /app
 
 COPY package.json bun.lockb ./
 RUN npm install -g pnpm
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 COPY . .
 RUN pnpm run build
