@@ -3,7 +3,18 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { cookies } from "next/headers";
+import util from 'util';
 import stops from "./stops.json";
+
+axios.interceptors.request.use(request => {
+    console.log('Starting Request', util.inspect(request, { showHidden: false, depth: 3, colors: true }))
+    return request
+})
+
+axios.interceptors.response.use(response => {
+    console.log('Response:', util.inspect(response, { showHidden: false, depth: 3, colors: true }))
+    return response
+})
 
 function getDistance(lat1, lon1, lat2, lon2) {
     const R = 6371;
@@ -153,8 +164,6 @@ export async function getStop(id, type, routes) {
                 refDateTime: new Date().toISOString(),
             },
         });
-
-        console.log("routes in getStop", routes.slice(0, 5));
 
         const routeMap = new Map(
             routes.map((route) => [Number(route.routeId), route])

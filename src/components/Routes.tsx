@@ -36,13 +36,6 @@ export function Routes({
 
     const details = stopMap[`${stop.stopId}-${stop.type}`];
 
-    useEffect(() => {
-        const intervalId = setInterval(() => {
-            router.refresh();
-        }, parseInt(process.env.AUTO_REFRESH || '10000', 10));
-        return () => clearInterval(intervalId);
-    }, [router]);
-
     const [sort, setSort] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('sort') || 'time' : 'time'));
     const [view, setView] = useState("departures");
 
