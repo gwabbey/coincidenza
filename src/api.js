@@ -106,7 +106,7 @@ export async function fetchData(endpoint, options = {}) {
                 signal: AbortSignal.timeout(10 * 1000)
             });
 
-            // console.log(url);
+            console.log(url);
 
             if (response && response.status === 200) {
                 return response.data;
@@ -164,20 +164,20 @@ export async function getStop(id, type, routes) {
             routes.map((route) => [Number(route.routeId), route])
         );
 
-        const routeGroups = trips.reduce((groups, trip) => {
+        const routeGroups = new Map();
+
+        for (const trip of trips || []) {
             const routeId = Number(trip.routeId);
             const routeDetails = routeMap.get(routeId);
 
             if (routeDetails) {
-                if (!groups.has(routeId)) {
-                    groups.set(routeId, { id: routeId, trips: [trip], details: routeDetails });
+                if (!routeGroups.has(routeId)) {
+                    routeGroups.set(routeId, { id: routeId, trips: [trip], details: routeDetails });
                 } else {
-                    groups.get(routeId).trips.push(trip);
+                    routeGroups.get(routeId).trips.push(trip);
                 }
             }
-
-            return groups;
-        }, new Map());
+        }
 
         const response = {
             stopId: id,
@@ -187,7 +187,7 @@ export async function getStop(id, type, routes) {
             )
         };
 
-        // console.log(response);
+        console.log(response);
 
         return response;
     } catch (error) {
