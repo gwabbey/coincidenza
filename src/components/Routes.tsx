@@ -1,9 +1,9 @@
 'use client';
 
 import { getCookie, getStop, setCookie } from '@/api';
-import { PopularStop, Stop } from '@/types';
+import { Stop } from '@/types';
 import { getDelayColor } from '@/utils';
-import { Accordion, Anchor, Badge, Box, Center, Flex, Group, Loader, SegmentedControl, Select, Stack, Text } from '@mantine/core';
+import { Accordion, Anchor, Badge, Box, Center, Flex, Group, SegmentedControl, Select, Stack, Text } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { notifications } from "@mantine/notifications";
 import Link from 'next/link';
@@ -11,7 +11,6 @@ import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RouteItem } from './RouteItem';
 import { HelpModal } from './stops/help-modal';
-import { PopularStops } from './stops/popular-stops';
 import { StopInfo } from './stops/stop-info';
 import { StopSearch } from './stops/stop-search';
 
@@ -19,26 +18,20 @@ export const revalidate = 0;
 
 interface RoutesProps {
     stops: Stop[];
-    recentStops: PopularStop[];
-    initialRoutes: any[];
-    initialId?: string;
-    initialType?: string;
+    routes: any[];
+    stop: { stopId: number, type: string, routes: any[] };
 }
 
 export function Routes({
     stops,
-    recentStops,
-    initialRoutes,
-    initialId,
-    initialType,
+    routes,
+    stop
 }: RoutesProps) {
     const router = useRouter();
-    const [value, setValue] = useState<string | null>(null);
-    const [selectedStop, setSelectedStop] = useState<Stop | null>(null);
-    const [routes, setRoutes] = useState<any[]>(initialRoutes);
-    const [initialLoading, setInitialLoading] = useState(true);
+    const [selectedStop, setSelectedStop] = useState(stop);
     const [opened, { open, close }] = useDisclosure(false);
     const [userLocation, setUserLocation] = useState(false);
+    const stopInfo = stops.find(stop => Number(stop.stopId) === Number(selectedStop.stopId));
 
     const stopMap = useMemo(
         () => stops.reduce((acc, stop) => {
@@ -48,25 +41,12 @@ export function Routes({
         [stops]
     );
 
-    useEffect(() => {
-        const initializeState = async () => {
-            if (initialId && initialType) {
-                const key = `${initialId}-${initialType}`;
-                const matchedStop = stopMap[key];
-                setValue(key);
-                setSelectedStop(matchedStop || null);
-                setRoutes(matchedStop ? initialRoutes : []);
-            }
-            setInitialLoading(false);
-        };
-        initializeState();
-    }, [stopMap, initialId, initialType, initialRoutes]);
-
-    const fetchRoutes = useCallback(async () => {
+    const refreshData = useCallback(async () => {
         if (selectedStop) {
             try {
-                const updatedRoutes = await getStop(selectedStop.stopId, selectedStop.type, initialRoutes);
-                setRoutes(updatedRoutes || []);
+                // TODO: try with router.refresh() ????
+                const stop = await getStop(selectedStop.stopId, selectedStop.type, routes);
+                setSelectedStop(stop);
             } catch (error) {
                 console.error('Error refreshing routes:', error);
             }
@@ -74,19 +54,21 @@ export function Routes({
     }, [selectedStop]);
 
     useEffect(() => {
-        const intervalId = setInterval(fetchRoutes, parseInt(process.env.AUTO_REFRESH || '10000', 10));
+        const intervalId = setInterval(refreshData, parseInt(process.env.AUTO_REFRESH || '10000', 10));
         return () => clearInterval(intervalId);
-    }, [fetchRoutes]);
+    }, [refreshData]);
 
     const handleStopChange = useCallback(async (selectedValue: string | null) => {
         if (!selectedValue) return;
+
         const stop = stopMap[selectedValue];
         const recentStops = JSON.parse(await getCookie('recentStops') || '[]');
         const newStop = { id: stop.stopId, name: stop.stopName, type: stop.type };
         const updatedStops = [newStop, ...recentStops.filter((s: any) => s.id !== newStop.id).slice(0, 4)];
 
         await setCookie('recentStops', JSON.stringify(updatedStops));
-        router.push(`/bus?id=${stop.stopId}&type=${stop.type}`);
+        window.history.pushState(null, '', `/bus?id=${stop.stopId}&type=${stop.type}`);
+        router.refresh();
     }, [stopMap, router]);
 
     const handleFetchStops = useCallback(async () => {
@@ -117,7 +99,6 @@ export function Routes({
                             color: 'red',
                             radius: 'lg',
                         });
-                        setInitialLoading(false);
                     },
                     { enableHighAccuracy: true, maximumAge: 0 }
                 );
@@ -160,7 +141,6 @@ export function Routes({
         <Box maw={750} w="100%" mx="auto" ta="left">
             <StopSearch
                 stops={stops}
-                value={value}
                 onStopChange={handleStopChange}
                 onLocationRequest={handleFetchStops}
             />
@@ -173,7 +153,7 @@ export function Routes({
                 </Group>
             </Stack>
 
-            {selectedStop && <StopInfo stop={selectedStop} userLocation={userLocation} />}
+            {stopInfo && <StopInfo stop={stopInfo} userLocation={userLocation} />}
 
             {selectedStop && (
                 <Group justify="center" mt="md">
@@ -189,22 +169,18 @@ export function Routes({
                 </Group>
             )}
 
-            {initialLoading ? (
-                <Center mt="xl">
-                    <Loader color={selectedStop?.type === 'U' ? 'green' : selectedStop?.type === 'E' ? 'green' : 'dimmed'} />
-                </Center>
-            ) : selectedStop && routes.length > 0 ? (
+            {selectedStop && routes.length > 0 ? (
                 sort === 'line' ? (
                     <Accordion chevronPosition="right" transitionDuration={500} maw={750} w="100%" mt="xl">
                         {routes.map((route) => (
-                            <RouteItem key={route.id} route={route} currentStop={selectedStop.stopId} />
+                            <RouteItem key={route.id} route={route} stopId={selectedStop.stopId} />
                         ))}
                     </Accordion>
                 ) : (
                     <Stack maw={750} w="100%" mt="xl">
                         {selectedStop && sort === 'time' && (
-                            !routes.every(route =>
-                                route.stops.every((trip: any) => {
+                            !selectedStop.routes.every(route =>
+                                route.trips.every((trip: any) => {
                                     const isFirstStopCurrentStop = trip.stopTimes[0].stopId.toString() === selectedStop?.stopId.toString();
                                     const isLastStopCurrentStop = trip.stopTimes[trip.stopTimes.length - 1].stopId.toString() === selectedStop?.stopId.toString();
                                     return !isFirstStopCurrentStop && !isLastStopCurrentStop;
@@ -223,8 +199,8 @@ export function Routes({
                             )
                         )}
 
-                        {routes
-                            .flatMap((route) => route.stops)
+                        {selectedStop.routes
+                            .flatMap((route) => route.trips)
                             .filter(trip => {
                                 const isFirstStopCurrentStop = trip.stopTimes[0].stopId.toString() === selectedStop?.stopId.toString();
                                 const isLastStopCurrentStop = trip.stopTimes[trip.stopTimes.length - 1].stopId.toString() === selectedStop?.stopId.toString();
@@ -232,9 +208,7 @@ export function Routes({
                                     stopTime.stopId.toString() === selectedStop?.stopId.toString() && index < trip.stopTimes.length - 1
                                 );
 
-                                return view === 'departures'
-                                    ? isFirstStopCurrentStop || isPassingThrough
-                                    : isLastStopCurrentStop;
+                                return view === 'departures' ? isFirstStopCurrentStop || isPassingThrough : isLastStopCurrentStop;
                             }).sort((a: any, b: any) => {
                                 const aDate = new Date(a.oraArrivoEffettivaAFermataSelezionata);
                                 const bDate = new Date(b.oraArrivoEffettivaAFermataSelezionata);
@@ -247,10 +221,10 @@ export function Routes({
                                             size="xl"
                                             radius="xl"
                                             color={
-                                                routes.find(route => route.id === trip.routeId)?.details.routeColor
-                                                    ? `#${routes.find(route => route.id === trip.routeId)?.details.routeColor}`
+                                                selectedStop.routes.find(route => route.id === trip.routeId)?.details.routeColor
+                                                    ? `#${selectedStop.routes.find(route => route.id === trip.routeId)?.details.routeColor}`
                                                     :
-                                                    routes.find(route => route.id === trip.routeId)?.details.type === 'U' ? 'gray' : "blue"
+                                                    selectedStop.routes.find(route => route.id === trip.routeId)?.details.type === 'U' ? 'gray' : "blue"
                                             }
                                             px={0}
                                             py="md"
@@ -258,7 +232,7 @@ export function Routes({
                                             w={50}
                                             ta="center"
                                         >
-                                            {routes.find(route => route.id === trip.routeId)?.details.routeShortName}
+                                            {selectedStop.routes.find(route => route.id === trip.routeId)?.details.routeShortName}
                                         </Badge>
                                         <Stack gap={0}>
                                             <Text size="lg" fw="bold" inline truncate component={Link} href={`/trips/${trip.tripId}:${trip.type}`} w={{ base: 200, sm: 300, md: 400, lg: "auto" }}>
@@ -284,12 +258,10 @@ export function Routes({
                             ))}
                     </Stack>
                 )
-            ) : selectedStop && routes.length === 0 ? (
+            ) : (
                 <Center mt="xl">
                     <div>Le corse di oggi sono terminate.</div>
                 </Center>
-            ) : (
-                <PopularStops onStopSelect={(value) => handleStopChange(value)} recentStops={recentStops} />
             )}
             <HelpModal opened={opened} onClose={close} />
         </Box>

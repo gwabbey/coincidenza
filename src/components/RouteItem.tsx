@@ -5,7 +5,7 @@ import { IconAlertCircle, IconInfoCircle } from "@tabler/icons-react";
 import Link from "next/link";
 import { memo } from "react";
 
-export const RouteItem = memo(({ route, currentStop }: { route: Route; currentStop?: number | null }) => {
+export const RouteItem = memo(({ route, stopId }: { route: Route; stopId: number }) => {
     const { colorScheme } = useMantineColorScheme();
     return (<Accordion.Item value={route.id.toString()}>
         <Accordion.Control>
@@ -41,7 +41,7 @@ export const RouteItem = memo(({ route, currentStop }: { route: Route; currentSt
                     const arrivalTime = new Date(route.oraArrivoEffettivaAFermataSelezionata).getTime();
                     const currentTime = new Date().getTime();
                     const diffInMinutes = Math.floor((arrivalTime - currentTime) / (1000 * 60));
-                    const isDeparting = route.delay === 0 && route.lastEventRecivedAt && route.stopTimes[0].stopId.toString() === currentStop?.toString() &&
+                    const isDeparting = route.delay === 0 && route.lastEventRecivedAt && route.stopTimes[0].stopId.toString() === stopId?.toString() &&
                         diffInMinutes < 5
 
                     return (<Container fluid key={index} fz={{ base: 'lg', md: 'xl' }} px={0}>
@@ -70,7 +70,7 @@ export const RouteItem = memo(({ route, currentStop }: { route: Route; currentSt
                                     </Text>)}
 
                                 <Text>
-                                    {(route.stopTimes[0].stopId.toString() === currentStop?.toString() && route.stopTimes[route.stopTimes.length - 1].stopId.toString() !== currentStop.toString()) ? 'parte' : route.stopTimes[route.stopTimes.length - 1].stopId.toString() === currentStop?.toString() ? 'arriva' : 'passa'}{' '}
+                                    {(route.stopTimes[0].stopId.toString() === stopId?.toString() && route.stopTimes[route.stopTimes.length - 1].stopId.toString() !== stopId.toString()) ? 'parte' : route.stopTimes[route.stopTimes.length - 1].stopId.toString() === stopId?.toString() ? 'arriva' : 'passa'}{' '}
                                     alle <strong>{formatTime(route.oraArrivoEffettivaAFermataSelezionata)}</strong>{' '}
                                     {diffInMinutes === 0 ? '(adesso)' : diffInMinutes < 0 ? `(${Math.abs(diffInMinutes) >= 60 ? `${Math.floor(Math.abs(diffInMinutes) / 60)} or${Math.floor(Math.abs(diffInMinutes) / 60) === 1 ? 'a' : 'e'} fa` : `${Math.abs(diffInMinutes)} minut${Math.abs(diffInMinutes) === 1 ? 'o' : 'i'} fa`})` : `(tra ${diffInMinutes >= 60 ? `${Math.floor(diffInMinutes / 60)} or${Math.floor(diffInMinutes / 60) === 1 ? 'a' : 'e'}` : `${diffInMinutes} minut${diffInMinutes === 1 ? 'o' : 'i'}`})`}
                                 </Text>

@@ -6,14 +6,12 @@ import { IconGps } from '@tabler/icons-react'
 
 interface StopSearchProps {
     stops: Stop[]
-    value: string | null
     onStopChange: (value: string | null) => void
     onLocationRequest: () => void
 }
 
 export function StopSearch({
     stops,
-    value,
     onStopChange,
     onLocationRequest
 }: StopSearchProps) {
@@ -47,7 +45,6 @@ export function StopSearch({
                     <IconGps stroke={1} size={36} />
                 </ActionIcon>
             }
-            value={value}
             renderOption={(props) => {
                 const option = props.option as typeof selectOptions[number]
                 return (

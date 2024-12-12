@@ -1,7 +1,9 @@
 import { getClosestBusStops, getRoutes, getStop } from "@/api";
 import { Routes } from "@/components/Routes";
+import { RecentStops } from "@/components/stops/popular-stops";
+import { StopSearch } from "@/components/stops/stop-search";
 import { Stop } from "@/types";
-import { Flex, Title } from "@mantine/core";
+import { Box, Title } from "@mantine/core";
 import { cookies } from "next/headers";
 
 export default async function Page({
@@ -36,23 +38,26 @@ export default async function Page({
     }
 
     return (
-        <Flex
-            justify="center"
-            direction="column"
-            wrap="wrap"
-            ta="center"
-            gap="md"
-        >
+        <Box>
             <Title order={1} maw={750} w="100%" mx="auto">
                 Cerca fermata
             </Title>
-            <Routes
+
+            <StopSearch
                 stops={closestStops}
-                recentStops={JSON.parse(recentStops ?? '[]')}
-                initialRoutes={stop ?? []}
-                initialId={id}
-                initialType={type}
+                onStopChange={setStop}
+                onLocationRequest={setUserLocation}
             />
-        </Flex>
+
+            {id && type ? (
+                <Routes
+                    stops={closestStops}
+                    routes={routes}
+                    stop={stop || { stopId: 0, type: '', routes: [] }}
+                />
+            ) : (
+                <RecentStops recentStops={recentStops} closestStops={closestStops} />
+            )}
+        </Box>
     );
 }

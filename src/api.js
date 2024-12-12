@@ -151,7 +151,7 @@ export async function getRoutes(type) {
 
 export async function getStop(id, type, routes) {
     try {
-        const stops = await fetchData('trips_new', {
+        const trips = await fetchData('trips_new', {
             params: {
                 type,
                 stopId: id,
@@ -164,24 +164,32 @@ export async function getStop(id, type, routes) {
             routes.map((route) => [Number(route.routeId), route])
         );
 
-        const routeGroups = stops.reduce((groups, stop) => {
-            const routeId = Number(stop.routeId);
+        const routeGroups = trips.reduce((groups, trip) => {
+            const routeId = Number(trip.routeId);
             const routeDetails = routeMap.get(routeId);
 
             if (routeDetails) {
                 if (!groups.has(routeId)) {
-                    groups.set(routeId, { id: routeId, stops: [stop], details: routeDetails });
+                    groups.set(routeId, { id: routeId, trips: [trip], details: routeDetails });
                 } else {
-                    groups.get(routeId).stops.push(stop);
+                    groups.get(routeId).trips.push(trip);
                 }
             }
 
             return groups;
         }, new Map());
 
-        return Array.from(routeGroups.values()).sort((a, b) =>
-            a.details.routeShortName.localeCompare(b.details.routeShortName, 'it', { numeric: true })
-        );
+        const response = {
+            stopId: id,
+            type,
+            routes: Array.from(routeGroups.values()).sort((a, b) =>
+                a.details.routeShortName.localeCompare(b.details.routeShortName, 'it', { numeric: true })
+            )
+        };
+
+        console.log(response);
+
+        return response;
     } catch (error) {
         console.error(`Error in getStop: ${error.message}`);
         throw new Error(`Failed to fetch stop data: ${error.message}`);
