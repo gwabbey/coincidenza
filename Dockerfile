@@ -2,11 +2,12 @@ FROM node:20-alpine
 WORKDIR /app
 
 COPY package.json bun.lockb ./
-RUN npm install --frozen-lockfile
+RUN npm install -g pnpm
+RUN pnpm install --frozen-lockfile
 
 COPY . .
-RUN npm run build
+RUN pnpm run build
 
 ENV PORT=3003
 
-CMD ["npm", "run", "start"]
+CMD ["pnpm", "run", "start"]
