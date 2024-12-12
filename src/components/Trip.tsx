@@ -1,6 +1,5 @@
 'use client';
 
-import { getTrip } from "@/api";
 import { Trip as TripProps } from '@/types';
 import { getDelayColor } from "@/utils";
 import {
@@ -23,26 +22,23 @@ import {
 import { useWindowScroll } from "@mantine/hooks";
 import { IconAlertTriangleFilled, IconArrowUp, IconBus, IconMapPin } from "@tabler/icons-react";
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useRouter } from "next/navigation";
+import { useEffect } from 'react';
 
-export default function Trip({ trip: initialTrip, routes }: { trip: TripProps, routes: any[] }) {
+export default function Trip({ trip, routes }: { trip: TripProps, routes: any[] }) {
+    const router = useRouter();
     const theme = useMantineTheme();
     const { colorScheme } = useMantineColorScheme();
     const [scroll, scrollTo] = useWindowScroll();
-    const [trip, setTrip] = useState(initialTrip);
 
     const route = routes.find(route => route.routeId === trip.routeId);
 
     useEffect(() => {
-        const interval = setInterval(async () => {
-            const updatedTrip = await getTrip(trip.tripId, trip.type);
-            if (updatedTrip) {
-                setTrip(updatedTrip);
-            }
-        }, parseInt(process.env.AUTO_REFRESH || '10000'));
-
-        return () => clearInterval(interval);
-    }, [trip]);
+        const intervalId = setInterval(() => {
+            router.refresh();
+        }, parseInt(process.env.AUTO_REFRESH || '10000', 10));
+        return () => clearInterval(intervalId);
+    }, [router]);
 
     const activeIndex = trip.stopTimes.findIndex((stop: { stopId: number }) => stop.stopId === trip.stopLast);
     const isDeparting = trip.delay === 0 && trip.lastEventRecivedAt && activeIndex === -1;

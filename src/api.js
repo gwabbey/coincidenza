@@ -97,16 +97,14 @@ export async function fetchData(endpoint, options = {}) {
                 httpsAgent,
                 headers: {
                     "Accept": "application/json",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
                     "X-Requested-With": "it.tndigit.mit",
                     Authorization: `Basic ${Buffer.from(
                         `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
                     ).toString("base64")}`
                 },
-                signal: AbortSignal.timeout(10 * 1000)
             });
 
-            console.log(url);
+            console.log(url, response.data);
 
             if (response && response.status === 200) {
                 return response.data;
@@ -186,8 +184,6 @@ export async function getStop(id, type, routes) {
                 a.details.routeShortName.localeCompare(b.details.routeShortName, 'it', { numeric: true })
             )
         };
-
-        console.log(response);
 
         return response;
     } catch (error) {
