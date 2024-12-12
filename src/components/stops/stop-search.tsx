@@ -1,26 +1,28 @@
 'use client'
 
+import { getCookie, setCookie } from '@/api'
 import { Stop } from '@/types'
 import { ActionIcon, Box, Select, Stack, Text } from '@mantine/core'
 import { IconGps } from '@tabler/icons-react'
+import { useRouter } from 'next/navigation'
+import { useCallback } from 'react'
+import { getUserLocation } from '../geolocation'
 
-interface StopSearchProps {
-    stops: Stop[]
-    onStopChange: (value: string | null) => void
-    onLocationRequest: () => void
-}
-
-export function StopSearch({
-    stops,
-    onStopChange,
-    onLocationRequest
-}: StopSearchProps) {
+export function StopSearch({ stops }: { stops: Stop[] }) {
+    const router = useRouter();
     const selectOptions = stops.map((stop) => ({
         value: `${stop.stopId}-${stop.type}`,
         label: `${stop.stopName} (${stop.stopCode})`,
         routes: stop.routes.map((route) => route.routeShortName).join(', '),
         type: stop.type
-    }))
+    }));
+
+    const getClosestStops = useCallback(async () => {
+        const userLocation = await getUserLocation();
+        await setCookie('lat', userLocation.lat);
+        await setCookie('lon', userLocation.lon);
+        router.refresh();
+    }, [router]);
 
     return (
         <Select
@@ -31,16 +33,27 @@ export function StopSearch({
             size="xl"
             my="sm"
             allowDeselect={false}
-            onChange={onStopChange}
+            onChange={async (value) => {
+                if (value) {
+                    const [id, type] = value.split('-');
+                    if (id && type) {
+                        const newStop = { id, name: selectOptions.find((option) => option.value === value)?.label, type: type };
+                        const recentStops = await getCookie('recentStops');
+                        const updatedStops = [newStop, ...JSON.parse(recentStops || '[]').filter((s: any) => s.id !== newStop.id).slice(0, 4)];
+                        await setCookie('recentStops', JSON.stringify(updatedStops));
+                        router.push(`/bus?id=${id}&type=${type}`);
+                    }
+                }
+            }}
             disabled={stops.length === 0}
             rightSectionPointerEvents="all"
-            onFocus={onLocationRequest}
+            onFocus={getClosestStops}
             rightSection={
                 <ActionIcon
                     variant="transparent"
                     size="xl"
                     aria-label="La tua posizione"
-                    onClick={onLocationRequest}
+                    onClick={getClosestStops}
                 >
                     <IconGps stroke={1} size={36} />
                 </ActionIcon>

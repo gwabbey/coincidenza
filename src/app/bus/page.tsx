@@ -1,6 +1,6 @@
 import { getClosestBusStops, getRoutes, getStop } from "@/api";
 import { Routes } from "@/components/Routes";
-import { RecentStops } from "@/components/stops/popular-stops";
+import { RecentStops } from "@/components/stops/recent-stops";
 import { StopSearch } from "@/components/stops/stop-search";
 import { Stop } from "@/types";
 import { Box, Title } from "@mantine/core";
@@ -38,15 +38,13 @@ export default async function Page({
     }
 
     return (
-        <Box>
-            <Title order={1} maw={750} w="100%" mx="auto">
+        <Box maw={750} w="100%" mx="auto">
+            <Title order={1} maw={750} w="100%" mx="auto" ta="center">
                 Cerca fermata
             </Title>
 
             <StopSearch
                 stops={closestStops}
-                onStopChange={setStop}
-                onLocationRequest={setUserLocation}
             />
 
             {id && type ? (

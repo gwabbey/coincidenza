@@ -1,18 +1,14 @@
 'use client';
 
-import { getCookie, getStop, setCookie } from '@/api';
 import { Stop } from '@/types';
 import { getDelayColor } from '@/utils';
-import { Accordion, Anchor, Badge, Box, Center, Flex, Group, SegmentedControl, Select, Stack, Text } from '@mantine/core';
+import { Accordion, Anchor, Badge, Box, Center, Container, Flex, Group, SegmentedControl, Select, Stack, Text, Title } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { notifications } from "@mantine/notifications";
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { RouteItem } from './RouteItem';
 import { HelpModal } from './stops/help-modal';
-import { StopInfo } from './stops/stop-info';
-import { StopSearch } from './stops/stop-search';
 
 export const revalidate = 0;
 
@@ -28,10 +24,7 @@ export function Routes({
     stop
 }: RoutesProps) {
     const router = useRouter();
-    const [selectedStop, setSelectedStop] = useState(stop);
     const [opened, { open, close }] = useDisclosure(false);
-    const [userLocation, setUserLocation] = useState(false);
-    const stopInfo = stops.find(stop => Number(stop.stopId) === Number(selectedStop.stopId));
 
     const stopMap = useMemo(
         () => stops.reduce((acc, stop) => {
@@ -41,70 +34,14 @@ export function Routes({
         [stops]
     );
 
-    const refreshData = useCallback(async () => {
-        if (selectedStop) {
-            try {
-                // TODO: try with router.refresh() ????
-                const stop = await getStop(selectedStop.stopId, selectedStop.type, routes);
-                setSelectedStop(stop);
-            } catch (error) {
-                console.error('Error refreshing routes:', error);
-            }
-        }
-    }, [selectedStop]);
+    const details = stopMap[`${stop.stopId}-${stop.type}`];
 
     useEffect(() => {
-        const intervalId = setInterval(refreshData, parseInt(process.env.AUTO_REFRESH || '10000', 10));
+        const intervalId = setInterval(() => {
+            router.refresh();
+        }, parseInt(process.env.AUTO_REFRESH || '10000', 10));
         return () => clearInterval(intervalId);
-    }, [refreshData]);
-
-    const handleStopChange = useCallback(async (selectedValue: string | null) => {
-        if (!selectedValue) return;
-
-        const stop = stopMap[selectedValue];
-        const recentStops = JSON.parse(await getCookie('recentStops') || '[]');
-        const newStop = { id: stop.stopId, name: stop.stopName, type: stop.type };
-        const updatedStops = [newStop, ...recentStops.filter((s: any) => s.id !== newStop.id).slice(0, 4)];
-
-        await setCookie('recentStops', JSON.stringify(updatedStops));
-        window.history.pushState(null, '', `/bus?id=${stop.stopId}&type=${stop.type}`);
-        router.refresh();
-    }, [stopMap, router]);
-
-    const handleFetchStops = useCallback(async () => {
-        const userLocation = await getUserLocation();
-        await setCookie('lat', userLocation.lat);
-        await setCookie('lon', userLocation.lon);
-        router.refresh();
     }, [router]);
-
-    function getUserLocation(): Promise<{ lat: number; lon: number }> {
-        return new Promise((resolve, reject) => {
-            if (typeof window !== 'undefined' && 'geolocation' in navigator) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        resolve({ lat: position.coords.latitude, lon: position.coords.longitude });
-                        setUserLocation(true);
-                    },
-                    (error) => {
-                        let message = 'Errore sconosciuto';
-                        if (error.code === error.PERMISSION_DENIED) message = 'Accesso negato alla posizione';
-                        else if (error.code === error.POSITION_UNAVAILABLE) message = 'Posizione non disponibile';
-                        else if (error.code === error.TIMEOUT) message = 'Timeout durante la richiesta';
-
-                        notifications.show({
-                            autoClose: 5000,
-                            title: "Errore",
-                            message,
-                            color: 'red',
-                            radius: 'lg',
-                        });
-                    },
-                    { enableHighAccuracy: true, maximumAge: 0 }
-                );
-            } else reject(new Error('Geolocation not supported'));
-        });
-    }
 
     const [sort, setSort] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('sort') || 'time' : 'time'));
     const [view, setView] = useState("departures");
@@ -139,12 +76,6 @@ export function Routes({
 
     return (
         <Box maw={750} w="100%" mx="auto" ta="left">
-            <StopSearch
-                stops={stops}
-                onStopChange={handleStopChange}
-                onLocationRequest={handleFetchStops}
-            />
-
             <Stack gap="sm">
                 <Group justify="center">
                     <Anchor inherit ta="center" onClick={open}>
@@ -153,9 +84,28 @@ export function Routes({
                 </Group>
             </Stack>
 
-            {stopInfo && <StopInfo stop={stopInfo} userLocation={userLocation} />}
+            {details && (
+                <Container mt="sm" ta="center">
+                    <Title order={2}>
+                        {details.stopName}
+                        {details.town && ` (${details.town})`}
+                    </Title>
+                    <Badge
+                        size="xl"
+                        color={details.type === 'E' ? 'blue' : 'green'}
+                    >
+                        {details.type === 'E' ? 'fermata extraurbana' : 'fermata urbana'}
+                    </Badge>
+                    <div>
+                        a {details.distance && details.distance > 1
+                            ? `${details.distance.toFixed(2)} km`
+                            : `${((details.distance ? details.distance : 0) * 1000).toFixed(0)} m`}{' '}
+                        da te
+                    </div>
+                </Container>
+            )}
 
-            {selectedStop && (
+            {stop && (
                 <Group justify="center" mt="md">
                     Ordina per:
                     <Select
@@ -169,20 +119,20 @@ export function Routes({
                 </Group>
             )}
 
-            {selectedStop && routes.length > 0 ? (
+            {stop && routes.length > 0 ? (
                 sort === 'line' ? (
                     <Accordion chevronPosition="right" transitionDuration={500} maw={750} w="100%" mt="xl">
                         {routes.map((route) => (
-                            <RouteItem key={route.id} route={route} stopId={selectedStop.stopId} />
+                            <RouteItem key={route.id} route={route} stopId={stop.stopId} />
                         ))}
                     </Accordion>
                 ) : (
                     <Stack maw={750} w="100%" mt="xl">
-                        {selectedStop && sort === 'time' && (
-                            !selectedStop.routes.every(route =>
+                        {stop && sort === 'time' && (
+                            !stop.routes.every(route =>
                                 route.trips.every((trip: any) => {
-                                    const isFirstStopCurrentStop = trip.stopTimes[0].stopId.toString() === selectedStop?.stopId.toString();
-                                    const isLastStopCurrentStop = trip.stopTimes[trip.stopTimes.length - 1].stopId.toString() === selectedStop?.stopId.toString();
+                                    const isFirstStopCurrentStop = trip.stopTimes[0].stopId.toString() === stop?.stopId.toString();
+                                    const isLastStopCurrentStop = trip.stopTimes[trip.stopTimes.length - 1].stopId.toString() === stop?.stopId.toString();
                                     return !isFirstStopCurrentStop && !isLastStopCurrentStop;
                                 })
                             ) && (
@@ -199,13 +149,13 @@ export function Routes({
                             )
                         )}
 
-                        {selectedStop.routes
+                        {stop.routes
                             .flatMap((route) => route.trips)
                             .filter(trip => {
-                                const isFirstStopCurrentStop = trip.stopTimes[0].stopId.toString() === selectedStop?.stopId.toString();
-                                const isLastStopCurrentStop = trip.stopTimes[trip.stopTimes.length - 1].stopId.toString() === selectedStop?.stopId.toString();
+                                const isFirstStopCurrentStop = trip.stopTimes[0].stopId.toString() === stop?.stopId.toString();
+                                const isLastStopCurrentStop = trip.stopTimes[trip.stopTimes.length - 1].stopId.toString() === stop?.stopId.toString();
                                 const isPassingThrough = trip.stopTimes.some((stopTime: any, index: number) =>
-                                    stopTime.stopId.toString() === selectedStop?.stopId.toString() && index < trip.stopTimes.length - 1
+                                    stopTime.stopId.toString() === stop?.stopId.toString() && index < trip.stopTimes.length - 1
                                 );
 
                                 return view === 'departures' ? isFirstStopCurrentStop || isPassingThrough : isLastStopCurrentStop;
@@ -221,10 +171,10 @@ export function Routes({
                                             size="xl"
                                             radius="xl"
                                             color={
-                                                selectedStop.routes.find(route => route.id === trip.routeId)?.details.routeColor
-                                                    ? `#${selectedStop.routes.find(route => route.id === trip.routeId)?.details.routeColor}`
+                                                stop.routes.find(route => route.id === trip.routeId)?.details.routeColor
+                                                    ? `#${stop.routes.find(route => route.id === trip.routeId)?.details.routeColor}`
                                                     :
-                                                    selectedStop.routes.find(route => route.id === trip.routeId)?.details.type === 'U' ? 'gray' : "blue"
+                                                    stop.routes.find(route => route.id === trip.routeId)?.details.type === 'U' ? 'gray' : "blue"
                                             }
                                             px={0}
                                             py="md"
@@ -232,7 +182,7 @@ export function Routes({
                                             w={50}
                                             ta="center"
                                         >
-                                            {selectedStop.routes.find(route => route.id === trip.routeId)?.details.routeShortName}
+                                            {stop.routes.find(route => route.id === trip.routeId)?.details.routeShortName}
                                         </Badge>
                                         <Stack gap={0}>
                                             <Text size="lg" fw="bold" inline truncate component={Link} href={`/trips/${trip.tripId}:${trip.type}`} w={{ base: 200, sm: 300, md: 400, lg: "auto" }}>
