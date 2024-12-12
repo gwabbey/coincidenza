@@ -1,12 +1,12 @@
-FROM oven/bun:alpine
+FROM node:20-alpine
 WORKDIR /app
 
 COPY package.json bun.lockb ./
-RUN bun install --frozen-lockfile
+RUN npm install --frozen-lockfile
 
 COPY . .
-RUN bun run build
+RUN npm run build
 
 ENV PORT=3003
 
-CMD ["bun", "run", "start"]
+CMD ["npm", "run", "start"]
