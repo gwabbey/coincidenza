@@ -106,7 +106,7 @@ export async function fetchData(endpoint, options = {}) {
                 signal: AbortSignal.timeout(10 * 1000)
             });
 
-            console.log(url);
+            // console.log(url);
 
             if (response && response.status === 200) {
                 return response.data;
@@ -187,7 +187,7 @@ export async function getStop(id, type, routes) {
             )
         };
 
-        console.log(response);
+        // console.log(response);
 
         return response;
     } catch (error) {

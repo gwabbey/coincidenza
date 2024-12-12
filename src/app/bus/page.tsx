@@ -6,6 +6,8 @@ import { Stop } from "@/types";
 import { Box, Title } from "@mantine/core";
 import { cookies } from "next/headers";
 
+export const dynamic = 'force-dynamic';
+
 export default async function Page({
     searchParams,
 }: {
