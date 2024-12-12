@@ -104,11 +104,7 @@ export async function fetchData(endpoint, options = {}) {
                 },
             });
 
-            console.log(url, response.data);
-
-            if (response && response.status === 200) {
-                return response.data;
-            }
+            return response.data;
         } catch (error) {
             console.error(`Error in fetchData attempt ${attempts + 1}: ${error.message}`);
             if (attempts === maxRetries - 1) {
@@ -157,6 +153,8 @@ export async function getStop(id, type, routes) {
                 refDateTime: new Date().toISOString(),
             },
         });
+
+        console.log("routes in getStop", routes);
 
         const routeMap = new Map(
             routes.map((route) => [Number(route.routeId), route])

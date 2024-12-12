@@ -35,7 +35,9 @@ export default async function Page({
 
     const routes = await getRoutes(type);
 
-    if (id && type) {
+    console.log("routes in bus/page.tsx", routes);
+
+    if (id && type && routes) {
         stop = await getStop(id, type, routes);
     }
 
