@@ -108,6 +108,7 @@ export async function fetchData(endpoint, options = {}) {
                 httpsAgent,
                 headers: {
                     "Accept": "application/json",
+                    "Content-Type": "application/json",
                     "X-Requested-With": "it.tndigit.mit",
                     Authorization: `Basic ${Buffer.from(
                         `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
