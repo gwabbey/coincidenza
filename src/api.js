@@ -154,7 +154,7 @@ export async function getStop(id, type, routes) {
             },
         });
 
-        console.log("routes in getStop", routes);
+        console.log("routes in getStop", routes.slice(0, 5));
 
         const routeMap = new Map(
             routes.map((route) => [Number(route.routeId), route])
