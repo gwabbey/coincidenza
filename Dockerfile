@@ -1,7 +1,7 @@
 FROM node:20-alpine
 WORKDIR /app
 
-COPY package.json bun.lockb ./
+COPY package.json ./
 RUN npm install -g pnpm
 RUN pnpm install --frozen-lockfile
 
