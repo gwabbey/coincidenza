@@ -15,7 +15,9 @@ export function HelpModal({ opened, onClose }: HelpModalProps) {
             onClose={onClose}
             title="Come trovo il codice di una fermata?"
             centered
+            radius="lg"
             size="xl"
+            transitionProps={{ transition: 'fade', duration: 300 }}
         >
             <Stack align="stretch" justify="flex-start" gap="md">
                 <div>

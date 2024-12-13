@@ -1,4 +1,4 @@
-import { getClosestBusStops, getRoutes, getStop } from "@/api";
+import { getClosestBusStops, getRoutes, getStopTrips } from "@/api";
 import { Routes } from "@/components/Routes";
 import { RecentStops } from "@/components/stops/recent-stops";
 import { StopSearch } from "@/components/stops/stop-search";
@@ -6,7 +6,7 @@ import { Stop } from "@/types";
 import { Box, Title } from "@mantine/core";
 import { cookies } from "next/headers";
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function Page({
     searchParams,
@@ -16,10 +16,14 @@ export default async function Page({
         type?: string;
     }>;
 }) {
-    const [lat, lon, recentStops] = await Promise.all([
+    const { id, type } = await searchParams;
+    const routes = await getRoutes(type);
+
+    const [lat, lon, recentStops, sort] = await Promise.all([
         cookies().then((cookies) => cookies.get('lat')?.value),
         cookies().then((cookies) => cookies.get('lon')?.value),
         cookies().then((cookies) => cookies.get('recentStops')?.value),
+        cookies().then((cookies) => cookies.get('sort')?.value),
     ]);
 
     let closestStops: Stop[];
@@ -31,12 +35,8 @@ export default async function Page({
         closestStops = await getClosestBusStops(46.07121658325195, 11.11913776397705);
     }
 
-    const { id, type } = await searchParams;
-
-    const routes = await getRoutes(type);
-
     if (id && type && routes) {
-        stop = await getStop(id, type, routes);
+        stop = await getStopTrips(id, type, routes);
     }
 
     return (
@@ -52,8 +52,8 @@ export default async function Page({
             {id && type ? (
                 <Routes
                     stops={closestStops}
-                    routes={routes}
                     stop={stop || { stopId: 0, type: '', routes: [] }}
+                    sort={sort || "time"}
                 />
             ) : (
                 <RecentStops recentStops={recentStops} closestStops={closestStops} />

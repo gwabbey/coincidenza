@@ -1,30 +1,33 @@
 'use client';
 
+import { setCookie } from '@/api';
 import { Stop } from '@/types';
 import { getDelayColor } from '@/utils';
-import { Accordion, Anchor, Badge, Box, Center, Container, Flex, Group, SegmentedControl, Select, Stack, Text, Title } from '@mantine/core';
+import { Accordion, Alert, Anchor, Badge, Box, Button, Center, Container, Flex, Grid, Group, SegmentedControl, Select, Stack, Text, Title } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
+import { IconAlertCircle, IconAlertTriangle } from '@tabler/icons-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
-import { RouteItem } from './RouteItem';
 import { HelpModal } from './stops/help-modal';
+import { NewsModal } from './stops/news-modal';
 
 export const revalidate = 0;
 
 interface RoutesProps {
     stops: Stop[];
-    routes: any[];
     stop: { stopId: number, type: string, routes: any[] };
+    sort: string;
 }
 
 export function Routes({
     stops,
-    routes,
-    stop
+    stop,
+    sort,
 }: RoutesProps) {
     const router = useRouter();
-    const [opened, { open, close }] = useDisclosure(false);
+    const [helpOpened, helpHandlers] = useDisclosure(false);
+    const [newsOpened, newsHandlers] = useDisclosure(false);
 
     const stopMap = useMemo(
         () => stops.reduce((acc, stop) => {
@@ -35,8 +38,21 @@ export function Routes({
     );
 
     const details = stopMap[`${stop.stopId}-${stop.type}`];
+    const news = Array.from(
+        new Map(
+            stop.routes
+                .flatMap((route) => route.details.news || [])
+                .map((newsItem) => [`${newsItem.details}-${newsItem.header}`, newsItem])
+        ).values()
+    );
 
-    const [sort, setSort] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('sort') || 'time' : 'time'));
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            router.refresh();
+        }, parseInt(process.env.AUTO_REFRESH || '10000', 10));
+        return () => clearInterval(intervalId);
+    }, [router]);
+
     const [view, setView] = useState("departures");
 
     useEffect(() => {
@@ -71,7 +87,7 @@ export function Routes({
         <Box maw={750} w="100%" mx="auto" ta="left">
             <Stack gap="sm">
                 <Group justify="center">
-                    <Anchor inherit ta="center" onClick={open}>
+                    <Anchor inherit ta="center" onClick={helpHandlers.open}>
                         Come trovo il codice di una fermata?
                     </Anchor>
                 </Group>
@@ -81,7 +97,7 @@ export function Routes({
                 <Container mt="sm" ta="center">
                     <Title order={2}>
                         {details.stopName}
-                        {details.town && ` (${details.town})`}
+                        {details.town && !details.stopName.includes(details.town) && ` (${details.town})`}
                     </Title>
                     <Badge
                         size="xl"
@@ -99,6 +115,7 @@ export function Routes({
             )}
 
             {stop && (
+                // TODO: check if it can be done faster
                 <Group justify="center" mt="md">
                     Ordina per:
                     <Select
@@ -107,20 +124,112 @@ export function Routes({
                             { value: 'line', label: 'Linea' },
                         ]}
                         value={sort}
-                        onChange={(value) => setSort(value || 'time')}
+                        onChange={(value) => setCookie('sort', value || 'time')}
                     />
                 </Group>
             )}
 
-            {stop && routes.length > 0 ? (
+            <Group justify="center" mt="md">
+                <Button leftSection={<IconAlertTriangle size={24} />} variant="light" color="yellow" onClick={newsHandlers.open} w={{ base: "100%", sm: "auto" }}>
+                    Avvisi
+                </Button>
+            </Group>
+
+            {stop && stop.routes.length > 0 ? (
                 sort === 'line' ? (
-                    <Accordion chevronPosition="right" transitionDuration={500} maw={750} w="100%" mt="xl">
-                        {routes.map((route) => (
-                            <RouteItem key={route.id} route={route} stopId={stop.stopId} />
+                    <Accordion chevronPosition="right" transitionDuration={500} maw={750} w="100%" mt="md" key={stop.stopId}>
+                        {stop.routes.map((route, index) => (
+                            <Accordion.Item key={index} value={index.toString()}>
+                                <Accordion.Control px="xs">
+                                    <Group gap="xs" wrap="nowrap" w="100%">
+                                        <Badge
+                                            size="xl"
+                                            radius="xl"
+                                            color={
+                                                route.details.routeColor
+                                                    ? `#${route.details.routeColor}`
+                                                    :
+                                                    route.details.type === 'U' ? 'gray' : "blue"
+                                            }
+                                            px={0}
+                                            py="md"
+                                            autoContrast
+                                            miw={50}
+                                            ta="center"
+                                        >
+                                            {route.details.routeShortName}
+                                        </Badge>
+                                        <Text fw="bold" inline truncate fz={{ base: 'md', sm: 'lg' }}>
+                                            {route.details.routeLongName}
+                                        </Text>
+                                    </Group>
+                                </Accordion.Control>
+                                <Accordion.Panel>
+                                    {route.details.news?.map((news: any, index: number) => (
+                                        <Alert
+                                            key={index}
+                                            my="xs"
+                                            autoContrast
+                                            variant="light"
+                                            color="yellow"
+                                            radius="xl"
+                                            title={news.header}
+                                            icon={<IconAlertCircle />}
+                                        >
+                                            {news.details}{" "}
+                                            {news.url && (<Link href={news.url} target="_blank">
+                                                Dettagli
+                                            </Link>)}
+                                        </Alert>
+                                    ))}
+
+                                    <div>
+                                        {route.trips.map((trip: any, index: any) => {
+                                            const arrivalTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata).getTime();
+                                            const currentTime = new Date().getTime();
+                                            const diffInMinutes = Math.floor((arrivalTime - currentTime) / (1000 * 60));
+
+                                            return (<Container fluid key={index} fz={{ base: 'lg', md: 'xl' }} px={0}>
+                                                <Grid justify="space-between" align="center">
+                                                    <Grid.Col span="content">
+                                                        <Flex direction="column" wrap={{ base: "wrap", sm: "nowrap" }}
+                                                            w={{ base: 250, xs: 450, sm: 650 }}>
+                                                            <Text
+                                                                inherit
+                                                                component={Link}
+                                                                href={`/trips/${trip.tripId}:${trip.type}`}
+                                                                fw="bold"
+                                                                fz={{ base: 'md', sm: 'lg' }}>
+                                                                → {trip.tripHeadsign}
+                                                            </Text>
+                                                        </Flex>
+
+                                                        <Group gap={0}>
+                                                            {trip.stopTimes[0].arrivalTime > new Date().toLocaleTimeString('en-GB', { hour12: false }).slice(0, 8) && (
+                                                                <Text size="sm" fz={{ base: 'sm', sm: 'md' }}
+                                                                    c={trip.isDeparting ? 'green' : 'dimmed'}>{trip.isDeparting ? 'in partenza' : 'non ancora partito'}</Text>)}
+                                                            {trip.delay !== null && trip.stopTimes[0].arrivalTime < new Date().toLocaleTimeString('en-GB', { hour12: false }).slice(0, 8) && (
+                                                                <Text size="sm" fz={{ base: 'sm', sm: 'md' }} c={getDelayColor(trip.delay)}>
+                                                                    {trip.delay < 0 ? `${Math.abs(trip.delay)} min in anticipo` : trip.delay > 0 ? `${trip.delay} min in ritardo` : 'in orario'}
+                                                                </Text>)}
+                                                        </Group>
+
+                                                        <Text fz={{ base: 'sm', sm: 'md' }}>
+                                                            {(trip.stopTimes[0].stopId.toString() === stop.stopId?.toString() && trip.stopTimes[trip.stopTimes.length - 1].stopId.toString() !== stop.stopId.toString()) ? 'in partenza' : trip.stopTimes[trip.stopTimes.length - 1].stopId.toString() === stop.stopId?.toString() ? 'in arrivo' : 'passa'}{' '}
+                                                            <strong>{diffInMinutes <= 0 ? 'adesso' : `tra ${diffInMinutes >= 60 ? `${Math.floor(diffInMinutes / 60)} or${Math.floor(diffInMinutes / 60) === 1 ? 'a' : 'e'}` : `${diffInMinutes} minut${diffInMinutes === 1 ? 'o' : 'i'}`}`}</strong>
+                                                        </Text>
+
+                                                    </Grid.Col>
+                                                </Grid>
+                                            </Container>);
+                                        })}
+                                    </div>
+                                </Accordion.Panel>
+                            </Accordion.Item>
                         ))}
                     </Accordion>
                 ) : (
-                    <Stack maw={750} w="100%" mt="xl">
+                    <Stack maw={750} w="100%" mt="md">
                         {stop && sort === 'time' && (
                             !stop.routes.every(route =>
                                 route.trips.every((trip: any) => {
@@ -178,7 +287,7 @@ export function Routes({
                                             {stop.routes.find(route => route.id === trip.routeId)?.details.routeShortName}
                                         </Badge>
                                         <Stack gap={0}>
-                                            <Text size="lg" fw="bold" inline truncate component={Link} href={`/trips/${trip.tripId}:${trip.type}`} w={{ base: 200, sm: 300, md: 400, lg: "auto" }}>
+                                            <Text fz={{ base: 'md', sm: 'lg' }} fw="bold" inline truncate component={Link} href={`/trips/${trip.tripId}:${trip.type}`} w={{ base: 200, sm: 300, md: 400, lg: "auto" }}>
                                                 {view === 'departures' ? trip.tripHeadsign : stopMap[`${trip.stopTimes[0].stopId}-${trip.type}`]?.stopName}
                                             </Text>
                                             <Group gap={0}>
@@ -206,7 +315,8 @@ export function Routes({
                     <div>Le corse di oggi sono terminate.</div>
                 </Center>
             )}
-            <HelpModal opened={opened} onClose={close} />
+            <HelpModal opened={helpOpened} onClose={helpHandlers.close} />
+            <NewsModal opened={newsOpened} onClose={newsHandlers.close} news={news} />
         </Box>
     );
 }

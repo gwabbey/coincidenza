@@ -85,3 +85,16 @@ export interface Trip {
     type: string;
     wheelchairAccessible: number;
 }
+
+export interface StopNews {
+    idFeed: any
+    agencyId: string
+    serviceType: string
+    startDate: string
+    endDate: string
+    header: string
+    details: string
+    stopId: string
+    url: string
+    routeIds: number[]
+}

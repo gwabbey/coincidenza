@@ -1,9 +1,8 @@
 'use client'
 
-import { setCookie } from '@/api';
-import { PopularStop, Stop } from '@/types';
+import { PopularStop } from '@/types';
 import { Button, Flex, Stack, Title } from '@mantine/core';
-import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 const defaultStops: PopularStop[] = [
     { id: 1, name: 'Stazione di Trento', type: 'E' },
@@ -13,24 +12,8 @@ const defaultStops: PopularStop[] = [
     { id: 1284, name: 'Corso Rosmini Posta', type: 'U' },
 ]
 
-// TODO: make stop pills more specific (e.g. "direction x")
+// TODO: add favorites
 export function RecentStops({ recentStops, closestStops }: { recentStops: any, closestStops: any }) {
-    const router = useRouter();
-    const stops = recentStops ? JSON.parse(recentStops) : defaultStops;
-
-    const stopMap = closestStops.reduce((acc: any, stop: any) => {
-        acc[`${stop.stopId}-${stop.type}`] = stop;
-        return acc;
-    }, {} as Record<string, Stop>);
-
-    const setStop = async (value: string) => {
-        const stop = stopMap[value];
-        const newStop = { id: stop.stopId, name: stop.stopName, type: stop.type };
-        const updatedStops = [newStop, ...JSON.parse(recentStops || '[]').filter((s: any) => s.id !== newStop.id).slice(0, 4)];
-        await setCookie('recentStops', JSON.stringify(updatedStops));
-        router.push(`/bus?id=${stop.stopId}&type=${stop.type}`);
-    }
-
     return (
         <Stack
             align="center"
@@ -39,7 +22,7 @@ export function RecentStops({ recentStops, closestStops }: { recentStops: any, c
             mt="xl"
         >
             <Title order={3}>
-                {recentStops ? 'Fermate recenti' : 'Fermate popolari'}
+                Fermate popolari
             </Title>
             <Flex
                 gap="xl"
@@ -48,14 +31,16 @@ export function RecentStops({ recentStops, closestStops }: { recentStops: any, c
                 direction="row"
                 wrap="wrap"
             >
-                {stops.map((stop: any) => (
+                {defaultStops.map((stop: any) => (
                     <Button
                         key={stop.id}
+                        component={Link}
+                        href={`/bus?id=${stop.id}&type=${stop.type}`}
+                        w={{ base: "100%", sm: "auto" }}
                         variant="outline"
                         radius="xl"
                         size="md"
                         color={stop.type === 'U' ? 'green' : 'blue'}
-                        onClick={() => setStop(`${stop.id}-${stop.type}`)}
                     >
                         {stop.name}
                     </Button>

@@ -85,6 +85,8 @@ export function StopSearch({ stops }: { stops: Stop[] }) {
             }}
             radius="xl"
             nothingFoundMessage="Nessuna fermata trovata"
+            maxDropdownHeight={300}
+            comboboxProps={{ transitionProps: { transition: 'fade', duration: 300 } }}
         />
     )
 } 

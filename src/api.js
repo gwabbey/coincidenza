@@ -144,7 +144,19 @@ export async function getRoutes(type) {
     });
 }
 
-export async function getStop(id, type, routes) {
+export async function getStops(type) {
+    if (!type) {
+        return await fetchData('stops');
+    }
+
+    return await fetchData('stops', {
+        params: {
+            type
+        }
+    });
+}
+
+export async function getStopTrips(id, type, routes) {
     try {
         const trips = await fetchData('trips_new', {
             params: {

@@ -323,7 +323,7 @@ export default function Directions({ directions, from, to }: { directions: any, 
                             </Card>
 
                             {step.transitDetails &&
-                                directions.routes[activePage].legs[0].steps[index + 1].transitDetails && (
+                                directions.routes[activePage].legs[0].steps[index + 1]?.transitDetails && (
                                     <Card
                                         shadow="xl"
                                         padding="xs"
