@@ -129,11 +129,13 @@ export function Routes({
                 </Group>
             )}
 
-            <Group justify="center" mt="md">
-                <Button leftSection={<IconAlertTriangle size={24} />} variant="light" color="yellow" onClick={newsHandlers.open} w={{ base: "100%", sm: "auto" }}>
-                    Avvisi
-                </Button>
-            </Group>
+            {news.length > 0 && (
+                <Group justify="center" mt="md">
+                    <Button leftSection={<IconAlertTriangle size={24} />} variant="light" color="yellow" onClick={newsHandlers.open} w={{ base: "100%", sm: "auto" }}>
+                        Avvisi
+                    </Button>
+                </Group>
+            )}
 
             {stop && stop.routes.length > 0 ? (
                 sort === 'line' ? (

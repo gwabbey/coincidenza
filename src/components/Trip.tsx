@@ -86,15 +86,15 @@ export default function Trip({ trip, routes }: { trip: TripProps, routes: any[] 
             </Flex>
 
             <Flex justify="center" align="center" my="md" direction={{ base: 'column', sm: 'row' }} visibleFrom="sm">
-                <Paper shadow="xl" radius="xl" p="md" withBorder>
-                    <Text fw="bold">{trip.stopTimes[0].stopName}</Text>
+                <Paper shadow="xl" radius="xl" p="md" withBorder w={250}>
+                    <Text fw="bold" truncate>{trip.stopTimes[0].stopName}</Text>
                     <Text>{trip.stopTimes[0].arrivalTime.replace(/^24:/, '00:').slice(0, 5)}</Text>
                 </Paper>
 
                 <Divider my="xs" label={formatDuration(tripDuration)} labelPosition="center" w={200} />
 
-                <Paper shadow="xl" radius="xl" p="md" withBorder>
-                    <Text fw="bold">{trip.stopTimes[trip.stopTimes.length - 1].stopName}</Text>
+                <Paper shadow="xl" radius="xl" p="md" withBorder w={250}>
+                    <Text fw="bold" truncate>{trip.stopTimes[trip.stopTimes.length - 1].stopName}</Text>
                     <Text>{trip.stopTimes[trip.stopTimes.length - 1].arrivalTime.replace(/^24:/, '00:').slice(0, 5)}</Text>
                 </Paper>
             </Flex>
@@ -247,6 +247,7 @@ export default function Trip({ trip, routes }: { trip: TripProps, routes: any[] 
                     );
                 })}
             </Timeline>
+
             <Affix position={{ bottom: 20, right: 20 }}>
                 <Transition transition="slide-up" mounted={scroll.y > 0}>
                     {(transitionStyles) => (
