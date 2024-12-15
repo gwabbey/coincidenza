@@ -115,14 +115,14 @@ export default function Trip({ trip, routes }: { trip: TripProps, routes: any[] 
                 <Flex justify={{ base: "space-between", sm: "center" }} align="center" direction={{ base: 'row', sm: 'column' }}>
                     <Stack gap={0}>
                         {trip.stopTimes[activeIndex] && Math.floor((new Date().getTime() - new Date(trip.lastEventRecivedAt).getTime()) / (1000 * 60)) > 5 && activeIndex !== trip.stopTimes.length - 1 ? (
-                            <Text fz={{ base: "lg", sm: "xl" }} ta={{ base: "left", sm: "center" }} fs="italic"
+                            <Text fz={{ base: "lg", sm: "xl" }} ta={{ base: "left", sm: "center" }} fs={activeIndex === -1 ? "normal" : "italic"}
                                 w={{ base: 230, xs: 450, md: "100%" }} truncate>
                                 {trip.stopTimes.reduce((closestStop: any, stopTime: any) => {
                                     const currentTime = new Date();
                                     const [hour, minute] = stopTime.departureTime.split(':').map(Number);
                                     const stopTimeDate = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), hour, minute + trip.delay);
                                     return stopTimeDate <= currentTime ? stopTime : closestStop;
-                                }, null)?.stopName || "Rilevamento interrotto"}
+                                }, null)?.stopName || "--"}
                             </Text>
                         ) : (
                             <Text fz={{ base: "lg", sm: "xl" }} fw="bold" ta={{ base: "left", sm: "center" }}

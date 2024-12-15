@@ -6,14 +6,7 @@ const getLocationName = async (coords: string) => {
     if (!coords) return "";
     const [lat, lon] = coords.split(",");
     const response = await reverseGeocode(lat, lon);
-    return [
-        response.features?.[0]?.properties?.name,
-        response.features?.[0]?.properties?.city,
-        response.features?.[0]?.properties?.county,
-        response.features?.[0]?.properties?.countrycode,
-    ]
-        .filter(Boolean)
-        .join(", ") || coords;
+    return response.features?.[0]?.properties?.name || coords;
 };
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ from: string; to: string; time: string }> }) {

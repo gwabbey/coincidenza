@@ -62,7 +62,12 @@ export function Routes({
     const calculateMinutesToArrival = (trip: any) => {
         const now = new Date();
 
-        const theoreticalTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata);
+        let theoreticalTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata);
+
+        if (trip.stopTimes[0].stopId.toString() === stop.stopId.toString() && trip.stopTimes[trip.stopTimes.length - 1].stopId.toString() === stop.stopId.toString()) {
+            const [hour, minute] = trip.stopTimes[trip.stopTimes.length - 1].arrivalTime.split(':').map(Number);
+            theoreticalTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute + trip.delay);
+        }
 
         const isTracked = trip.matricolaBus && trip.lastEventRecievedAt;
 
@@ -131,7 +136,7 @@ export function Routes({
 
             {news.length > 0 && (
                 <Group justify="center" mt="md">
-                    <Button leftSection={<IconAlertTriangle size={24} />} variant="light" color="yellow" onClick={newsHandlers.open} w={{ base: "100%", sm: "auto" }}>
+                    <Button leftSection={<IconAlertTriangle size={20} />} variant="light" color="yellow" onClick={newsHandlers.open} w={{ base: "100%", sm: "auto" }}>
                         Avvisi
                     </Button>
                 </Group>
@@ -193,7 +198,7 @@ export function Routes({
 
                                             return (<Container fluid key={index} fz={{ base: 'lg', md: 'xl' }} px={0}>
                                                 <Grid justify="space-between" align="center">
-                                                    <Grid.Col span="content">
+                                                    <Grid.Col key={index} span="content">
                                                         <Flex direction="column" wrap={{ base: "wrap", sm: "nowrap" }}
                                                             w={{ base: 250, xs: 450, sm: 650 }}>
                                                             <Text
@@ -262,7 +267,11 @@ export function Routes({
                                     stopTime.stopId.toString() === stop?.stopId.toString() && index < trip.stopTimes.length - 1
                                 );
 
-                                return view === 'departures' ? isFirstStopCurrentStop || isPassingThrough : isLastStopCurrentStop;
+                                if (view === 'departures') {
+                                    return !isLastStopCurrentStop && (isFirstStopCurrentStop || isPassingThrough);
+                                }
+
+                                return isLastStopCurrentStop;
                             }).sort((a: any, b: any) => {
                                 const aDate = new Date(a.oraArrivoEffettivaAFermataSelezionata);
                                 const bDate = new Date(b.oraArrivoEffettivaAFermataSelezionata);

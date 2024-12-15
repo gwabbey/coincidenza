@@ -40,7 +40,9 @@ export async function setCookie(name, value, options = {}) {
 export async function searchLocation(query) {
     let url = new URL("https://photon.komoot.io/api/");
     url.searchParams.append("q", query);
-    url.searchParams.append("limit", "10");
+    url.searchParams.append("limit", "25");
+    url.searchParams.append("lat", "46.0722416");
+    url.searchParams.append("lon", "11.1193186");
 
     if (!query) {
         return [];
@@ -230,12 +232,12 @@ export async function getStationMonitor(id) {
         const alerts = $('#barraInfoStazioneId > div').find('div[class="marqueeinfosupp"] div').text();
 
         $('#bodyTabId > tr').each((index, element) => {
-            const company = $(element).find('td[id="RVettore"] img').attr('alt');
-            const category = $(element).find('td[id="RCategoria"] img').attr('src');
+            const company = $(element).find('td[id="RVettore"] img').attr('alt')?.toLowerCase();
+            const category = $(element).find('td[id="RCategoria"] img').attr('alt')?.replace('Categoria ', '').replace('CIVITAVECCHIA EXPRESS ', '').toLowerCase();
             const trainNumber = $(element).find('td[id="RTreno"]').text().trim();
-            const destination = $(element).find('td[id="RStazione"] div').text().trim();
+            const destination = $(element).find('td[id="RStazione"] div').text()?.toLowerCase().trim();
             const departureTime = $(element).find('td[id="ROrario"]').text().trim();
-            const delay = $(element).find('td[id="RRitardo"]').text().trim() || 'Nessuno';
+            const delay = $(element).find('td[id="RRitardo"]').text().trim() || '0';
             const platform = $(element).find('td[id="RBinario"] div').text().trim();
             const departing = $(element).find('td[id="RExLampeggio"] img').length > 0;
 

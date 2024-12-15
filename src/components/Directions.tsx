@@ -1,12 +1,12 @@
 'use client';
 import { vehicleIcons } from "@/icons";
-import { Anchor, Box, Button, Card, Divider, Flex, Grid, Stack, Text, Timeline, Title } from "@mantine/core";
+import { Anchor, Box, Button, Card, Divider, Flex, Grid, Group, OptionsFilter, Stack, Text, Timeline, Title } from "@mantine/core";
 import { IconLiveView, IconMapPin } from "@tabler/icons-react";
 import 'dayjs/locale/it';
 import MapComponent from "./map";
 
 import { searchLocation } from "@/api";
-import { Autocomplete, ComboboxItem, Loader, OptionsFilter } from "@mantine/core";
+import { Autocomplete, Loader } from "@mantine/core";
 import { DatesProvider, TimeInput } from "@mantine/dates";
 import { useDebouncedValue } from "@mantine/hooks";
 import Link from "next/link";
@@ -16,10 +16,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 interface Props {
     name: string;
     selected?: string;
-    placeholder: string;
+    placeholder?: string;
     debounceDelay?: number;
     disabled?: boolean;
-    onLoadingChange?: (isLoading: boolean) => void;
 }
 
 export const LocationInput = ({
@@ -32,13 +31,23 @@ export const LocationInput = ({
     const router = useRouter();
     const [value, setValue] = useState(selected);
     const [debouncedValue] = useDebouncedValue(value, debounceDelay);
-    const [data, setData] = useState<{ value: string; label: string }[]>([]);
+    const [data, setData] = useState<{
+        value: string;
+        label: string;
+        city?: string;
+        county?: string;
+        countrycode?: string;
+        type?: string;
+        routes?: string;
+    }[]>([]);
     const [loading, setLoading] = useState(false);
+    const searchParams = useSearchParams();
 
     const fetchData = useCallback(async (query: string) => {
         setLoading(true);
         try {
             const result = await searchLocation(query);
+            console.log(result);
             const locations = result.features.filter((location: {
                 properties: { name: any; city: any; county: any; countrycode: any; };
             }, index: any, self: any[]) => {
@@ -50,14 +59,16 @@ export const LocationInput = ({
                 ));
             }).map((location: any) => ({
                 value: JSON.stringify(location),
-                label: [
-                    location.properties.name,
+                label: location.properties.name,
+                city: location.properties.city,
+                county: location.properties.county,
+                countrycode: location.properties.countrycode,
+                type: location.properties.type || 'default',
+                routes: [
                     location.properties.city,
                     location.properties.county,
                     location.properties.countrycode,
-                ]
-                    .filter(Boolean)
-                    .join(", "),
+                ].filter(Boolean).join(', ')
             }));
             setData(locations);
         } catch (error) {
@@ -75,17 +86,17 @@ export const LocationInput = ({
         fetchData(debouncedValue);
     }, [debouncedValue, fetchData]);
 
+
     const optionsFilter: OptionsFilter = ({ options, search }) => {
         const splitSearch = search.toLowerCase().trim().split(" ");
-        return (options as ComboboxItem[]).filter((option) => {
-            const words = option.label.toLowerCase().trim().split(" ");
+        return options.filter((option) => {
             return splitSearch.every((searchWord) =>
-                words.some((word) => word.includes(searchWord))
+                Object.values(option).some((value) =>
+                    typeof value === 'string' && value.toLowerCase().includes(searchWord)
+                )
             );
         });
     };
-
-    const searchParams = useSearchParams();
 
     const onLocationSelect = useCallback(async (value: string) => {
         const location = JSON.parse(value);
@@ -99,7 +110,7 @@ export const LocationInput = ({
         }
 
         router.push(`/directions?${params.toString()}`);
-    }, [router, searchParams]);
+    }, [router, searchParams, name]);
 
     return (
         <Autocomplete
@@ -107,29 +118,54 @@ export const LocationInput = ({
             data={data}
             onChange={setValue}
             onOptionSubmit={onLocationSelect}
-            rightSection={loading && <Loader size="xs" />}
+            rightSection={loading ? <Loader size="xs" /> : null}
             placeholder={placeholder}
             size="xl"
             disabled={disabled}
             comboboxProps={{
-                transitionProps: { transition: "fade-up", duration: 200 },
+                transitionProps: { transition: "fade", duration: 300 },
             }}
             filter={optionsFilter}
             radius="xl"
+            styles={{
+                option: {
+                    padding: 0,
+                    margin: 0,
+                }
+            }}
+            renderOption={(props) => {
+                const option = props.option as typeof data[number];
+                return (
+                    <Group justify="center" gap={0} p="xs">
+                        <IconMapPin size={24} />
+                        <Stack
+                            align="start"
+                            justify="center"
+                            gap={0}
+                            pos="relative"
+                            pl="sm"
+                        >
+                            <Text size="xl">{option.label}</Text>
+                            <Text size="sm" c="dimmed">{option.routes}</Text>
+                        </Stack>
+                    </Group>
+                )
+            }}
+            maxDropdownHeight={300}
         />
     );
 };
 
 export default function Directions({ directions, from, to }: { directions: any, from: string, to: string }) {
-    const [activePage, setActivePage] = useState(0);
     const router = useRouter();
     const searchParams = useSearchParams();
+    const ref = useRef<HTMLInputElement>(null);
+    const [activePage, setActivePage] = useState(0);
 
     const [time, setTime] = useState(() => {
         const existingTimeParam = new Date(searchParams?.get('time') || new Date()).toLocaleString('it-IT', { hour: '2-digit', minute: '2-digit' });
         return existingTimeParam;
     });
-    const ref = useRef<HTMLInputElement>(null);
 
     const handleTimeChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         const newTime = event.currentTarget.value;

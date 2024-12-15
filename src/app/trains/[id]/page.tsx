@@ -28,7 +28,7 @@ export default async function Page({
                 Partenze da {(stations as Record<string, string>)[id]}
             </Title>
             <TrainStationInput placeholder="Cerca stazione" selected={(stations as Record<string, string>)[id]} />
-            <Monitor monitor={monitor} id={id} />
+            <Monitor monitor={monitor} />
         </Flex>
     );
 }
