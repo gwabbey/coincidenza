@@ -262,7 +262,7 @@ export async function getStationMonitor(id) {
         return { trains, alerts };
     } catch (error) {
         console.error(`Error in getStationMonitor: ${error.message}`);
-        throw new Error("monitor fetch error: ", error.message);
+        return { trains: [], alerts: [], error: "Errore nel recupero dei dati" };
     }
 }
 
