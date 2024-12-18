@@ -3,6 +3,7 @@ import axios from 'axios';
 import * as cheerio from 'cheerio';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { cookies } from "next/headers";
+import { trainCategoryShortNames } from "./mappings";
 import stops from "./stops.json";
 
 function getDistance(lat1, lon1, lat2, lon2) {
@@ -232,24 +233,26 @@ export async function getStationMonitor(id) {
         const alerts = $('#barraInfoStazioneId > div').find('div[class="marqueeinfosupp"] div').text();
 
         $('#bodyTabId > tr').each((index, element) => {
-            const company = $(element).find('td[id="RVettore"] img').attr('alt')?.toLowerCase();
-            const category = $(element).find('td[id="RCategoria"] img').attr('alt')?.replace('Categoria ', '').replace('CIVITAVECCHIA EXPRESS ', '').toLowerCase();
-            const trainNumber = $(element).find('td[id="RTreno"]').text().trim();
+            const company = $(element).find('td[id="RVettore"] img').attr('alt')?.toLowerCase().trim();
+            const category = $(element).find('td[id="RCategoria"] img').attr('alt')?.replace('Categoria ', '').replace('CIVITAVECCHIA EXPRESS ', '').toLowerCase().trim();
+            const number = $(element).find('td[id="RTreno"]').text().trim();
             const destination = $(element).find('td[id="RStazione"] div').text()?.toLowerCase().trim();
             const departureTime = $(element).find('td[id="ROrario"]').text().trim();
             const delay = $(element).find('td[id="RRitardo"]').text().trim() || '0';
-            const platform = $(element).find('td[id="RBinario"] div').text().trim();
-            const departing = $(element).find('td[id="RExLampeggio"] img').length > 0;
+            const platform = category === "autocorsa" ? "Piazzale Ferrovia" : $(element).find('td[id="RBinario"] div').text().trim();
+            const departing = $(element).find('td[id="RExLampeggio"] img').attr('alt')?.toLowerCase().trim() === "si";
+            const shortCategory = category && category.startsWith('suburbano') ? category.split(' ')[1] : trainCategoryShortNames[category];
 
             if (!id) {
                 return;
             }
 
-            if (trainNumber && destination && departureTime) {
+            if (number && destination && departureTime) {
                 trains.push({
                     company,
                     category,
-                    trainNumber,
+                    shortCategory,
+                    number,
                     destination,
                     departureTime,
                     delay,

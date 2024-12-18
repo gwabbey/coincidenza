@@ -1,5 +1,6 @@
 'use client';
 import { Badge, Divider, Flex, Group, Stack, Text } from '@mantine/core';
+import { motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 
@@ -24,10 +25,10 @@ export function Monitor({ monitor }: { monitor: any }) {
     console.log(monitor)
 
     const calculateDestinationWidth = (delay: string) => {
-        let baseWidth = 200;
+        let baseWidth = 225;
         if (delay !== '0') {
             const delayLength = delay.length;
-            baseWidth = Math.max(100, 200 - (delayLength * 10));
+            baseWidth = Math.max(100, 225 - (delayLength * 10));
         }
         return baseWidth;
     };
@@ -36,13 +37,13 @@ export function Monitor({ monitor }: { monitor: any }) {
         <Stack w="100%" maw={750} mx="auto">
             {monitor.trains.map((train: any, index: number) => (
                 <Flex key={index} w="100%">
-                    <Group key={train.trainNumber} w="100%" gap="xs">
+                    <Group key={train.trainNumber} w="100%" gap="xs" wrap="nowrap">
                         <Badge
                             size="xl"
                             color="gray"
                             px={0}
                             py="md"
-                            miw={75}
+                            miw={60}
                             ta="center"
                             autoContrast
                         >
@@ -62,12 +63,44 @@ export function Monitor({ monitor }: { monitor: any }) {
                                 {train.destination}
                             </Text>
                             <Text fz="sm" c="dimmed" tt="capitalize">
-                                {train.category} {train.trainNumber}
+                                {train.shortCategory || train.company} {train.number} {train.shortCategory && `• ${train.company}`}
                             </Text>
-                            {train.departing && (
-                                <Text c="green" fw="bold">
-                                    in partenza
-                                </Text>
+                            {!train.departing ? (
+                                <Group gap={0} style={{ whiteSpace: "pre" }}>
+                                    {train.platform !== "Piazzale Ferrovia" && (
+                                        <Text fz="sm" c="dimmed">
+                                            {train.platform ? "binario " : ""}
+                                        </Text>
+                                    )}
+                                    <Text fz="sm" c="blue" fw="bold">
+                                        {train.platform}
+                                    </Text>
+                                </Group>
+                            ) : (
+                                <Group gap={0} style={{ whiteSpace: "pre" }}>
+                                    <Text fz="sm" c="green" fw="bold">
+                                        in partenza{" "}
+                                    </Text>
+                                    {train.platform && train.platform !== "Piazzale Ferrovia" && (
+                                        <Text fz="sm" c="dimmed">
+                                            • binario{" "}
+                                        </Text>
+                                    )}
+                                    <motion.div
+                                        animate={{
+                                            opacity: [1, 0, 1],
+                                            transition: {
+                                                duration: 1,
+                                                repeat: Infinity,
+                                                ease: 'easeInOut'
+                                            }
+                                        }}
+                                    >
+                                        <Text fz="sm" c="blue" fw="bold">
+                                            <strong>{train.platform}</strong>
+                                        </Text>
+                                    </motion.div>
+                                </Group>
                             )}
                         </Stack>
                         <Flex flex={1} />
