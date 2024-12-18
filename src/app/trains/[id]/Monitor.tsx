@@ -1,11 +1,12 @@
 'use client';
 import { Badge, Divider, Flex, Group, Stack, Text } from '@mantine/core';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export function Monitor({ monitor }: { monitor: any }) {
     const router = useRouter();
+    const [blinkKey, setBlinkKey] = useState(0);
 
     useEffect(() => {
         const intervalId = setInterval(() => {
@@ -14,6 +15,13 @@ export function Monitor({ monitor }: { monitor: any }) {
         return () => clearInterval(intervalId);
     }, [router]);
 
+    useEffect(() => {
+        const blinkInterval = setInterval(() => {
+            setBlinkKey(prev => prev + 1);
+        }, 1000);
+        return () => clearInterval(blinkInterval);
+    }, []);
+
     if (monitor.error) {
         return <Text ta="center" fz="lg" c="dimmed" fw="bold" p="xl">{monitor.error}</Text>;
     }
@@ -21,8 +29,6 @@ export function Monitor({ monitor }: { monitor: any }) {
     if (monitor.trains.length === 0) {
         return <Text ta="center" fz="lg" c="dimmed" fw="bold" p="xl">Nessun treno in partenza</Text>;
     }
-
-    console.log(monitor)
 
     const calculateDestinationWidth = (delay: string) => {
         let baseWidth = 225;
@@ -35,85 +41,96 @@ export function Monitor({ monitor }: { monitor: any }) {
 
     return (
         <Stack w="100%" maw={750} mx="auto">
-            {monitor.trains.map((train: any, index: number) => (
-                <Flex key={index} w="100%">
-                    <Group key={train.trainNumber} w="100%" gap="xs" wrap="nowrap">
-                        <Badge
-                            size="xl"
-                            color="gray"
-                            px={0}
-                            py="md"
-                            miw={60}
-                            ta="center"
-                            autoContrast
-                        >
-                            {train.departureTime}
-                        </Badge>
-                        <Stack gap={0} ta="left">
-                            <Text
-                                fw="bold"
-                                fz={{ base: 'md', sm: 'lg' }}
-                                tt="capitalize"
-                                truncate
-                                w={{
-                                    base: calculateDestinationWidth(train.delay),
-                                    xs: "auto"
-                                }}
-                            >
-                                {train.destination}
-                            </Text>
-                            <Text fz="sm" c="dimmed" tt="capitalize">
-                                {train.shortCategory || train.company} {train.number} {train.shortCategory && `• ${train.company}`}
-                            </Text>
-                            {!train.departing ? (
-                                <Group gap={0} style={{ whiteSpace: "pre" }}>
-                                    {train.platform !== "Piazzale Ferrovia" && (
-                                        <Text fz="sm" c="dimmed">
-                                            {train.platform ? "binario " : ""}
-                                        </Text>
-                                    )}
-                                    <Text fz="sm" c="blue" fw="bold">
-                                        {train.platform}
-                                    </Text>
-                                </Group>
-                            ) : (
-                                <Group gap={0} style={{ whiteSpace: "pre" }}>
-                                    <Text fz="sm" c="green" fw="bold">
-                                        in partenza{" "}
-                                    </Text>
-                                    {train.platform && train.platform !== "Piazzale Ferrovia" && (
-                                        <Text fz="sm" c="dimmed">
-                                            • binario{" "}
-                                        </Text>
-                                    )}
-                                    <motion.div
-                                        animate={{
-                                            opacity: [1, 0, 1],
-                                            transition: {
-                                                duration: 1,
-                                                repeat: Infinity,
-                                                ease: 'easeInOut'
-                                            }
+            <AnimatePresence>
+                {monitor.trains.map((train: any) => (
+                    <motion.div
+                        key={train.number}
+                        layout
+                        layoutId={train.number.toString()}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        style={{ width: '100%' }}
+                    >
+                        <Flex w="100%">
+                            <Group w="100%" gap="xs" wrap="nowrap">
+                                <Badge
+                                    size="xl"
+                                    color="gray"
+                                    px={0}
+                                    py="md"
+                                    miw={60}
+                                    ta="center"
+                                    autoContrast
+                                >
+                                    {train.departureTime}
+                                </Badge>
+                                <Stack gap={0} ta="left">
+                                    <Text
+                                        fw="bold"
+                                        fz={{ base: 'md', sm: 'lg' }}
+                                        tt="capitalize"
+                                        truncate
+                                        w={{
+                                            base: calculateDestinationWidth(train.delay),
+                                            xs: "auto"
                                         }}
                                     >
-                                        <Text fz="sm" c="blue" fw="bold">
-                                            <strong>{train.platform}</strong>
+                                        {train.destination}
+                                    </Text>
+                                    <Text fz="sm" c="dimmed" tt="capitalize">
+                                        {train.shortCategory || train.company} {train.number} {train.shortCategory && `• ${train.company}`}
+                                    </Text>
+                                    {!train.departing ? (
+                                        <Group gap={0} style={{ whiteSpace: "pre" }}>
+                                            {train.platform !== "Piazzale Ferrovia" && (
+                                                <Text fz="sm" c="dimmed">
+                                                    {train.platform ? "binario " : ""}
+                                                </Text>
+                                            )}
+                                            <Text fz="sm" c="blue" fw="bold">
+                                                {train.platform}
+                                            </Text>
+                                        </Group>
+                                    ) : (
+                                        <Group gap={0} style={{ whiteSpace: "pre" }}>
+                                            <Text fz="sm" c="green" fw="bold">
+                                                in partenza{" "}
+                                            </Text>
+                                            {train.platform && train.platform !== "Piazzale Ferrovia" && (
+                                                <Text fz="sm" c="dimmed">
+                                                    • binario{" "}
+                                                </Text>
+                                            )}
+                                            <motion.div
+                                                key={blinkKey}
+                                                initial={{ opacity: 1 }}
+                                                animate={{ opacity: [1, 0, 1] }}
+                                                transition={{
+                                                    duration: 1,
+                                                    times: [0, 0.5, 1],
+                                                    ease: 'easeInOut'
+                                                }}
+                                            >
+                                                <Text fz="sm" c="blue" fw="bold">
+                                                    <strong>{train.platform}</strong>
+                                                </Text>
+                                            </motion.div>
+                                        </Group>
+                                    )}
+                                </Stack>
+                                <Flex flex={1} />
+                                {train.delay !== '0' && (
+                                    <Flex justify="end" align="center">
+                                        <Text size="lg" fw="bold" ta="right" tt="uppercase">
+                                            {parseInt(train.delay) > 0 ? `+${train.delay}'` : train.delay}
                                         </Text>
-                                    </motion.div>
-                                </Group>
-                            )}
-                        </Stack>
-                        <Flex flex={1} />
-                        {train.delay !== '0' && (
-                            <Flex justify="end" align="center">
-                                <Text size="lg" fw="bold" ta="right" tt="uppercase">
-                                    {parseInt(train.delay) > 0 ? `+${train.delay}'` : train.delay}
-                                </Text>
-                            </Flex>
-                        )}
-                    </Group>
-                </Flex>
-            ))}
+                                    </Flex>
+                                )}
+                            </Group>
+                        </Flex>
+                    </motion.div>
+                ))}
+            </AnimatePresence>
             <Divider />
             <Text c="dimmed" ta="center">
                 {monitor.alerts}

@@ -6,6 +6,7 @@ import { getDelayColor } from '@/utils';
 import { Accordion, Alert, Anchor, Badge, Box, Button, Center, Container, Flex, Grid, Group, SegmentedControl, Select, Stack, Text, Title } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconAlertCircle, IconAlertTriangle } from '@tabler/icons-react';
+import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
@@ -278,46 +279,56 @@ export function Routes({
                                 return aDate.getTime() - bDate.getTime();
                             })
                             .map((trip: any, index: number) => (
-                                <Flex key={index} w="100%">
-                                    <Group key={index} gap="xs" w="100%">
-                                        <Badge
-                                            size="xl"
-                                            radius="xl"
-                                            color={
-                                                stop.routes.find(route => route.id === trip.routeId)?.details.routeColor
-                                                    ? `#${stop.routes.find(route => route.id === trip.routeId)?.details.routeColor}`
-                                                    :
-                                                    stop.routes.find(route => route.id === trip.routeId)?.details.type === 'U' ? 'gray' : "blue"
-                                            }
-                                            px={0}
-                                            py="md"
-                                            autoContrast
-                                            w={50}
-                                            ta="center"
-                                        >
-                                            {stop.routes.find(route => route.id === trip.routeId)?.details.routeShortName}
-                                        </Badge>
-                                        <Stack gap={0}>
-                                            <Text fz={{ base: 'md', sm: 'lg' }} fw="bold" inline truncate component={Link} href={`/trips/${trip.tripId}:${trip.type}`} w={{ base: 200, sm: 300, md: 400, lg: "auto" }}>
-                                                {view === 'departures' ? trip.tripHeadsign : stopMap[`${trip.stopTimes[0].stopId}-${trip.type}`]?.stopName}
-                                            </Text>
-                                            <Group gap={0}>
-                                                {trip.stopTimes[0].arrivalTime > new Date().toLocaleTimeString('en-GB', { hour12: false }).slice(0, 8) && (
-                                                    <Text size="sm"
-                                                        c={trip.isDeparting ? 'green' : 'dimmed'}>{trip.isDeparting ? 'in partenza' : 'non ancora partito'}</Text>)}
-                                                {trip.delay !== null && trip.stopTimes[0].arrivalTime < new Date().toLocaleTimeString('en-GB', { hour12: false }).slice(0, 8) && (
-                                                    <Text size="sm" c={getDelayColor(trip.delay)}>
-                                                        {trip.delay < 0 ? `${Math.abs(trip.delay)} min in anticipo` : trip.delay > 0 ? `${trip.delay} min in ritardo` : 'in orario'}
-                                                    </Text>)}
+                                <AnimatePresence key={trip.tripId}>
+                                    <motion.div
+                                        layout
+                                        layoutId={trip.tripId.toString()}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -20 }}
+                                        style={{ width: '100%' }}
+                                    >
+                                        <Flex w="100%">
+                                            <Group gap="xs" w="100%">
+                                                <Badge
+                                                    size="xl"
+                                                    radius="xl"
+                                                    color={
+                                                        stop.routes.find(route => route.id === trip.routeId)?.details.routeColor
+                                                            ? `#${stop.routes.find(route => route.id === trip.routeId)?.details.routeColor}`
+                                                            :
+                                                            stop.routes.find(route => route.id === trip.routeId)?.details.type === 'U' ? 'gray' : "blue"
+                                                    }
+                                                    px={0}
+                                                    py="md"
+                                                    autoContrast
+                                                    w={50}
+                                                    ta="center"
+                                                >
+                                                    {stop.routes.find(route => route.id === trip.routeId)?.details.routeShortName}
+                                                </Badge>
+                                                <Stack gap={0}>
+                                                    <Text fz={{ base: 'md', sm: 'lg' }} fw="bold" inline truncate component={Link} href={`/trips/${trip.tripId}:${trip.type}`} w={{ base: 200, sm: 300, md: 400, lg: "auto" }}>
+                                                        {view === 'departures' ? trip.tripHeadsign : stopMap[`${trip.stopTimes[0].stopId}-${trip.type}`]?.stopName}
+                                                    </Text>
+                                                    <Group gap={0}>
+                                                        {trip.stopTimes[0].arrivalTime > new Date().toLocaleTimeString('en-GB', { hour12: false }).slice(0, 8) && (
+                                                            <Text size="sm"
+                                                                c={trip.isDeparting ? 'green' : 'dimmed'}>{trip.isDeparting ? 'in partenza' : 'non ancora partito'}</Text>)}
+                                                        {trip.delay !== null && trip.stopTimes[0].arrivalTime < new Date().toLocaleTimeString('en-GB', { hour12: false }).slice(0, 8) && (
+                                                            <Text size="sm" c={getDelayColor(trip.delay)}>
+                                                                {trip.delay < 0 ? `${Math.abs(trip.delay)} min in anticipo` : trip.delay > 0 ? `${trip.delay} min in ritardo` : 'in orario'}
+                                                            </Text>)}
+                                                    </Group>
+                                                </Stack>
                                             </Group>
-                                        </Stack>
-                                    </Group>
-                                    <Flex justify="end" align="center" w={{ base: 100, lg: "100%" }}>
-                                        <Text size="lg" fw="bold" ta="right">
-                                            {calculateMinutesToArrival(trip)}
-                                        </Text>
-                                    </Flex>
-                                </Flex>
+                                            <Flex justify="end" align="center" w={{ base: 100, lg: "100%" }}>
+                                                <Text size="lg" fw="bold" ta="right">
+                                                    {calculateMinutesToArrival(trip)}
+                                                </Text>
+                                            </Flex>
+                                        </Flex>
+                                    </motion.div>
+                                </AnimatePresence>
                             ))}
                     </Stack>
                 )

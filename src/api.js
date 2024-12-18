@@ -233,7 +233,6 @@ export async function getStationMonitor(id) {
         const alerts = $('#barraInfoStazioneId > div').find('div[class="marqueeinfosupp"] div').text();
 
         $('#bodyTabId > tr').each((index, element) => {
-            const company = $(element).find('td[id="RVettore"] img').attr('alt')?.toLowerCase().trim();
             const category = $(element).find('td[id="RCategoria"] img').attr('alt')?.replace('Categoria ', '').replace('CIVITAVECCHIA EXPRESS ', '').toLowerCase().trim();
             const number = $(element).find('td[id="RTreno"]').text().trim();
             const destination = $(element).find('td[id="RStazione"] div').text()?.toLowerCase().trim();
@@ -241,7 +240,45 @@ export async function getStationMonitor(id) {
             const delay = $(element).find('td[id="RRitardo"]').text().trim() || '0';
             const platform = category === "autocorsa" ? "Piazzale Ferrovia" : $(element).find('td[id="RBinario"] div').text().trim();
             const departing = $(element).find('td[id="RExLampeggio"] img').attr('alt')?.toLowerCase().trim() === "si";
-            const shortCategory = category && category.startsWith('suburbano') ? category.split(' ')[1] : trainCategoryShortNames[category];
+
+            const getShortCategory = (category) => {
+                if (!category) return null;
+
+                if (category.startsWith('suburbano')) {
+                    return category.split(' ')[1];
+                }
+
+                if (category.startsWith('servizio ferroviario metropolitano')) {
+                    return category.replace('servizio ferroviario metropolitano linea', 'SFM').trim();
+                }
+
+                if (category === 'treno storico') {
+                    return 'TS';
+                }
+
+                return trainCategoryShortNames[category] || null;
+            };
+
+            const shortCategory = getShortCategory(category);
+
+            let company = $(element).find('td[id="RVettore"] img').attr('alt')?.toLowerCase().trim();
+            const getCompany = (company) => {
+                if (company === 'ente volturno autonomo') {
+                    return 'EAV';
+                }
+
+                if (company === 'sad - trasporto locale spa') {
+                    return 'SAD';
+                }
+
+                if (company === 'obb') {
+                    return 'OBB';
+                }
+
+                return company;
+            };
+
+            company = getCompany(company);
 
             if (!id) {
                 return;
