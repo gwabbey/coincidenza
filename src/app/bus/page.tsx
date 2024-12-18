@@ -45,6 +45,7 @@ export default async function Page({
             <StopSearch
                 stops={closestStops}
             />
+
             <Suspense fallback={<BusSkeleton />} key={id}>
                 <PageBus id={id} type={type} routes={routes} closestStops={closestStops} recentStops={recentStops} sort={sort || "time"} />
             </Suspense>
