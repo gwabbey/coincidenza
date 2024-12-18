@@ -8,6 +8,12 @@ importers:
 
   .:
     dependencies:
+      '@aarsteinmedia/dotlottie-player':
+        specifier: ^4.0.11
+        version: 4.0.11(@types/react@18.3.16)
+      '@lottiefiles/dotlottie-react':
+        specifier: ^0.12.0
+        version: 0.12.0(react@18.3.1)
       '@mantine/core':
         specifier: ^7.15.1
         version: 7.15.1(@mantine/hooks@7.15.1(react@18.3.1))(@types/react@18.3.16)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -89,6 +95,12 @@ importers:
         version: 5.7.2
 
 packages:
+
+  '@aarsteinmedia/dotlottie-player@4.0.11':
+    resolution: {integrity: sha512-gY0WgnboQvcsZHOTK/+MzjmK7TViKHP5kU1l8yHR8FuFBdUYs27jt5bhT95e6QSDh3120XD8kKHLxoq6m3wQjg==}
+    engines: {node: '>= 8.17.0'}
+    peerDependencies:
+      '@types/react': '>= 16.0.0'
 
   '@alloc/quick-lru@5.2.0':
     resolution: {integrity: sha512-UrcABB+4bUrFABwbluTIBErXwvbsU/V7TZWfmbgJfbkwiBuziS9gxdODUyuiecfdGQ85jglMW6juS3+z5TsKLw==}
@@ -256,6 +268,14 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.25':
     resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
+
+  '@lottiefiles/dotlottie-react@0.12.0':
+    resolution: {integrity: sha512-33Tsd67vlotrm43R8oko30Krwyuqb0YdOLra7L5m2mVfrTvDPEDBt8jfjgiveoLJ0jG/FlTLiCPXi/vCaBSXrg==}
+    peerDependencies:
+      react: ^17 || ^18 || ^19
+
+  '@lottiefiles/dotlottie-web@0.38.2':
+    resolution: {integrity: sha512-01d+UjJ8NG7ZStYQxtb8FPzknzGmauG7gEkcH+wHfSdiSQJY9PoBNVSTB9V6F5hAnmFqOxaocTtd7TIEEnzMnA==}
 
   '@mantine/core@7.15.1':
     resolution: {integrity: sha512-MKHrByqgpu+vzhauX0X9EH+BOgJqyjHwk4E0sfIIX9CXC9pziLMc4aL8pua0KaXiRuQiskTl/DuGX31saHBH5g==}
@@ -627,6 +647,9 @@ packages:
   fastq@1.17.1:
     resolution: {integrity: sha512-sRVD3lWVIXWg6By68ZN7vho9a1pQcN/WBFaAAsDDFzlJjvoGx0P8z7V1t72grFJfJhu3YPZBuu25f7Kaw2jN1w==}
 
+  fflate@0.8.2:
+    resolution: {integrity: sha512-cPJU47OaAoCbg0pBvzsgpTPhmhqI5eJjh/JIu8tPj5q+T7iLvW/JAYUqmE7KOB4R1ZyEhzBaIQpQpardBF5z8A==}
+
   fill-range@7.1.1:
     resolution: {integrity: sha512-YsGpe3WHLK8ZYi4tWDg2Jy3ebRz2rXowDxnld4bkQB00cc/1Zw9AWnC0i9ztDJitivtQvaI9KaLyKrc+hBW0yg==}
     engines: {node: '>=8'}
@@ -798,6 +821,9 @@ packages:
   loose-envify@1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
+
+  lottie-web@5.12.2:
+    resolution: {integrity: sha512-uvhvYPC8kGPjXT3MyKMrL3JitEAmDMp30lVkuq/590Mw9ok6pWcFCwXJveo0t5uqYw1UREQHofD+jVpdjBv8wg==}
 
   lru-cache@10.4.3:
     resolution: {integrity: sha512-JNAzZcXrCt42VGLuYz0zfAzDfAvJWW6AfYlDBQyDV5DClI2m5sAmK+OIO7s59XfsRsWHp02jAJrRadPRGTt6SQ==}
@@ -1393,6 +1419,12 @@ packages:
 
 snapshots:
 
+  '@aarsteinmedia/dotlottie-player@4.0.11(@types/react@18.3.16)':
+    dependencies:
+      '@types/react': 18.3.16
+      fflate: 0.8.2
+      lottie-web: 5.12.2
+
   '@alloc/quick-lru@5.2.0': {}
 
   '@babel/code-frame@7.26.2':
@@ -1537,6 +1569,13 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
+
+  '@lottiefiles/dotlottie-react@0.12.0(react@18.3.1)':
+    dependencies:
+      '@lottiefiles/dotlottie-web': 0.38.2
+      react: 18.3.1
+
+  '@lottiefiles/dotlottie-web@0.38.2': {}
 
   '@mantine/core@7.15.1(@mantine/hooks@7.15.1(react@18.3.1))(@types/react@18.3.16)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
@@ -1895,6 +1934,8 @@ snapshots:
     dependencies:
       reusify: 1.0.4
 
+  fflate@0.8.2: {}
+
   fill-range@7.1.1:
     dependencies:
       to-regex-range: 5.0.1
@@ -2042,6 +2083,8 @@ snapshots:
   loose-envify@1.4.0:
     dependencies:
       js-tokens: 4.0.0
+
+  lottie-web@5.12.2: {}
 
   lru-cache@10.4.3: {}
 

@@ -50,6 +50,10 @@ export function Monitor({ monitor }: { monitor: any }) {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
                         style={{ width: '100%' }}
+                        transition={{
+                            duration: 0.5,
+                            ease: 'easeInOut'
+                        }}
                     >
                         <Flex w="100%">
                             <Group w="100%" gap="xs" wrap="nowrap">
