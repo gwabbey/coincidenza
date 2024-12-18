@@ -2,6 +2,7 @@
 
 import { PopularStop } from '@/types';
 import { Button, Flex, Stack, Title } from '@mantine/core';
+import { motion } from 'motion/react';
 import Link from 'next/link';
 
 const defaultStops: PopularStop[] = [
@@ -14,6 +15,21 @@ const defaultStops: PopularStop[] = [
 
 // TODO: add favorites
 export function RecentStops({ recentStops, closestStops }: { recentStops: any, closestStops: any }) {
+    const container = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
+        }
+    }
+
+    const item = {
+        hidden: { opacity: 0, y: 20 },
+        show: { opacity: 1, y: 0 }
+    }
+
     return (
         <Stack
             align="center"
@@ -24,28 +40,35 @@ export function RecentStops({ recentStops, closestStops }: { recentStops: any, c
             <Title order={3}>
                 Fermate popolari
             </Title>
-            <Flex
-                gap="xl"
-                justify="center"
-                align="center"
-                direction="row"
-                wrap="wrap"
+            <motion.div
+                variants={container}
+                initial="hidden"
+                animate="show"
             >
-                {defaultStops.map((stop: any) => (
-                    <Button
-                        key={stop.id}
-                        component={Link}
-                        href={`/bus?id=${stop.id}&type=${stop.type}`}
-                        w={{ base: "100%", sm: "auto" }}
-                        variant="outline"
-                        radius="xl"
-                        size="md"
-                        color={stop.type === 'U' ? 'green' : 'blue'}
-                    >
-                        {stop.name}
-                    </Button>
-                ))}
-            </Flex>
+                <Flex
+                    gap="xl"
+                    justify="center"
+                    align="center"
+                    direction="row"
+                    wrap="wrap"
+                >
+                    {defaultStops.map((stop: any) => (
+                        <motion.div key={stop.id} variants={item}>
+                            <Button
+                                component={Link}
+                                href={`/bus?id=${stop.id}&type=${stop.type}`}
+                                w={{ base: "100%", sm: "auto" }}
+                                variant="outline"
+                                radius="xl"
+                                size="md"
+                                color={stop.type === 'U' ? 'green' : 'blue'}
+                            >
+                                {stop.name}
+                            </Button>
+                        </motion.div>
+                    ))}
+                </Flex>
+            </motion.div>
         </Stack>
     )
 } 

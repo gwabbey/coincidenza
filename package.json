@@ -9,7 +9,6 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@aarsteinmedia/dotlottie-player": "^4.0.11",
     "@lottiefiles/dotlottie-react": "^0.12.0",
     "@mantine/core": "^7.15.1",
     "@mantine/dates": "^7.15.1",
