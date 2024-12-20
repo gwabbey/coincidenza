@@ -60,21 +60,26 @@ export function Routes({
         if (typeof window !== 'undefined') localStorage.setItem('sort', sort);
     }, [sort]);
 
-    const calculateMinutesToArrival = (trip: any) => {
+    const getTimeLeft = (trip: any) => {
         const now = new Date();
+        const isTracked = trip.matricolaBus !== null && trip.lastEventRecivedAt !== undefined;
 
-        let theoreticalTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata);
-
-        if (trip.stopTimes[0].stopId.toString() === stop.stopId.toString() && trip.stopTimes[trip.stopTimes.length - 1].stopId.toString() === stop.stopId.toString()) {
-            const [hour, minute] = trip.stopTimes[trip.stopTimes.length - 1].arrivalTime.split(':').map(Number);
-            theoreticalTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute + trip.delay);
+        let arrivalTime: Date;
+        if (isTracked) {
+            arrivalTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata);
+        } else {
+            let theoreticalTime: Date;
+            if (view === 'departures') {
+                const currentStopTime = trip.stopTimes.find((st: any) => st.stopId.toString() === stop.stopId.toString());
+                const [hour, minute] = currentStopTime.departureTime.split(':').map(Number);
+                theoreticalTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute);
+            } else {
+                const lastStopTime = trip.stopTimes[trip.stopTimes.length - 1];
+                const [hour, minute] = lastStopTime.arrivalTime.split(':').map(Number);
+                theoreticalTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute);
+            }
+            arrivalTime = theoreticalTime;
         }
-
-        const isTracked = trip.matricolaBus && trip.lastEventRecievedAt;
-
-        const arrivalTime = isTracked
-            ? new Date(theoreticalTime.getTime() + trip.delay * 60 * 1000)
-            : theoreticalTime;
 
         if (arrivalTime.getTime() < now.getTime()) return "0'";
 
@@ -264,21 +269,26 @@ export function Routes({
                             .filter(trip => {
                                 const isFirstStopCurrentStop = trip.stopTimes[0].stopId.toString() === stop?.stopId.toString();
                                 const isLastStopCurrentStop = trip.stopTimes[trip.stopTimes.length - 1].stopId.toString() === stop?.stopId.toString();
+                                const isCircularTrip = isFirstStopCurrentStop && isLastStopCurrentStop;
                                 const isPassingThrough = trip.stopTimes.some((stopTime: any, index: number) =>
                                     stopTime.stopId.toString() === stop?.stopId.toString() && index < trip.stopTimes.length - 1
                                 );
 
+                                const hasStarted = trip.stopTimes[0].arrivalTime <= new Date().toLocaleTimeString('en-GB', { hour12: false }).slice(0, 8);
+
                                 if (view === 'departures') {
+                                    if (isCircularTrip) return !hasStarted;
                                     return !isLastStopCurrentStop && (isFirstStopCurrentStop || isPassingThrough);
                                 }
 
+                                if (isCircularTrip) return hasStarted;
                                 return isLastStopCurrentStop;
                             }).sort((a: any, b: any) => {
                                 const aDate = new Date(a.oraArrivoEffettivaAFermataSelezionata);
                                 const bDate = new Date(b.oraArrivoEffettivaAFermataSelezionata);
                                 return aDate.getTime() - bDate.getTime();
                             })
-                            .map((trip: any, index: number) => (
+                            .map((trip: any) => (
                                 <AnimatePresence key={trip.tripId}>
                                     <motion.div
                                         layout
@@ -327,7 +337,7 @@ export function Routes({
                                             </Group>
                                             <Flex justify="end" align="center" w={{ base: 100, lg: "100%" }}>
                                                 <Text size="lg" fw="bold" ta="right">
-                                                    {calculateMinutesToArrival(trip)}
+                                                    {getTimeLeft(trip)}
                                                 </Text>
                                             </Flex>
                                         </Flex>

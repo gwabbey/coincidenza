@@ -1,5 +1,6 @@
 "use server";
 import axios from 'axios';
+import axiosRetry from 'axios-retry';
 import * as cheerio from 'cheerio';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { cookies } from "next/headers";
@@ -91,31 +92,36 @@ export async function fetchData(endpoint, options = {}) {
     }
 
     const httpsAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
-    const maxRetries = 5;
-    let attempts = 0;
 
-    while (attempts < maxRetries) {
-        try {
-            const response = await axios.get(url, {
-                httpsAgent,
-                headers: {
-                    "Accept": "application/json",
-                    "Content-Type": "application/json",
-                    "X-Requested-With": "it.tndigit.mit",
-                    Authorization: `Basic ${Buffer.from(
-                        `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
-                    ).toString("base64")}`
-                },
-            });
-
-            return response.data;
-        } catch (error) {
-            console.error(`Error in fetchData attempt ${attempts + 1}: ${error.message}`);
-            if (attempts === maxRetries - 1) {
-                throw new Error("trentino trasporti data fetch error: ", error.message);
-            }
+    const client = axios.create({
+        httpsAgent,
+        headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "X-Requested-With": "it.tndigit.mit",
+            Authorization: `Basic ${Buffer.from(
+                `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
+            ).toString("base64")}`
         }
-        attempts++;
+    });
+
+    axiosRetry(client, {
+        retries: 5,
+        retryDelay: axiosRetry.exponentialDelay,
+        retryCondition: (error) => {
+            return axiosRetry.isNetworkOrIdempotentRequestError(error) ||
+                error.response?.status >= 500;
+        },
+        onRetry: (retryCount, error) => {
+            console.error(`Retry attempt ${retryCount} for error: ${error.message}`);
+        }
+    });
+
+    try {
+        const response = await client.get(url);
+        return response.data;
+    } catch (error) {
+        throw new Error(`Trentino trasporti data fetch error: ${error.message}`);
     }
 }
 
@@ -175,14 +181,21 @@ export async function getStopTrips(id, type, routes) {
         );
 
         const routeGroups = new Map();
+        const uniqueTrips = new Set();
 
         for (const trip of trips || []) {
             const routeId = Number(trip.routeId);
             const routeDetails = routeMap.get(routeId);
 
-            if (routeDetails) {
+            if (routeDetails && !uniqueTrips.has(trip.tripId)) {
+                uniqueTrips.add(trip.tripId);
+
                 if (!routeGroups.has(routeId)) {
-                    routeGroups.set(routeId, { id: routeId, trips: [trip], details: routeDetails });
+                    routeGroups.set(routeId, {
+                        id: routeId,
+                        trips: [trip],
+                        details: routeDetails,
+                    });
                 } else {
                     routeGroups.get(routeId).trips.push(trip);
                 }
@@ -194,12 +207,12 @@ export async function getStopTrips(id, type, routes) {
             type,
             routes: Array.from(routeGroups.values()).sort((a, b) =>
                 a.details.routeShortName.localeCompare(b.details.routeShortName, 'it', { numeric: true })
-            )
+            ),
         };
 
         return response;
     } catch (error) {
-        console.error(`Error in getStop: ${error.message}`);
+        console.error(`Error in getStopTrips: ${error.message}`);
         throw new Error(`Failed to fetch stop data: ${error.message}`);
     }
 }
