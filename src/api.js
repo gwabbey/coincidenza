@@ -106,14 +106,9 @@ export async function fetchData(endpoint, options = {}) {
     });
 
     axiosRetry(client, {
-        retries: 5,
         retryDelay: axiosRetry.exponentialDelay,
-        retryCondition: (error) => {
-            return axiosRetry.isNetworkOrIdempotentRequestError(error) ||
-                error.response?.status >= 500;
-        },
         onRetry: (retryCount, error) => {
-            console.error(`Retry attempt ${retryCount} for error: ${error.message}`);
+            console.error(`Retry attempt ${retryCount} for error ${error.response?.status}`);
         }
     });
 

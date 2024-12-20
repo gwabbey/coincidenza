@@ -60,6 +60,15 @@ export function Routes({
         if (typeof window !== 'undefined') localStorage.setItem('sort', sort);
     }, [sort]);
 
+    const [blinkKey, setBlinkKey] = useState(0);
+
+    useEffect(() => {
+        const blinkInterval = setInterval(() => {
+            setBlinkKey(prev => prev + 1);
+        }, 1000);
+        return () => clearInterval(blinkInterval);
+    }, []);
+
     const getTimeLeft = (trip: any) => {
         const now = new Date();
         const isTracked = trip.matricolaBus !== null && trip.lastEventRecivedAt !== undefined;
@@ -336,9 +345,26 @@ export function Routes({
                                                 </Stack>
                                             </Group>
                                             <Flex justify="end" align="center" w={{ base: 100, lg: "100%" }}>
-                                                <Text size="lg" fw="bold" ta="right">
-                                                    {getTimeLeft(trip)}
-                                                </Text>
+                                                {getTimeLeft(trip) === "0'" ? (
+                                                    <motion.div
+                                                        key={blinkKey}
+                                                        initial={{ opacity: 1 }}
+                                                        animate={{ opacity: [1, 0, 1] }}
+                                                        transition={{
+                                                            duration: 1,
+                                                            times: [0, 0.5, 1],
+                                                            ease: 'easeInOut'
+                                                        }}
+                                                    >
+                                                        <Text size="lg" fw="bold" ta="right">
+                                                            {getTimeLeft(trip)}
+                                                        </Text>
+                                                    </motion.div>
+                                                ) : (
+                                                    <Text size="lg" fw="bold" ta="right">
+                                                        {getTimeLeft(trip)}
+                                                    </Text>
+                                                )}
                                             </Flex>
                                         </Flex>
                                     </motion.div>
