@@ -106,6 +106,7 @@ export async function fetchData(endpoint, options = {}) {
     });
 
     axiosRetry(client, {
+        retries: 5,
         retryDelay: axiosRetry.exponentialDelay,
         onRetry: (retryCount, error) => {
             console.error(`Retry attempt ${retryCount} for error ${error.response?.status}`);
@@ -234,8 +235,18 @@ export async function getTrip(id, type) {
 
 export async function getStationMonitor(id) {
     try {
-        const response = await fetch(`https://iechub.rfi.it/ArriviPartenze/ArrivalsDepartures/Monitor?placeId=${id}&arrivals=False`);
-        const $ = cheerio.load(await response.text());
+        const client = axios.create();
+
+        axiosRetry(client, {
+            retries: 5,
+            retryDelay: axiosRetry.exponentialDelay,
+            onRetry: (retryCount, error) => {
+                console.error(`Retry attempt ${retryCount} for error ${error.response?.status}`);
+            }
+        });
+
+        const response = await client.get(`https://iechub.rfi.it/ArriviPartenze/ArrivalsDepartures/Monitor?placeId=${id}&arrivals=False`);
+        const $ = cheerio.load(response.data);
 
         const trains = [];
         const alerts = $('#barraInfoStazioneId > div').find('div[class="marqueeinfosupp"] div').text();

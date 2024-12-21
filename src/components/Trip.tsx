@@ -186,7 +186,7 @@ export default function Trip({ trip, routes }: { trip: TripProps, routes: any[] 
                         : activeIndex
                 }
                 bulletSize={24}
-                lineWidth={2}
+                lineWidth={4}
                 color={trip.type === 'U' ? 'green' : trip.type === 'E' ? 'blue' : 'dimmed'}
                 mx={{ base: 0, sm: "auto" }}
             >

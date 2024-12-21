@@ -82,7 +82,7 @@ export function Monitor({ monitor }: { monitor: any }) {
                                         {train.destination}
                                     </Text>
                                     <Text fz="sm" c="dimmed" tt="capitalize">
-                                        {train.shortCategory || train.company} {train.number} {train.shortCategory && `• ${train.company}`}
+                                        {train.shortCategory || train.company} {train.number} {train.shortCategory && train.company && `• ${train.company}`}
                                     </Text>
                                     {!train.departing ? (
                                         <Group gap={0} style={{ whiteSpace: "pre" }}>

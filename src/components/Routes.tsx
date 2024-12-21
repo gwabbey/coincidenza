@@ -171,7 +171,7 @@ export function Routes({
                                                 route.details.routeColor
                                                     ? `#${route.details.routeColor}`
                                                     :
-                                                    route.details.type === 'U' ? 'gray' : "blue"
+                                                    route.details.type === "U" ? "gray" : "blue"
                                             }
                                             px={0}
                                             py="md"
