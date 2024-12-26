@@ -1,17 +1,20 @@
 'use client';
 import { vehicleIcons } from "@/icons";
-import { Anchor, Box, Button, Card, Divider, Flex, Grid, Group, OptionsFilter, Stack, Text, Timeline, Title } from "@mantine/core";
+import { Anchor, Box, Button, Card, Divider, Flex, Grid, Group, Stack, Text, Timeline, Title } from "@mantine/core";
 import { IconLiveView, IconMapPin } from "@tabler/icons-react";
 import 'dayjs/locale/it';
 import MapComponent from "./map";
 
-import { searchLocation } from "@/api";
+import { setCookie } from "@/api";
+import { getCachedMapsToken } from "@/api/apple-maps/auth";
+import { geocodeAddress } from "@/api/apple-maps/geocoding";
 import { Autocomplete, Loader } from "@mantine/core";
 import { DatesProvider, TimeInput } from "@mantine/dates";
 import { useDebouncedValue } from "@mantine/hooks";
 import Link from "next/link";
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getUserLocation } from "./geolocation";
 
 interface Props {
     name: string;
@@ -34,40 +37,41 @@ export const LocationInput = ({
     const [data, setData] = useState<{
         value: string;
         label: string;
-        city?: string;
-        county?: string;
-        countrycode?: string;
-        type?: string;
-        routes?: string;
+        address: string;
     }[]>([]);
     const [loading, setLoading] = useState(false);
     const searchParams = useSearchParams();
+    const [userLocation, setUserLocation] = useState<{ lat: number, lon: number } | null>(null);
+
+    useEffect(() => {
+        getClosestStops();
+    }, []);
+
+    const getClosestStops = useCallback(async () => {
+        const userLocation = await getUserLocation();
+        console.log("user location", userLocation);
+        setUserLocation(userLocation);
+    }, []);
 
     const fetchData = useCallback(async (query: string) => {
         setLoading(true);
         try {
-            const result = await searchLocation(query);
-            console.log(result);
-            const locations = result.features.filter((location: {
-                properties: { name: any; city: any; county: any; countrycode: any; };
-            }, index: any, self: any[]) => {
-                return index === self.findIndex((t) => (
-                    t.properties.name === location.properties.name &&
-                    t.properties.city === location.properties.city &&
-                    t.properties.county === location.properties.county &&
-                    t.properties.countrycode === location.properties.countrycode
-                ));
-            }).map((location: any) => ({
+            const token = await getCachedMapsToken();
+            const search = await geocodeAddress(query, token, {
+                limitToCountries: 'IT',
+                lang: 'it-IT',
+                userLocation: userLocation ? `${userLocation.lat},${userLocation.lon}` : undefined,
+                searchLocation: '46.0722416,11.1193186'
+            });
+
+            console.log("search autocomplete", search);
+
+            const locations = search.results.map((location: any) => ({
                 value: JSON.stringify(location),
-                label: location.properties.name,
-                city: location.properties.city,
-                county: location.properties.county,
-                countrycode: location.properties.countrycode,
-                type: location.properties.type || 'default',
-                routes: [
-                    location.properties.city,
-                    location.properties.county,
-                    location.properties.countrycode,
+                label: location.displayLines[0],
+                address: [
+                    location.structuredAddress?.locality ?? location.displayLines[1],
+                    location.structuredAddress?.fullThoroughfare ?? location.structuredAddress?.subLocality
                 ].filter(Boolean).join(', ')
             }));
             setData(locations);
@@ -86,28 +90,18 @@ export const LocationInput = ({
         fetchData(debouncedValue);
     }, [debouncedValue, fetchData]);
 
-
-    const optionsFilter: OptionsFilter = ({ options, search }) => {
-        const splitSearch = search.toLowerCase().trim().split(" ");
-        return options.filter((option) => {
-            return splitSearch.every((searchWord) =>
-                Object.values(option).some((value) =>
-                    typeof value === 'string' && value.toLowerCase().includes(searchWord)
-                )
-            );
-        });
-    };
-
     const onLocationSelect = useCallback(async (value: string) => {
-        const location = JSON.parse(value);
-        const locationString = `${location.geometry.coordinates[1]},${location.geometry.coordinates[0]}`;
+        const result = JSON.parse(value);
+        const location = `${result.location.latitude},${result.location.longitude}`;
         const params = new URLSearchParams(searchParams.toString());
 
         if (params.has(name)) {
-            params.set(name, locationString);
+            params.set(name, location);
         } else {
-            params.append(name, locationString);
+            params.append(name, location);
         }
+
+        setCookie(name, result.displayLines[0]);
 
         router.push(`/directions?${params.toString()}`);
     }, [router, searchParams, name]);
@@ -125,7 +119,7 @@ export const LocationInput = ({
             comboboxProps={{
                 transitionProps: { transition: "fade", duration: 300 },
             }}
-            filter={optionsFilter}
+            filter={({ options }) => options}
             radius="xl"
             styles={{
                 option: {
@@ -145,8 +139,10 @@ export const LocationInput = ({
                             pos="relative"
                             pl="sm"
                         >
-                            <Text size="xl">{option.label}</Text>
-                            <Text size="sm" c="dimmed">{option.routes}</Text>
+                            <Text size="lg" lineClamp={2} maw={{ base: 250, sm: 400, md: 600 }}>{option.label}</Text>
+                            <Text size="sm" c="dimmed" lineClamp={2} maw={{ base: 250, sm: 400, md: 600 }}>
+                                {option.address}
+                            </Text>
                         </Stack>
                     </Group>
                 )
@@ -213,11 +209,11 @@ export default function Directions({ directions, from, to }: { directions: any, 
 
             {directions && directions.routes.length > 0 ? (
                 <Stack gap="lg" align="center" my={16}>
-                    <Grid justify="center" align="center">
+                    <Grid justify="center" align="center" key={directions.routes.length}>
                         {directions.routes.map((route: any, index: number) => {
                             const changes = route.legs[0].steps.filter((step: any) => step.travelMode !== 'WALKING').length - 1;
                             return (
-                                <Grid.Col span="content">
+                                <Grid.Col span="content" key={index}>
                                     <Button
                                         p={8}
                                         variant={activePage === index ? "filled" : "outline"}

@@ -39,50 +39,6 @@ export async function setCookie(name, value, options = {}) {
     });
 }
 
-export async function searchLocation(query) {
-    let url = new URL("https://photon.komoot.io/api/");
-    url.searchParams.append("q", query);
-    url.searchParams.append("limit", "25");
-    url.searchParams.append("lat", "46.0722416");
-    url.searchParams.append("lon", "11.1193186");
-
-    if (!query) {
-        return [];
-    }
-
-    try {
-        const response = await fetch(url);
-
-        if (!response.ok) {
-            throw new Error(`Fetch error: ${response.status}`);
-        }
-
-        return await response.json();
-    } catch (error) {
-        console.error(`Error in searchLocation: ${error.message}`);
-        throw error;
-    }
-}
-
-export async function reverseGeocode(lat, lon) {
-    let url = new URL("https://photon.komoot.io/reverse/");
-    url.searchParams.append("lat", lat);
-    url.searchParams.append("lon", lon);
-
-    try {
-        const response = await fetch(url);
-
-        if (!response.ok) {
-            throw new Error(`Fetch error: ${response.status}`);
-        }
-
-        return await response.json();
-    } catch (error) {
-        console.error(`Error in reverseGeocode: ${error.message}`);
-        throw error;
-    }
-}
-
 export async function fetchData(endpoint, options = {}) {
     let url = `https://app-tpl.tndigit.it/gtlservice/${endpoint}`;
 
@@ -94,7 +50,7 @@ export async function fetchData(endpoint, options = {}) {
     const httpsAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
 
     const client = axios.create({
-        httpsAgent,
+        // httpsAgent,
         headers: {
             "Accept": "application/json",
             "Content-Type": "application/json",
@@ -109,7 +65,7 @@ export async function fetchData(endpoint, options = {}) {
         retries: 5,
         retryDelay: axiosRetry.exponentialDelay,
         onRetry: (retryCount, error) => {
-            console.error(`Retry attempt ${retryCount} for error ${error.response?.status}`);
+            console.error(`Retry attempt ${retryCount} for error ${error.response?.statusText}`);
         }
     });
 
@@ -241,7 +197,7 @@ export async function getStationMonitor(id) {
             retries: 5,
             retryDelay: axiosRetry.exponentialDelay,
             onRetry: (retryCount, error) => {
-                console.error(`Retry attempt ${retryCount} for error ${error.response?.status}`);
+                console.error(`Retry attempt ${retryCount} for error ${error.response?.statusText}`);
             }
         });
 
@@ -268,7 +224,7 @@ export async function getStationMonitor(id) {
                 }
 
                 if (category.startsWith('servizio ferroviario metropolitano')) {
-                    return category.replace('servizio ferroviario metropolitano linea', 'SFM').trim();
+                    return category.replace('servizio ferroviario metropolitano linea', 'SFM');
                 }
 
                 if (category === 'treno storico') {
@@ -282,6 +238,8 @@ export async function getStationMonitor(id) {
 
             let company = $(element).find('td[id="RVettore"] img').attr('alt')?.toLowerCase().trim();
             const getCompany = (company) => {
+                if (!company) return null;
+
                 if (company === 'ente volturno autonomo') {
                     return 'EAV';
                 }
@@ -290,7 +248,7 @@ export async function getStationMonitor(id) {
                     return 'SAD';
                 }
 
-                if (company === 'obb') {
+                if (company.startsWith('obb')) {
                     return 'OBB';
                 }
 

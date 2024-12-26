@@ -1,20 +1,19 @@
-import { fetchData, getDirections, reverseGeocode } from "@/api";
+import { fetchData, getDirections } from "@/api";
 import Directions from "@/components/Directions";
 import { Box, Flex, Title } from '@mantine/core';
+import { cookies } from "next/headers";
 
-const getLocationName = async (coords: string) => {
-    if (!coords) return "";
-    const [lat, lon] = coords.split(",");
-    const response = await reverseGeocode(lat, lon);
-    return response.features?.[0]?.properties?.name || coords;
+async function getLocationName(name: string) {
+    const location = (await cookies()).get(name);
+    return location?.value ?? "";
 };
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ from: string; to: string; time: string }> }) {
     const { from, to, time } = await searchParams;
 
     const [fromName, toName] = await Promise.all([
-        getLocationName(from),
-        getLocationName(to),
+        from ? getLocationName("from") : "",
+        to ? getLocationName("to") : "",
     ]);
 
     const details = await fetchData('routes');

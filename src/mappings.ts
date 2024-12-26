@@ -5,6 +5,7 @@ export const trainCategoryShortNames = {
     "frecciarossa": "FR",
     "frecciabianca": "FB",
     "eurocity": "EC",
+    "railjet": "RJ",
     "intercity": "IC",
     "italo": "AV",
     "intercity notte": "ICN",
