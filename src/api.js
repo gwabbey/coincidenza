@@ -50,7 +50,7 @@ export async function fetchData(endpoint, options = {}) {
     const httpsAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
 
     const client = axios.create({
-        // httpsAgent,
+        httpsAgent,
         headers: {
             "Accept": "application/json",
             "Content-Type": "application/json",
