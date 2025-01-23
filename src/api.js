@@ -227,11 +227,7 @@ export async function getStationMonitor(id) {
                     return category.replace('servizio ferroviario metropolitano linea', 'SFM');
                 }
 
-                if (category === 'treno storico') {
-                    return 'TS';
-                }
-
-                return trainCategoryShortNames[category] || null;
+                return trainCategoryShortNames[category] || "Treno";
             };
 
             const shortCategory = getShortCategory(category);
