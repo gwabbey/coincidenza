@@ -89,8 +89,7 @@ export default function Results({ data }: { data: Trip }) {
                                                     </span>
                                                 </div>
                                             )
-                                        },
-                                        ]} active={-1} />
+                                        }]} active={-1} />
                                     </div>
                                 )}
                             </div>

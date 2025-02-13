@@ -2,24 +2,6 @@
 
 import { Trip as TripProps } from '@/types';
 import { getDelayColor } from "@/utils";
-import {
-    ActionIcon,
-    Affix,
-    Badge,
-    Divider,
-    Flex,
-    Group,
-    Indicator,
-    Paper,
-    Stack,
-    Text,
-    Timeline,
-    Title,
-    Transition,
-    useMantineColorScheme,
-    useMantineTheme
-} from "@mantine/core";
-import { useWindowScroll } from "@mantine/hooks";
 import { IconAlertTriangleFilled, IconArrowUp, IconBus, IconMapPin } from "@tabler/icons-react";
 import Link from 'next/link';
 import { useRouter } from "next/navigation";
@@ -27,9 +9,6 @@ import { useEffect } from 'react';
 
 export default function Trip({ trip, routes }: { trip: TripProps, routes: any[] }) {
     const router = useRouter();
-    const theme = useMantineTheme();
-    const { colorScheme } = useMantineColorScheme();
-    const [scroll, scrollTo] = useWindowScroll();
 
     const route = routes.find(route => route.routeId === trip.routeId);
 
@@ -64,40 +43,32 @@ export default function Trip({ trip, routes }: { trip: TripProps, routes: any[] 
     };
 
     return (
-        <Flex
-            justify="center"
-            direction="column"
-            wrap="wrap"
-            ta="center"
-            gap="md"
-        >
-            <Flex justify="center" align="center" direction={{ base: 'column', sm: 'row' }}>
-                <Badge
-                    size="xl"
-                    radius="xl"
-                    mr="xs"
+        <div className="flex flex-col gap-4 text-center">
+            <div className="flex justify-center items-center flex-col sm:flex-row">
+                <div
+                    className="text-2xl mr-4"
                     color={trip.type === 'U' ? 'green' : 'blue'}
                 >
                     {route.routeShortName}
-                </Badge>
-                <Title order={2}>
+                </div>
+                <div className="text-2xl font-bold">
                     {trip.stopTimes[0].stopName} → {trip.stopTimes[trip.stopTimes.length - 1].stopName}
-                </Title>
-            </Flex>
+                </div>
+            </div>
 
-            <Flex justify="center" align="center" my="md" direction={{ base: 'column', sm: 'row' }} visibleFrom="sm">
-                <Paper shadow="xl" radius="xl" p="md" withBorder w={250}>
-                    <Text fw="bold" truncate>{trip.stopTimes[0].stopName}</Text>
-                    <Text>{trip.stopTimes[0].arrivalTime.replace(/^24:/, '00:').slice(0, 5)}</Text>
-                </Paper>
+            <div className="flex justify-center items-center my-4 flex-col sm:flex-row">
+                <div className="shadow-xl rounded-xl p-4 border w-64">
+                    <div className="font-bold truncate">{trip.stopTimes[0].stopName}</div>
+                    <div>{trip.stopTimes[0].arrivalTime.replace(/^24:/, '00:').slice(0, 5)}</div>
+                </div>
 
-                <Divider my="xs" label={formatDuration(tripDuration)} labelPosition="center" w={200} />
+                <div className="w-200">{formatDuration(tripDuration)}</div>
 
-                <Paper shadow="xl" radius="xl" p="md" withBorder w={250}>
-                    <Text fw="bold" truncate>{trip.stopTimes[trip.stopTimes.length - 1].stopName}</Text>
-                    <Text>{trip.stopTimes[trip.stopTimes.length - 1].arrivalTime.replace(/^24:/, '00:').slice(0, 5)}</Text>
-                </Paper>
-            </Flex>
+                <div className="shadow-xl rounded-xl p-4 border w-64">
+                    <div className="font-bold truncate">{trip.stopTimes[trip.stopTimes.length - 1].stopName}</div>
+                    <div>{trip.stopTimes[trip.stopTimes.length - 1].arrivalTime.replace(/^24:/, '00:').slice(0, 5)}</div>
+                </div>
+            </div>
 
             <Flex
                 justify="center"
