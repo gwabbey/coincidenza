@@ -1,12 +1,7 @@
-// Import styles of packages that you've installed.
-// All packages except `@mantine/hooks` require styles imports
-import '@mantine/core/styles.css';
-import '@mantine/dates/styles.css';
-import '@mantine/notifications/styles.css';
+import "./globals.css";
 
-import { Header } from "@/components/Header";
-import { ColorSchemeScript, Container, MantineProvider } from '@mantine/core';
-import { Notifications } from '@mantine/notifications';
+import { Header } from "@/components/header";
+import { Providers } from "./providers";
 
 export const metadata = {
     title: 'trasporti.g3b.dev',
@@ -20,17 +15,13 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en" suppressHydrationWarning>
-            <head>
-                <ColorSchemeScript defaultColorScheme="dark" />
-            </head>
             <body>
-                <MantineProvider defaultColorScheme="dark">
-                    <Notifications />
+                <Providers>
                     <Header />
-                    <Container fluid h="100%" pb="xl">
+                    <main className="p-4">
                         {children}
-                    </Container>
-                </MantineProvider>
+                    </main>
+                </Providers>
             </body>
         </html>
     );

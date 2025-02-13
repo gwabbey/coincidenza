@@ -1,15 +1,15 @@
-'use server';
+"use server";
+
 import axios from 'axios';
+import { getCachedMapsToken } from './auth';
 
 /**
  * Generates a geocoding request.
  * @param address - The address to geocode (e.g., "1 Apple Park, Cupertino, CA").
- * @param token - A valid Apple Maps JWT token.
  * @param options - Optional parameters for geocoding.
  */
 export async function geocodeAddress(
     address: string,
-    token: string,
     options?: {
         limitToCountries?: string; // e.g., "US,CA"
         lang?: string; // e.g., "en-US"
@@ -18,6 +18,7 @@ export async function geocodeAddress(
         userLocation?: string; // e.g., "37.78,-122.42"
     }
 ) {
+    const token = await getCachedMapsToken();
     const params: Record<string, string> = { q: address };
     if (options?.limitToCountries) params.limitToCountries = options.limitToCountries;
     if (options?.lang) params.lang = options.lang;

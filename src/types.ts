@@ -1,3 +1,8 @@
+export interface Coordinates {
+    lat: number;
+    lon: number;
+}
+
 export interface Stop {
     stopId: number;
     stopName: string;
@@ -5,6 +10,7 @@ export interface Stop {
     type: string;
     town?: string | null;
     distance: number | null;
+    intermediateQuays: Array<{ id: number, name: string }>;
     stopLat?: number | null;
     stopLon?: number | null;
     routes: RouteDetails[];

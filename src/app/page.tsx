@@ -1,4 +1,4 @@
-import { Button, Stack } from "@mantine/core";
+import { Button } from "@heroui/react";
 import { IconBus, IconRoute, IconTrain } from "@tabler/icons-react";
 import Link from "next/link";
 
@@ -10,25 +10,17 @@ const links = [
 
 export default function Page() {
     return (
-        <div>
-            <Stack
-                mt="xl"
-                align="center"
-                justify="start"
-                gap="xl"
-            >
-                {links.map((link, index) => (
-                    <Button variant="gradient"
-                        key={index}
-                        gradient={{ from: 'violet', to: 'indigo', deg: 90 }}
-                        radius="xl" size="xl" maw={750} w="100%" leftSection={<link.icon />} justify="start"
-                        component={Link}
-                        href={link.href}
-                    >
-                        {link.label}
-                    </Button>
-                ))}
-            </Stack>
+        <div className="flex flex-col items-center justify-start gap-4">
+            {links.map((link, index) => (
+                <Button variant="solid"
+                    startContent={<link.icon />}
+                    key={index}
+                    className="bg-gradient-to-r dark:from-violet-500 dark:to-indigo-500 from-violet-300 to-indigo-300 max-w-2xl w-full flex items-center justify-start"
+                    radius="md" size="lg" as={Link} href={link.href}
+                >
+                    {link.label}
+                </Button>
+            ))}
         </div>
     )
 }

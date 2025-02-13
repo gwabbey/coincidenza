@@ -253,6 +253,13 @@ export async function getStationMonitor(id) {
 
             company = getCompany(company);
 
+            let stops = $(element).find('td[id="RDettagli"] div[class="FermateSuccessivePopupStyle"] div[class="testoinfoaggiuntive"]').first().text().trim();
+            stops = [...stops.matchAll(/(?:FERMA A:\s*)?([^()-]+)\s*\((\d{1,2}[:.]\d{2})\)/g)]
+                .map(match => ({
+                    location: match[1].trim().replace(/^- /, "").toLowerCase(),
+                    time: match[2].replace(".", ":")
+                }));
+
             if (!id) {
                 return;
             }
@@ -268,6 +275,7 @@ export async function getStationMonitor(id) {
                     delay,
                     platform,
                     departing,
+                    stops,
                 });
             }
         });

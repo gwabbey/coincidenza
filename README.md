@@ -1,3 +1,7 @@
 # trasporti.g3b.dev
 
-l'obiettivo di questo progetto è creare un'applicazione web per semplificare e promuovere l'uso dei mezzi pubblici.
+un modo semplice e veloce di viaggiare con i mezzi pubblici.
+
+## obiettivo
+
+quello che vorrei realizzare è un sito che rende il più facile possibile capire come muoversi utilizzando soltanto i mezzi pubblici.
