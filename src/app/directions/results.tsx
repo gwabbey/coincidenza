@@ -1,14 +1,14 @@
 "use client"
 import Timeline from "@/components/timeline";
-import { Accordion, AccordionItem, Button, Card, cn } from "@heroui/react";
-import { IconAccessPoint, IconBus, IconInfoCircleFilled, IconInfoSmall, IconTrain, IconWalk } from "@tabler/icons-react";
+import { Accordion, AccordionItem, Alert, Button, Link, Card, cn, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure } from "@heroui/react";
+import { IconAccessPoint, IconBus, IconExclamationCircle, IconInfoCircleFilled, IconInfoSmall, IconInfoTriangle, IconInfoTriangleFilled, IconTrain, IconWalk } from "@tabler/icons-react";
 import { format } from "date-fns";
 import { Directions } from "./types";
 import Steps from "./steps";
 import { formatDuration, getDelayColor } from "@/utils";
-import Link from "next/link";
 
 export default function Results({ directions }: { directions: Directions }) {
+    const { isOpen, onOpen, onOpenChange } = useDisclosure();
     const IconMap: Record<string, React.ReactNode> = {
         "bus": <IconBus size={32} />,
         "rail": <IconTrain size={32} />,
@@ -88,6 +88,7 @@ export default function Results({ directions }: { directions: Directions }) {
                                                 href={`/track/trentino-trasporti/${leg.tripId}`}
                                                 variant="bordered"
                                                 isIconOnly
+                                                isExternal
                                                 radius="full"
                                                 className="border-gray-500 border-1 self-center"
                                                 aria-label={`${leg.line?.code || ""} ${leg.code || ""} in tempo reale`}
@@ -97,7 +98,28 @@ export default function Results({ directions }: { directions: Directions }) {
                                         )}
                                     </div>
                                     {leg.mode !== "foot" && (
-                                        <div className="pl-10">
+                                        <div className="pl-10 flex flex-col gap-4">
+                                            {leg.realtime?.alerts.length > 0 && (
+                                                <Button variant="flat" color="warning" className="flex items-center font-bold sm:w-fit" startContent={<IconInfoTriangleFilled />}
+                                                    onPress={onOpen}>
+                                                    avvisi
+                                                </Button>
+                                            )}
+                                            <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur">
+                                                <ModalContent className="pb-2">
+                                                    <ModalHeader className="flex flex-col gap-1">avvisi sulla linea</ModalHeader>
+                                                    <ModalBody>
+                                                        {leg.realtime?.alerts.map((alert, index) => (
+                                                            <div key={index} className="flex flex-col gap-2">
+                                                                <Link isExternal showAnchorIcon href={alert.url}>
+                                                                    {alert.description}
+                                                                </Link>
+                                                            </div>
+                                                        ))}
+                                                    </ModalBody>
+                                                </ModalContent>
+                                            </Modal>
+
                                             <Timeline steps={[{
                                                 content: (
                                                     <div className="flex flex-col">
@@ -105,12 +127,12 @@ export default function Results({ directions }: { directions: Directions }) {
                                                             {leg.fromPlace.name}
                                                         </span>
                                                         <div className="flex gap-1 items-center">
-                                                            <span className={`text-gray-500 text-sm ${leg.realtime.delay ? (leg.realtime.delay != 0 ? "line-through" : "font-bold text-success") : ""}`}>
+                                                            <span className={`text-gray-500 text-sm ${leg.realtime?.delay ? (leg.realtime?.delay != 0 ? "line-through" : "font-bold text-success") : ""}`}>
                                                                 {format(new Date(leg.aimedStartTime), "HH:mm")}
                                                             </span>
-                                                            {leg.realtime && leg.realtime.delay !== 0 && leg.realtime.delay !== null && (
-                                                                <span className={`font-bold text-sm text-${getDelayColor(leg.realtime.delay)}`}>
-                                                                    {format(new Date(leg.aimedStartTime).getTime() + (leg.realtime.delay * 60 * 1000), "HH:mm")}
+                                                            {leg.realtime && leg.realtime?.delay !== 0 && leg.realtime?.delay !== null && (
+                                                                <span className={`font-bold text-sm text-${getDelayColor(leg.realtime?.delay)}`}>
+                                                                    {format(new Date(leg.aimedStartTime).getTime() + (leg.realtime?.delay * 60 * 1000), "HH:mm")}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -129,12 +151,12 @@ export default function Results({ directions }: { directions: Directions }) {
                                                             {leg.toPlace.name}
                                                         </span>
                                                         <div className="flex gap-1 items-center">
-                                                            <span className={`text-gray-500 text-sm ${leg.realtime.delay ? (leg.realtime.delay != 0 ? "line-through" : "font-bold text-success") : ""}`}>
+                                                            <span className={`text-gray-500 text-sm ${leg.realtime?.delay ? (leg.realtime?.delay != 0 ? "line-through" : "font-bold text-success") : ""}`}>
                                                                 {format(new Date(leg.aimedEndTime), "HH:mm")}
                                                             </span>
-                                                            {leg.realtime && leg.realtime.delay !== 0 && leg.realtime.delay !== null && (
-                                                                <span className={`font-bold text-sm text-${getDelayColor(leg.realtime.delay)}`}>
-                                                                    {format(new Date(leg.aimedEndTime).getTime() + (leg.realtime.delay * 60 * 1000), "HH:mm")}
+                                                            {leg.realtime && leg.realtime?.delay !== 0 && leg.realtime?.delay !== null && (
+                                                                <span className={`font-bold text-sm text-${getDelayColor(leg.realtime?.delay)}`}>
+                                                                    {format(new Date(leg.aimedEndTime).getTime() + (leg.realtime?.delay * 60 * 1000), "HH:mm")}
                                                                 </span>
                                                             )}
                                                         </div>

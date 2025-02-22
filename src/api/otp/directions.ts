@@ -2,7 +2,6 @@
 
 import { Coordinates } from '@/types';
 import axios from 'axios';
-import { get } from 'http';
 import { getRealtimeData } from './realtime';
 
 const getCode = (leg: any) => {

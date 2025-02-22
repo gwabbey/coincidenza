@@ -116,6 +116,7 @@ export default function Directions() {
                     <DateInput
                         variant="underlined"
                         label="data"
+                        isInvalid={new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()) > date}
                         defaultValue={new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate())}
                         onChange={(date) => setDate(date instanceof CalendarDate ? date : new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()))}
                     />
@@ -133,7 +134,7 @@ export default function Directions() {
                 color="primary"
                 className="self-center font-bold max-w-md md:max-w-32 w-full"
                 startContent={!isLoading && <IconSearch stroke={1.5} />}
-                isDisabled={!selectedLocations.from || !selectedLocations.to || !date || !time || isLoading || (selectedLocations && isSameLocation)}
+                isDisabled={!selectedLocations.from || !selectedLocations.to || !date || !time || isLoading || (selectedLocations && isSameLocation) || new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()) > date}
                 isLoading={isLoading}
             >
                 {!isLoading && "cerca!"}

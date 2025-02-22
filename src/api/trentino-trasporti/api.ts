@@ -62,8 +62,10 @@ export async function getRoutes(type: string) {
     return routes;
 }
 
-export async function getTrip(id: string) {
-    return await fetchData(`trips/${id}`);
+export async function getTrip(id: string, type: string) {
+    const routes = await getRoutes(type);
+    const trip = await fetchData(`trips/${id}`);
+    return { ...trip, route: routes.find((route: any) => route.routeId === trip.routeId) };
 }
 
 export async function getTripDetails(id: string, type: string) {
