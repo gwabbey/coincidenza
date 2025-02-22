@@ -39,44 +39,6 @@ export async function setCookie(name, value, options = {}) {
     });
 }
 
-export async function fetchData(endpoint, options = {}) {
-    let url = `https://app-tpl.tndigit.it/gtlservice/${endpoint}`;
-
-    if (options.params) {
-        const searchParams = new URLSearchParams(options.params);
-        url += `?${searchParams.toString()}`;
-    }
-
-    const httpsAgent = new HttpsProxyAgent(process.env.PROXY_AGENT);
-
-    const client = axios.create({
-        httpsAgent,
-        headers: {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "X-Requested-With": "it.tndigit.mit",
-            Authorization: `Basic ${Buffer.from(
-                `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
-            ).toString("base64")}`
-        }
-    });
-
-    axiosRetry(client, {
-        retries: 5,
-        retryDelay: axiosRetry.exponentialDelay,
-        onRetry: (retryCount, error) => {
-            console.error(`Retry attempt ${retryCount} for error ${error.response?.statusText}`);
-        }
-    });
-
-    try {
-        const response = await client.get(url);
-        return response.data;
-    } catch (error) {
-        throw new Error(`Trentino trasporti data fetch error: ${error.message}`);
-    }
-}
-
 export async function getClosestBusStops(userLat, userLon) {
     try {
         const stopsWithDistance = stops.map(stop => ({
@@ -91,30 +53,6 @@ export async function getClosestBusStops(userLat, userLon) {
         console.error(`Error in getClosestBusStops: ${error.message}`);
         throw new Error("closest stops fetch error: " + error.message);
     }
-}
-
-export async function getRoutes(type) {
-    if (!type) {
-        return await fetchData('routes');
-    }
-
-    return await fetchData('routes', {
-        params: {
-            type
-        }
-    });
-}
-
-export async function getStops(type) {
-    if (!type) {
-        return await fetchData('stops');
-    }
-
-    return await fetchData('stops', {
-        params: {
-            type
-        }
-    });
 }
 
 export async function getStopTrips(id, type, routes) {
@@ -166,26 +104,6 @@ export async function getStopTrips(id, type, routes) {
     } catch (error) {
         console.error(`Error in getStopTrips: ${error.message}`);
         throw new Error(`Failed to fetch stop data: ${error.message}`);
-    }
-}
-
-export async function getTrip(id, type) {
-    try {
-        const trip = await fetchData(`trips/${id}`);
-
-        const stopMap = new Map(
-            stops.filter(stop => stop.type === type).map(stop => [stop.stopId, stop.stopName])
-        );
-
-        return {
-            ...trip,
-            stopTimes: trip.stopTimes.map(stopTime => ({
-                ...stopTime,
-                stopName: stopMap.get(stopTime.stopId) || 'Fermata sconosciuta'
-            })),
-        };
-    } catch (error) {
-        return null;
     }
 }
 

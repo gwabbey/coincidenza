@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useRouter } from "next/navigation";
 import { useEffect } from 'react';
 
-export default function Trip({ trip, routes }: { trip: TripProps, routes: any[] }) {
+export default function OldTrip({ trip, routes }: { trip: TripProps, routes: any[] }) {
     const router = useRouter();
 
     const route = routes.find(route => route.routeId === trip.routeId);

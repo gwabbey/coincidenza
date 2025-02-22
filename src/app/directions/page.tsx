@@ -6,8 +6,9 @@ import { CalendarDate, Time } from "@internationalized/date";
 import { IconArrowDown, IconSearch } from "@tabler/icons-react";
 import { useRef, useState } from "react";
 import { LocationAutocomplete } from "./autocomplete";
-import { Trip } from "./interfaces";
+import { type Directions, Trip } from "./types";
 import Results from "./results";
+
 interface Coordinates {
     lat: number;
     lon: number;
@@ -19,20 +20,19 @@ interface SelectedLocations {
 }
 
 export default function Directions() {
+    // TODO: change values back once testing is done
     const [selectedLocations, setSelectedLocations] = useState<SelectedLocations>({
-        from: null,
-        to: null
+        from: { "lat": 45.93386, "lon": 11.09547 },
+        to: { "lat": 45.89395, "lon": 11.04499 }
     });
     const [date, setDate] = useState<CalendarDate>(new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()));
     const [time, setTime] = useState<Time>(new Time(new Date().getHours(), new Date().getMinutes()));
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [directions, setDirections] = useState<Trip>();
+    const [directions, setDirections] = useState<Directions>();
     const toInputRef = useRef<HTMLInputElement>(null);
 
-    console.log("Selected locations:", selectedLocations);
-    console.log("Date:", date);
-    console.log("Time:", time);
+    console.log("directions", directions);
 
     const handleLocationSelect = (type: 'from' | 'to', coordinates: Coordinates | null) => {
         setSelectedLocations(prev => ({
@@ -87,7 +87,7 @@ export default function Directions() {
 
             setDirections(prev => prev ? {
                 ...moreDirections,
-                tripPatterns: [...prev.tripPatterns, ...moreDirections.tripPatterns]
+                trips: [...prev.trips, ...moreDirections.trips]
             } : moreDirections);
         } finally {
             setIsLoadingMore(false);
@@ -138,7 +138,7 @@ export default function Directions() {
             >
                 {!isLoading && "cerca!"}
             </Button>
-            {directions && <Results data={directions} />}
+            {directions && <Results directions={directions} />}
             {directions?.nextPageCursor && (
                 <Button
                     startContent={!isLoadingMore && <IconArrowDown />}

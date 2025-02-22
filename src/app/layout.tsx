@@ -1,6 +1,6 @@
+import { Header } from "@/components/Header";
 import "./globals.css";
 
-import { Header } from "@/components/header";
 import { Providers } from "./providers";
 
 export const metadata = {
@@ -15,6 +15,7 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en" suppressHydrationWarning>
+            <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
             <body>
                 <Providers>
                     <Header />

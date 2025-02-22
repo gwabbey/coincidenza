@@ -2,6 +2,109 @@
 
 import { Coordinates } from '@/types';
 import axios from 'axios';
+import { get } from 'http';
+import { getRealtimeData } from './realtime';
+
+const getCode = (leg: any) => {
+    if (leg.mode === "rail" && leg.authority?.id === "IT-ITH3-TRENITALIA_L1:Dummy-GMT" && leg.serviceJourney?.id) {
+        const match = leg.serviceJourney?.id?.match(/VehicleJourney:\d+-(\d+)-/);
+        return match ? match[1] : null;
+    }
+
+    return leg.serviceJourney?.publicCode?.split('-').pop().trim() || null;
+};
+
+const getLine = (leg: any) => {
+    let name = "";
+    let code = "";
+    let color = "";
+    if (leg.line?.name === "REG") code = "R";
+    if (leg.authority?.id === "4:1" && leg.line?.publicCode?.startsWith("RE")) code = "RE";
+    if (leg.mode === "rail" && leg.authority?.id === "IT-ITH3-TRENITALIA_L1:Dummy-GMT" && leg.serviceJourney?.id) {
+        switch (leg.line?.name) {
+            case "Regionale Veloce":
+                code = "RV";
+                name = "Regionale Veloce";
+                break;
+            case "Regionale":
+                code = "R";
+                name = "Regionale";
+                break;
+            default:
+                break;
+        }
+    }
+
+    if (leg.authority?.id === "1:12" && !leg.line?.presentation?.colour) color = "006FEE";
+    if (leg.authority?.id === "5:12" && !leg.line?.presentation?.colour) color = "17c964";
+
+    return {
+        id: leg.line?.id,
+        name: name || leg.line?.name,
+        code: code || leg.line?.publicCode,
+        color: color || leg.line?.presentation?.colour
+    }
+};
+
+const getStop = (name: string) => {
+    const match = name.match(/Stazione di (.+)/i);
+    const extracted = match ? match[1] : name;
+
+    return extracted
+        .toLowerCase()
+        .replace(/\b\w/g, char => char.toUpperCase())
+        .replace(/([-.])\s*(\w)/g, (_, symbol, char) => `${symbol} ${char.toUpperCase()}`);
+}
+
+const processTripData = async (data: { tripPatterns: any[]; nextPageCursor?: string }) => {
+    const processedTrips = await Promise.all(data.tripPatterns.map(async (trip) => {
+        const processedLegs = await Promise.all(trip.legs.map(async (leg: any) => {
+            const realtime = await getRealtimeData(leg.authority?.id, leg.serviceJourney?.id);
+
+            return {
+                code: getCode(leg),
+                line: getLine(leg),
+                destination: leg.toEstimatedCall?.destinationDisplay?.frontText || "",
+                points: leg.pointsOnLink.points,
+                id: leg.id,
+                mode: leg.mode,
+                aimedStartTime: leg.aimedStartTime,
+                aimedEndTime: leg.aimedEndTime,
+                expectedEndTime: leg.expectedEndTime,
+                expectedStartTime: leg.expectedStartTime,
+                distance: leg.distance,
+                intermediateQuays: leg.intermediateQuays.map((quay: any) => ({
+                    id: quay.id,
+                    name: getStop(quay.name)
+                })),
+                duration: leg.duration,
+                fromPlace: {
+                    name: getStop(leg.fromPlace.name),
+                    quay: leg.fromPlace.quay?.id
+                },
+                toPlace: {
+                    name: getStop(leg.toPlace.name),
+                    quay: leg.toPlace.quay?.id
+                },
+                authority: leg.authority,
+                interchangeTo: leg.interchangeTo,
+                interchangeFrom: leg.interchangeFrom,
+                tripId: leg.serviceJourney?.id,
+                realtime
+            };
+        }));
+
+        return {
+            ...trip,
+            legs: processedLegs
+        };
+    }));
+
+    return {
+        trips: processedTrips,
+        nextPageCursor: data.nextPageCursor
+    };
+};
 
 export async function getDirections(
     from: Coordinates,
@@ -16,35 +119,35 @@ export async function getDirections(
             url: 'http://localhost:8080/otp/transmodel/v3',
             headers: { 'Content-Type': 'application/json' },
             data: {
-                query: 'query trip($from: Location!, $to: Location!, $arriveBy: Boolean, $dateTime: DateTime, $numTripPatterns: Int, $searchWindow: Int, $modes: Modes, $itineraryFiltersDebug: ItineraryFilterDebugProfile, $wheelchairAccessible: Boolean, $pageCursor: String) {\n  trip(\n    from: $from\n    to: $to\n    arriveBy: $arriveBy\n    dateTime: $dateTime\n    numTripPatterns: $numTripPatterns\n    searchWindow: $searchWindow\n    modes: $modes\n    itineraryFilters: {debug: $itineraryFiltersDebug}\n    wheelchairAccessible: $wheelchairAccessible\n    pageCursor: $pageCursor\n  ) {\n    previousPageCursor\n    nextPageCursor\n    tripPatterns {\n      aimedStartTime\n      aimedEndTime\n      expectedEndTime\n      expectedStartTime\n      duration\n      distance\n      legs {\n        id\n        serviceJourney {\n          id\n          publicCode\n        }\n        mode\n        aimedStartTime\n        aimedEndTime\n        expectedEndTime\n        expectedStartTime\n        realtime\n        distance\n intermediateQuays {\n          id\n          name\n        }\n                duration\n        fromPlace {\n          name\n          quay {\n            id\n          }\n        }\n        toPlace {\n          name\n          quay {\n            id\n          }\n        }\n        toEstimatedCall {\n          destinationDisplay {\n            frontText\n          }\n        }\n        line {\n          publicCode\n          name\n          id\n          presentation {\n            colour\n          }\n        }\n        authority {\n          name\n          id\n        }\n        pointsOnLink {\n          points\n        }\n        interchangeTo {\n          staySeated\n        }\n        interchangeFrom {\n          staySeated\n        }\n      }\n      systemNotices {\n        tag\n      }\n    }\n  }\n}',
+                query: 'query trip($from: Location!, $to: Location!, $arriveBy: Boolean, $dateTime: DateTime, $numTripPatterns: Int, $searchWindow: Int, $modes: Modes, $itineraryFiltersDebug: ItineraryFilterDebugProfile, $wheelchairAccessible: Boolean, $pageCursor: String) {trip( from: $from to: $to arriveBy: $arriveBy dateTime: $dateTime numTripPatterns: $numTripPatterns searchWindow: $searchWindow modes: $modes itineraryFilters: {debug: $itineraryFiltersDebug} wheelchairAccessible: $wheelchairAccessible pageCursor: $pageCursor) { previousPageCursor nextPageCursor tripPatterns { aimedStartTime aimedEndTime expectedEndTime expectedStartTime duration distance legs { id serviceJourney { id publicCode } mode aimedStartTime aimedEndTime expectedEndTime expectedStartTime realtime distance intermediateQuays { id name } duration fromPlace { name quay { id } } toPlace { name quay { id } } toEstimatedCall { destinationDisplay { frontText } } line { publicCode name id presentation { colour } } authority { name id } pointsOnLink { points } interchangeTo { staySeated } interchangeFrom { staySeated } } systemNotices { tag } }}}',
                 variables: {
                     from: { coordinates: { latitude: from.lat, longitude: from.lon } },
                     to: { coordinates: { latitude: to.lat, longitude: to.lon } },
                     dateTime: dateTime,
                     pageCursor: cursor,
                     searchWindow: 180,
-                    numTripPatterns: 5,
+                    numTripPatterns: 3,
                 },
                 operationName: 'trip'
             }
         };
         const response = await axios.request(options);
-        return response.data.data.trip;
+
+        return {
+            tripPatterns: response.data.data?.trip?.tripPatterns || [],
+            nextPageCursor: response.data.data?.trip?.nextPageCursor
+        };
     };
 
     let attempts = 0;
     let result = await fetchData(pageCursor);
 
-    while (
-        attempts < maxAttempts &&
-        result.tripPatterns.length === 0 &&
-        result.nextPageCursor
-    ) {
+    while (attempts < maxAttempts && result.tripPatterns.length === 0 && result.nextPageCursor != null) {
         attempts++;
         result = await fetchData(result.nextPageCursor);
     }
 
-    return result;
+    return processTripData(result);
 }
 
 export async function reverseGeocode(latitude: number, longitude: number, token: string) {

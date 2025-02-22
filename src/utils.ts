@@ -1,13 +1,14 @@
 export const getDelayColor = (delay: number | null) => {
-    if (delay === null) return 'gray';
-    if (delay >= 10) return 'red';
-    if (delay >= 5) return 'yellow';
-    if (delay >= 0) return 'green';
-    return 'grape';
+    if (delay === null) return 'default';
+    if (delay >= 10) return 'danger';
+    if (delay >= 5) return 'warning';
+    if (delay >= 0) return 'success';
+    return 'secondary';
 };
 
-export const formatTime = (date: string) => {
-    return new Date(date).toLocaleTimeString('it-IT', {
-        hour: '2-digit', minute: '2-digit',
-    });
+export const formatDuration = (duration: number) => {
+    const durationInMinutes = Math.round(duration / 60);
+    const hours = Math.floor(durationInMinutes / 60);
+    const minutes = durationInMinutes % 60;
+    return hours > 0 ? `${hours}h ${minutes !== 0 ? minutes + "min" : ""}` : `${minutes}min`;
 };

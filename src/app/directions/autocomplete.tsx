@@ -94,7 +94,6 @@ export const LocationAutocomplete = ({
     };
 
     const onInputChange = (value: string) => {
-        console.log("Input value:", value);
         setValue(value);
         if (!selectedLocation || value !== (selectedLocation.textValue || selectedLocation.label)) {
             setSelectedLocation(null);
@@ -104,6 +103,7 @@ export const LocationAutocomplete = ({
             }
         }
     };
+
 
     const fetchData = useDebouncedCallback(async (query: string) => {
         if (!query) {
@@ -170,7 +170,7 @@ export const LocationAutocomplete = ({
             onInputChange={onInputChange}
             onSelectionChange={onSelectionChange}
             isDisabled={disabled}
-            endContent={loading && <Spinner size="sm" />}
+            endContent={loading && <Spinner size="sm" color="default" />}
             className="max-w-md"
             items={allItems}
             ref={ref}

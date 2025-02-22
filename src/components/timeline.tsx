@@ -57,7 +57,7 @@ const Timeline = ({ steps, active = steps.length - 1 }: TimelineProps) => {
                         >
                             <div className="relative z-10">
                                 <div
-                                    className={`flex justify-center items-center after:shadow-small after:bg-background outline-none w-4 h-4 after:w-3 after:h-3 rounded-full after:rounded-full bg-primary top-1/2 ring-transparent border-0 after:transition-all shadow-small ${isActive ? "bg-blue-500 after:bg-blue-500" : "bg-gray-200"}`}
+                                    className={`flex justify-center items-center after:shadow-small outline-none w-4 h-4 after:w-3 after:h-3 rounded-full after:rounded-full bg-primary top-1/2 ring-transparent border-0 after:transition-all shadow-small ${isActive ? "after:bg-blue-500" : "bg-gray-200 after:bg-white"}`}
                                 />
                             </div>
 
@@ -68,7 +68,7 @@ const Timeline = ({ steps, active = steps.length - 1 }: TimelineProps) => {
 
                 <div
                     ref={lineRef}
-                    className="absolute left-2 top-0 h-[calc(100%-2rem)] w-1 bg-gray-200 -translate-x-1/2"
+                    className="absolute left-2 top-0 h-[calc(100%-2rem)] w-1 bg-gray-500 -translate-x-1/2"
                 >
                     <div
                         className="absolute w-full bg-blue-500 transition-all duration-1000"
