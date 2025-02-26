@@ -62,16 +62,16 @@ export async function getRoutes(type: string) {
     return routes;
 }
 
-export async function getTrip(id: string, type: string) {
-    const routes = await getRoutes(type);
+export async function getTrip(id: string) {
     const trip = await fetchData(`trips/${id}`);
+    const routes = await getRoutes(trip.type);
     return { ...trip, route: routes.find((route: any) => route.routeId === trip.routeId) };
 }
 
-export async function getTripDetails(id: string, type: string) {
+export async function getTripDetails(id: string) {
     const trip = await fetchData(`trips/${id}`);
-    const stops = await getStops(type === "1" ? "E" : "U");
-    const routes = await getRoutes(type === "1" ? "E" : "U");
+    const stops = await getStops(trip.type);
+    const routes = await getRoutes(trip.type);
 
     const stopMap = new Map(
         stops.map((stop: Stop) => [stop.stopId, stop.stopName])

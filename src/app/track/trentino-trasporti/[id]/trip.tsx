@@ -112,8 +112,8 @@ export default function Trip({ trip }: { trip: TripProps }) {
     return (
         <div className="flex flex-col gap-4">
             <div className="flex justify-center items-center justify-center text-center flex-row gap-x-2">
-                <div className={`text-lg font-bold text-center rounded-small w-fit ${!trip.route.routeColor && trip.type === "U" ? "bg-success text-white" : "bg-primary text-white"}`} style={{
-                    backgroundColor: trip.route.routeColor ? `#${trip.route.routeColor}` : "",
+                <div className={`text-lg font-bold text-center rounded-small w-fit ${!trip.route?.routeColor && trip.type === "U" ? "bg-success text-white" : "bg-primary text-white"}`} style={{
+                    backgroundColor: trip.route && trip.route.routeColor ? `#${trip.route.routeColor}` : "",
                     padding: "0.1rem 0.5rem"
                 }}>
                     {trip.route.routeShortName}

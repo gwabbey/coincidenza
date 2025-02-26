@@ -40,16 +40,22 @@ export interface Leg {
 export interface IntermediateQuay {
     id: string
     name: string
+    latitude: number
+    longitude: number
 }
 
 export interface FromPlace {
     id: string
     name: string
+    latitude: number
+    longitude: number
 }
 
 export interface ToPlace {
     id: string
-    name: string
+    name: string,
+    latitude: number
+    longitude: number
 }
 
 export interface Line {

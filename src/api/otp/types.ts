@@ -4,7 +4,7 @@ export interface Alert {
 }
 
 export interface Realtime {
-    delay: number
-    destination: string
-    alerts: Alert[]
+    delay: number | null
+    destination: string | null
+    alerts: Alert[] | null
 }

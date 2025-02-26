@@ -1,0 +1,30 @@
+[
+    {
+        "name": "STA",
+        "url": "ftp://ftp.sta.bz.it/gtfs/google_transit_shp.zip"
+    },
+    {
+        "name": "Trentino Trasporti Urbano",
+        "url": "https://www.trentinotrasporti.it/opendata/google_transit_urbano_tte.zip"
+    },
+    {
+        "name": "Trentino Trasporti Extraurbano",
+        "url": "https://www.trentinotrasporti.it/opendata/google_transit_extraurbano_tte.zip"
+    },
+    {
+        "name": "Trenord",
+        "url": "https://www.dati.lombardia.it/download/3z4k-mxz9/application/zip"
+    },
+    {
+        "name": "ATM",
+        "url": "https://dati.comune.milano.it/gtfs.zip"
+    },
+    {
+        "name": "OBB",
+        "url": "https://static.oebb.at/open-data/soll-fahrplan-gtfs/GTFS_OP_2025_obb.zip"
+    },
+    {
+        "name": "Roma Mobilità",
+        "url": "https://romamobilita.it/sites/default/files/rome_static_gtfs.zip"
+    }
+]

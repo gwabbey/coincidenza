@@ -1,15 +1,36 @@
 "use client"
 import Timeline from "@/components/timeline";
 import { Accordion, AccordionItem, Alert, Button, Link, Card, cn, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure } from "@heroui/react";
-import { IconAccessPoint, IconBus, IconExclamationCircle, IconInfoCircleFilled, IconInfoSmall, IconInfoTriangle, IconInfoTriangleFilled, IconTrain, IconWalk } from "@tabler/icons-react";
+import { IconAccessPoint, IconBus, IconMap, IconInfoTriangleFilled, IconTrain, IconWalk } from "@tabler/icons-react";
 import { format } from "date-fns";
 import { Directions } from "./types";
 import Steps from "./steps";
 import { formatDuration, getDelayColor } from "@/utils";
+import LeafletMap from "@/components/leaflet";
+import { useState } from "react";
+
+type RouteModalProps = {
+    isOpen: boolean;
+    onOpenChange: (isOpen: boolean) => void;
+    title: string;
+    children: React.ReactNode;
+};
+
+const RouteModal = ({ isOpen, onOpenChange, title, children }: RouteModalProps) => (
+    <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur">
+        <ModalContent className="pb-2">
+            <ModalHeader className="flex flex-col gap-1">{title}</ModalHeader>
+            <ModalBody>{children}</ModalBody>
+        </ModalContent>
+    </Modal>
+);
 
 export default function Results({ directions }: { directions: Directions }) {
-    const { isOpen, onOpen, onOpenChange } = useDisclosure();
-    const IconMap: Record<string, React.ReactNode> = {
+    const infoModal = useDisclosure();
+    const mapModal = useDisclosure();
+    const [selectedLeg, setSelectedLeg] = useState<any>(null);
+
+    const icons: Record<string, React.ReactNode> = {
         "bus": <IconBus size={32} />,
         "rail": <IconTrain size={32} />,
         "foot": <IconWalk size={32} />,
@@ -21,10 +42,20 @@ export default function Results({ directions }: { directions: Directions }) {
         }
         if (leg.mode === "foot") {
             const distanceInKm = leg.distance / 1000;
-            const distanceStr = distanceInKm > 1 ? `${distanceInKm.toFixed(1)} km` : `${Math.round(leg.distance)} metri`;
+            const roundedMeters = Math.round(leg.distance / 100) * 100;
+            const distanceStr = distanceInKm > 1 ? `${distanceInKm.toFixed(1)} km` : `circa ${roundedMeters} metri`;
             return `${formatDuration(leg.duration)} · ${distanceStr}`;
         }
         return leg.line?.name || "";
+    };
+
+    const openModal = (leg: any, modalType: 'map' | 'info') => {
+        setSelectedLeg(leg);
+        if (modalType === 'map') {
+            mapModal.onOpen();
+        } else {
+            infoModal.onOpen();
+        }
     };
 
     return (
@@ -56,7 +87,7 @@ export default function Results({ directions }: { directions: Directions }) {
                                 <div key={legIndex} className="flex flex-col gap-4">
                                     <div className="flex flex-row justify-between">
                                         <div className="flex flex-row gap-2 items-center">
-                                            {IconMap[leg.mode]}
+                                            {icons[leg.mode]}
                                             <div className="flex flex-col justify-center">
                                                 {leg.mode !== "foot" ? (
                                                     <div className="flex flex-row items-center gap-x-1">
@@ -89,36 +120,51 @@ export default function Results({ directions }: { directions: Directions }) {
                                                 variant="bordered"
                                                 isIconOnly
                                                 isExternal
+                                                startContent={<IconAccessPoint />}
                                                 radius="full"
                                                 className="border-gray-500 border-1 self-center"
                                                 aria-label={`${leg.line?.code || ""} ${leg.code || ""} in tempo reale`}
-                                            >
-                                                <IconAccessPoint />
-                                            </Button>
+                                            />
+                                        )}
+                                        {leg.mode === "foot" && (
+                                            <Button
+                                                as={Link}
+                                                href={`https://maps.apple.com/?saddr=${leg.fromPlace.latitude},${leg.fromPlace.longitude}&daddr=${leg.toPlace.latitude},${leg.toPlace.longitude}&dirflg=w`}
+                                                variant="bordered"
+                                                isIconOnly
+                                                isExternal
+                                                startContent={<IconMap />}
+                                                radius="full"
+                                                className="border-gray-500 border-1 self-center"
+                                                aria-label={`${leg.line?.code || ""} ${leg.code || ""} in tempo reale`}
+                                            />
                                         )}
                                     </div>
                                     {leg.mode !== "foot" && (
                                         <div className="pl-10 flex flex-col gap-4">
-                                            {leg.realtime?.alerts.length > 0 && (
-                                                <Button variant="flat" color="warning" className="flex items-center font-bold sm:w-fit" startContent={<IconInfoTriangleFilled />}
-                                                    onPress={onOpen}>
+                                            {leg.realtime.alerts && leg.realtime.alerts.length > 0 && (
+                                                <Button
+                                                    variant="flat"
+                                                    color="warning"
+                                                    className="flex items-center font-bold sm:w-fit"
+                                                    startContent={<IconInfoTriangleFilled />}
+                                                    onPress={() => openModal(leg, 'info')}
+                                                >
                                                     avvisi
                                                 </Button>
                                             )}
-                                            <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur">
-                                                <ModalContent className="pb-2">
-                                                    <ModalHeader className="flex flex-col gap-1">avvisi sulla linea</ModalHeader>
-                                                    <ModalBody>
-                                                        {leg.realtime?.alerts.map((alert, index) => (
-                                                            <div key={index} className="flex flex-col gap-2">
-                                                                <Link isExternal showAnchorIcon href={alert.url}>
-                                                                    {alert.description}
-                                                                </Link>
-                                                            </div>
-                                                        ))}
-                                                    </ModalBody>
-                                                </ModalContent>
-                                            </Modal>
+
+                                            <LeafletMap leg={leg} className="hidden sm:flex" />
+
+                                            <Button
+                                                variant="flat"
+                                                color="primary"
+                                                className="flex items-center font-bold sm:hidden"
+                                                startContent={<IconMap />}
+                                                onPress={() => openModal(leg, 'map')}
+                                            >
+                                                vedi sulla mappa
+                                            </Button>
 
                                             <Timeline steps={[{
                                                 content: (
@@ -127,7 +173,16 @@ export default function Results({ directions }: { directions: Directions }) {
                                                             {leg.fromPlace.name}
                                                         </span>
                                                         <div className="flex gap-1 items-center">
-                                                            <span className={`text-gray-500 text-sm ${leg.realtime?.delay ? (leg.realtime?.delay != 0 ? "line-through" : "font-bold text-success") : ""}`}>
+                                                            <span
+                                                                className={cn(
+                                                                    "text-sm",
+                                                                    leg.realtime.delay === null
+                                                                        ? "text-gray-500"
+                                                                        : leg.realtime.delay === 0
+                                                                            ? "font-bold text-success"
+                                                                            : "text-gray-500 line-through"
+                                                                )}
+                                                            >
                                                                 {format(new Date(leg.aimedStartTime), "HH:mm")}
                                                             </span>
                                                             {leg.realtime && leg.realtime?.delay !== 0 && leg.realtime?.delay !== null && (
@@ -151,7 +206,16 @@ export default function Results({ directions }: { directions: Directions }) {
                                                             {leg.toPlace.name}
                                                         </span>
                                                         <div className="flex gap-1 items-center">
-                                                            <span className={`text-gray-500 text-sm ${leg.realtime?.delay ? (leg.realtime?.delay != 0 ? "line-through" : "font-bold text-success") : ""}`}>
+                                                            <span
+                                                                className={cn(
+                                                                    "text-sm",
+                                                                    leg.realtime.delay === null
+                                                                        ? "text-gray-500"
+                                                                        : leg.realtime.delay === 0
+                                                                            ? "font-bold text-success"
+                                                                            : "text-gray-500 line-through"
+                                                                )}
+                                                            >
                                                                 {format(new Date(leg.aimedEndTime), "HH:mm")}
                                                             </span>
                                                             {leg.realtime && leg.realtime?.delay !== 0 && leg.realtime?.delay !== null && (
@@ -168,6 +232,27 @@ export default function Results({ directions }: { directions: Directions }) {
                                 </div>
                             ))}
                     </div>
+                    <RouteModal
+                        isOpen={mapModal.isOpen}
+                        onOpenChange={mapModal.onOpenChange}
+                        title={selectedLeg ? `percorso ${selectedLeg.line?.code} ${selectedLeg.realtime?.destination}` : 'percorso'}
+                    >
+                        {selectedLeg && <LeafletMap leg={selectedLeg} />}
+                    </RouteModal>
+
+                    <RouteModal
+                        isOpen={infoModal.isOpen}
+                        onOpenChange={infoModal.onOpenChange}
+                        title="avvisi sulla linea"
+                    >
+                        {selectedLeg && selectedLeg.realtime?.alerts && selectedLeg.realtime.alerts.map((alert: any, index: number) => (
+                            <div key={index} className="flex flex-col gap-2">
+                                <Link isExternal showAnchorIcon href={alert.url}>
+                                    {alert.description}
+                                </Link>
+                            </div>
+                        ))}
+                    </RouteModal>
                 </AccordionItem>
             ))}
         </Accordion>

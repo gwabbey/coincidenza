@@ -13,7 +13,7 @@ export const trainCategoryShortNames = {
     "metropolitano": "M",
     "espresso": "E",
     "eurostar italia": "ES*",
-    "autocorsa": "Bus",
+    "autocorsa": "bus",
     "treno storico": "TS",
     "interregionale": "iR",
 }

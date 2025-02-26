@@ -11,7 +11,7 @@ const getCode = (leg: any) => {
     }
 
     return leg.serviceJourney?.publicCode?.split('-').pop().trim() || null;
-};
+}
 
 const getLine = (leg: any) => {
     let name = "";
@@ -34,8 +34,8 @@ const getLine = (leg: any) => {
         }
     }
 
-    if (leg.authority?.id === "1:12" && !leg.line?.presentation?.colour) color = "006FEE";
-    if (leg.authority?.id === "5:12" && !leg.line?.presentation?.colour) color = "17c964";
+    if (leg.authority?.id && leg.authority?.id.split(":")[0] === "TT_URBANO" && !leg.line?.presentation?.colour) color = "17c964";
+    if (leg.authority?.id && leg.authority?.id.split(":")[0] === "TT_EXTRAURBANO" && !leg.line?.presentation?.colour) color = "006FEE";
 
     return {
         id: leg.line?.id,
@@ -43,7 +43,7 @@ const getLine = (leg: any) => {
         code: code || leg.line?.publicCode,
         color: color || leg.line?.presentation?.colour
     }
-};
+}
 
 const getStop = (name: string) => {
     const match = name.match(/Stazione di (.+)/i);
@@ -74,16 +74,22 @@ const processTripData = async (data: { tripPatterns: any[]; nextPageCursor?: str
                 distance: leg.distance,
                 intermediateQuays: leg.intermediateQuays.map((quay: any) => ({
                     id: quay.id,
-                    name: getStop(quay.name)
+                    name: getStop(quay.name),
+                    latitude: quay.latitude,
+                    longitude: quay.longitude
                 })),
                 duration: leg.duration,
                 fromPlace: {
                     name: getStop(leg.fromPlace.name),
-                    quay: leg.fromPlace.quay?.id
+                    quay: leg.fromPlace.quay?.id,
+                    latitude: leg.fromPlace.latitude,
+                    longitude: leg.fromPlace.longitude
                 },
                 toPlace: {
                     name: getStop(leg.toPlace.name),
-                    quay: leg.toPlace.quay?.id
+                    quay: leg.toPlace.quay?.id,
+                    latitude: leg.toPlace.latitude,
+                    longitude: leg.toPlace.longitude
                 },
                 authority: leg.authority,
                 interchangeTo: leg.interchangeTo,
@@ -102,8 +108,8 @@ const processTripData = async (data: { tripPatterns: any[]; nextPageCursor?: str
     return {
         trips: processedTrips,
         nextPageCursor: data.nextPageCursor
-    };
-};
+    }
+}
 
 export async function getDirections(
     from: Coordinates,
@@ -118,7 +124,7 @@ export async function getDirections(
             url: 'http://localhost:8080/otp/transmodel/v3',
             headers: { 'Content-Type': 'application/json' },
             data: {
-                query: 'query trip($from: Location!, $to: Location!, $arriveBy: Boolean, $dateTime: DateTime, $numTripPatterns: Int, $searchWindow: Int, $modes: Modes, $itineraryFiltersDebug: ItineraryFilterDebugProfile, $wheelchairAccessible: Boolean, $pageCursor: String) {trip( from: $from to: $to arriveBy: $arriveBy dateTime: $dateTime numTripPatterns: $numTripPatterns searchWindow: $searchWindow modes: $modes itineraryFilters: {debug: $itineraryFiltersDebug} wheelchairAccessible: $wheelchairAccessible pageCursor: $pageCursor) { previousPageCursor nextPageCursor tripPatterns { aimedStartTime aimedEndTime expectedEndTime expectedStartTime duration distance legs { id serviceJourney { id publicCode } mode aimedStartTime aimedEndTime expectedEndTime expectedStartTime realtime distance intermediateQuays { id name } duration fromPlace { name quay { id } } toPlace { name quay { id } } toEstimatedCall { destinationDisplay { frontText } } line { publicCode name id presentation { colour } } authority { name id } pointsOnLink { points } interchangeTo { staySeated } interchangeFrom { staySeated } } systemNotices { tag } }}}',
+                query: 'query trip($from: Location!, $to: Location!, $arriveBy: Boolean, $dateTime: DateTime, $numTripPatterns: Int, $searchWindow: Int, $modes: Modes, $itineraryFiltersDebug: ItineraryFilterDebugProfile, $wheelchairAccessible: Boolean, $pageCursor: String) {trip( from: $from to: $to arriveBy: $arriveBy dateTime: $dateTime numTripPatterns: $numTripPatterns searchWindow: $searchWindow modes: $modes itineraryFilters: {debug: $itineraryFiltersDebug} wheelchairAccessible: $wheelchairAccessible pageCursor: $pageCursor) { previousPageCursor nextPageCursor tripPatterns { aimedStartTime aimedEndTime expectedEndTime expectedStartTime duration distance legs { id serviceJourney { id publicCode } mode aimedStartTime aimedEndTime expectedEndTime expectedStartTime realtime distance intermediateQuays { id name latitude longitude } duration fromPlace { name latitude longitude quay { id } } toPlace { name latitude longitude quay { id } } toEstimatedCall { destinationDisplay { frontText } } line { publicCode name id presentation { colour } } authority { name id } pointsOnLink { points } interchangeTo { staySeated } interchangeFrom { staySeated } } systemNotices { tag } }}}',
                 variables: {
                     from: { coordinates: { latitude: from.lat, longitude: from.lon } },
                     to: { coordinates: { latitude: to.lat, longitude: to.lon } },
