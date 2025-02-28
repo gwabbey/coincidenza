@@ -1,18 +1,13 @@
 "use client";
 
 import { getDirections } from "@/api/otp/directions";
+import { Coordinates, type Directions } from "@/api/otp/types";
 import { Button, DateInput, TimeInput } from "@heroui/react";
 import { CalendarDate, Time } from "@internationalized/date";
 import { IconArrowDown, IconSearch } from "@tabler/icons-react";
 import { useRef, useState } from "react";
 import { LocationAutocomplete } from "./autocomplete";
-import { type Directions, Trip } from "./types";
 import Results from "./results";
-
-interface Coordinates {
-    lat: number;
-    lon: number;
-}
 
 interface SelectedLocations {
     from: Coordinates | null;
@@ -22,8 +17,8 @@ interface SelectedLocations {
 export default function Directions() {
     // TODO: change values back once testing is done
     const [selectedLocations, setSelectedLocations] = useState<SelectedLocations>({
-        from: { "lat": 45.93386, "lon": 11.09547 },
-        to: { "lat": 45.89395, "lon": 11.04499 }
+        from: { "lat": 45.89094, "lon": 11.03431 },
+        to: { "lat": 46.07281, "lon": 11.11923 }
     });
     const [date, setDate] = useState<CalendarDate>(new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()));
     const [time, setTime] = useState<Time>(new Time(new Date().getHours(), new Date().getMinutes()));

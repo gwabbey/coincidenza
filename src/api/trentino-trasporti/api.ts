@@ -1,11 +1,7 @@
-// "use server";
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
-import * as cheerio from 'cheerio';
 import { HttpsProxyAgent } from 'https-proxy-agent';
-import { cookies } from "next/headers";
 import { Stop, StopTime } from './types';
-import { revalidatePath } from 'next/cache';
 
 export async function fetchData(endpoint: string, options: { params?: Record<string, string> } = {}) {
     let url = `https://app-tpl.tndigit.it/gtlservice/${endpoint}`;
@@ -72,6 +68,8 @@ export async function getTripDetails(id: string) {
     const trip = await fetchData(`trips/${id}`);
     const stops = await getStops(trip.type);
     const routes = await getRoutes(trip.type);
+
+    if (!trip) return null;
 
     const stopMap = new Map(
         stops.map((stop: Stop) => [stop.stopId, stop.stopName])

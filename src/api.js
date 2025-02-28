@@ -2,10 +2,9 @@
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import * as cheerio from 'cheerio';
-import { HttpsProxyAgent } from 'https-proxy-agent';
 import { cookies } from "next/headers";
-import { trainCategoryShortNames } from "./mappings";
 import stops from "./stops.json";
+import { trainCategoryShortNames } from "./train-categories";
 
 function getDistance(lat1, lon1, lat2, lon2) {
     const R = 6371;

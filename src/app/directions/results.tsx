@@ -1,13 +1,16 @@
 "use client"
-import Timeline from "@/components/timeline";
-import { Accordion, AccordionItem, Alert, Button, Link, Card, cn, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader, useDisclosure } from "@heroui/react";
-import { IconAccessPoint, IconBus, IconMap, IconInfoTriangleFilled, IconTrain, IconWalk } from "@tabler/icons-react";
-import { format } from "date-fns";
-import { Directions } from "./types";
-import Steps from "./steps";
-import { formatDuration, getDelayColor } from "@/utils";
+import { agencies } from "@/agencies";
+import { Directions, Leg } from "@/api/otp/types";
 import LeafletMap from "@/components/leaflet";
+import Timeline from "@/components/timeline";
+import { getTrainCategory, trainCodeLogos } from "@/train-categories";
+import { formatDuration, getDelayColor } from "@/utils";
+import { Accordion, AccordionItem, Button, cn, Link, Modal, ModalBody, ModalContent, ModalHeader, useDisclosure } from "@heroui/react";
+import { IconAccessPoint, IconBus, IconInfoTriangleFilled, IconMap, IconTrain, IconWalk } from "@tabler/icons-react";
+import { format } from "date-fns";
+import Image from "next/image";
 import { useState } from "react";
+import Steps from "./steps";
 
 type RouteModalProps = {
     isOpen: boolean;
@@ -28,28 +31,26 @@ const RouteModal = ({ isOpen, onOpenChange, title, children }: RouteModalProps) 
 export default function Results({ directions }: { directions: Directions }) {
     const infoModal = useDisclosure();
     const mapModal = useDisclosure();
-    const [selectedLeg, setSelectedLeg] = useState<any>(null);
+    const [selectedLeg, setSelectedLeg] = useState<Leg | null>(null);
 
     const icons: Record<string, React.ReactNode> = {
         "bus": <IconBus size={32} />,
         "rail": <IconTrain size={32} />,
         "foot": <IconWalk size={32} />,
+        "metro": <IconTrain size={32} />,
     }
 
-    const getLegDescription = (leg: any) => {
-        if (leg.mode === "rail" && leg.destination) {
-            return `Treno per ${leg.destination}`;
-        }
+    const getLegDescription = (leg: Leg) => {
         if (leg.mode === "foot") {
             const distanceInKm = leg.distance / 1000;
             const roundedMeters = Math.round(leg.distance / 100) * 100;
             const distanceStr = distanceInKm > 1 ? `${distanceInKm.toFixed(1)} km` : `circa ${roundedMeters} metri`;
-            return `${formatDuration(leg.duration)} · ${distanceStr}`;
+            return `${formatDuration(Math.round(leg.duration / 60))} · ${distanceStr}`;
         }
-        return leg.line?.name || "";
+        return getTrainCategory(leg.line?.name || "") || leg.line?.name || "";
     };
 
-    const openModal = (leg: any, modalType: 'map' | 'info') => {
+    const openModal = (leg: Leg, modalType: 'map' | 'info') => {
         setSelectedLeg(leg);
         if (modalType === 'map') {
             mapModal.onOpen();
@@ -61,19 +62,20 @@ export default function Results({ directions }: { directions: Directions }) {
     return (
         <Accordion variant="splitted" className="px-0 w-full mx-auto">
             {directions.trips.map((trip, index) => (
-                <AccordionItem key={index} value={`item-${index}`} title={
-                    <div className="flex flex-col gap-1">
-                        <Steps trip={trip} />
-                        <span className="font-bold text-2xl">{format(new Date(trip.aimedStartTime), "HH:mm")}</span>
-                    </div>
-                }
+                <AccordionItem key={index} value={`item-${index}`}
+                    title={
+                        <div className="flex flex-col gap-1">
+                            <Steps trip={trip} />
+                            <span className="font-bold text-2xl">{format(new Date(trip.aimedStartTime), "HH:mm")}</span>
+                        </div>
+                    }
                     subtitle={
                         <div className="flex flex-col gap-1">
                             {(() => {
                                 const transfers = trip.legs
                                     .filter(leg => leg.mode !== "foot")
                                     .length - 1;
-                                const duration = formatDuration(trip.duration);
+                                const duration = formatDuration(Math.round(trip.duration / 60));
 
                                 return `${duration} · ${transfers < 1 ? "diretto" : transfers + " " + (transfers > 1 ? "cambi" : "cambio")}`;
                             })()}
@@ -91,16 +93,20 @@ export default function Results({ directions }: { directions: Directions }) {
                                             <div className="flex flex-col justify-center">
                                                 {leg.mode !== "foot" ? (
                                                     <div className="flex flex-row items-center gap-x-1">
-                                                        <span className="sm:text-lg text-md font-bold w-fit rounded-small" style={{
-                                                            backgroundColor: (leg.line?.color && leg.mode === "bus") ? `#${leg.line.color}` : "transparent",
-                                                            padding: (leg.line?.color && leg.mode === "bus") ? "0.1rem 0.5rem" : "0",
-                                                            textAlign: (leg.line?.color && leg.mode === "bus") ? "center" : "left",
-                                                            color: (leg.line?.color && leg.mode === "bus") ? "white" : "inherit",
+                                                        <span className="sm:text-lg text-md font-bold w-fit rounded-small flex flex-row items-center gap-x-1" style={{
+                                                            backgroundColor: leg.line?.color ? `#${leg.line.color}` : "transparent",
+                                                            padding: leg.line?.color ? "0.1rem 0.5rem" : "0",
+                                                            textAlign: leg.line?.color ? "center" : "left",
+                                                            color: leg.line?.color ? "white" : "inherit",
                                                         }}>
-                                                            {leg.line?.code}
+                                                            {trainCodeLogos.find(code => code.code === leg.line?.code)?.svg ? (
+                                                                <Image src={`https://www.lefrecce.it/Channels.Website.WEB/web/images/logo/${trainCodeLogos.find(code => code.code === leg.line?.code)?.svg}.svg`} alt={leg.line?.name || ""} width={24} height={24} className={trainCodeLogos.find(code => code.code === leg.line?.code)?.className + " flex self-center"} />
+                                                            ) : (
+                                                                leg.line?.code
+                                                            )} {leg.code}
                                                         </span>
                                                         <span className="sm:text-lg text-md font-bold">
-                                                            {leg.code} {leg.realtime?.destination}
+                                                            {leg.realtime?.destination || leg.destination}
                                                         </span>
                                                     </div>
                                                 ) : (
@@ -111,12 +117,23 @@ export default function Results({ directions }: { directions: Directions }) {
                                                 <span className="text-gray-500 text-sm">
                                                     {getLegDescription(leg)}
                                                 </span>
+                                                {leg.realtime && leg.realtime.delay && (
+                                                    <span className="flex flex-row items-center gap-x-1">
+                                                        <div className="relative inline-flex">
+                                                            <div className="rounded-full bg-green-400 h-[8px] w-[8px] inline-block mr-1"></div>
+                                                            <div className="absolute animate-ping rounded-full bg-green-400 h-[8px] w-[8px] mr-1"></div>
+                                                        </div>
+                                                        <span className={`font-bold text-sm text-${getDelayColor(leg.realtime?.delay)}`}>
+                                                            {leg.realtime.delay && leg.realtime.delay !== 0 && formatDuration(leg.realtime.delay, true)} in {leg.realtime?.delay > 0 ? "ritardo" : leg.realtime?.delay < 0 ? "anticipo" : "orario"}
+                                                        </span>
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
                                         {leg.mode !== "foot" && (
                                             <Button
                                                 as={Link}
-                                                href={`/track/trentino-trasporti/${leg.tripId}`}
+                                                href={`/track/${agencies[leg.authority?.id as keyof typeof agencies]}/${leg.mode === "bus" ? leg.tripId : leg.code}`}
                                                 variant="bordered"
                                                 isIconOnly
                                                 isExternal
@@ -193,7 +210,7 @@ export default function Results({ directions }: { directions: Directions }) {
                                                         </div>
                                                         {leg.intermediateQuays.length > 0 && (
                                                             <span className="text-gray-500 text-sm -mb-4 mt-3 leading-none">
-                                                                {leg.intermediateQuays.length} fermat{leg.intermediateQuays.length === 1 ? "a" : "e"}, {formatDuration(leg.duration)}
+                                                                {leg.intermediateQuays.length} fermat{leg.intermediateQuays.length === 1 ? "a" : "e"}, {formatDuration(Math.round(leg.duration / 60))}
                                                             </span>
                                                         )}
                                                     </div>
@@ -247,9 +264,15 @@ export default function Results({ directions }: { directions: Directions }) {
                     >
                         {selectedLeg && selectedLeg.realtime?.alerts && selectedLeg.realtime.alerts.map((alert: any, index: number) => (
                             <div key={index} className="flex flex-col gap-2">
-                                <Link isExternal showAnchorIcon href={alert.url}>
-                                    {alert.description}
-                                </Link>
+                                {alert.url ? (
+                                    <Link isExternal showAnchorIcon href={alert.url}>
+                                        {alert.description}
+                                    </Link>
+                                ) : (
+                                    <span>
+                                        {alert.description}
+                                    </span>
+                                )}
                             </div>
                         ))}
                     </RouteModal>

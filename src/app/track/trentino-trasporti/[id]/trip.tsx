@@ -1,13 +1,11 @@
 'use client';
 
 import { Trip as TripProps } from "@/api/trentino-trasporti/types";
-import { getDelayColor } from "@/utils";
-import { IconAlertTriangleFilled, IconArrowUp, IconBus, IconMapPin } from "@tabler/icons-react";
-import Link from 'next/link';
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from 'react';
-import { Badge, Button, Card, Divider } from "@heroui/react";
 import Timeline from "@/components/timeline";
+import { getDelayColor } from "@/utils";
+import { Button, Card, Divider } from "@heroui/react";
+import { IconAlertTriangleFilled, IconArrowUp } from "@tabler/icons-react";
+import { useEffect, useState } from 'react';
 
 const timeToMinutes = (timeStr: string): number => {
     const [hours, minutes] = timeStr.split(':').map(Number);
@@ -55,7 +53,6 @@ const calculatePreciseActiveIndex = (stopTimes: any[], delay: number, stopLast: 
 
 
 export default function Trip({ trip }: { trip: TripProps }) {
-    const router = useRouter();
     const [scroll, setScroll] = useState({ y: 0 });
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
 
@@ -78,13 +75,6 @@ export default function Trip({ trip }: { trip: TripProps }) {
 
         return () => clearInterval(intervalId);
     }, [trip.stopTimes, trip.delay, trip.stopLast]);
-
-    useEffect(() => {
-        const intervalId = setInterval(() => {
-            router.refresh();
-        }, parseInt(process.env.AUTO_REFRESH || '10000', 10));
-        return () => clearInterval(intervalId);
-    }, [router]);
 
     const activeIndex = trip.stopTimes.findIndex((stop: { stopId: number }) => stop.stopId === trip.stopLast);
     const isDeparting = trip.delay === 0 && trip.lastEventRecivedAt && activeIndex === -1;
@@ -111,7 +101,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex justify-center items-center justify-center text-center flex-row gap-x-2">
+            <div className="flex justify-center items-center text-center flex-row gap-x-2">
                 <div className={`text-lg font-bold text-center rounded-small w-fit ${!trip.route?.routeColor && trip.type === "U" ? "bg-success text-white" : "bg-primary text-white"}`} style={{
                     backgroundColor: trip.route && trip.route.routeColor ? `#${trip.route.routeColor}` : "",
                     padding: "0.1rem 0.5rem"

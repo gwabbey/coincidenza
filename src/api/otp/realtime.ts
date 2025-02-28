@@ -1,16 +1,29 @@
-import { getTrip } from "../trentino-trasporti/api";
+import { agencies } from "@/agencies";
+import { capitalize } from "@/utils";
+import { getTrip as getTrenitaliaTrip } from "../trenitalia/api";
+import { getTrip as getTrentinoTrip } from "../trentino-trasporti/api";
 import { Realtime } from "./types";
 
 export async function getRealtimeData(agencyId: string, tripId: string): Promise<Realtime | null> {
     if (agencyId) {
-        if (agencyId.split(":")[1] === "12") {
-            const trip = await getTrip(tripId.split(":")[1]);
+        if (agencies[agencyId as keyof typeof agencies] === "trentino-trasporti") {
+            const trip = await getTrentinoTrip(tripId.split(":")[1]);
+            console.log("trip", trip);
             return {
-                delay: trip.delay,
-                destination: trip.tripHeadsign,
-                alerts: trip.route.news.map((alert: any) => ({
+                delay: trip?.delay || null,
+                destination: trip?.tripHeadsign || null,
+                alerts: trip?.route?.news?.map((alert: any) => ({
                     description: alert.header,
                     url: alert.url
+                }))
+            }
+        } else if (agencies[agencyId as keyof typeof agencies] === "trenitalia") {
+            const trip = await getTrenitaliaTrip(tripId);
+            return {
+                delay: trip?.ritardo || null,
+                destination: trip?.destinazione ? capitalize(trip?.destinazione) : null,
+                alerts: trip?.info?.map((alert: any) => ({
+                    description: alert.infoNote,
                 }))
             }
         }

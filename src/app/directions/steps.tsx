@@ -1,12 +1,14 @@
+import { Trip } from "@/api/otp/types";
 import { IconBus, IconChevronRight, IconTrain, IconWalk } from "@tabler/icons-react";
-import { Trip } from "./types";
 
 export default function Steps({ trip }: { trip: Trip }) {
     const IconMap: Record<string, React.ReactNode> = {
         "bus": <IconBus size={16} />,
         "rail": <IconTrain size={16} />,
         "foot": <IconWalk size={16} />,
+        "metro": <IconTrain size={16} />,
     }
+
     return (
         <div>
             <div className="flex flex-row gap-1 text-sm flex-wrap">
