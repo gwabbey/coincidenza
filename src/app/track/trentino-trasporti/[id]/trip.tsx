@@ -94,9 +94,9 @@ export default function Trip({ trip }: { trip: TripProps }) {
         if (duration >= 60) {
             const hours = Math.floor(duration / 60);
             const minutes = duration % 60;
-            return `${hours}h ${minutes}m`;
+            return `${hours}h ${minutes}min`;
         }
-        return `${duration}m`;
+        return `${duration}min`;
     };
 
     return (

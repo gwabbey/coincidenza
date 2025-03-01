@@ -17,8 +17,8 @@ interface SelectedLocations {
 export default function Directions() {
     // TODO: change values back once testing is done
     const [selectedLocations, setSelectedLocations] = useState<SelectedLocations>({
-        from: { "lat": 45.89094, "lon": 11.03431 },
-        to: { "lat": 46.07281, "lon": 11.11923 }
+        from: { "lat": 45.89072, "lon": 11.04737 },
+        to: { "lat": 45.89083, "lon": 11.03808 }
     });
     const [date, setDate] = useState<CalendarDate>(new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()));
     const [time, setTime] = useState<Time>(new Time(new Date().getHours(), new Date().getMinutes()));

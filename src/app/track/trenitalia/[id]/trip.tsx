@@ -1,15 +1,18 @@
 'use client';
 
-import { Trip as TripProps } from "@/api/trentino-trasporti/types";
+import { Stop, Trip as TripProps } from "@/api/trenitalia/types";
 import Timeline from "@/components/timeline";
-import { getDelayColor } from "@/utils";
+import { trainCodeLogos } from "@/train-categories";
+import { capitalize, getDelayColor } from "@/utils";
 import { Button, Card, Divider } from "@heroui/react";
-import { IconAlertTriangleFilled, IconArrowUp } from "@tabler/icons-react";
+import { IconArrowUp } from "@tabler/icons-react";
+import { formatDate } from "date-fns";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from 'react';
 
-const timeToMinutes = (timeStr: string): number => {
-    const [hours, minutes] = timeStr.split(':').map(Number);
+const timeToMinutes = (time: number): number => {
+    const [hours, minutes] = time.toString().split(':').map(Number);
     return hours * 60 + minutes;
 };
 
@@ -18,37 +21,106 @@ const getCurrentMinutes = (): number => {
     return now.getHours() * 60 + now.getMinutes() + (now.getSeconds() / 60);
 };
 
-const calculatePreciseActiveIndex = (stopTimes: any[], delay: number, stopLast: number): number => {
+const calculatePreciseActiveIndex = (stops: Stop[], delay: number, lastKnownStopId: string): number => {
     const currentMinutes = getCurrentMinutes();
-    const lastKnownStopIndex = stopTimes.findIndex(stop => stop.stopId === stopLast);
 
-    for (let i = 0; i < stopTimes.length - 1; i++) {
-        const currentStopTime = timeToMinutes(stopTimes[i].departureTime) + delay;
-        const nextStopTime = timeToMinutes(stopTimes[i + 1].departureTime) + delay;
+    // Find the current station where the train is located (stazioneCorrente: true)
+    const currentStationIndex = stops.findIndex(stop => stop.id === lastKnownStopId);
 
-        if (currentMinutes >= currentStopTime && currentMinutes <= nextStopTime) {
-            if (i >= lastKnownStopIndex) {
-                const progress = (currentMinutes - currentStopTime) / (nextStopTime - currentStopTime);
-                return lastKnownStopIndex + progress;
+    // If we found a current station, the train is there
+    if (currentStationIndex !== -1) {
+        const currentStop = stops[currentStationIndex];
+
+        // Check if train has arrived but not departed
+        if (currentStop.arrivoReale && !currentStop.partenzaReale) {
+            return currentStationIndex;
+        }
+    }
+
+    // Process each stop to determine train location
+    for (let i = 0; i < stops.length; i++) {
+        const stop = stops[i];
+        const nextStop = i < stops.length - 1 ? stops[i + 1] : null;
+
+        // Extract timestamps (convert to minutes for comparison)
+        const arrivalTime = stop.arrivo_teorico ? timeToMinutes(new Date(stop.arrivo_teorico).getHours() + ':' + new Date(stop.arrivo_teorico).getMinutes()) + delay : null;
+        const departureTime = stop.partenza_teorica ? timeToMinutes(new Date(stop.partenza_teorica).getHours() + ':' + new Date(stop.partenza_teorica).getMinutes()) + delay : null;
+        const nextArrivalTime = nextStop?.arrivo_teorico ? timeToMinutes(new Date(nextStop.arrivo_teorico).getHours() + ':' + new Date(nextStop.arrivo_teorico).getMinutes()) + delay : null;
+
+        // If this stop has arrivoReale but no partenzaReale, train is at this station
+        if (stop.arrivoReale && !stop.partenzaReale) {
+            return i;
+        }
+
+        // If we have departed from this stop but not arrived at the next one
+        if (stop.partenzaReale && nextStop && !nextStop.arrivoReale) {
+            // Current time is between departure from this stop and arrival at next stop
+            if (departureTime && nextArrivalTime && currentMinutes >= departureTime && currentMinutes < nextArrivalTime) {
+                const segmentDuration = nextArrivalTime - departureTime;
+                if (segmentDuration > 0) {
+                    const progress = (currentMinutes - departureTime) / segmentDuration;
+                    return i + progress;
+                }
             }
 
-            const progress = (currentMinutes - currentStopTime) / (nextStopTime - currentStopTime);
-            return i + progress;
+            // If we can't calculate precise progress, we're on the way to the next stop
+            return i + 0.5;
         }
 
-        if (currentMinutes > nextStopTime && i === lastKnownStopIndex) {
-            return Math.min(lastKnownStopIndex + 0.99, stopTimes.length - 1);
+        // If this is the last stop and we've arrived
+        if (i === stops.length - 1 && stop.arrivoReale) {
+            return i;
         }
     }
 
-    if (currentMinutes < timeToMinutes(stopTimes[0].departureTime) + delay) {
-        return -1;
+    // If all previous stops have partenzaReale and we're before the last stop
+    const lastCompletedStopIndex = findLastIndex(stops, stop => stop.partenzaReale === true);
+    if (lastCompletedStopIndex !== -1 && lastCompletedStopIndex < stops.length - 1) {
+        const lastCompletedStop = stops[lastCompletedStopIndex];
+        const nextStop = stops[lastCompletedStopIndex + 1];
+
+        const departureTime = lastCompletedStop.partenza_teorica ?
+            timeToMinutes(new Date(lastCompletedStop.partenza_teorica).getHours() + ':' + new Date(lastCompletedStop.partenza_teorica).getMinutes()) + delay : null;
+        const nextArrivalTime = nextStop.arrivo_teorico ?
+            timeToMinutes(new Date(nextStop.arrivo_teorico).getHours() + ':' + new Date(nextStop.arrivo_teorico).getMinutes()) + delay : null;
+
+        if (departureTime && nextArrivalTime) {
+            const segmentDuration = nextArrivalTime - departureTime;
+            if (segmentDuration > 0) {
+                const progress = (currentMinutes - departureTime) / segmentDuration;
+                return lastCompletedStopIndex + Math.min(progress, 0.99);
+            }
+        }
+
+        return lastCompletedStopIndex + 0.5;
     }
 
-    if (currentMinutes > timeToMinutes(stopTimes[stopTimes.length - 1].departureTime) + delay) {
-        return lastKnownStopIndex === -1 ? stopTimes.length - 1 : lastKnownStopIndex + 0.99;
+    // If train hasn't started journey yet (before first departure)
+    if (stops[0] && !stops[0].partenzaReale) {
+        const firstDepartureTime = stops[0].partenza_teorica ?
+            timeToMinutes(new Date(stops[0].partenza_teorica).getHours() + ':' + new Date(stops[0].partenza_teorica).getMinutes()) + delay : null;
+
+        if (firstDepartureTime && currentMinutes < firstDepartureTime) {
+            return -1;
+        }
     }
 
+    // Fallback to last known stop
+    const lastKnownStopIndex = stops.findIndex(stop => stop.id === lastKnownStopId);
+    if (lastKnownStopIndex !== -1) {
+        return lastKnownStopIndex;
+    }
+
+    return -1;
+};
+
+// Helper function to find the last index in an array that satisfies a condition
+const findLastIndex = (array, predicate) => {
+    for (let i = array.length - 1; i >= 0; i--) {
+        if (predicate(array[i])) {
+            return i;
+        }
+    }
     return -1;
 };
 
@@ -68,7 +140,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
 
     useEffect(() => {
         const updateIndex = () => {
-            const newIndex = calculatePreciseActiveIndex(trip.stopTimes, trip.delay || 0, trip.stopLast);
+            const newIndex = calculatePreciseActiveIndex(trip.fermate, trip.ritardo || 0, trip.fermate[trip.fermate.length - 1].id);
             setPreciseActiveIndex(newIndex);
         };
 
@@ -76,67 +148,66 @@ export default function Trip({ trip }: { trip: TripProps }) {
         const intervalId = setInterval(updateIndex, 1000);
 
         return () => clearInterval(intervalId);
-    }, [trip.stopTimes, trip.delay, trip.stopLast]);
+    }, [trip.fermate, trip.ritardo]);
 
     useEffect(() => {
         const intervalId = setInterval(() => {
             router.refresh();
-        }, parseInt(process.env.AUTO_REFRESH || '10000', 10));
+            // TODO: better refresh
+        }, parseInt(process.env.AUTO_REFRESH || '60000', 10));
         return () => clearInterval(intervalId);
     }, [router]);
 
-    const activeIndex = trip.stopTimes.findIndex((stop: { stopId: number }) => stop.stopId === trip.stopLast);
-    const isDeparting = trip.delay === 0 && trip.lastEventRecivedAt && activeIndex === -1;
+    const activeIndex = 0;
 
-    const calculateDuration = (arrival: string, departure: string) =>
+    /* const calculateDuration = (arrival: string, departure: string) =>
         Math.abs(
             (new Date(0, 0, 0, ...arrival.split(':').map(Number)).getTime() -
                 new Date(0, 0, 0, ...departure.split(':').map(Number)).getTime()) / 60000
-        );
+        ); */
+    /* 
+        const tripDuration = calculateDuration(
+            trip.fermate[trip.fermate.length - 1].arrivo_teorico,
+            trip.fermate[0].partenza_teorica
+        ); */
 
-    const tripDuration = calculateDuration(
-        trip.stopTimes[trip.stopTimes.length - 1].arrivalTime,
-        trip.stopTimes[0].arrivalTime
-    );
-
-    const formatDuration = (duration: number) => {
-        if (duration >= 60) {
-            const hours = Math.floor(duration / 60);
-            const minutes = duration % 60;
-            return `${hours}h ${minutes}m`;
-        }
-        return `${duration}m`;
+    const formatDuration = (duration: string) => {
+        const [hours, minutes] = duration.split(':').map(Number);
+        return `${hours}${hours > 0 ? 'h' : ''} ${minutes}${minutes > 1 ? 'min' : ''}`;
     };
 
     return (
         <div className="flex flex-col gap-4">
             <div className="flex justify-center items-center text-center flex-row gap-x-2">
-                <div className={`text-lg font-bold text-center rounded-small w-fit ${!trip.route?.routeColor && trip.type === "U" ? "bg-success text-white" : "bg-primary text-white"}`} style={{
-                    backgroundColor: trip.route && trip.route.routeColor ? `#${trip.route.routeColor}` : "",
-                    padding: "0.1rem 0.5rem"
+                <span className="sm:text-lg text-md font-bold w-fit rounded-small flex flex-row items-center gap-x-1 bg-danger text-white" style={{
+                    padding: "0.1rem 0.5rem",
                 }}>
-                    {trip.route.routeShortName}
-                </div>
+                    {trainCodeLogos.find(code => code.code === trip.categoria)?.svg ? (
+                        <Image src={`https://www.lefrecce.it/Channels.Website.WEB/web/images/logo/${trainCodeLogos.find(code => code.code === trip.categoria)?.svg}.svg`} alt={trip.compTipologiaTreno || ""} width={22} height={22} className={trainCodeLogos.find(code => code.code === trip.categoria)?.className + " flex self-center -mx-1"} />
+                    ) : (
+                        trip.categoria
+                    )} {trip.numeroTreno}
+                </span>
                 <div className="text-xl font-bold">
-                    {trip.stopTimes[trip.stopTimes.length - 1].stopName}
+                    {capitalize(trip.destinazione)}
                 </div>
             </div>
 
             <div className="md:flex hidden justify-center items-center my-4 flex-row gap-4">
                 <Card radius="lg" className="p-4 w-64 text-center">
-                    <div className="font-bold truncate">{trip.stopTimes[0].stopName}</div>
-                    <div>{trip.stopTimes[0].arrivalTime.replace(/^24:/, '00:').slice(0, 5)}</div>
+                    <div className="font-bold truncate">{capitalize(trip.origine)}</div>
+                    <div>{formatDate(new Date(trip.orarioPartenza), 'HH:mm')}</div>
                 </Card>
 
                 <div className="flex flex-row items-center justify-between gap-2">
                     <Divider className="my-4 w-16" />
-                    <div className="text-center">{formatDuration(tripDuration)}</div>
+                    <div className="text-center">{formatDuration(trip.compDurata)}</div>
                     <Divider className="my-4 w-16" />
                 </div>
 
                 <Card radius="lg" className="p-4 w-64 text-center">
-                    <div className="font-bold truncate">{trip.stopTimes[trip.stopTimes.length - 1].stopName}</div>
-                    <div>{trip.stopTimes[trip.stopTimes.length - 1].arrivalTime.replace(/^24:/, '00:').slice(0, 5)}</div>
+                    <div className="font-bold truncate">{capitalize(trip.destinazione)}</div>
+                    <div>{formatDate(new Date(trip.orarioArrivo), 'HH:mm')}</div>
                 </Card>
             </div>
 
@@ -145,59 +216,35 @@ export default function Trip({ trip }: { trip: TripProps }) {
 
                 <div className="flex sm:flex-col flex-row justify-between items-center gap-y-2 py-4">
                     <div className="flex flex-col">
-                        {trip.stopTimes[activeIndex] &&
-                            Math.floor((new Date().getTime() - new Date(trip.lastEventRecivedAt).getTime()) / (1000 * 60)) > 5 &&
-                            activeIndex !== trip.stopTimes.length - 1 ? (
-                            <p className={`text-lg sm:text-xl text-left sm:text-center ${activeIndex === -1 ? '' : 'italic'} truncate max-w-[230px] xs:max-w-[450px] md:max-w-full`}>
-                                {trip.stopTimes.reduce((closestStop: any, stopTime: any) => {
-                                    const currentTime = new Date();
-                                    const [hour, minute] = stopTime.departureTime.split(':').map(Number);
-                                    const stopTimeDate = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), hour, minute + trip.delay);
-                                    return stopTimeDate <= currentTime ? stopTime : closestStop;
-                                }, null)?.stopName || "--"}
-                            </p>
-                        ) : (
-                            <p className="text-lg sm:text-xl font-bold text-left sm:text-center truncate max-w-[230px] xs:max-w-[450px] md:max-w-full">
-                                {trip.stopTimes.length > 0 && !isDeparting ? trip.stopTimes[activeIndex]?.stopName : "--"}
-                            </p>
-                        )}
+                        <p className="text-lg sm:text-xl font-bold text-left sm:text-center truncate max-w-[230px] xs:max-w-[450px] md:max-w-full">
+                            {trip.nonPartito ? "non ancora partito" : capitalize(trip.stazioneUltimoRilevamento || "--")}
+                        </p>
 
-                        {!isDeparting && !trip.stopTimes[activeIndex] && (
-                            <p className="text-lg sm:text-xl font-bold text-left sm:text-center truncate">
-                                dati in tempo reale non disponibili
-                            </p>
-                        )}
-
-                        {trip.lastEventRecivedAt && (
-                            <div className="flex flex-row justify-start sm:justify-center">
-                                {trip.stopTimes[activeIndex] &&
-                                    Math.floor((new Date().getTime() - new Date(trip.lastEventRecivedAt).getTime()) / (1000 * 60)) > 5 &&
-                                    activeIndex !== trip.stopTimes.length - 1 && (
-                                        <IconAlertTriangleFilled className="text-orange-500 self-center" size={16} />
-                                    )}
+                        <div className="flex flex-row justify-start sm:justify-center">
+                            {/* {trip.fermate[activeIndex] &&
+                                activeIndex !== trip.fermate.length - 1 && (
+                                    <IconAlertTriangleFilled className="text-orange-500 self-center" size={16} />
+                                )} */}
+                            {trip.compOraUltimoRilevamento !== "--" && (
                                 <p className="text-xs sm:text-sm text-gray-500">
-                                    ultimo rilevamento: {new Date(trip.lastEventRecivedAt).toLocaleTimeString('it-IT', {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                    }).replace(/,/g, ' ')}
-                                    {trip.matricolaBus && ` (bus ${trip.matricolaBus})`}
+                                    ultimo rilevamento: {trip.compOraUltimoRilevamento}
                                 </p>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
 
-                    {trip.delay !== null && (
+                    {!trip.nonPartito && (
                         <Button
                             className={`p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors text-white`}
                             radius="sm"
-                            color={trip.lastSequenceDetection === trip.stopTimes.length ? "default" : getDelayColor(trip.delay)}
+                            color={getDelayColor(trip.ritardo)}
                             variant="solid"
                             disabled
                             disableRipple
                             disableAnimation
                         >
-                            {trip.delay < 0 ? '' : trip.delay > 0 ? '+' : trip.lastSequenceDetection === trip.stopTimes.length ? "arrivato" : "in orario"}
-                            {trip.delay !== 0 && `${trip.delay} min`}
+                            {trip.ritardo < 0 ? '' : trip.ritardo > 0 ? '+' : "in orario"}
+                            {trip.ritardo !== 0 && `${trip.ritardo} min`}
                         </Button>
                     )}
                 </div>
@@ -207,46 +254,67 @@ export default function Trip({ trip }: { trip: TripProps }) {
 
             <div className="text-left sm:self-center">
                 <Timeline
-                    steps={trip.stopTimes.map((stop: any, index: number) => {
-                        const isPastStop = index <= Math.floor(preciseActiveIndex);
-                        const isFutureStop = index > Math.floor(preciseActiveIndex);
-
+                    steps={trip.fermate.map((stop: Stop, index: number) => {
                         return {
                             content: (
-                                <div className="flex flex-col">
-                                    <span className="font-bold">{stop.stopName}</span>
-                                    <div className="text-gray-500 text-sm">
-                                        {stop.departureTime ? (
-                                            <div className="flex gap-1">
-                                                {isPastStop && (
-                                                    <span>
-                                                        {new Date(new Date(`2000-01-01 ${stop.departureTime}`).getTime()).toLocaleTimeString('it-IT', {
-                                                            hour: '2-digit',
-                                                            minute: '2-digit',
-                                                        })}
+                                <div className="grid grid-cols-[minmax(13.5em,1fr),auto] items-start gap-4">
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="font-bold truncate sm:max-w-[200px]">{capitalize(stop.stazione)}</span>
+                                        <div className="text-gray-500 text-sm">
+
+                                            <div className="flex flex-col">
+                                                <div className={`flex gap-1 ${!stop.arrivoReale ? 'italic' : ''}`}>
+                                                    <span className={`${stop.ritardoArrivo !== 0 ? 'line-through' : 'font-bold text-success'}`}>
+                                                        {stop.arrivo_teorico &&
+                                                            formatDate(
+                                                                new Date(
+                                                                    stop.ritardoArrivo === 0 && trip.ritardo !== 0
+                                                                        ? stop.arrivo_teorico + trip.ritardo * 60 * 1000
+                                                                        : stop.arrivo_teorico
+                                                                ),
+                                                                'HH:mm'
+                                                            )}
                                                     </span>
-                                                )}
-                                                {isFutureStop && trip.lastEventRecivedAt && trip.delay !== 0 && (
-                                                    <span className="line-through">
-                                                        {new Date(new Date(`2000-01-01T${stop.departureTime.replace(/^24:/, '00:')}`).getTime()).toLocaleTimeString('it-IT', {
-                                                            hour: '2-digit',
-                                                            minute: '2-digit',
-                                                        })}
+                                                    {stop.ritardoArrivo !== 0 && (
+                                                        <span className={`font-bold text-${getDelayColor(stop.ritardoArrivo)}`}>
+                                                            {formatDate(new Date(stop.arrivoReale || ''), 'HH:mm')}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                <div className={`flex gap-1 ${!stop.partenzaReale ? 'italic' : ''}`}>
+                                                    <span className={`${stop.ritardoPartenza !== 0 ? 'line-through' : 'font-bold text-success'}`}>
+                                                        {stop.partenza_teorica &&
+                                                            formatDate(
+                                                                new Date(
+                                                                    stop.ritardoPartenza === 0 && trip.ritardo !== 0
+                                                                        ? stop.partenza_teorica + trip.ritardo * 60 * 1000
+                                                                        : stop.partenza_teorica
+                                                                ),
+                                                                'HH:mm'
+                                                            )}
                                                     </span>
-                                                )}
-                                                {isFutureStop && (
-                                                    <span className={`font-bold text-${getDelayColor(trip.delay)}`}>
-                                                        {new Date(new Date(`2000-01-01T${stop.departureTime.replace(/^24:/, '00:')}`).getTime() + (trip.delay * 60 * 1000)).toLocaleTimeString('it-IT', {
-                                                            hour: '2-digit',
-                                                            minute: '2-digit',
-                                                        })}
-                                                    </span>
-                                                )}
+                                                    {stop.ritardoPartenza !== 0 && (
+                                                        <span className={`font-bold text-${getDelayColor(stop.ritardoPartenza)}`}>
+                                                            {formatDate(new Date(stop.partenzaReale || ''), 'HH:mm')}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
-                                        ) : (
-                                            <div>--</div>
-                                        )}
+
+                                        </div>
                                     </div>
+                                    <Button
+                                        className="p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors text-white"
+                                        radius="sm"
+                                        variant={(stop.binarioEffettivoArrivoDescrizione || stop.binarioEffettivoPartenzaDescrizione) ? 'solid' : 'ghost'}
+                                        color={(stop.binarioEffettivoArrivoDescrizione || stop.binarioEffettivoPartenzaDescrizione) ? 'success' : 'default'}
+                                        disabled
+                                        disableRipple
+                                        disableAnimation
+                                    >
+                                        BIN. {index === 0 ? (stop.binarioEffettivoPartenzaDescrizione || stop.binarioProgrammatoPartenzaDescrizione) : (stop.binarioEffettivoArrivoDescrizione || stop.binarioProgrammatoArrivoDescrizione)}
+                                    </Button>
                                 </div>
                             ),
                         };

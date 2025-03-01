@@ -100,12 +100,12 @@ export default function Results({ directions }: { directions: Directions }) {
                                                             color: leg.line?.color ? "white" : "inherit",
                                                         }}>
                                                             {trainCodeLogos.find(code => code.code === leg.line?.code)?.svg ? (
-                                                                <Image src={`https://www.lefrecce.it/Channels.Website.WEB/web/images/logo/${trainCodeLogos.find(code => code.code === leg.line?.code)?.svg}.svg`} alt={leg.line?.name || ""} width={24} height={24} className={trainCodeLogos.find(code => code.code === leg.line?.code)?.className + " flex self-center"} />
+                                                                <Image src={`https://www.lefrecce.it/Channels.Website.WEB/web/images/logo/${trainCodeLogos.find(code => code.code === leg.line?.code)?.svg}.svg`} alt={leg.line?.name || ""} width={22} height={22} className={trainCodeLogos.find(code => code.code === leg.line?.code)?.className + " flex self-center -mx-1"} />
                                                             ) : (
                                                                 leg.line?.code
                                                             )} {leg.code}
                                                         </span>
-                                                        <span className="sm:text-lg text-md font-bold">
+                                                        <span className="sm:text-lg text-md font-bold truncate">
                                                             {leg.realtime?.destination || leg.destination}
                                                         </span>
                                                     </div>
@@ -117,17 +117,6 @@ export default function Results({ directions }: { directions: Directions }) {
                                                 <span className="text-gray-500 text-sm">
                                                     {getLegDescription(leg)}
                                                 </span>
-                                                {leg.realtime && leg.realtime.delay && (
-                                                    <span className="flex flex-row items-center gap-x-1">
-                                                        <div className="relative inline-flex">
-                                                            <div className="rounded-full bg-green-400 h-[8px] w-[8px] inline-block mr-1"></div>
-                                                            <div className="absolute animate-ping rounded-full bg-green-400 h-[8px] w-[8px] mr-1"></div>
-                                                        </div>
-                                                        <span className={`font-bold text-sm text-${getDelayColor(leg.realtime?.delay)}`}>
-                                                            {leg.realtime.delay && leg.realtime.delay !== 0 && formatDuration(leg.realtime.delay, true)} in {leg.realtime?.delay > 0 ? "ritardo" : leg.realtime?.delay < 0 ? "anticipo" : "orario"}
-                                                        </span>
-                                                    </span>
-                                                )}
                                             </div>
                                         </div>
                                         {leg.mode !== "foot" && (
@@ -183,6 +172,18 @@ export default function Results({ directions }: { directions: Directions }) {
                                                 vedi sulla mappa
                                             </Button>
 
+                                            {leg.realtime && leg.realtime.delay !== null && (
+                                                <span className="flex flex-row items-center gap-x-1">
+                                                    <div className="relative inline-flex">
+                                                        <div className="rounded-full bg-green-400 h-[8px] w-[8px] inline-block mr-1"></div>
+                                                        <div className="absolute animate-ping rounded-full bg-green-400 h-[8px] w-[8px] mr-1"></div>
+                                                    </div>
+                                                    <span className={`font-bold text-sm text-${getDelayColor(leg.realtime.delay)}`}>
+                                                        {leg.realtime.delay !== 0 && formatDuration(leg.realtime.delay, true)} in {leg.realtime.delay > 0 ? "ritardo" : leg.realtime.delay < 0 ? "anticipo" : "orario"}
+                                                    </span>
+                                                </span>
+                                            )}
+
                                             <Timeline steps={[{
                                                 content: (
                                                     <div className="flex flex-col">
@@ -202,9 +203,9 @@ export default function Results({ directions }: { directions: Directions }) {
                                                             >
                                                                 {format(new Date(leg.aimedStartTime), "HH:mm")}
                                                             </span>
-                                                            {leg.realtime && leg.realtime?.delay !== 0 && leg.realtime?.delay !== null && (
-                                                                <span className={`font-bold text-sm text-${getDelayColor(leg.realtime?.delay)}`}>
-                                                                    {format(new Date(leg.aimedStartTime).getTime() + (leg.realtime?.delay * 60 * 1000), "HH:mm")}
+                                                            {leg.realtime && leg.realtime.delay !== 0 && leg.realtime.delay !== null && (
+                                                                <span className={`font-bold text-sm text-${getDelayColor(leg.realtime.delay)}`}>
+                                                                    {format(new Date(leg.aimedStartTime).getTime() + (leg.realtime.delay * 60 * 1000), "HH:mm")}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -235,9 +236,9 @@ export default function Results({ directions }: { directions: Directions }) {
                                                             >
                                                                 {format(new Date(leg.aimedEndTime), "HH:mm")}
                                                             </span>
-                                                            {leg.realtime && leg.realtime?.delay !== 0 && leg.realtime?.delay !== null && (
-                                                                <span className={`font-bold text-sm text-${getDelayColor(leg.realtime?.delay)}`}>
-                                                                    {format(new Date(leg.aimedEndTime).getTime() + (leg.realtime?.delay * 60 * 1000), "HH:mm")}
+                                                            {leg.realtime && leg.realtime.delay !== 0 && leg.realtime.delay !== null && (
+                                                                <span className={`font-bold text-sm text-${getDelayColor(leg.realtime.delay)}`}>
+                                                                    {format(new Date(leg.aimedEndTime).getTime() + (leg.realtime.delay * 60 * 1000), "HH:mm")}
                                                                 </span>
                                                             )}
                                                         </div>

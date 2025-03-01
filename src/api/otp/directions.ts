@@ -20,10 +20,13 @@ const getLine = (leg: any) => {
     let code = "";
     let color = "";
     const agency = agencies[leg.authority?.id as keyof typeof agencies];
-    if (leg.line?.name === "REG") code = "R";
-    if (leg.authority?.id === "4:1" && leg.line?.publicCode?.startsWith("RE")) code = "RE";
 
-    if (leg.mode === "rail" && leg.authority?.id === "TRENITALIA_VENETO:Dummy-GMT" && leg.serviceJourney?.id) {
+    if (leg.line?.name === "REG") {
+        name = "R";
+        code = "R";
+    }
+
+    if (leg.mode === "rail" && agency === "trenitalia" && leg.serviceJourney?.id) {
         switch (leg.line?.name) {
             case "Regionale Veloce":
                 code = "RV";
@@ -36,6 +39,7 @@ const getLine = (leg: any) => {
         }
     }
 
+    if (agency === "trenord" && leg.line?.publicCode?.startsWith("RE")) code = "RE";
     if (agency === "trentino-trasporti" && leg.authority?.id?.split(":")[0] === "TT_URBANO" && !leg.line?.presentation?.colour) color = "17c964";
     if (agency === "trentino-trasporti" && leg.authority?.id?.split(":")[0] === "TT_EXTRAURBANO" && !leg.line?.presentation?.colour) color = "006FEE";
     if (agency === "trenitalia" && leg.mode === "rail" && !leg.line?.presentation?.colour) color = "f31260";
@@ -121,7 +125,7 @@ export async function getDirections(
     const fetchData = async (cursor?: string) => {
         const options = {
             method: 'POST',
-            url: 'http://192.168.1.110:8080/otp/transmodel/v3',
+            url: 'http://172.20.10.3:8080/otp/transmodel/v3',
             headers: { 'Content-Type': 'application/json' },
             data: {
                 query: 'query trip($from: Location!, $to: Location!, $arriveBy: Boolean, $dateTime: DateTime, $numTripPatterns: Int, $searchWindow: Int, $modes: Modes, $itineraryFiltersDebug: ItineraryFilterDebugProfile, $wheelchairAccessible: Boolean, $pageCursor: String) {trip( from: $from to: $to arriveBy: $arriveBy dateTime: $dateTime numTripPatterns: $numTripPatterns searchWindow: $searchWindow modes: $modes itineraryFilters: {debug: $itineraryFiltersDebug} wheelchairAccessible: $wheelchairAccessible pageCursor: $pageCursor) { previousPageCursor nextPageCursor tripPatterns { aimedStartTime aimedEndTime expectedEndTime expectedStartTime duration distance legs { id serviceJourney { id publicCode } mode aimedStartTime aimedEndTime expectedEndTime expectedStartTime realtime distance intermediateQuays { id name latitude longitude } duration fromPlace { name latitude longitude quay { id } } toPlace { name latitude longitude quay { id } } toEstimatedCall { destinationDisplay { frontText } } line { publicCode name id presentation { colour } } authority { name id } pointsOnLink { points } interchangeTo { staySeated } interchangeFrom { staySeated } } systemNotices { tag } }}}',

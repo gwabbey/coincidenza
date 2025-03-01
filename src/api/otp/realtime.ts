@@ -7,12 +7,11 @@ import { Realtime } from "./types";
 export async function getRealtimeData(agencyId: string, tripId: string): Promise<Realtime | null> {
     if (agencyId) {
         if (agencies[agencyId as keyof typeof agencies] === "trentino-trasporti") {
-            const trip = await getTrentinoTrip(tripId.split(":")[1]);
-            console.log("trip", trip);
+            const trip = await getTrentinoTrip(tripId);
             return {
-                delay: trip?.delay || null,
-                destination: trip?.tripHeadsign || null,
-                alerts: trip?.route?.news?.map((alert: any) => ({
+                delay: trip.delay,
+                destination: trip.tripHeadsign,
+                alerts: trip.route?.news?.map((alert: any) => ({
                     description: alert.header,
                     url: alert.url
                 }))

@@ -14,13 +14,12 @@ export async function getTripSmartCaring(code: string, origin: string, date: str
     return data;
 }
 
-
 export async function getTrip(id: string) {
-    const { data } = await axios.get(
+    const { data, status } = await axios.get(
         `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`
     );
 
-    if (data.length === 0) return null;
+    if (status === 200 && data.length === 0) return null;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -69,6 +68,7 @@ export async function getTrip(id: string) {
         .join("-");
 
     const trip = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${code}/${timestamp}`);
+    if (trip.data.categoria === "REG") trip.data.categoria = "R";
     const info = await getTripSmartCaring(code, origin, formattedDate);
     return { ...trip.data, info };
 }
