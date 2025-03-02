@@ -1,6 +1,6 @@
 'use client';
 
-import { Stop, Trip as TripProps } from "@/api/trenitalia/types";
+import { Canvas, Stop, Trip as TripProps } from "@/api/trenitalia/types";
 import Timeline from "@/components/timeline";
 import { trainCodeLogos } from "@/train-categories";
 import { capitalize, getDelayColor } from "@/utils";
@@ -11,119 +11,69 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from 'react';
 
-const timeToMinutes = (time: number): number => {
-    const [hours, minutes] = time.toString().split(':').map(Number);
-    return hours * 60 + minutes;
+const timeToMinutes = (timeString: string, date: Date) => {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    return (date.getDate() * 24 * 60) + (hours * 60) + minutes;
 };
 
-const getCurrentMinutes = (): number => {
+const getCurrentMinutes = () => {
     const now = new Date();
-    return now.getHours() * 60 + now.getMinutes() + (now.getSeconds() / 60);
+    return (now.getDate() * 24 * 60) + (now.getHours() * 60) + now.getMinutes() + (now.getSeconds() / 60);
 };
 
-const calculatePreciseActiveIndex = (stops: Stop[], delay: number, lastKnownStopId: string): number => {
+const calculatePreciseActiveIndex = (stops: Stop[], canvas: Canvas[], delay: number) => {
     const currentMinutes = getCurrentMinutes();
+    const currentStation = canvas.find(item => item.stazioneCorrente);
+    const currentStopIndex = currentStation ? stops.findIndex(stop => stop.id === currentStation.id) : -1;
 
-    // Find the current station where the train is located (stazioneCorrente: true)
-    const currentStationIndex = stops.findIndex(stop => stop.id === lastKnownStopId);
+    const firstStopDate = new Date(stops[0].partenza_teorica || 0);
+    const firstStopMinutes = timeToMinutes(formatDate(firstStopDate, 'HH:mm'), firstStopDate);
+    if (currentMinutes < firstStopMinutes) return -1;
 
-    // If we found a current station, the train is there
-    if (currentStationIndex !== -1) {
-        const currentStop = stops[currentStationIndex];
+    if (stops[stops.length - 1].arrivoReale) return stops.length - 1;
 
-        // Check if train has arrived but not departed
-        if (currentStop.arrivoReale && !currentStop.partenzaReale) {
-            return currentStationIndex;
-        }
-    }
+    if (currentStopIndex !== -1) {
+        const stop = stops[currentStopIndex];
+        if (stop.arrivoReale && !stop.partenzaReale) return currentStopIndex;
 
-    // Process each stop to determine train location
-    for (let i = 0; i < stops.length; i++) {
-        const stop = stops[i];
-        const nextStop = i < stops.length - 1 ? stops[i + 1] : null;
+        if (stop.partenzaReale && currentStopIndex < stops.length - 1) {
+            const departureDate = new Date(stop.partenzaReale || 0);
+            const departureMinutes = timeToMinutes(formatDate(departureDate, 'HH:mm'), departureDate);
 
-        // Extract timestamps (convert to minutes for comparison)
-        const arrivalTime = stop.arrivo_teorico ? timeToMinutes(new Date(stop.arrivo_teorico).getHours() + ':' + new Date(stop.arrivo_teorico).getMinutes()) + delay : null;
-        const departureTime = stop.partenza_teorica ? timeToMinutes(new Date(stop.partenza_teorica).getHours() + ':' + new Date(stop.partenza_teorica).getMinutes()) + delay : null;
-        const nextArrivalTime = nextStop?.arrivo_teorico ? timeToMinutes(new Date(nextStop.arrivo_teorico).getHours() + ':' + new Date(nextStop.arrivo_teorico).getMinutes()) + delay : null;
+            const nextArrivalDate = new Date(stops[currentStopIndex + 1].arrivo_teorico || 0);
+            const nextArrivalMinutes = timeToMinutes(formatDate(nextArrivalDate, 'HH:mm'), nextArrivalDate) + delay;
 
-        // If this stop has arrivoReale but no partenzaReale, train is at this station
-        if (stop.arrivoReale && !stop.partenzaReale) {
-            return i;
-        }
-
-        // If we have departed from this stop but not arrived at the next one
-        if (stop.partenzaReale && nextStop && !nextStop.arrivoReale) {
-            // Current time is between departure from this stop and arrival at next stop
-            if (departureTime && nextArrivalTime && currentMinutes >= departureTime && currentMinutes < nextArrivalTime) {
-                const segmentDuration = nextArrivalTime - departureTime;
-                if (segmentDuration > 0) {
-                    const progress = (currentMinutes - departureTime) / segmentDuration;
-                    return i + progress;
-                }
+            if (currentMinutes >= departureMinutes && currentMinutes <= nextArrivalMinutes) {
+                return currentStopIndex + Math.min((currentMinutes - departureMinutes) / (nextArrivalMinutes - departureMinutes), 0.99);
             }
-
-            // If we can't calculate precise progress, we're on the way to the next stop
-            return i + 0.5;
-        }
-
-        // If this is the last stop and we've arrived
-        if (i === stops.length - 1 && stop.arrivoReale) {
-            return i;
+        } else {
+            return currentStopIndex;
         }
     }
 
-    // If all previous stops have partenzaReale and we're before the last stop
-    const lastCompletedStopIndex = findLastIndex(stops, stop => stop.partenzaReale === true);
-    if (lastCompletedStopIndex !== -1 && lastCompletedStopIndex < stops.length - 1) {
-        const lastCompletedStop = stops[lastCompletedStopIndex];
-        const nextStop = stops[lastCompletedStopIndex + 1];
+    let lastPassedStopIndex = -1;
+    for (let i = 0; i < stops.length - 1; i++) {
+        if (!stops[i].partenza_teorica || !stops[i + 1].arrivo_teorico) continue;
 
-        const departureTime = lastCompletedStop.partenza_teorica ?
-            timeToMinutes(new Date(lastCompletedStop.partenza_teorica).getHours() + ':' + new Date(lastCompletedStop.partenza_teorica).getMinutes()) + delay : null;
-        const nextArrivalTime = nextStop.arrivo_teorico ?
-            timeToMinutes(new Date(nextStop.arrivo_teorico).getHours() + ':' + new Date(nextStop.arrivo_teorico).getMinutes()) + delay : null;
-
-        if (departureTime && nextArrivalTime) {
-            const segmentDuration = nextArrivalTime - departureTime;
-            if (segmentDuration > 0) {
-                const progress = (currentMinutes - departureTime) / segmentDuration;
-                return lastCompletedStopIndex + Math.min(progress, 0.99);
-            }
+        if (!stops[i].partenzaReale) {
+            if (i === currentStopIndex) return i;
+            continue;
         }
 
-        return lastCompletedStopIndex + 0.5;
-    }
+        const departureDate = new Date(stops[i].partenzaReale || 0);
+        const departureMinutes = timeToMinutes(formatDate(departureDate, 'HH:mm'), departureDate);
 
-    // If train hasn't started journey yet (before first departure)
-    if (stops[0] && !stops[0].partenzaReale) {
-        const firstDepartureTime = stops[0].partenza_teorica ?
-            timeToMinutes(new Date(stops[0].partenza_teorica).getHours() + ':' + new Date(stops[0].partenza_teorica).getMinutes()) + delay : null;
+        const nextStopDate = new Date(stops[i + 1].arrivo_teorico || 0);
+        const nextStopMinutes = timeToMinutes(formatDate(nextStopDate, 'HH:mm'), nextStopDate) + delay;
 
-        if (firstDepartureTime && currentMinutes < firstDepartureTime) {
-            return -1;
+        if (currentMinutes >= departureMinutes) lastPassedStopIndex = i;
+        if (currentMinutes >= departureMinutes && currentMinutes <= nextStopMinutes) {
+            return i + Math.min((currentMinutes - departureMinutes) / (nextStopMinutes - departureMinutes), 0.99);
         }
     }
 
-    // Fallback to last known stop
-    const lastKnownStopIndex = stops.findIndex(stop => stop.id === lastKnownStopId);
-    if (lastKnownStopIndex !== -1) {
-        return lastKnownStopIndex;
-    }
-
-    return -1;
+    return lastPassedStopIndex !== -1 ? lastPassedStopIndex + 0.99 : Math.max(0, currentStopIndex);
 };
-
-// Helper function to find the last index in an array that satisfies a condition
-const findLastIndex = (array, predicate) => {
-    for (let i = array.length - 1; i >= 0; i--) {
-        if (predicate(array[i])) {
-            return i;
-        }
-    }
-    return -1;
-};
-
 
 export default function Trip({ trip }: { trip: TripProps }) {
     const router = useRouter();
@@ -140,7 +90,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
 
     useEffect(() => {
         const updateIndex = () => {
-            const newIndex = calculatePreciseActiveIndex(trip.fermate, trip.ritardo || 0, trip.fermate[trip.fermate.length - 1].id);
+            const newIndex = calculatePreciseActiveIndex(trip.fermate, trip.canvas, trip.ritardo || 0);
             setPreciseActiveIndex(newIndex);
         };
 
@@ -153,31 +103,17 @@ export default function Trip({ trip }: { trip: TripProps }) {
     useEffect(() => {
         const intervalId = setInterval(() => {
             router.refresh();
-            // TODO: better refresh
-        }, parseInt(process.env.AUTO_REFRESH || '60000', 10));
+        }, parseInt(process.env.AUTO_REFRESH || '10000', 10));
         return () => clearInterval(intervalId);
     }, [router]);
 
-    const activeIndex = 0;
-
-    /* const calculateDuration = (arrival: string, departure: string) =>
-        Math.abs(
-            (new Date(0, 0, 0, ...arrival.split(':').map(Number)).getTime() -
-                new Date(0, 0, 0, ...departure.split(':').map(Number)).getTime()) / 60000
-        ); */
-    /* 
-        const tripDuration = calculateDuration(
-            trip.fermate[trip.fermate.length - 1].arrivo_teorico,
-            trip.fermate[0].partenza_teorica
-        ); */
-
     const formatDuration = (duration: string) => {
         const [hours, minutes] = duration.split(':').map(Number);
-        return `${hours}${hours > 0 ? 'h' : ''} ${minutes}${minutes > 1 ? 'min' : ''}`;
+        return `${hours > 0 ? hours : ""}${hours > 0 ? 'h' : ''} ${minutes}${minutes > 1 ? 'min' : ''}`;
     };
 
     return (
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 mx-auto">
             <div className="flex justify-center items-center text-center flex-row gap-x-2">
                 <span className="sm:text-lg text-md font-bold w-fit rounded-small flex flex-row items-center gap-x-1 bg-danger text-white" style={{
                     padding: "0.1rem 0.5rem",
@@ -252,60 +188,57 @@ export default function Trip({ trip }: { trip: TripProps }) {
                 <Divider className="my-2" />
             </div>
 
-            <div className="text-left sm:self-center">
+            <div className="max-w-md w-full mx-auto">
                 <Timeline
                     steps={trip.fermate.map((stop: Stop, index: number) => {
+                        const isFutureStop = preciseActiveIndex <= index;
+                        const isDepartureDelayed = stop.partenza_teorica && formatDate(new Date(stop.partenza_teorica), 'HH:mm') !== formatDate(new Date(stop.partenzaReale || stop.partenza_teorica + (!isFutureStop ? stop.ritardoPartenza * 60 * 1000 : trip.ritardo * 60 * 1000)), 'HH:mm');
+                        const isArrivalDelayed = stop.arrivo_teorico && formatDate(new Date(stop.arrivo_teorico), 'HH:mm') !== formatDate(new Date(stop.arrivoReale || stop.arrivo_teorico + (!isFutureStop ? stop.ritardoArrivo * 60 * 1000 : trip.ritardo * 60 * 1000)), 'HH:mm');
+
                         return {
                             content: (
-                                <div className="grid grid-cols-[minmax(13.5em,1fr),auto] items-start gap-4">
-                                    <div className="flex flex-col min-w-0">
-                                        <span className="font-bold truncate sm:max-w-[200px]">{capitalize(stop.stazione)}</span>
+                                <div className="flex items-start justify-between w-full">
+                                    <div className="flex-col">
+                                        <span className="font-bold break-words">{capitalize(stop.stazione)}</span>
                                         <div className="text-gray-500 text-sm">
 
-                                            <div className="flex flex-col">
+                                            <div className="flex-col">
                                                 <div className={`flex gap-1 ${!stop.arrivoReale ? 'italic' : ''}`}>
-                                                    <span className={`${stop.ritardoArrivo !== 0 ? 'line-through' : 'font-bold text-success'}`}>
-                                                        {stop.arrivo_teorico &&
-                                                            formatDate(
-                                                                new Date(
-                                                                    stop.ritardoArrivo === 0 && trip.ritardo !== 0
-                                                                        ? stop.arrivo_teorico + trip.ritardo * 60 * 1000
-                                                                        : stop.arrivo_teorico
-                                                                ),
-                                                                'HH:mm'
-                                                            )}
-                                                    </span>
-                                                    {stop.ritardoArrivo !== 0 && (
-                                                        <span className={`font-bold text-${getDelayColor(stop.ritardoArrivo)}`}>
-                                                            {formatDate(new Date(stop.arrivoReale || ''), 'HH:mm')}
+                                                    {stop.arrivo_teorico && <span>a.</span>}
+
+                                                    {stop.arrivo_teorico && (
+                                                        <span className={`${isArrivalDelayed ? 'line-through' : 'font-bold'} ${stop.arrivoReale && !isArrivalDelayed ? 'text-success' : ''}`}>
+                                                            {formatDate(new Date(stop.arrivo_teorico), 'HH:mm')}
+                                                        </span>
+                                                    )}
+
+                                                    {isArrivalDelayed && stop.arrivo_teorico && (
+                                                        <span className={`font-bold text-${getDelayColor(stop.ritardoArrivo || trip.ritardo)}`}>
+                                                            {formatDate(new Date(stop.arrivoReale || stop.arrivo_teorico + trip.ritardo * 60 * 1000), 'HH:mm')}
                                                         </span>
                                                     )}
                                                 </div>
 
                                                 <div className={`flex gap-1 ${!stop.partenzaReale ? 'italic' : ''}`}>
-                                                    <span className={`${stop.ritardoPartenza !== 0 ? 'line-through' : 'font-bold text-success'}`}>
-                                                        {stop.partenza_teorica &&
-                                                            formatDate(
-                                                                new Date(
-                                                                    stop.ritardoPartenza === 0 && trip.ritardo !== 0
-                                                                        ? stop.partenza_teorica + trip.ritardo * 60 * 1000
-                                                                        : stop.partenza_teorica
-                                                                ),
-                                                                'HH:mm'
-                                                            )}
-                                                    </span>
-                                                    {stop.ritardoPartenza !== 0 && (
-                                                        <span className={`font-bold text-${getDelayColor(stop.ritardoPartenza)}`}>
-                                                            {formatDate(new Date(stop.partenzaReale || ''), 'HH:mm')}
+                                                    {stop.partenza_teorica && <span>p.</span>}
+
+                                                    {stop.partenza_teorica && (
+                                                        <span className={`${isDepartureDelayed ? 'line-through' : 'font-bold'} ${stop.partenzaReale && !isDepartureDelayed ? 'text-success' : ''}`}>
+                                                            {formatDate(new Date(stop.partenza_teorica), 'HH:mm')}
+                                                        </span>
+                                                    )}
+
+                                                    {isDepartureDelayed && stop.partenza_teorica && (
+                                                        <span className={`font-bold text-${getDelayColor(stop.ritardoPartenza || trip.ritardo)}`}>
+                                                            {formatDate(new Date(stop.partenzaReale || stop.partenza_teorica + trip.ritardo * 60 * 1000), 'HH:mm')}
                                                         </span>
                                                     )}
                                                 </div>
                                             </div>
-
                                         </div>
                                     </div>
                                     <Button
-                                        className="p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors text-white"
+                                        className={`flex p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors whitespace-pre-wrap flex-shrink-0 ${stop.binarioEffettivoArrivoDescrizione || stop.binarioEffettivoPartenzaDescrizione ? 'text-white' : 'text-gray-500'}`}
                                         radius="sm"
                                         variant={(stop.binarioEffettivoArrivoDescrizione || stop.binarioEffettivoPartenzaDescrizione) ? 'solid' : 'ghost'}
                                         color={(stop.binarioEffettivoArrivoDescrizione || stop.binarioEffettivoPartenzaDescrizione) ? 'success' : 'default'}

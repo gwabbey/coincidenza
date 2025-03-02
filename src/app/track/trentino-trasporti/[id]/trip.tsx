@@ -51,7 +51,6 @@ const calculatePreciseActiveIndex = (stopTimes: any[], delay: number, stopLast: 
     return -1;
 };
 
-
 export default function Trip({ trip }: { trip: TripProps }) {
     const [scroll, setScroll] = useState({ y: 0 });
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
@@ -196,7 +195,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                 <Divider className="my-2" />
             </div>
 
-            <div className="text-left sm:self-center">
+            <div className="flex justify-center w-full">
                 <Timeline
                     steps={trip.stopTimes.map((stop: any, index: number) => {
                         const isPastStop = index <= Math.floor(preciseActiveIndex);

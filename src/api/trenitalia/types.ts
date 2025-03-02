@@ -90,6 +90,7 @@ export interface Trip {
     compImgCambiNumerazione: string
     ultimoRilev: number
     iconTreno: any
+    canvas: Canvas[]
 }
 
 export interface Stop {
@@ -129,4 +130,20 @@ export interface Stop {
     nextTrattaType: number
     actualFermataType: number
     materiale_label: any
+}
+
+export interface Canvas {
+    last: boolean
+    stazioneCorrente: boolean
+    id: string
+    stazione: string
+    fermata: Stop
+    partenzaReale: boolean
+    arrivoReale: boolean
+    first: boolean
+    orientamento: string[]
+    nextTrattaType: number
+    actualFermataType: number
+    previousTrattaType?: number
+    trattaType: number
 }

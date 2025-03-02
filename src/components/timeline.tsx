@@ -43,7 +43,7 @@ const Timeline = ({ steps, active = steps.length - 1 }: TimelineProps) => {
     }, [active, steps.length]);
 
     return (
-        <div className="relative flex flex-col">
+        <div className="relative flex flex-col mx-auto">
             <div className="relative flex flex-col gap-8">
                 {steps.map((step, index) => {
                     const isActive = index <= wholeNumber
@@ -63,7 +63,7 @@ const Timeline = ({ steps, active = steps.length - 1 }: TimelineProps) => {
                                 />
                             </div>
 
-                            <div className="leading-none">{step.content}</div>
+                            <div className="leading-none max-w-lg w-full">{step.content}</div>
                         </div>
                     )
                 })}

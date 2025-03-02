@@ -2,6 +2,7 @@
 
 import { capitalize } from "@/utils";
 import axios from "axios";
+import { Trip } from "./types";
 
 export async function searchStation(query: string) {
     const { data } = await axios.get(`https://app.lefrecce.it/Channels.Website.BFF.WEB/app/locations?name=${query}&limit=5&multi=false`);
@@ -14,12 +15,18 @@ export async function getTripSmartCaring(code: string, origin: string, date: str
     return data;
 }
 
+export async function getTripCanvas(code: string, origin: string, date: string) {
+    const { data } = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/tratteCanvas/${origin}/${code}/${date}`);
+    if (data.length === 0) return null;
+    return data;
+}
+
 export async function getTrip(id: string) {
-    const { data, status } = await axios.get(
+    const { data } = await axios.get(
         `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`
     );
 
-    if (status === 200 && data.length === 0) return null;
+    if (data.length === 0) return null;
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -54,9 +61,21 @@ export async function getTrip(id: string) {
             };
         })
         .filter(Boolean)
-        .filter(({ tripDate }: { tripDate: Date }) => tripDate.getTime() === today.getTime());
+        .sort((a: any, b: any) => a.tripDate.getTime() - b.tripDate.getTime());
 
-    const { code, origin, timestamp } = parsed[0];
+    const now = new Date();
+    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+
+    const todayTrip = parsed.find((trip: Trip) => {
+        const tripDate = new Date(trip.orarioPartenza);
+        return tripDate.toDateString() === now.toDateString();
+    });
+
+    const selectedTrip = parsed[0].timestamp < oneHourAgo.getTime() && todayTrip
+        ? todayTrip
+        : parsed[0];
+
+    const { code, origin, timestamp } = selectedTrip;
     const formattedDate = new Intl.DateTimeFormat("it-IT", {
         year: "numeric",
         month: "2-digit",
@@ -70,5 +89,6 @@ export async function getTrip(id: string) {
     const trip = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${code}/${timestamp}`);
     if (trip.data.categoria === "REG") trip.data.categoria = "R";
     const info = await getTripSmartCaring(code, origin, formattedDate);
-    return { ...trip.data, info };
+    const canvas = await getTripCanvas(code, origin, timestamp);
+    return { ...trip.data, info, canvas };
 }
