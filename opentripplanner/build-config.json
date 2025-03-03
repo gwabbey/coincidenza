@@ -1,0 +1,56 @@
+{
+  "osmDefaults": {
+    "timeZone": "Europe/Rome"
+  },
+  "transitFeeds": [
+    {
+      "type": "gtfs",
+      "feedId": "TT_URBANO",
+      "source": "tt_urbano.gtfs.zip"
+    },
+    {
+      "type": "gtfs",
+      "feedId": "TT_EXTRAURBANO",
+      "source": "tt_extraurbano.gtfs.zip"
+    },
+    {
+      "type": "gtfs",
+      "feedId": "ROMA_MOBILITA",
+      "source": "roma.gtfs.zip"
+    },
+    {
+      "type": "gtfs",
+      "feedId": "STA",
+      "source": "sta.gtfs.zip"
+    },
+    {
+      "type": "gtfs",
+      "feedId": "OEBB",
+      "source": "obb.gtfs.zip"
+    },
+    {
+      "type": "gtfs",
+      "feedId": "ATM",
+      "source": "atm.gtfs.zip"
+    },
+    {
+      "type": "gtfs",
+      "feedId": "TRENORD",
+      "source": "trenord.gtfs.zip"
+    },
+    {
+      "type": "netex",
+      "feedId": "ATV",
+      "source": "IT-ITH3-ATV_L1.zip",
+      "groupFilePattern": "([A-Za-z0-9-]+)_.*\\.xml"
+    },
+    {
+      "type": "netex",
+      "feedId": "TRENITALIA_VENETO",
+      "source": "IT-ITH3-TRENITALIA_L1.zip",
+      "groupFilePattern": "([A-Za-z0-9-]+)_.*\\.xml"
+    }
+  ],
+  "osmCacheDataInMem": true,
+  "transitModelTimeZone": "Europe/Rome"
+}
