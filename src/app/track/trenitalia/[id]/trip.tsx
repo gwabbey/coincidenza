@@ -107,10 +107,30 @@ export default function Trip({ trip }: { trip: TripProps }) {
         return () => clearInterval(intervalId);
     }, [router]);
 
-    const formatDuration = (duration: string) => {
-        const [hours, minutes] = duration.split(':').map(Number);
-        return `${hours > 0 ? hours : ""}${hours > 0 ? 'h' : ''} ${minutes}${minutes > 1 ? 'min' : ''}`;
-    };
+    function formatDuration(start: Date, end: Date): string {
+        const startHours = start.getHours();
+        const startMinutes = start.getMinutes();
+        const endHours = end.getHours();
+        const endMinutes = end.getMinutes();
+
+        const startTotalMinutes = startHours * 60 + startMinutes;
+        const endTotalMinutes = endHours * 60 + endMinutes;
+
+        let diffMinutes = endTotalMinutes - startTotalMinutes;
+
+        if (diffMinutes < 0) {
+            diffMinutes += 24 * 60;
+        }
+
+        const hours = Math.floor(diffMinutes / 60);
+        const minutes = diffMinutes % 60;
+
+        if (hours > 0) {
+            return `${hours}h ${minutes}min`;
+        } else {
+            return `${minutes}min`;
+        }
+    }
 
     return (
         <div className="flex flex-col gap-4 mx-auto">
@@ -131,19 +151,19 @@ export default function Trip({ trip }: { trip: TripProps }) {
 
             <div className="md:flex hidden justify-center items-center my-4 flex-row gap-4">
                 <Card radius="lg" className="p-4 w-64 text-center">
-                    <div className="font-bold truncate">{capitalize(trip.origine)}</div>
-                    <div>{formatDate(new Date(trip.orarioPartenza), 'HH:mm')}</div>
+                    <div className="font-bold truncate">{capitalize(trip.origineEstera || trip.origine)}</div>
+                    <div>{formatDate(new Date(trip.oraPartenzaEstera || trip.orarioPartenza), 'HH:mm')}</div>
                 </Card>
 
                 <div className="flex flex-row items-center justify-between gap-2">
                     <Divider className="my-4 w-16" />
-                    <div className="text-center">{formatDuration(trip.compDurata)}</div>
+                    <div className="text-center">{formatDuration(new Date(trip.oraPartenzaEstera || trip.orarioPartenza), new Date(trip.oraArrivoEstera || trip.orarioArrivo))}</div>
                     <Divider className="my-4 w-16" />
                 </div>
 
                 <Card radius="lg" className="p-4 w-64 text-center">
-                    <div className="font-bold truncate">{capitalize(trip.destinazione)}</div>
-                    <div>{formatDate(new Date(trip.orarioArrivo), 'HH:mm')}</div>
+                    <div className="font-bold truncate">{capitalize(trip.destinazioneEstera || trip.destinazione)}</div>
+                    <div>{formatDate(new Date(trip.oraArrivoEstera || trip.orarioArrivo), 'HH:mm')}</div>
                 </Card>
             </div>
 
@@ -182,6 +202,18 @@ export default function Trip({ trip }: { trip: TripProps }) {
                             {trip.ritardo < 0 ? '' : trip.ritardo > 0 ? '+' : "in orario"}
                             {trip.ritardo !== 0 && `${trip.ritardo} min`}
                         </Button>
+                    )}
+
+                    {trip.subTitle && (
+                        <div className="text-center font-bold">
+                            {trip.subTitle}
+                        </div>
+                    )}
+
+                    {trip.provvedimenti && (
+                        <div className="text-center font-bold">
+                            {trip.provvedimenti}
+                        </div>
                     )}
                 </div>
 

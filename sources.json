@@ -1,30 +1,56 @@
 [
     {
         "name": "STA",
-        "url": "ftp://ftp.sta.bz.it/gtfs/google_transit_shp.zip"
+        "url": "ftp://ftp.sta.bz.it/gtfs/google_transit_shp.zip",
+        "type": "gtfs",
+        "output": "sta.gtfs.zip"
     },
     {
         "name": "Trentino Trasporti Urbano",
-        "url": "https://www.trentinotrasporti.it/opendata/google_transit_urbano_tte.zip"
+        "url": "https://www.trentinotrasporti.it/opendata/google_transit_urbano_tte.zip",
+        "type": "gtfs",
+        "output": "tt_urbano.gtfs.zip"
     },
     {
         "name": "Trentino Trasporti Extraurbano",
-        "url": "https://www.trentinotrasporti.it/opendata/google_transit_extraurbano_tte.zip"
+        "url": "https://www.trentinotrasporti.it/opendata/google_transit_extraurbano_tte.zip",
+        "type": "gtfs",
+        "output": "tt_extraurbano.gtfs.zip"
     },
     {
         "name": "Trenord",
-        "url": "https://www.dati.lombardia.it/download/3z4k-mxz9/application/zip"
+        "url": "https://www.dati.lombardia.it/download/3z4k-mxz9/application/zip",
+        "type": "gtfs",
+        "output": "trenord.gtfs.zip"
     },
     {
         "name": "ATM",
-        "url": "https://dati.comune.milano.it/gtfs.zip"
+        "url": "https://dati.comune.milano.it/gtfs.zip",
+        "type": "gtfs",
+        "output": "atm.gtfs.zip"
     },
     {
         "name": "OBB",
-        "url": "https://static.oebb.at/open-data/soll-fahrplan-gtfs/GTFS_OP_2025_obb.zip"
+        "url": "https://static.oebb.at/open-data/soll-fahrplan-gtfs/GTFS_OP_2025_obb.zip",
+        "type": "gtfs",
+        "output": "oebb.gtfs.zip"
     },
     {
         "name": "Roma Mobilità",
-        "url": "https://romamobilita.it/sites/default/files/rome_static_gtfs.zip"
+        "url": "https://romamobilita.it/sites/default/files/rome_static_gtfs.zip",
+        "type": "gtfs",
+        "output": "roma.gtfs.zip"
+    },
+    {
+        "name": "ATV Verona",
+        "url": "https://www.cciss.it/nap/mmtis/public/api/v1/download/blob/Asset/6998/checkedResource",
+        "type": "netex",
+        "output": "atv.gtfs.zip"
+    },
+    {
+        "name": "Trenitalia Veneto",
+        "url": "https://www.cciss.it/nap/mmtis/public/api/v1/download/blob/Asset/181861/checkedResource",
+        "type": "netex",
+        "output": "atv.gtfs.zip"
     }
 ]
