@@ -1,4 +1,4 @@
-import { Divider, Flex, Group, Skeleton, Stack } from '@mantine/core';
+/* import { Divider, Flex, Group, Skeleton, Stack } from '@mantine/core';
 
 export function MonitorSkeleton() {
     return (
@@ -19,4 +19,4 @@ export function MonitorSkeleton() {
             <Skeleton height={16} width="60%" mx="auto" />
         </Stack>
     );
-} 
+}  */

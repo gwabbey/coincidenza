@@ -1,4 +1,4 @@
-'use client';
+/* 'use client';
 import { Badge, Divider, Flex, Group, Stack, Text } from '@mantine/core';
 import { AnimatePresence, motion } from 'motion/react';
 import { useRouter } from 'next/navigation';
@@ -142,3 +142,4 @@ export function Monitor({ monitor }: { monitor: any }) {
         </Stack>
     );
 }
+ */

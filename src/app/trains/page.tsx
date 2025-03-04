@@ -1,4 +1,4 @@
-import { Flex, Title } from "@mantine/core";
+/* import { Flex, Title } from "@mantine/core";
 import { TrainStationInput } from "./TrainStationInput";
 
 export default function Page() {
@@ -16,4 +16,4 @@ export default function Page() {
             <TrainStationInput placeholder="Cerca stazione" />
         </Flex>
     )
-}
+} */

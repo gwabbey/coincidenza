@@ -1,4 +1,4 @@
-import { getStationMonitor } from "@/api";
+/* import { getStationMonitor } from "@/api";
 import { Flex, Title } from "@mantine/core";
 import { Suspense } from "react";
 import stations from "../stations.json";
@@ -40,4 +40,4 @@ async function PageMonitor({ id }: { id: string }) {
     return (
         <Monitor monitor={monitor} />
     );
-}
+} */

@@ -6,6 +6,8 @@ import { capitalize } from '@/utils';
 import axios from 'axios';
 import { getRealtimeData } from './realtime';
 
+const OTP_SERVER_IP = process.env.OTP_SERVER_IP || "localhost:8080"
+
 const getCode = (leg: any) => {
     if (leg.mode === "rail" && leg.authority?.id === "TRENITALIA_VENETO:Dummy-GMT" && leg.serviceJourney?.id) {
         const match = leg.serviceJourney?.id?.match(/VehicleJourney:\d+-(\d+)-/);
@@ -125,7 +127,7 @@ export async function getDirections(
     const fetchData = async (cursor?: string) => {
         const options = {
             method: 'POST',
-            url: 'http://172.20.10.3:8080/otp/transmodel/v3',
+            url: `http://${OTP_SERVER_IP}/otp/transmodel/v3`,
             headers: { 'Content-Type': 'application/json' },
             data: {
                 query: 'query trip($from: Location!, $to: Location!, $arriveBy: Boolean, $dateTime: DateTime, $numTripPatterns: Int, $searchWindow: Int, $modes: Modes, $itineraryFiltersDebug: ItineraryFilterDebugProfile, $wheelchairAccessible: Boolean, $pageCursor: String) {trip( from: $from to: $to arriveBy: $arriveBy dateTime: $dateTime numTripPatterns: $numTripPatterns searchWindow: $searchWindow modes: $modes itineraryFilters: {debug: $itineraryFiltersDebug} wheelchairAccessible: $wheelchairAccessible pageCursor: $pageCursor) { previousPageCursor nextPageCursor tripPatterns { aimedStartTime aimedEndTime expectedEndTime expectedStartTime duration distance legs { id serviceJourney { id publicCode } mode aimedStartTime aimedEndTime expectedEndTime expectedStartTime realtime distance intermediateQuays { id name latitude longitude } duration fromPlace { name latitude longitude quay { id } } toPlace { name latitude longitude quay { id } } toEstimatedCall { destinationDisplay { frontText } } line { publicCode name id presentation { colour } } authority { name id } pointsOnLink { points } interchangeTo { staySeated } interchangeFrom { staySeated } } systemNotices { tag } }}}',
