@@ -8,6 +8,6 @@ RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm run build
 
-ENV PORT=3003
+ENV PORT=80
 
 CMD ["pnpm", "run", "start"]
