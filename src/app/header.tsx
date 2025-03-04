@@ -6,7 +6,7 @@ import { useTheme } from "next-themes";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-export default function Header() {
+export function Header() {
     const [mounted, setMounted] = useState(false)
     const { theme, setTheme } = useTheme()
 
