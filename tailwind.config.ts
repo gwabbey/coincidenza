@@ -1,4 +1,4 @@
-import { heroui } from "@heroui/theme";
+import { heroui } from "@heroui/react";
 import typography from "@tailwindcss/typography";
 import type { Config } from "tailwindcss";
 
