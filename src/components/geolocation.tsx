@@ -1,6 +1,6 @@
 'use client'
 
-import { notifications } from '@mantine/notifications';
+import toast from "react-hot-toast";
 
 export function getUserLocation(): Promise<{ lat: number; lon: number }> {
     return new Promise((resolve, reject) => {
@@ -15,13 +15,7 @@ export function getUserLocation(): Promise<{ lat: number; lon: number }> {
                     else if (error.code === error.POSITION_UNAVAILABLE) message = 'Posizione non disponibile';
                     else if (error.code === error.TIMEOUT) message = 'Timeout durante la richiesta';
 
-                    notifications.show({
-                        autoClose: 5000,
-                        title: "Errore",
-                        message,
-                        color: 'red',
-                        radius: 'lg',
-                    });
+                    toast.error(message);
                 },
                 { enableHighAccuracy: true, maximumAge: 0 }
             );
