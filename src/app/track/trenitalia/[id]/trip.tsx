@@ -139,7 +139,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                     padding: "0.1rem 0.5rem",
                 }}>
                     {trainCodeLogos.find(code => code.code === trip.categoria)?.svg ? (
-                        <Image src={`https://www.lefrecce.it/Channels.Website.WEB/web/images/logo/${trainCodeLogos.find(code => code.code === trip.categoria)?.svg}.svg`} alt={trip.compTipologiaTreno || ""} width={22} height={22} className={trainCodeLogos.find(code => code.code === trip.categoria)?.className + " flex self-center -mx-1"} />
+                        <Image src={`https://www.lefrecce.it/Channels.Website.WEB/web/images/logo/${trainCodeLogos.find(code => code.code === trip.categoria)?.svg}.svg`} alt={trip.compTipologiaTreno || ""} width={22} height={22} className={trainCodeLogos.find(code => code.code === trip.categoria)?.className + " flex self-center -mx-1 invert"} />
                     ) : (
                         trip.categoria
                     )} {trip.numeroTreno}
@@ -186,6 +186,9 @@ export default function Trip({ trip }: { trip: TripProps }) {
                                     ultimo rilevamento: {trip.compOraUltimoRilevamento}
                                 </p>
                             )}
+
+                            {/* TODO: add avvisi button */}
+
                         </div>
                     </div>
 

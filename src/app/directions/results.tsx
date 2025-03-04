@@ -100,7 +100,7 @@ export default function Results({ directions }: { directions: Directions }) {
                                                             color: leg.line?.color ? "white" : "inherit",
                                                         }}>
                                                             {trainCodeLogos.find(code => code.code === leg.line?.code)?.svg ? (
-                                                                <Image src={`https://www.lefrecce.it/Channels.Website.WEB/web/images/logo/${trainCodeLogos.find(code => code.code === leg.line?.code)?.svg}.svg`} alt={leg.line?.name || ""} width={22} height={22} className={trainCodeLogos.find(code => code.code === leg.line?.code)?.className + " flex self-center -mx-1"} />
+                                                                <Image src={`https://www.lefrecce.it/Channels.Website.WEB/web/images/logo/${trainCodeLogos.find(code => code.code === leg.line?.code)?.svg}.svg`} alt={leg.line?.name || ""} width={22} height={22} className={trainCodeLogos.find(code => code.code === leg.line?.code)?.className + " flex self-center -mx-1 invert"} />
                                                             ) : (
                                                                 leg.line?.code
                                                             )} {leg.code}
