@@ -1,10 +1,6 @@
 "use server";
-import axios from 'axios';
-import axiosRetry from 'axios-retry';
-import * as cheerio from 'cheerio';
 import { cookies } from "next/headers";
 import stops from "./stops.json";
-import { trainCategoryShortNames } from "./train-categories";
 
 function getDistance(lat1, lon1, lat2, lon2) {
     const R = 6371;
@@ -103,104 +99,6 @@ export async function getStopTrips(id, type, routes) {
     } catch (error) {
         console.error(`Error in getStopTrips: ${error.message}`);
         throw new Error(`Failed to fetch stop data: ${error.message}`);
-    }
-}
-
-export async function getStationMonitor(id) {
-    try {
-        const client = axios.create();
-
-        axiosRetry(client, {
-            retries: 5,
-            retryDelay: axiosRetry.exponentialDelay,
-            onRetry: (retryCount, error) => {
-                console.error(`Retry attempt ${retryCount} for error ${error.response?.statusText}`);
-            }
-        });
-
-        const response = await client.get(`https://iechub.rfi.it/ArriviPartenze/ArrivalsDepartures/Monitor?placeId=${id}&arrivals=False`);
-        const $ = cheerio.load(response.data);
-
-        const trains = [];
-        const alerts = $('#barraInfoStazioneId > div').find('div[class="marqueeinfosupp"] div').text();
-
-        $('#bodyTabId > tr').each((index, element) => {
-            const category = $(element).find('td[id="RCategoria"] img').attr('alt')?.replace('Categoria ', '').replace('CIVITAVECCHIA EXPRESS ', '').toLowerCase().trim();
-            const number = $(element).find('td[id="RTreno"]').text().trim();
-            const destination = $(element).find('td[id="RStazione"] div').text()?.toLowerCase().trim();
-            const departureTime = $(element).find('td[id="ROrario"]').text().trim();
-            const delay = $(element).find('td[id="RRitardo"]').text().trim() || '0';
-            const platform = category === "autocorsa" ? "Piazzale Ferrovia" : $(element).find('td[id="RBinario"] div').text().trim();
-            const departing = $(element).find('td[id="RExLampeggio"] img').attr('alt')?.toLowerCase().trim() === "si";
-
-            const getShortCategory = (category) => {
-                if (!category) return null;
-
-                if (category.startsWith('suburbano')) {
-                    return category.split(' ')[1];
-                }
-
-                if (category.startsWith('servizio ferroviario metropolitano')) {
-                    return category.replace('servizio ferroviario metropolitano linea', 'SFM');
-                }
-
-                return trainCategoryShortNames[category] || "Treno";
-            };
-
-            const shortCategory = getShortCategory(category);
-
-            let company = $(element).find('td[id="RVettore"] img').attr('alt')?.toLowerCase().trim();
-            const getCompany = (company) => {
-                if (!company) return null;
-
-                if (company === 'ente volturno autonomo') {
-                    return 'EAV';
-                }
-
-                if (company === 'sad - trasporto locale spa') {
-                    return 'SAD';
-                }
-
-                if (company.startsWith('obb')) {
-                    return 'OBB';
-                }
-
-                return company;
-            };
-
-            company = getCompany(company);
-
-            let stops = $(element).find('td[id="RDettagli"] div[class="FermateSuccessivePopupStyle"] div[class="testoinfoaggiuntive"]').first().text().trim();
-            stops = [...stops.matchAll(/(?:FERMA A:\s*)?([^()-]+)\s*\((\d{1,2}[:.]\d{2})\)/g)]
-                .map(match => ({
-                    location: match[1].trim().replace(/^- /, "").toLowerCase(),
-                    time: match[2].replace(".", ":")
-                }));
-
-            if (!id) {
-                return;
-            }
-
-            if (number && destination && departureTime) {
-                trains.push({
-                    company,
-                    category,
-                    shortCategory,
-                    number,
-                    destination,
-                    departureTime,
-                    delay,
-                    platform,
-                    departing,
-                    stops,
-                });
-            }
-        });
-
-        return { trains, alerts };
-    } catch (error) {
-        console.error(`Error in getStationMonitor: ${error.message}`);
-        return { trains: [], alerts: [], error: "Errore nel recupero dei dati" };
     }
 }
 

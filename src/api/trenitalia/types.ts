@@ -147,3 +147,28 @@ export interface Canvas {
     previousTrattaType?: number
     trattaType: number
 }
+
+
+export interface TrainStop {
+    location: string;
+    time: string;
+}
+
+export interface Train {
+    company: string | null;
+    category: string | null;
+    shortCategory: string | null;
+    number: string;
+    destination: string;
+    departureTime: string;
+    delay: string;
+    platform: string;
+    departing: boolean;
+    stops: TrainStop[];
+}
+
+export interface StationMonitor {
+    trains: Train[];
+    alerts: string;
+    error?: string;
+}

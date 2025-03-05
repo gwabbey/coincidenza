@@ -133,7 +133,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
     }
 
     return (
-        <div className="flex flex-col gap-4 mx-auto">
+        <div className="flex flex-col gap-4">
             <div className="flex justify-center items-center text-center flex-row gap-x-2">
                 <span className="sm:text-lg text-md font-bold w-fit rounded-small flex flex-row items-center gap-x-1 bg-danger text-white" style={{
                     padding: "0.1rem 0.5rem",
@@ -170,9 +170,9 @@ export default function Trip({ trip }: { trip: TripProps }) {
             <div className="sticky top-0 bg-white dark:bg-black z-20">
                 <Divider className="my-2" />
 
-                <div className="flex sm:flex-col flex-row justify-between items-center gap-y-2 py-4">
-                    <div className="flex flex-col">
-                        <p className="text-lg sm:text-xl font-bold text-left sm:text-center truncate max-w-[230px] xs:max-w-[450px] md:max-w-full">
+                <div className="flex sm:flex-col flex-row justify-between items-center gap-y-2 py-4 max-w-md w-full mx-auto">
+                    <div className="flex flex-col flex-grow min-w-0">
+                        <p className="text-lg sm:text-xl font-bold text-left sm:text-center truncate flex-grow min-w-0">
                             {trip.nonPartito ? "non ancora partito" : capitalize(trip.stazioneUltimoRilevamento || "--")}
                         </p>
 
@@ -186,9 +186,6 @@ export default function Trip({ trip }: { trip: TripProps }) {
                                     ultimo rilevamento: {trip.compOraUltimoRilevamento}
                                 </p>
                             )}
-
-                            {/* TODO: add avvisi button */}
-
                         </div>
                     </div>
 
@@ -206,19 +203,19 @@ export default function Trip({ trip }: { trip: TripProps }) {
                             {trip.ritardo !== 0 && `${trip.ritardo} min`}
                         </Button>
                     )}
-
-                    {trip.subTitle && (
-                        <div className="text-center font-bold">
-                            {trip.subTitle}
-                        </div>
-                    )}
-
-                    {trip.provvedimenti && (
-                        <div className="text-center font-bold">
-                            {trip.provvedimenti}
-                        </div>
-                    )}
                 </div>
+
+                {trip.subTitle && (
+                    <div className="text-center font-bold">
+                        {trip.subTitle}
+                    </div>
+                )}
+
+                {trip.provvedimenti && (
+                    <div className="text-center font-bold">
+                        {trip.provvedimenti}
+                    </div>
+                )}
 
                 <Divider className="my-2" />
             </div>
@@ -234,7 +231,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                             content: (
                                 <div className="flex items-start justify-between w-full">
                                     <div className="flex-col">
-                                        <span className="font-bold break-words">{capitalize(stop.stazione)}</span>
+                                        <span className={`break-words ${stop.actualFermataType === 3 ? "line-through" : "font-bold"}`}>{capitalize(stop.stazione)}</span>
                                         <div className="text-gray-500 text-sm">
 
                                             <div className="flex-col">

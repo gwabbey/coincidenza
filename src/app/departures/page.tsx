@@ -1,0 +1,12 @@
+"use client";
+
+import Search from "./search";
+
+export default function Page() {
+    return (
+        <div className="flex flex-col gap-4 text-center">
+            <h1 className="text-4xl font-bold">consulta le partenze di una stazione</h1>
+            <Search />
+        </div>
+    );
+}
