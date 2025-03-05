@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { BlogPost } from './actions';
+import { Post } from './actions';
 
-export const BlogPosts = ({ posts }: { posts: BlogPost[] }) => (
+export const Posts = ({ posts }: { posts: Post[] }) => (
     <div className="flex flex-col gap-4 max-w-2xl mx-auto">
         {posts.map((post, index) => (
             <Link href={`/news/${post.slug}`} key={index}>

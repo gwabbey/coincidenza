@@ -3,9 +3,9 @@
 import { Card } from '@heroui/react';
 import Link from 'next/link';
 import Markdown from 'react-markdown';
-import { BlogPost } from '../actions';
+import { Post } from '../actions';
 
-export const BlogPostContent = ({ post }: { post: BlogPost }) => (
+export const BlogPostContent = ({ post }: { post: Post }) => (
     <Card className="prose dark:prose-invert max-w-none p-4">
         <article>
             <Markdown
@@ -29,7 +29,7 @@ export const BlogPostContent = ({ post }: { post: BlogPost }) => (
     </Card>
 );
 
-export const BlogPostHeader = ({ post }: { post: BlogPost }) => (
+export const BlogPostHeader = ({ post }: { post: Post }) => (
     <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
         {new Date(post.date).toLocaleDateString('it-IT', {
             year: 'numeric',

@@ -5,7 +5,7 @@ import matter from 'gray-matter';
 import path from 'path';
 import { cache } from 'react';
 
-export interface BlogPost {
+export interface Post {
     slug: string;
     title: string;
     description: string;
@@ -24,7 +24,7 @@ const calculateReadingTime = (content: string): string => {
     return `${minutes} min di lettura`;
 };
 
-export const getPosts = cache(async (): Promise<BlogPost[]> => {
+export const getPosts = cache(async (): Promise<Post[]> => {
     try {
         const files = await fs.readdir(POSTS_DIRECTORY);
         const posts = await Promise.all(
@@ -54,7 +54,7 @@ export const getPosts = cache(async (): Promise<BlogPost[]> => {
     }
 });
 
-export const getPost = cache(async (slug: string): Promise<BlogPost | null> => {
+export const getPost = cache(async (slug: string): Promise<Post | null> => {
     try {
         const filePath = path.join(POSTS_DIRECTORY, `${slug}.md`);
         const fileContent = await fs.readFile(filePath, 'utf8');
