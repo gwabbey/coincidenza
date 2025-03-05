@@ -2,12 +2,14 @@
 
 import { Canvas, Stop, Trip as TripProps } from "@/api/trenitalia/types";
 import Timeline from "@/components/timeline";
+import stations from "@/stations.json";
 import { trainCodeLogos } from "@/train-categories";
 import { capitalize, getDelayColor } from "@/utils";
 import { Button, Card, Divider } from "@heroui/react";
 import { IconArrowUp } from "@tabler/icons-react";
 import { formatDate } from "date-fns";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from 'react';
 
@@ -20,6 +22,38 @@ const getCurrentMinutes = () => {
     const now = new Date();
     return (now.getDate() * 24 * 60) + (now.getHours() * 60) + now.getMinutes() + (now.getSeconds() / 60);
 };
+
+function normalizeStationName(name: string): string {
+    return name
+        .toLowerCase()
+        .replace(/\bc\.? ?le\b/g, "centrale")
+        .replace("posto comunicazione", "pc")
+        .replace(/[`'']/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function findBestMatchingStationId(stationName: string): string | null {
+    const normalizedInput = normalizeStationName(stationName);
+    const inputWords = normalizedInput.split(' ');
+
+    for (const [id, name] of Object.entries(stations)) {
+        const normalizedStation = normalizeStationName(name);
+        const stationWords = normalizedStation.split(' ');
+
+        const longWordsMatch = inputWords
+            .filter(word => word.length > 3)
+            .every(longWord =>
+                stationWords.some(stationWord => stationWord.includes(longWord))
+            );
+
+        if (longWordsMatch) {
+            return id;
+        }
+    }
+
+    return null;
+}
 
 const calculatePreciseActiveIndex = (stops: Stop[], canvas: Canvas[], delay: number) => {
     const currentMinutes = getCurrentMinutes();
@@ -231,7 +265,9 @@ export default function Trip({ trip }: { trip: TripProps }) {
                             content: (
                                 <div className="flex items-start justify-between w-full">
                                     <div className="flex-col">
-                                        <span className={`break-words ${stop.actualFermataType === 3 ? "line-through" : "font-bold"}`}>{capitalize(stop.stazione)}</span>
+                                        <Link className={`break-words ${stop.actualFermataType === 3 ? "line-through" : "font-bold"}`} href={`/departures/${findBestMatchingStationId(stop.stazione) ?? ""}`}>
+                                            {capitalize(stop.stazione)}
+                                        </Link>
                                         <div className="text-gray-500 text-sm">
 
                                             <div className="flex-col">

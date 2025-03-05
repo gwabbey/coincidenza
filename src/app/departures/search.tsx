@@ -1,9 +1,9 @@
 "use client";
 
+import stations from "@/stations.json";
 import { Autocomplete, AutocompleteItem } from "@heroui/react";
 import Link from "next/link";
 import { Key, useState } from "react";
-import stations from "./stations.json";
 
 export default function Search({ selected }: { selected?: string }) {
     const [key, setValue] = useState<Key | null>(selected || null);

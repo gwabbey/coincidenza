@@ -1,5 +1,5 @@
 'use client';
-import { getDelayColor } from '@/utils';
+import { capitalize, getDelayColor } from '@/utils';
 import { Divider } from '@heroui/react';
 import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
@@ -54,14 +54,14 @@ export function Monitor({ monitor }: { monitor: any }) {
                     >
                         <div className="flex flex-row justify-between gap-4">
                             <div className="flex gap-2 w-full">
-                                <div className="w-full max-w-16 p-2 text-lg font-bold self-center text-center rounded-small bg-gray-500 text-white">
+                                <div className="flex items-center justify-center w-full max-w-16 p-2 text-lg font-bold text-center rounded-small bg-gray-500 text-white self-center">
                                     {train.departureTime}
                                 </div>
 
                                 <div className="flex flex-col text-left w-full flex-grow min-w-0">
                                     <div className="flex items-center justify-between w-full min-w-0 gap-2">
-                                        <Link className="font-bold text-base sm:text-lg capitalize truncate min-w-0 flex-grow" href={`/track/${train.company.toLowerCase().replace(' ', '-')}/${train.number}`}>
-                                            {train.destination}
+                                        <Link className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow" href={`/track/${train.company.toLowerCase().replace(' ', '-')}/${train.number}`}>
+                                            {capitalize(train.destination)}
                                         </Link>
                                         {train.delay !== "0" && (
                                             <p className={`text-lg font-bold uppercase flex-shrink-0 whitespace-nowrap text-${getDelayColor(train.delay)}`}>
