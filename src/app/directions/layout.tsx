@@ -5,7 +5,7 @@ export default async function Layout({
 }) {
     const OTP_SERVER_IP = process.env.OTP_SERVER_IP || "localhost:8080";
     try {
-        await fetch(`http://${OTP_SERVER_IP}/otp/transmodel/v3`);
+        await fetch(`http://${OTP_SERVER_IP}/otp`);
 
         return children;
     } catch (e) {
