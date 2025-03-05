@@ -7,11 +7,8 @@ export default async function Layout({
     try {
         await fetch(`http://${OTP_SERVER_IP}/otp/transmodel/v3`);
 
-        return (
-            { children }
-        );
+        return children;
     } catch (e) {
-
         return (
             <div className="flex flex-col gap-4 text-center">
                 <h1 className="text-2xl font-bold">oh no</h1>
