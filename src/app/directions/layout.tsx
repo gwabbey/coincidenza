@@ -9,6 +9,7 @@ export default async function Layout({
 
         return children;
     } catch (e) {
+        console.log(e)
         return (
             <div className="flex flex-col gap-4 text-center">
                 <h1 className="text-2xl font-bold">oh no</h1>
