@@ -47,7 +47,6 @@ export const getPosts = cache(async (): Promise<BlogPost[]> => {
                 })
         );
 
-        // Sort posts by date (newest first)
         return posts.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     } catch (error) {
         console.error('Error reading blog posts:', error);

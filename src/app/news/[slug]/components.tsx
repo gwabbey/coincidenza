@@ -30,13 +30,11 @@ export const BlogPostContent = ({ post }: { post: BlogPost }) => (
 );
 
 export const BlogPostHeader = ({ post }: { post: BlogPost }) => (
-    <div className="flex flex-wrap items-center gap-4 text-sm">
-        <span>{post.readingTime}</span>
-        <span>•</span>
-        <span>{new Date(post.date).toLocaleDateString('it-IT', {
+    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+        {new Date(post.date).toLocaleDateString('it-IT', {
             year: 'numeric',
             month: 'long',
             day: 'numeric'
-        }).toLowerCase()}</span>
+        }).toLowerCase()}
     </div>
 ); 
