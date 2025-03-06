@@ -160,7 +160,7 @@ export default function Results({ directions }: { directions: Directions }) {
                                                 </Button>
                                             )}
 
-                                            <LeafletMap leg={leg} className="hidden sm:flex" />
+                                            <LeafletMap leg={leg} className="hidden sm:flex rounded-small" />
 
                                             <Button
                                                 variant="flat"
@@ -255,7 +255,7 @@ export default function Results({ directions }: { directions: Directions }) {
                         onOpenChange={mapModal.onOpenChange}
                         title={selectedLeg ? `percorso ${selectedLeg.line?.code} ${selectedLeg.realtime?.destination}` : 'percorso'}
                     >
-                        {selectedLeg && <LeafletMap leg={selectedLeg} />}
+                        {selectedLeg && <LeafletMap leg={selectedLeg} className="rounded-small" />}
                     </RouteModal>
 
                     <RouteModal

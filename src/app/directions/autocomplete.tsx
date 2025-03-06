@@ -4,7 +4,7 @@ import { geocodeAddress } from "@/api/apple-maps/geocoding";
 import { Coordinates } from "@/types";
 import { Autocomplete, AutocompleteItem, Spinner } from "@heroui/react";
 import { IconMapPin } from "@tabler/icons-react";
-import { Key, useState } from "react";
+import { Key, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useDebouncedCallback } from 'use-debounce';
 
@@ -42,6 +42,12 @@ export const LocationAutocomplete = ({
     const [userLocation, setUserLocation] = useState<{ lat: number, lon: number } | null>(null);
     const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
 
+    useEffect(() => {
+        if (selected) {
+            setValue(selected);
+        }
+    }, [selected]);
+
     const getCurrentPosition = () => {
         return new Promise<GeolocationPosition>((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject);
@@ -59,15 +65,24 @@ export const LocationAutocomplete = ({
                     lon: position.coords.longitude
                 };
                 setUserLocation(coords);
-                setValue('La tua posizione');
-                onLocationSelect(coords);
-                setSelectedLocation({
+
+                const locationLabel = 'La tua posizione';
+                setValue(locationLabel);
+
+                const locationData = {
                     value: 'current-location',
-                    label: 'La tua posizione',
-                    textValue: 'La tua posizione',
+                    label: locationLabel,
+                    textValue: locationLabel,
                     coordinates: coords
-                });
-                nextInputRef?.current?.focus();
+                };
+
+                setSelectedLocation(locationData);
+                onLocationSelect(coords);
+
+                setTimeout(() => {
+                    nextInputRef?.current?.focus();
+                }, 50);
+
                 return;
             } catch (error) {
                 const errorMessage = error instanceof GeolocationPositionError
@@ -86,10 +101,14 @@ export const LocationAutocomplete = ({
 
         const selected = data.find(item => item.value === key);
         if (selected) {
+            const displayValue = typeof selected.label === 'string' ? selected.label : selected.textValue || '';
+
+            setValue(displayValue);
             setSelectedLocation(selected);
-            setValue(typeof selected.label === 'string' ? selected.label : selected.textValue || '');
             onLocationSelect(selected.coordinates);
-            nextInputRef?.current?.focus();
+            setTimeout(() => {
+                nextInputRef?.current?.focus();
+            }, 50);
         }
     };
 
@@ -104,7 +123,6 @@ export const LocationAutocomplete = ({
         }
     };
 
-
     const fetchData = useDebouncedCallback(async (query: string) => {
         if (!query) {
             setData([]);
@@ -112,7 +130,6 @@ export const LocationAutocomplete = ({
         }
 
         setLoading(true);
-        console.log("Fetching locations for query:", query);
 
         try {
             const search = await geocodeAddress(query, {
@@ -121,8 +138,6 @@ export const LocationAutocomplete = ({
                 userLocation: userLocation ? `${userLocation.lat},${userLocation.lon}` : undefined,
                 searchLocation: '46.0722416,11.1193186'
             });
-
-            console.log("Search results:", search);
 
             const locations = search.results.map((location: any) => ({
                 value: JSON.stringify(location),
@@ -138,7 +153,6 @@ export const LocationAutocomplete = ({
                 }
             }));
 
-            console.log("Processed locations:", locations);
             setData(locations);
         } catch (error) {
             if ((error as Error).name === 'AbortError') {
@@ -174,6 +188,9 @@ export const LocationAutocomplete = ({
             className="max-w-md"
             items={allItems}
             ref={ref}
+            listboxProps={{
+                emptyContent: "nessun risultato."
+            }}
         >
             {(item: LocationData) => (
                 <AutocompleteItem
