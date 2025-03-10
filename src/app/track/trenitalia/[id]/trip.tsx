@@ -265,7 +265,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                             content: (
                                 <div className="flex items-start justify-between w-full">
                                     <div className="flex-col">
-                                        <Link className={`break-words ${stop.actualFermataType === 3 ? "line-through" : "font-bold"}`} href={`/departures/${findBestMatchingStationId(stop.stazione) ?? ""}`}>
+                                        <Link className={`break-words font-bold ${stop.actualFermataType === 3 ? "line-through" : ""}`} href={`/departures/${findBestMatchingStationId(stop.stazione) ?? ""}`}>
                                             {capitalize(stop.stazione)}
                                         </Link>
                                         <div className="text-gray-500 text-sm">
@@ -275,7 +275,8 @@ export default function Trip({ trip }: { trip: TripProps }) {
                                                     {stop.arrivo_teorico && <span>a.</span>}
 
                                                     {stop.arrivo_teorico && (
-                                                        <span className={`${isArrivalDelayed ? 'line-through' : 'font-bold'} ${stop.arrivoReale && !isArrivalDelayed ? 'text-success' : ''}`}>
+                                                        <span className={`${isArrivalDelayed ? 'line-through' : 'font-bold'} ${(stop.arrivoReale && !isArrivalDelayed) || (isFutureStop && trip.ritardo === 0 && !trip.nonPartito) ? 'text-success' : ''
+                                                            } ${isFutureStop && trip.ritardo === 0 ? 'italic' : ''}`}>
                                                             {formatDate(new Date(stop.arrivo_teorico), 'HH:mm')}
                                                         </span>
                                                     )}
@@ -291,7 +292,8 @@ export default function Trip({ trip }: { trip: TripProps }) {
                                                     {stop.partenza_teorica && <span>p.</span>}
 
                                                     {stop.partenza_teorica && (
-                                                        <span className={`${isDepartureDelayed ? 'line-through' : 'font-bold'} ${stop.partenzaReale && !isDepartureDelayed ? 'text-success' : ''}`}>
+                                                        <span className={`${isDepartureDelayed ? 'line-through' : 'font-bold'} ${(stop.partenzaReale && !isDepartureDelayed) || (isFutureStop && trip.ritardo === 0 && !trip.nonPartito) ? 'text-success' : ''
+                                                            } ${isFutureStop && trip.ritardo === 0 ? 'italic' : ''}`}>
                                                             {formatDate(new Date(stop.partenza_teorica), 'HH:mm')}
                                                         </span>
                                                     )}

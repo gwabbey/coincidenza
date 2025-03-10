@@ -5,6 +5,7 @@ import Timeline from "@/components/timeline";
 import { getDelayColor } from "@/utils";
 import { Button, Card, Divider } from "@heroui/react";
 import { IconAlertTriangleFilled, IconArrowUp } from "@tabler/icons-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from 'react';
 
 const timeToMinutes = (timeStr: string): number => {
@@ -52,6 +53,7 @@ const calculatePreciseActiveIndex = (stopTimes: any[], delay: number, stopLast: 
 };
 
 export default function Trip({ trip }: { trip: TripProps }) {
+    const router = useRouter();
     const [scroll, setScroll] = useState({ y: 0 });
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
 
@@ -62,6 +64,13 @@ export default function Trip({ trip }: { trip: TripProps }) {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    useEffect(() => {
+        const intervalId = setInterval(() => {
+            router.refresh();
+        }, parseInt(process.env.AUTO_REFRESH || '10000', 10));
+        return () => clearInterval(intervalId);
+    }, [router]);
 
     useEffect(() => {
         const updateIndex = () => {
@@ -163,7 +172,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                                 {trip.stopTimes[activeIndex] &&
                                     Math.floor((new Date().getTime() - new Date(trip.lastEventRecivedAt).getTime()) / (1000 * 60)) > 5 &&
                                     activeIndex !== trip.stopTimes.length - 1 && (
-                                        <IconAlertTriangleFilled className="text-orange-500 self-center" size={16} />
+                                        <IconAlertTriangleFilled className="text-warning self-center mr-1" size={16} />
                                     )}
                                 <p className="text-xs sm:text-sm text-gray-500">
                                     ultimo rilevamento: {new Date(trip.lastEventRecivedAt).toLocaleTimeString('it-IT', {
