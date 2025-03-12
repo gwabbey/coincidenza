@@ -120,7 +120,6 @@ async function getTrenordMonitor(id: string): Promise<StationMonitor> {
         `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/partenze/${id}/${new Date().toString()}`
     );
 
-    console.log(new Date().toString())
     const trains: Train[] = [];
     const alerts = "";
 

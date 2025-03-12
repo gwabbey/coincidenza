@@ -33,21 +33,25 @@ function normalizeStationName(name: string): string {
         .trim();
 }
 
-function findBestMatchingStationId(stationName: string): string | null {
+function findMatchingStation(stationName: string): string | null {
+    if (!stationName || stationName.trim() === '') {
+        return null;
+    }
+
     const normalizedInput = normalizeStationName(stationName);
-    const inputWords = normalizedInput.split(' ');
+
+    for (const [id, name] of Object.entries(stations)) {
+        const normalizedStation = normalizeStationName(name);
+        if (normalizedInput === normalizedStation) {
+            return id;
+        }
+    }
 
     for (const [id, name] of Object.entries(stations)) {
         const normalizedStation = normalizeStationName(name);
         const stationWords = normalizedStation.split(' ');
 
-        const longWordsMatch = inputWords
-            .filter(word => word.length > 3)
-            .every(longWord =>
-                stationWords.some(stationWord => stationWord.includes(longWord))
-            );
-
-        if (longWordsMatch) {
+        if (stationWords.includes(normalizedInput)) {
             return id;
         }
     }
@@ -110,6 +114,7 @@ const calculatePreciseActiveIndex = (stops: Stop[], canvas: Canvas[], delay: num
 };
 
 export default function Trip({ trip }: { trip: TripProps }) {
+    console.log(trip)
     const router = useRouter();
     const [scroll, setScroll] = useState({ y: 0 });
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
@@ -166,6 +171,8 @@ export default function Trip({ trip }: { trip: TripProps }) {
         }
     }
 
+    console.log(trip)
+
     return (
         <div className="flex flex-col gap-4">
             <div className="flex justify-center items-center text-center flex-row gap-x-2">
@@ -175,7 +182,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                     {trainCodeLogos.find(code => code.code === trip.categoria)?.svg ? (
                         <Image src={`https://www.lefrecce.it/Channels.Website.WEB/web/images/logo/${trainCodeLogos.find(code => code.code === trip.categoria)?.svg}.svg`} alt={trip.compTipologiaTreno || ""} width={22} height={22} className={trainCodeLogos.find(code => code.code === trip.categoria)?.className + " flex self-center -mx-1 invert"} />
                     ) : (
-                        trip.categoria
+                        trip.categoria.length > 0 ? trip.categoria : trip.compNumeroTreno.trim().split(" ")[0]
                     )} {trip.numeroTreno}
                 </span>
                 <div className="text-xl font-bold">
@@ -211,10 +218,6 @@ export default function Trip({ trip }: { trip: TripProps }) {
                         </p>
 
                         <div className="flex flex-row justify-start sm:justify-center">
-                            {/* {trip.fermate[activeIndex] &&
-                                activeIndex !== trip.fermate.length - 1 && (
-                                    <IconAlertTriangleFilled className="text-orange-500 self-center" size={16} />
-                                )} */}
                             {trip.compOraUltimoRilevamento !== "--" && (
                                 <p className="text-xs sm:text-sm text-gray-500">
                                     ultimo rilevamento: {trip.compOraUltimoRilevamento}
@@ -225,9 +228,8 @@ export default function Trip({ trip }: { trip: TripProps }) {
 
                     {!trip.nonPartito && (
                         <Button
-                            className={`p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors text-white`}
+                            className={`p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors text-white bg-${getDelayColor(trip.ritardo)}`}
                             radius="sm"
-                            color={getDelayColor(trip.ritardo)}
                             variant="solid"
                             disabled
                             disableRipple
@@ -240,7 +242,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                 </div>
 
                 {trip.subTitle && (
-                    <div className="text-center font-bold">
+                    <div className="text-center font-bold bg-warning-100 w-fit mx-auto">
                         {trip.subTitle}
                     </div>
                 )}
@@ -265,10 +267,10 @@ export default function Trip({ trip }: { trip: TripProps }) {
                             content: (
                                 <div className="flex items-start justify-between w-full">
                                     <div className="flex-col">
-                                        <Link className={`break-words font-bold ${stop.actualFermataType === 3 ? "line-through" : ""}`} href={`/departures/${findBestMatchingStationId(stop.stazione) ?? ""}`}>
+                                        <Link className={`break-words font-bold ${stop.actualFermataType === 3 ? "line-through" : ""}`} href={`/departures/${findMatchingStation(stop.stazione) ?? ""}`}>
                                             {capitalize(stop.stazione)}
                                         </Link>
-                                        <div className="text-gray-500 text-sm">
+                                        <div className={`text-gray-500 text-sm ${stop.actualFermataType === 3 ? "line-through" : ""}`}>
 
                                             <div className="flex-col">
                                                 <div className={`flex gap-1 ${!stop.arrivoReale ? 'italic' : ''}`}>
@@ -307,17 +309,19 @@ export default function Trip({ trip }: { trip: TripProps }) {
                                             </div>
                                         </div>
                                     </div>
-                                    <Button
-                                        className={`flex p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors whitespace-pre-wrap flex-shrink-0 ${stop.binarioEffettivoArrivoDescrizione || stop.binarioEffettivoPartenzaDescrizione ? 'text-white' : 'text-gray-500'}`}
-                                        radius="sm"
-                                        variant={(stop.binarioEffettivoArrivoDescrizione || stop.binarioEffettivoPartenzaDescrizione) ? 'solid' : 'ghost'}
-                                        color={(stop.binarioEffettivoArrivoDescrizione || stop.binarioEffettivoPartenzaDescrizione) ? 'success' : 'default'}
-                                        disabled
-                                        disableRipple
-                                        disableAnimation
-                                    >
-                                        BIN. {index === 0 ? (stop.binarioEffettivoPartenzaDescrizione || stop.binarioProgrammatoPartenzaDescrizione) : (stop.binarioEffettivoArrivoDescrizione || stop.binarioProgrammatoArrivoDescrizione)}
-                                    </Button>
+                                    {stop.actualFermataType !== 3 && (
+                                        <Button
+                                            className={`flex p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors whitespace-pre-wrap flex-shrink-0 ${stop.binarioEffettivoArrivoDescrizione || stop.binarioEffettivoPartenzaDescrizione ? 'text-white' : 'text-gray-500'}`}
+                                            radius="sm"
+                                            variant={(stop.binarioEffettivoArrivoDescrizione || stop.binarioEffettivoPartenzaDescrizione) ? 'solid' : 'ghost'}
+                                            color={(stop.binarioEffettivoArrivoDescrizione || stop.binarioEffettivoPartenzaDescrizione) ? 'success' : 'default'}
+                                            disabled
+                                            disableRipple
+                                            disableAnimation
+                                        >
+                                            BIN. {index === 0 ? (stop.binarioEffettivoPartenzaDescrizione || stop.binarioProgrammatoPartenzaDescrizione) : (stop.binarioEffettivoArrivoDescrizione || stop.binarioProgrammatoArrivoDescrizione)}
+                                        </Button>
+                                    )}
                                 </div>
                             ),
                         };

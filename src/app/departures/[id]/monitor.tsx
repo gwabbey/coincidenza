@@ -6,6 +6,45 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+function getTrackUrl(company: string, trainNumber: string): string | null {
+    // Normalize the company name to lowercase without spaces
+    const normalizedCompany = company.toLowerCase().trim();
+
+    // Handle special cases for Trenitalia brands
+    if (
+        normalizedCompany === "frecciarossa" ||
+        normalizedCompany === "frecciargento" ||
+        normalizedCompany === "frecciabianca" ||
+        normalizedCompany === "intercity" ||
+        normalizedCompany === "intercity notte" ||
+        normalizedCompany === "treno storico" ||
+        normalizedCompany === "espresso"
+    ) {
+        return `/track/trenitalia/${trainNumber}`;
+    }
+
+    switch (normalizedCompany) {
+        case "trenitalia":
+            return `/track/trenitalia/${trainNumber}`;
+        case "trenord":
+            // once the trenord tracking is implemented we'll use that one
+            return `/track/trenitalia/${trainNumber}`;
+        case "trenitalia tper":
+            return `/track/tper/${trainNumber}`;
+        case "sad":
+        case "sta":
+            // same with STA
+            return `/track/trenitalia/${trainNumber}`;
+        case "bus":
+        case "autobus":
+        case "autolinea":
+        case "italo":
+            return null;
+        default:
+            return `/track/${normalizedCompany.replace(/\s+/g, "-")}/${trainNumber}`;
+    }
+}
+
 export function Monitor({ monitor }: { monitor: any }) {
     const router = useRouter();
     const [blinkKey, setBlinkKey] = useState(0);
@@ -60,9 +99,18 @@ export function Monitor({ monitor }: { monitor: any }) {
 
                                 <div className="flex flex-col text-left w-full flex-grow min-w-0">
                                     <div className="flex items-center justify-between w-full min-w-0 gap-2">
-                                        <Link className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow" href={`/track/${train.company.toLowerCase().replace(' ', '-')}/${train.number}`}>
-                                            {capitalize(train.destination)}
-                                        </Link>
+                                        {getTrackUrl(train.company, train.number) ? (
+                                            <Link
+                                                className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow"
+                                                href={getTrackUrl(train.company, train.number)!}
+                                            >
+                                                {capitalize(train.destination)}
+                                            </Link>
+                                        ) : (
+                                            <span className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow">
+                                                {capitalize(train.destination)}
+                                            </span>
+                                        )}
                                         {train.delay !== "0" && (
                                             <p className={`text-lg font-bold uppercase flex-shrink-0 whitespace-nowrap text-${getDelayColor(train.delay)}`}>
                                                 {parseInt(train.delay) > 0 ? `+${train.delay}'` : train.delay}
@@ -70,10 +118,20 @@ export function Monitor({ monitor }: { monitor: any }) {
                                         )}
                                     </div>
 
-                                    <Link className="text-sm text-gray-500 capitalize" href={`/track/${train.company.toLowerCase().replace(' ', '-')}/${train.number}`}>
-                                        {train.shortCategory || train.company} {train.number}{" "}
-                                        {train.shortCategory && train.company && `• ${train.company}`}
-                                    </Link>
+                                    {getTrackUrl(train.company, train.number) ? (
+                                        <Link
+                                            className="text-sm text-gray-500 capitalize"
+                                            href={getTrackUrl(train.company, train.number)!}
+                                        >
+                                            {train.shortCategory || train.company} {train.number}{" "}
+                                            {train.shortCategory && train.company && `• ${train.company}`}
+                                        </Link>
+                                    ) : (
+                                        <span className="text-sm text-gray-500 capitalize">
+                                            {train.shortCategory || train.company} {train.number}{" "}
+                                            {train.shortCategory && train.company && `• ${train.company}`}
+                                        </span>
+                                    )}
 
                                     {!train.departing ? (
                                         <div className="flex items-center gap-1 whitespace-pre">

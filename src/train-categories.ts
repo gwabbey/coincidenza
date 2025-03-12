@@ -37,9 +37,6 @@ export const trainCodeLogos = [{
     "svg": "RV",
     "className": "dark:invert invert-0"
 }, {
-    "code": "IC",
-    "svg": "IC",
-}, {
     "code": "EC",
     "svg": "EC",
     "className": "dark:invert invert-0"

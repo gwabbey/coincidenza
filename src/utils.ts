@@ -1,5 +1,5 @@
 export const getDelayColor = (delay: number | null) => {
-    if (delay === null) return 'default';
+    if (delay === null) return 'gray';
     if (delay >= 10) return 'danger';
     if (delay >= 5) return 'warning';
     if (delay >= 0) return 'success';

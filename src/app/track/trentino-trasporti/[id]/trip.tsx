@@ -66,11 +66,14 @@ export default function Trip({ trip }: { trip: TripProps }) {
     }, []);
 
     useEffect(() => {
-        const intervalId = setInterval(() => {
-            router.refresh();
-        }, parseInt(process.env.AUTO_REFRESH || '10000', 10));
-        return () => clearInterval(intervalId);
-    }, [router]);
+        if (!(trip.lastSequenceDetection === trip.stopTimes.length)) {
+            const intervalId = setInterval(() => {
+                router.refresh();
+            }, parseInt(process.env.AUTO_REFRESH || '10000', 10));
+
+            return () => clearInterval(intervalId);
+        }
+    }, [router, trip.lastSequenceDetection, trip.stopTimes.length]);
 
     useEffect(() => {
         const updateIndex = () => {
@@ -187,9 +190,8 @@ export default function Trip({ trip }: { trip: TripProps }) {
 
                     {trip.delay !== null && (
                         <Button
-                            className={`p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors text-white`}
+                            className={`p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors text-white bg-${trip.lastSequenceDetection === trip.stopTimes.length ? "default" : getDelayColor(trip.delay)}`}
                             radius="sm"
-                            color={trip.lastSequenceDetection === trip.stopTimes.length ? "default" : getDelayColor(trip.delay)}
                             variant="solid"
                             disabled
                             disableRipple
