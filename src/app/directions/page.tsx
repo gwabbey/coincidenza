@@ -109,6 +109,7 @@ export default function Directions() {
                     <DateInput
                         variant="underlined"
                         label="data"
+                        size="lg"
                         isInvalid={new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()) > date}
                         defaultValue={new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate())}
                         onChange={(date) => setDate(date instanceof CalendarDate ? date : new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()))}
@@ -116,6 +117,7 @@ export default function Directions() {
                     <TimeInput
                         variant="underlined"
                         label="ora"
+                        size="lg"
                         defaultValue={new Time(new Date().getHours(), new Date().getMinutes())}
                         onChange={(time) => setTime(time instanceof Time ? time : new Time(new Date().getHours(), new Date().getMinutes()))}
                     />

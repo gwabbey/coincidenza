@@ -191,6 +191,7 @@ export const LocationAutocomplete = ({
             listboxProps={{
                 emptyContent: "nessun risultato."
             }}
+            size="lg"
         >
             {(item: LocationData) => (
                 <AutocompleteItem

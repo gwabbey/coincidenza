@@ -1,15 +1,16 @@
-"use client"
+"use client";
+
 import { agencies } from "@/agencies";
 import { Directions, Leg } from "@/api/otp/types";
 import LeafletMap from "@/components/leaflet";
 import Timeline from "@/components/timeline";
 import { getTrainCategory, trainCodeLogos } from "@/train-categories";
 import { formatDuration, getDelayColor } from "@/utils";
-import { Accordion, AccordionItem, Button, cn, Link, Modal, ModalBody, ModalContent, ModalHeader, useDisclosure } from "@heroui/react";
+import { Accordion, AccordionItem, Button, cn, Link, Modal, ModalBody, ModalContent, ModalHeader, Selection, useDisclosure } from "@heroui/react";
 import { IconAccessPoint, IconBus, IconInfoTriangleFilled, IconMap, IconTrain, IconWalk } from "@tabler/icons-react";
 import { format } from "date-fns";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Steps from "./steps";
 
 type RouteModalProps = {
@@ -32,6 +33,7 @@ export default function Results({ directions }: { directions: Directions }) {
     const infoModal = useDisclosure();
     const mapModal = useDisclosure();
     const [selectedLeg, setSelectedLeg] = useState<Leg | null>(null);
+    const [selectedKeys, setSelectedKeys] = useState<Selection>(new Set([]));
 
     const icons: Record<string, React.ReactNode> = {
         "bus": <IconBus size={32} />,
@@ -59,8 +61,12 @@ export default function Results({ directions }: { directions: Directions }) {
         }
     };
 
+    useEffect(() => {
+        setSelectedKeys(new Set([]));
+    }, [directions]);
+
     return (
-        <Accordion variant="splitted" className="px-0 w-full mx-auto">
+        <Accordion variant="splitted" className="px-0 w-full mx-auto" selectedKeys={selectedKeys} onSelectionChange={setSelectedKeys}>
             {directions.trips.map((trip, index) => (
                 <AccordionItem key={index} value={`item-${index}`}
                     title={

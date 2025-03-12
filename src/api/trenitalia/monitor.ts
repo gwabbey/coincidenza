@@ -13,8 +13,8 @@ async function getRfiMonitor(id: string) {
         retries: 5,
         retryDelay: axiosRetry.exponentialDelay,
         onRetry: (retryCount, error) => {
-            console.error(
-                `Retry attempt ${retryCount} for error ${error.response?.statusText}`
+            console.log(
+                `retry attempt ${retryCount} for error ${error.response?.statusText}`
             );
         },
     });
@@ -110,8 +110,8 @@ async function getTrenordMonitor(id: string): Promise<StationMonitor> {
         retries: 5,
         retryDelay: axiosRetry.exponentialDelay,
         onRetry: (retryCount, error) => {
-            console.error(
-                `Retry attempt ${retryCount} for error ${error.response?.statusText}`
+            console.log(
+                `retry attempt ${retryCount} for error ${error.response?.statusText}`
             );
         },
     });
