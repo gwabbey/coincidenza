@@ -30,7 +30,6 @@ const RouteModal = ({ isOpen, onOpenChange, title, children }: RouteModalProps) 
 );
 
 export default function Results({ directions }: { directions: Directions }) {
-    console.log(directions)
     const infoModal = useDisclosure();
     const mapModal = useDisclosure();
     const [selectedLeg, setSelectedLeg] = useState<Leg | null>(null);
@@ -129,7 +128,7 @@ export default function Results({ directions }: { directions: Directions }) {
                                         {leg.mode !== "foot" && (
                                             <Button
                                                 as={Link}
-                                                href={`/track/${agencies[leg.authority?.id as keyof typeof agencies]}/${leg.mode === "bus" ? leg.tripId : leg.code}`}
+                                                href={`/track/${agencies[leg.authority?.id as keyof typeof agencies]}/${leg.tripId || leg.code}`}
                                                 variant="bordered"
                                                 isIconOnly
                                                 isExternal

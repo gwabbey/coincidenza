@@ -23,8 +23,8 @@ const calculatePreciseActiveIndex = (stopTimes: any[], delay: number, stopLast: 
     const lastKnownStopIndex = stopTimes.findIndex(stop => stop.stopId === stopLast);
 
     for (let i = 0; i < stopTimes.length - 1; i++) {
-        const currentStopTime = timeToMinutes(stopTimes[i].departureTime) + delay;
-        const nextStopTime = timeToMinutes(stopTimes[i + 1].departureTime) + delay;
+        const currentStopTime = timeToMinutes(stopTimes[i].arrivalTime) + delay;
+        const nextStopTime = timeToMinutes(stopTimes[i + 1].arrivalTime) + delay;
 
         if (currentMinutes >= currentStopTime && currentMinutes <= nextStopTime) {
             if (i >= lastKnownStopIndex) {
@@ -41,11 +41,11 @@ const calculatePreciseActiveIndex = (stopTimes: any[], delay: number, stopLast: 
         }
     }
 
-    if (currentMinutes < timeToMinutes(stopTimes[0].departureTime) + delay) {
+    if (currentMinutes < timeToMinutes(stopTimes[0].arrivalTime) + delay) {
         return -1;
     }
 
-    if (currentMinutes > timeToMinutes(stopTimes[stopTimes.length - 1].departureTime) + delay) {
+    if (currentMinutes > timeToMinutes(stopTimes[stopTimes.length - 1].arrivalTime) + delay) {
         return lastKnownStopIndex === -1 ? stopTimes.length - 1 : lastKnownStopIndex + 0.99;
     }
 
@@ -53,6 +53,7 @@ const calculatePreciseActiveIndex = (stopTimes: any[], delay: number, stopLast: 
 };
 
 export default function Trip({ trip }: { trip: TripProps }) {
+    console.log(trip)
     const router = useRouter();
     const [scroll, setScroll] = useState({ y: 0 });
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
@@ -105,7 +106,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
         if (duration >= 60) {
             const hours = Math.floor(duration / 60);
             const minutes = duration % 60;
-            return `${hours}h ${minutes}min`;
+            return `${hours}h ${minutes > 0 ? minutes + " min" : ""}`;
         }
         return `${duration}min`;
     };
@@ -153,7 +154,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                             <p className={`text-lg sm:text-xl text-left sm:text-center ${activeIndex === -1 ? '' : 'italic'} truncate max-w-[230px] xs:max-w-[450px] md:max-w-full`}>
                                 {trip.stopTimes.reduce((closestStop: any, stopTime: any) => {
                                     const currentTime = new Date();
-                                    const [hour, minute] = stopTime.departureTime.split(':').map(Number);
+                                    const [hour, minute] = stopTime.arrivalTime.split(':').map(Number);
                                     const stopTimeDate = new Date(currentTime.getFullYear(), currentTime.getMonth(), currentTime.getDate(), hour, minute + trip.delay);
                                     return stopTimeDate <= currentTime ? stopTime : closestStop;
                                 }, null)?.stopName || "--"}
@@ -211,17 +212,25 @@ export default function Trip({ trip }: { trip: TripProps }) {
                     steps={trip.stopTimes.map((stop: any, index: number) => {
                         const isPastStop = index <= Math.floor(preciseActiveIndex);
                         const isFutureStop = index > Math.floor(preciseActiveIndex);
+                        const isLongerStop = new Date(new Date(`2000-01-01 ${stop.departureTime}`).getTime()).toLocaleTimeString('it-IT', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                        }) > new Date(new Date(`2000-01-01 ${stop.arrivalTime}`).getTime()).toLocaleTimeString('it-IT', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                        });
+                        const longerStopBreak = Math.round((new Date(`2000-01-01 ${stop.departureTime}`).getTime() - new Date(`2000-01-01 ${stop.arrivalTime}`).getTime()) / (60 * 1000));
 
                         return {
                             content: (
                                 <div className="flex flex-col">
                                     <span className="font-bold">{stop.stopName}</span>
                                     <div className="text-gray-500 text-sm">
-                                        {stop.departureTime ? (
+                                        {stop.arrivalTime ? (
                                             <div className="flex gap-1">
                                                 {isPastStop && (
                                                     <span>
-                                                        {new Date(new Date(`2000-01-01 ${stop.departureTime}`).getTime()).toLocaleTimeString('it-IT', {
+                                                        {new Date(new Date(`2000-01-01 ${stop.arrivalTime}`).getTime()).toLocaleTimeString('it-IT', {
                                                             hour: '2-digit',
                                                             minute: '2-digit',
                                                         })}
@@ -229,7 +238,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                                                 )}
                                                 {isFutureStop && trip.lastEventRecivedAt && trip.delay !== 0 && (
                                                     <span className="line-through">
-                                                        {new Date(new Date(`2000-01-01T${stop.departureTime.replace(/^24:/, '00:')}`).getTime()).toLocaleTimeString('it-IT', {
+                                                        {new Date(new Date(`2000-01-01T${stop.arrivalTime.replace(/^24:/, '00:')}`).getTime()).toLocaleTimeString('it-IT', {
                                                             hour: '2-digit',
                                                             minute: '2-digit',
                                                         })}
@@ -237,7 +246,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                                                 )}
                                                 {isFutureStop && (
                                                     <span className={`font-bold text-${getDelayColor(trip.delay)}`}>
-                                                        {new Date(new Date(`2000-01-01T${stop.departureTime.replace(/^24:/, '00:')}`).getTime() + (trip.delay * 60 * 1000)).toLocaleTimeString('it-IT', {
+                                                        {new Date(new Date(`2000-01-01T${stop.arrivalTime.replace(/^24:/, '00:')}`).getTime() + (trip.delay * 60 * 1000)).toLocaleTimeString('it-IT', {
                                                             hour: '2-digit',
                                                             minute: '2-digit',
                                                         })}
@@ -246,6 +255,11 @@ export default function Trip({ trip }: { trip: TripProps }) {
                                             </div>
                                         ) : (
                                             <div>--</div>
+                                        )}
+                                        {isLongerStop && longerStopBreak > 1 && (
+                                            <span className="text-gray-500">
+                                                sosta di {longerStopBreak} minuti
+                                            </span>
                                         )}
                                     </div>
                                 </div>

@@ -114,7 +114,6 @@ const calculatePreciseActiveIndex = (stops: Stop[], canvas: Canvas[], delay: num
 };
 
 export default function Trip({ trip }: { trip: TripProps }) {
-    console.log(trip)
     const router = useRouter();
     const [scroll, setScroll] = useState({ y: 0 });
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
@@ -260,8 +259,20 @@ export default function Trip({ trip }: { trip: TripProps }) {
                 <Timeline
                     steps={trip.fermate.map((stop: Stop, index: number) => {
                         const isFutureStop = preciseActiveIndex <= index;
-                        const isDepartureDelayed = stop.partenza_teorica && formatDate(new Date(stop.partenza_teorica), 'HH:mm') !== formatDate(new Date(stop.partenzaReale || stop.partenza_teorica + (!isFutureStop ? stop.ritardoPartenza * 60 * 1000 : trip.ritardo * 60 * 1000)), 'HH:mm');
-                        const isArrivalDelayed = stop.arrivo_teorico && formatDate(new Date(stop.arrivo_teorico), 'HH:mm') !== formatDate(new Date(stop.arrivoReale || stop.arrivo_teorico + (!isFutureStop ? stop.ritardoArrivo * 60 * 1000 : trip.ritardo * 60 * 1000)), 'HH:mm');
+
+                        const effectiveDelayArrival = !isFutureStop ? stop.ritardoArrivo :
+                            (trip.ritardo >= 0 ? trip.ritardo : 0);
+
+                        const effectiveDelayDeparture = !isFutureStop ? stop.ritardoPartenza :
+                            (trip.ritardo >= 0 ? trip.ritardo : 0);
+
+                        const isDepartureDelayed = stop.partenza_teorica &&
+                            formatDate(new Date(stop.partenza_teorica), 'HH:mm') !==
+                            formatDate(new Date(stop.partenzaReale || stop.partenza_teorica + effectiveDelayDeparture * 60 * 1000), 'HH:mm');
+
+                        const isArrivalDelayed = stop.arrivo_teorico &&
+                            formatDate(new Date(stop.arrivo_teorico), 'HH:mm') !==
+                            formatDate(new Date(stop.arrivoReale || stop.arrivo_teorico + effectiveDelayArrival * 60 * 1000), 'HH:mm');
 
                         return {
                             content: (
@@ -273,36 +284,40 @@ export default function Trip({ trip }: { trip: TripProps }) {
                                         <div className={`text-gray-500 text-sm ${stop.actualFermataType === 3 ? "line-through" : ""}`}>
 
                                             <div className="flex-col">
-                                                <div className={`flex gap-1 ${!stop.arrivoReale ? 'italic' : ''}`}>
+                                                <div className={`flex gap-1 ${!stop.arrivoReale && isFutureStop ? 'italic' : ''}`}>
                                                     {stop.arrivo_teorico && <span>a.</span>}
 
                                                     {stop.arrivo_teorico && (
-                                                        <span className={`${isArrivalDelayed ? 'line-through' : 'font-bold'} ${(stop.arrivoReale && !isArrivalDelayed) || (isFutureStop && trip.ritardo === 0 && !trip.nonPartito) ? 'text-success' : ''
-                                                            } ${isFutureStop && trip.ritardo === 0 ? 'italic' : ''}`}>
+                                                        <span className={`${isArrivalDelayed
+                                                            ? 'line-through text-gray-500'
+                                                            : `font-bold ${(!isFutureStop || (isFutureStop && trip.ritardo === 0 && !trip.nonPartito)) ? 'text-success' : ''}`
+                                                            }`}>
                                                             {formatDate(new Date(stop.arrivo_teorico), 'HH:mm')}
                                                         </span>
                                                     )}
 
                                                     {isArrivalDelayed && stop.arrivo_teorico && (
-                                                        <span className={`font-bold text-${getDelayColor(stop.ritardoArrivo || trip.ritardo)}`}>
-                                                            {formatDate(new Date(stop.arrivoReale || stop.arrivo_teorico + trip.ritardo * 60 * 1000), 'HH:mm')}
+                                                        <span className={`font-bold ${!stop.arrivoReale && isFutureStop ? 'italic' : ''} text-${getDelayColor(stop.ritardoArrivo || trip.ritardo)}`}>
+                                                            {formatDate(new Date(stop.arrivoReale || stop.arrivo_teorico + effectiveDelayArrival * 60 * 1000), 'HH:mm')}
                                                         </span>
                                                     )}
                                                 </div>
 
-                                                <div className={`flex gap-1 ${!stop.partenzaReale ? 'italic' : ''}`}>
+                                                <div className={`flex gap-1 ${!stop.partenzaReale && isFutureStop ? 'italic' : ''}`}>
                                                     {stop.partenza_teorica && <span>p.</span>}
 
                                                     {stop.partenza_teorica && (
-                                                        <span className={`${isDepartureDelayed ? 'line-through' : 'font-bold'} ${(stop.partenzaReale && !isDepartureDelayed) || (isFutureStop && trip.ritardo === 0 && !trip.nonPartito) ? 'text-success' : ''
-                                                            } ${isFutureStop && trip.ritardo === 0 ? 'italic' : ''}`}>
+                                                        <span className={`${isDepartureDelayed
+                                                            ? 'line-through text-gray-500'
+                                                            : `font-bold ${(!isFutureStop || (isFutureStop && trip.ritardo === 0 && !trip.nonPartito)) ? 'text-success' : ''}`
+                                                            }`}>
                                                             {formatDate(new Date(stop.partenza_teorica), 'HH:mm')}
                                                         </span>
                                                     )}
 
                                                     {isDepartureDelayed && stop.partenza_teorica && (
-                                                        <span className={`font-bold text-${getDelayColor(stop.ritardoPartenza || trip.ritardo)}`}>
-                                                            {formatDate(new Date(stop.partenzaReale || stop.partenza_teorica + trip.ritardo * 60 * 1000), 'HH:mm')}
+                                                        <span className={`font-bold ${!stop.partenzaReale && isFutureStop ? 'italic' : ''} text-${getDelayColor(stop.ritardoPartenza || trip.ritardo)}`}>
+                                                            {formatDate(new Date(stop.partenzaReale || stop.partenza_teorica + effectiveDelayDeparture * 60 * 1000), 'HH:mm')}
                                                         </span>
                                                     )}
                                                 </div>

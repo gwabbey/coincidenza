@@ -7,10 +7,8 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
 function getTrackUrl(company: string, trainNumber: string): string | null {
-    // Normalize the company name to lowercase without spaces
     const normalizedCompany = company.toLowerCase().trim();
 
-    // Handle special cases for Trenitalia brands
     if (
         normalizedCompany === "frecciarossa" ||
         normalizedCompany === "frecciargento" ||
@@ -30,10 +28,10 @@ function getTrackUrl(company: string, trainNumber: string): string | null {
             // once the trenord tracking is implemented we'll use that one
             return `/track/trenitalia/${trainNumber}`;
         case "trenitalia tper":
-            return `/track/tper/${trainNumber}`;
+            return `/track/trenitalia/${trainNumber}`;
         case "sad":
         case "sta":
-            // same with STA
+            // same with SAD
             return `/track/trenitalia/${trainNumber}`;
         case "bus":
         case "autobus":

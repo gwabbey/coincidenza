@@ -63,7 +63,8 @@ const getStop = (name: string) => {
 const processTripData = async (data: { tripPatterns: any[]; nextPageCursor?: string }) => {
     const processedTrips = await Promise.all(data.tripPatterns.map(async (trip) => {
         const processedLegs = await Promise.all(trip.legs.map(async (leg: any) => {
-            const serviceJourneyId = leg.mode === "bus" ? leg.serviceJourney?.id.split(":")[1] : getCode(leg);
+            const agency = agencies[leg.authority?.id as keyof typeof agencies];
+            const serviceJourneyId = agency === "trentino-trasporti" ? leg.serviceJourney?.id.split(":")[1] : getCode(leg);
             const realtime = await getRealtimeData(leg.authority?.id, serviceJourneyId);
 
             return {

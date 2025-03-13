@@ -2,7 +2,7 @@
 
 import { capitalize } from "@/utils";
 import axios from 'axios';
-import { Trip } from "./types";
+import { type Trip } from "./types";
 
 export async function searchStation(query: string) {
     const { data } = await axios.get(`https://app.lefrecce.it/Channels.Website.BFF.WEB/app/locations?name=${query}&limit=5&multi=false`);
