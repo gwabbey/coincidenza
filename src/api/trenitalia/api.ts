@@ -88,6 +88,7 @@ export async function getTrip(id: string) {
 
     const trip = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${code}/${timestamp}`);
     if (trip.data.categoria === "REG") trip.data.categoria = "R";
+    if (!trip.data.categoria) trip.data.categoria = trip.data.compNumeroTreno.trim().split(" ")[0]
     const info = await getTripSmartCaring(code, origin, formattedDate);
     const canvas = await getTripCanvas(code, origin, timestamp);
     return { ...trip.data, info, canvas };

@@ -6,7 +6,7 @@ import stations from "@/stations.json";
 import { trainCodeLogos } from "@/train-categories";
 import { capitalize, getDelayColor } from "@/utils";
 import { Button, Card, Divider } from "@heroui/react";
-import { IconArrowUp } from "@tabler/icons-react";
+import { IconAlertTriangleFilled, IconArrowUp } from "@tabler/icons-react";
 import { formatDate } from "date-fns";
 import Image from "next/image";
 import Link from "next/link";
@@ -114,9 +114,11 @@ const calculatePreciseActiveIndex = (stops: Stop[], canvas: Canvas[], delay: num
 };
 
 export default function Trip({ trip }: { trip: TripProps }) {
+    console.log(trip)
     const router = useRouter();
     const [scroll, setScroll] = useState({ y: 0 });
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
+    const isCanceled = trip.provvedimento === 1
 
     useEffect(() => {
         const handleScroll = () => {
@@ -170,18 +172,22 @@ export default function Trip({ trip }: { trip: TripProps }) {
         }
     }
 
-    console.log(trip)
-
     return (
         <div className="flex flex-col gap-4">
             <div className="flex justify-center items-center text-center flex-row gap-x-2">
-                <span className="sm:text-lg text-md font-bold w-fit rounded-small flex flex-row items-center gap-x-1 bg-danger text-white" style={{
+                <span className={`sm:text-lg text-md font-bold w-fit rounded-small flex flex-row items-center gap-x-1 text-white ${trip.categoria.toLowerCase().startsWith("ic") ? "bg-primary-200" : "bg-danger"}`} style={{
                     padding: "0.1rem 0.5rem",
                 }}>
-                    {trainCodeLogos.find(code => code.code === trip.categoria)?.svg ? (
-                        <Image src={`https://www.lefrecce.it/Channels.Website.WEB/web/images/logo/${trainCodeLogos.find(code => code.code === trip.categoria)?.svg}.svg`} alt={trip.compTipologiaTreno || ""} width={22} height={22} className={trainCodeLogos.find(code => code.code === trip.categoria)?.className + " flex self-center -mx-1 invert"} />
+                    {trainCodeLogos.find(code => code.code === trip.categoria)?.url ? (
+                        <Image
+                            src={trainCodeLogos.find(code => code.code === trip.categoria)?.url ?? ""}
+                            alt={trip.compTipologiaTreno || ""}
+                            width={100}
+                            height={20}
+                            className={trainCodeLogos.find(code => code.code === trip.categoria)?.className + " flex self-center h-5 w-full"}
+                        />
                     ) : (
-                        trip.categoria.length > 0 ? trip.categoria : trip.compNumeroTreno.trim().split(" ")[0]
+                        trip.categoria
                     )} {trip.numeroTreno}
                 </span>
                 <div className="text-xl font-bold">
@@ -212,9 +218,15 @@ export default function Trip({ trip }: { trip: TripProps }) {
 
                 <div className="flex sm:flex-col flex-row justify-between items-center gap-y-2 py-4 max-w-md w-full mx-auto">
                     <div className="flex flex-col flex-grow min-w-0">
-                        <p className="text-lg sm:text-xl font-bold text-left sm:text-center truncate flex-grow min-w-0">
-                            {trip.nonPartito ? "non ancora partito" : capitalize(trip.stazioneUltimoRilevamento || "--")}
-                        </p>
+                        {!isCanceled ? (
+                            <p className="text-lg sm:text-xl font-bold text-left sm:text-center truncate flex-grow min-w-0">
+                                {trip.nonPartito ? "non ancora partito" : capitalize(trip.stazioneUltimoRilevamento || "--")}
+                            </p>
+                        ) : (
+                            <p className="text-xl font-bold text-center">
+                                {trip.subTitle.toLowerCase()}
+                            </p>
+                        )}
 
                         <div className="flex flex-row justify-start sm:justify-center">
                             {trip.compOraUltimoRilevamento !== "--" && (
@@ -240,7 +252,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                     )}
                 </div>
 
-                {trip.subTitle && (
+                {trip.subTitle && !isCanceled && (
                     <div className="text-center font-bold bg-warning-100 w-fit mx-auto">
                         {trip.subTitle}
                     </div>
@@ -255,102 +267,115 @@ export default function Trip({ trip }: { trip: TripProps }) {
                 <Divider className="my-2" />
             </div>
 
-            <div className="max-w-md w-full mx-auto">
-                <Timeline
-                    steps={trip.fermate.map((stop: Stop, index: number) => {
-                        const isFutureStop = preciseActiveIndex <= index;
+            {!isCanceled ? (
+                <div className="max-w-md w-full mx-auto">
+                    <Timeline
+                        steps={trip.fermate.map((stop: Stop, index: number) => {
+                            const isFutureStop = preciseActiveIndex <= index;
 
-                        const effectiveDelayArrival = !isFutureStop ? stop.ritardoArrivo :
-                            (trip.ritardo >= 0 ? trip.ritardo : 0);
+                            const effectiveDelayArrival = !isFutureStop ? stop.ritardoArrivo :
+                                (trip.ritardo >= 0 ? trip.ritardo : 0);
 
-                        const effectiveDelayDeparture = !isFutureStop ? stop.ritardoPartenza :
-                            (trip.ritardo >= 0 ? trip.ritardo : 0);
+                            const effectiveDelayDeparture = !isFutureStop ? stop.ritardoPartenza :
+                                (trip.ritardo >= 0 ? trip.ritardo : 0);
 
-                        const isDepartureDelayed = stop.partenza_teorica &&
-                            formatDate(new Date(stop.partenza_teorica), 'HH:mm') !==
-                            formatDate(new Date(stop.partenzaReale || stop.partenza_teorica + effectiveDelayDeparture * 60 * 1000), 'HH:mm');
+                            const isDepartureDelayed = stop.partenza_teorica &&
+                                formatDate(new Date(stop.partenza_teorica), 'HH:mm') !==
+                                formatDate(new Date(stop.partenzaReale || stop.partenza_teorica + effectiveDelayDeparture * 60 * 1000), 'HH:mm');
 
-                        const isArrivalDelayed = stop.arrivo_teorico &&
-                            formatDate(new Date(stop.arrivo_teorico), 'HH:mm') !==
-                            formatDate(new Date(stop.arrivoReale || stop.arrivo_teorico + effectiveDelayArrival * 60 * 1000), 'HH:mm');
+                            const isArrivalDelayed = stop.arrivo_teorico &&
+                                formatDate(new Date(stop.arrivo_teorico), 'HH:mm') !==
+                                formatDate(new Date(stop.arrivoReale || stop.arrivo_teorico + effectiveDelayArrival * 60 * 1000), 'HH:mm');
 
-                        return {
-                            content: (
-                                <div className="flex items-start justify-between w-full">
-                                    <div className="flex-col">
-                                        <Link className={`break-words font-bold ${stop.actualFermataType === 3 ? "line-through" : ""}`} href={`/departures/${findMatchingStation(stop.stazione) ?? ""}`}>
-                                            {capitalize(stop.stazione)}
-                                        </Link>
-                                        <div className={`text-gray-500 text-sm ${stop.actualFermataType === 3 ? "line-through" : ""}`}>
+                            return {
+                                content: (
+                                    <div className="flex items-start justify-between w-full">
+                                        <div className="flex-col">
+                                            <Link className={`break-words font-bold ${stop.actualFermataType === 3 ? "line-through" : ""}`} href={`/departures/${findMatchingStation(stop.stazione) ?? ""}`}>
+                                                {capitalize(stop.stazione)}
+                                            </Link>
+                                            <div className={`text-gray-500 text-sm ${stop.actualFermataType === 3 ? "line-through" : ""}`}>
 
-                                            <div className="flex-col">
-                                                <div className={`flex gap-1 ${!stop.arrivoReale && isFutureStop ? 'italic' : ''}`}>
-                                                    {stop.arrivo_teorico && <span>a.</span>}
+                                                <div className="flex-col">
+                                                    <div className={`flex gap-1 ${!stop.arrivoReale && isFutureStop ? 'italic' : ''}`}>
+                                                        {stop.arrivo_teorico && <span>a.</span>}
 
-                                                    {stop.arrivo_teorico && (
-                                                        <span className={`${isArrivalDelayed
-                                                            ? 'line-through text-gray-500'
-                                                            : `font-bold ${(!isFutureStop || (isFutureStop && trip.ritardo === 0 && !trip.nonPartito)) ? 'text-success' : ''}`
-                                                            }`}>
-                                                            {formatDate(new Date(stop.arrivo_teorico), 'HH:mm')}
-                                                        </span>
-                                                    )}
+                                                        {stop.arrivo_teorico && (
+                                                            <span className={`${isArrivalDelayed
+                                                                ? 'line-through text-gray-500'
+                                                                : `font-bold ${(!isFutureStop || (isFutureStop && trip.ritardo === 0 && !trip.nonPartito)) ? 'text-success' : ''}`
+                                                                }`}>
+                                                                {formatDate(new Date(stop.arrivo_teorico), 'HH:mm')}
+                                                            </span>
+                                                        )}
 
-                                                    {isArrivalDelayed && stop.arrivo_teorico && (
-                                                        <span className={`font-bold ${!stop.arrivoReale && isFutureStop ? 'italic' : ''} text-${getDelayColor(stop.ritardoArrivo || trip.ritardo)}`}>
-                                                            {formatDate(new Date(stop.arrivoReale || stop.arrivo_teorico + effectiveDelayArrival * 60 * 1000), 'HH:mm')}
-                                                        </span>
-                                                    )}
-                                                </div>
+                                                        {isArrivalDelayed && stop.arrivo_teorico && (
+                                                            <span className={`font-bold ${!stop.arrivoReale && isFutureStop ? 'italic' : ''} text-${getDelayColor(stop.ritardoArrivo || trip.ritardo)}`}>
+                                                                {formatDate(new Date(stop.arrivoReale || stop.arrivo_teorico + effectiveDelayArrival * 60 * 1000), 'HH:mm')}
+                                                            </span>
+                                                        )}
+                                                    </div>
 
-                                                <div className={`flex gap-1 ${!stop.partenzaReale && isFutureStop ? 'italic' : ''}`}>
-                                                    {stop.partenza_teorica && <span>p.</span>}
+                                                    <div className={`flex gap-1 ${!stop.partenzaReale && isFutureStop ? 'italic' : ''}`}>
+                                                        {stop.partenza_teorica && <span>p.</span>}
 
-                                                    {stop.partenza_teorica && (
-                                                        <span className={`${isDepartureDelayed
-                                                            ? 'line-through text-gray-500'
-                                                            : `font-bold ${(!isFutureStop || (isFutureStop && trip.ritardo === 0 && !trip.nonPartito)) ? 'text-success' : ''}`
-                                                            }`}>
-                                                            {formatDate(new Date(stop.partenza_teorica), 'HH:mm')}
-                                                        </span>
-                                                    )}
+                                                        {stop.partenza_teorica && (
+                                                            <span className={`${isDepartureDelayed
+                                                                ? 'line-through text-gray-500'
+                                                                : `font-bold ${(!isFutureStop || (isFutureStop && trip.ritardo === 0 && !trip.nonPartito)) ? 'text-success' : ''}`
+                                                                }`}>
+                                                                {formatDate(new Date(stop.partenza_teorica), 'HH:mm')}
+                                                            </span>
+                                                        )}
 
-                                                    {isDepartureDelayed && stop.partenza_teorica && (
-                                                        <span className={`font-bold ${!stop.partenzaReale && isFutureStop ? 'italic' : ''} text-${getDelayColor(stop.ritardoPartenza || trip.ritardo)}`}>
-                                                            {formatDate(new Date(stop.partenzaReale || stop.partenza_teorica + effectiveDelayDeparture * 60 * 1000), 'HH:mm')}
-                                                        </span>
-                                                    )}
+                                                        {isDepartureDelayed && stop.partenza_teorica && (
+                                                            <span className={`font-bold ${!stop.partenzaReale && isFutureStop ? 'italic' : ''} text-${getDelayColor(stop.ritardoPartenza || trip.ritardo)}`}>
+                                                                {formatDate(new Date(stop.partenzaReale || stop.partenza_teorica + effectiveDelayDeparture * 60 * 1000), 'HH:mm')}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
+                                        {stop.actualFermataType !== 3 && (
+                                            <Button
+                                                className={`flex p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors whitespace-pre-wrap flex-shrink-0 ${stop.binarioEffettivoArrivoDescrizione || stop.binarioEffettivoPartenzaDescrizione ? 'text-white' : 'text-gray-500'}`}
+                                                radius="sm"
+                                                variant={(stop.binarioEffettivoArrivoDescrizione || stop.binarioEffettivoPartenzaDescrizione) ? 'solid' : 'ghost'}
+                                                color={(stop.binarioEffettivoArrivoDescrizione || stop.binarioEffettivoPartenzaDescrizione) ? 'success' : 'default'}
+                                                disabled
+                                                disableRipple
+                                                disableAnimation
+                                            >
+                                                BIN. {index === 0 ? (stop.binarioEffettivoPartenzaDescrizione || stop.binarioProgrammatoPartenzaDescrizione) : (stop.binarioEffettivoArrivoDescrizione || stop.binarioProgrammatoArrivoDescrizione)}
+                                            </Button>
+                                        )}
                                     </div>
-                                    {stop.actualFermataType !== 3 && (
-                                        <Button
-                                            className={`flex p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors whitespace-pre-wrap flex-shrink-0 ${stop.binarioEffettivoArrivoDescrizione || stop.binarioEffettivoPartenzaDescrizione ? 'text-white' : 'text-gray-500'}`}
-                                            radius="sm"
-                                            variant={(stop.binarioEffettivoArrivoDescrizione || stop.binarioEffettivoPartenzaDescrizione) ? 'solid' : 'ghost'}
-                                            color={(stop.binarioEffettivoArrivoDescrizione || stop.binarioEffettivoPartenzaDescrizione) ? 'success' : 'default'}
-                                            disabled
-                                            disableRipple
-                                            disableAnimation
-                                        >
-                                            BIN. {index === 0 ? (stop.binarioEffettivoPartenzaDescrizione || stop.binarioProgrammatoPartenzaDescrizione) : (stop.binarioEffettivoArrivoDescrizione || stop.binarioProgrammatoArrivoDescrizione)}
-                                        </Button>
-                                    )}
-                                </div>
-                            ),
-                        };
-                    })}
-                    active={preciseActiveIndex}
-                />
-            </div>
-
-            {scroll.y > 0 && (
-                <Button isIconOnly radius="full" startContent={<IconArrowUp size={32} />}
-                    onPress={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                    className="fixed bottom-5 right-5 p-2 shadow-lg"
-                />
+                                ),
+                            };
+                        })}
+                        active={preciseActiveIndex}
+                    />
+                </div>
+            ) : (
+                <div className="flex flex-col gap-2">
+                    {trip.info.slice(0, 2).filter(Boolean).map((alert, index) => (
+                        <span key={index} className="flex flex-row gap-2">
+                            <IconAlertTriangleFilled className="text-warning flex-shrink-0 mt-1" size={16} />
+                            {alert.infoNote}
+                        </span>
+                    ))}
+                </div>
             )}
-        </div>
+
+            {
+                scroll.y > 0 && (
+                    <Button isIconOnly radius="full" startContent={<IconArrowUp size={32} />}
+                        onPress={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                        className="fixed bottom-5 right-5 p-2 shadow-lg"
+                    />
+                )
+            }
+        </div >
     );
 }

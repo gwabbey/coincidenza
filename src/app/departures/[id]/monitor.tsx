@@ -33,9 +33,6 @@ function getTrackUrl(company: string, trainNumber: string): string | null {
         case "sta":
             // same with SAD
             return `/track/trenitalia/${trainNumber}`;
-        case "bus":
-        case "autobus":
-        case "autolinea":
         case "italo":
             return null;
         default:
@@ -79,15 +76,15 @@ export function Monitor({ monitor }: { monitor: any }) {
 
     return (
         <div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
-            <AnimatePresence>
-                {monitor.trains.map((train: any, index: number) => (
+            <AnimatePresence mode="popLayout">
+                {monitor.trains.map((train: any) => (
                     <motion.div
-                        key={index}
+                        key={train.number.toString()}
                         layout
-                        layoutId={train.number.toString()}
+                        initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        transition={{ duration: 0.5, ease: "easeInOut" }}
+                        exit={{ opacity: 0, y: -20, transition: { duration: 0.3 } }}
+                        transition={{ duration: 0.3, ease: "easeInOut" }}
                     >
                         <div className="flex flex-row justify-between gap-4">
                             <div className="flex gap-2 w-full">
@@ -97,7 +94,7 @@ export function Monitor({ monitor }: { monitor: any }) {
 
                                 <div className="flex flex-col text-left w-full flex-grow min-w-0">
                                     <div className="flex items-center justify-between w-full min-w-0 gap-2">
-                                        {getTrackUrl(train.company, train.number) ? (
+                                        {getTrackUrl(train.company, train.number) && train.category !== "autocorsa" ? (
                                             <Link
                                                 className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow"
                                                 href={getTrackUrl(train.company, train.number)!}
@@ -116,7 +113,7 @@ export function Monitor({ monitor }: { monitor: any }) {
                                         )}
                                     </div>
 
-                                    {getTrackUrl(train.company, train.number) ? (
+                                    {getTrackUrl(train.company, train.number) && train.category !== "autocorsa" ? (
                                         <Link
                                             className="text-sm text-gray-500 capitalize"
                                             href={getTrackUrl(train.company, train.number)!}

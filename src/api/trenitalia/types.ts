@@ -91,6 +91,21 @@ export interface Trip {
     ultimoRilev: number
     iconTreno: any
     canvas: Canvas[]
+    info: Info[]
+}
+
+export interface Info {
+    id: number
+    idNoteInfopush: number
+    infoNote: string
+    infoNoteEn: string
+    trains: any[]
+    daysOfWeek: any
+    startTime: number
+    endTime: number
+    startValidity: number
+    endValidity: number
+    insertTimestamp: number
 }
 
 export interface Stop {

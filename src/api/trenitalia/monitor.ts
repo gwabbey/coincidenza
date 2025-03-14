@@ -4,7 +4,7 @@ import { trainCategoryShortNames } from "@/train-categories";
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import * as cheerio from 'cheerio';
-import { StationMonitor, Train, TrainStop, Trip } from "./types";
+import { StationMonitor, Train, TrainStop } from "./types";
 
 async function getRfiMonitor(id: string) {
     const client = axios.create();
@@ -51,6 +51,7 @@ async function getRfiMonitor(id: string) {
 
         const getShortCategory = (category: string | null): string | null => {
             if (!category) return null;
+            if (category === "railjet") return "EC";
             if (category.startsWith('suburbano')) return category.split(' ')[1];
             if (category.startsWith('servizio ferroviario metropolitano')) {
                 return category.replace('servizio ferroviario metropolitano linea', 'SFM');
@@ -103,57 +104,8 @@ async function getRfiMonitor(id: string) {
     return { trains, alerts };
 }
 
-async function getTrenordMonitor(id: string): Promise<StationMonitor> {
-    const client = axios.create();
-
-    axiosRetry(client, {
-        retries: 5,
-        retryDelay: axiosRetry.exponentialDelay,
-        onRetry: (retryCount, error) => {
-            console.log(
-                `retry attempt ${retryCount} for error ${error.response?.statusText}`
-            );
-        },
-    });
-
-    const response = await client.get(
-        `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/partenze/${id}/${new Date().toString()}`
-    );
-
-    const trains: Train[] = [];
-    const alerts = "";
-
-    response.data.forEach((trip: Trip) => {
-        const shortCategory = "";
-        const number = trip.numeroTreno.toString();
-        const destination = trip.destinazioneEstera || trip.destinazione;
-        const departureTime = trip.compOrarioPartenza;
-        const delay = "";
-        const departing = false;
-        const company = "Trenord";
-
-        if (number && destination && departureTime && !trip.arrivato) {
-            trains.push({
-                company,
-                shortCategory,
-                number,
-                destination,
-                departureTime,
-                delay,
-                platform: "",
-                departing,
-                stops: [],
-                category: ""
-            });
-        }
-    });
-
-    return { trains, alerts };
-}
-
 export async function getMonitor(id: string): Promise<StationMonitor> {
     try {
-        if (id.startsWith("N")) return await getTrenordMonitor(id);
         return await getRfiMonitor(id);
     } catch (error: any) {
         console.error(error.message);

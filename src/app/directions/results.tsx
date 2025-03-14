@@ -21,7 +21,7 @@ type RouteModalProps = {
 };
 
 const RouteModal = ({ isOpen, onOpenChange, title, children }: RouteModalProps) => (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur">
+    <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur" scrollBehavior="inside">
         <ModalContent className="pb-2">
             <ModalHeader className="flex flex-col gap-1">{title}</ModalHeader>
             <ModalBody>{children}</ModalBody>
@@ -105,8 +105,8 @@ export default function Results({ directions }: { directions: Directions }) {
                                                             textAlign: leg.line?.color ? "center" : "left",
                                                             color: leg.line?.color ? "white" : "inherit",
                                                         }}>
-                                                            {trainCodeLogos.find(code => code.code === leg.line?.code)?.svg ? (
-                                                                <Image src={`https://www.lefrecce.it/Channels.Website.WEB/web/images/logo/${trainCodeLogos.find(code => code.code === leg.line?.code)?.svg}.svg`} alt={leg.line?.name || ""} width={22} height={22} className={trainCodeLogos.find(code => code.code === leg.line?.code)?.className + " flex self-center -mx-1 invert"} />
+                                                            {trainCodeLogos.find(code => code.code === leg.line?.code)?.url ? (
+                                                                <Image src={trainCodeLogos.find(code => code.code === leg.line?.code)?.url ?? ""} alt={leg.line?.name || ""} width={24} height={24} className={trainCodeLogos.find(code => code.code === leg.line?.code)?.className + " flex self-center -mx-1 invert"} />
                                                             ) : (
                                                                 leg.line?.code
                                                             )} {leg.code}
