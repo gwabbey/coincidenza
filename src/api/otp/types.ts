@@ -65,7 +65,7 @@ export interface ToPlace {
 export interface Line {
     id: string
     name: string
-    code: string
+    category: string
     color: string
 }
 

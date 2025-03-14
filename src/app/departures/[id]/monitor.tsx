@@ -36,7 +36,7 @@ function getTrackUrl(company: string, trainNumber: string): string | null {
         case "italo":
             return null;
         default:
-            return `/track/${normalizedCompany.replace(/\s+/g, "-")}/${trainNumber}`;
+            return `/track/trenitalia/${trainNumber}`;
     }
 }
 

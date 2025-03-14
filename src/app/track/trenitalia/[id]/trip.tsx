@@ -184,7 +184,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                             alt={trip.compTipologiaTreno || ""}
                             width={100}
                             height={20}
-                            className={trainCodeLogos.find(code => code.code === trip.categoria)?.className + " flex self-center h-5 w-full"}
+                            className={trainCodeLogos.find(code => code.code === trip.categoria)?.className + " flex self-center h-4 w-full"}
                         />
                     ) : (
                         trip.categoria

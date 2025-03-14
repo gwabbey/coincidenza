@@ -49,7 +49,7 @@ const getLine = (leg: any) => {
     return {
         id: leg.line?.id,
         name: name || leg.line?.name,
-        code: code || leg.line?.publicCode,
+        category: code || leg.line?.publicCode,
         color: color || leg.line?.presentation?.colour
     }
 }

@@ -72,7 +72,7 @@ export default function Results({ directions }: { directions: Directions }) {
                     title={
                         <div className="flex flex-col gap-1">
                             <Steps trip={trip} />
-                            <span className="font-bold text-2xl">{format(new Date(trip.aimedStartTime), "HH:mm")}</span>
+                            <span className="font-bold text-2xl">{format(new Date(trip.legs[1].aimedStartTime), "HH:mm")}</span>
                         </div>
                     }
                     subtitle={
@@ -105,10 +105,16 @@ export default function Results({ directions }: { directions: Directions }) {
                                                             textAlign: leg.line?.color ? "center" : "left",
                                                             color: leg.line?.color ? "white" : "inherit",
                                                         }}>
-                                                            {trainCodeLogos.find(code => code.code === leg.line?.code)?.url ? (
-                                                                <Image src={trainCodeLogos.find(code => code.code === leg.line?.code)?.url ?? ""} alt={leg.line?.name || ""} width={24} height={24} className={trainCodeLogos.find(code => code.code === leg.line?.code)?.className + " flex self-center -mx-1 invert"} />
+                                                            {trainCodeLogos.find(code => code.code === leg.line?.category)?.url ? (
+                                                                <Image
+                                                                    src={trainCodeLogos.find(code => code.code === leg.line?.category)?.url ?? ""}
+                                                                    alt={leg.code || ""}
+                                                                    width={100}
+                                                                    height={20}
+                                                                    className={trainCodeLogos.find(code => code.code === leg.line?.category)?.className + " flex self-center h-4 w-full"}
+                                                                />
                                                             ) : (
-                                                                leg.line?.code
+                                                                leg.line?.category
                                                             )} {leg.code}
                                                         </span>
                                                         <span className="sm:text-lg text-md font-bold truncate">
@@ -132,10 +138,10 @@ export default function Results({ directions }: { directions: Directions }) {
                                                 variant="bordered"
                                                 isIconOnly
                                                 isExternal
-                                                startContent={<IconAccessPoint />}
+                                                startContent={<IconAccessPoint size={24} />}
                                                 radius="full"
                                                 className="border-gray-500 border-1 self-center"
-                                                aria-label={`${leg.line?.code || ""} ${leg.code || ""} in tempo reale`}
+                                                aria-label={`${leg.line?.category || ""} ${leg.code || ""} in tempo reale`}
                                             />
                                         )}
                                         {leg.mode === "foot" && (
@@ -148,7 +154,7 @@ export default function Results({ directions }: { directions: Directions }) {
                                                 startContent={<IconMap />}
                                                 radius="full"
                                                 className="border-gray-500 border-1 self-center"
-                                                aria-label={`${leg.line?.code || ""} ${leg.code || ""} in tempo reale`}
+                                                aria-label={`${leg.line?.category || ""} ${leg.code || ""} in tempo reale`}
                                             />
                                         )}
                                     </div>
@@ -259,7 +265,7 @@ export default function Results({ directions }: { directions: Directions }) {
                     <RouteModal
                         isOpen={mapModal.isOpen}
                         onOpenChange={mapModal.onOpenChange}
-                        title={selectedLeg ? `percorso ${selectedLeg.line?.code} ${selectedLeg.realtime?.destination}` : 'percorso'}
+                        title={selectedLeg ? `percorso ${selectedLeg.line?.category} ${selectedLeg.realtime?.destination}` : 'percorso'}
                     >
                         {selectedLeg && <LeafletMap leg={selectedLeg} className="rounded-small" />}
                     </RouteModal>

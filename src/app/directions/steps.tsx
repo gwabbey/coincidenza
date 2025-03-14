@@ -14,7 +14,7 @@ export default function Steps({ trip }: { trip: Trip }) {
             <div className="flex flex-row gap-1 text-sm flex-wrap">
                 {trip.legs.map((leg, index) => (
                     <div key={index} className="flex flex-row gap-1 items-center">
-                        {IconMap[leg.mode]} {leg.line?.code} {leg.code}
+                        {IconMap[leg.mode]} {leg.line?.category} {leg.code}
                         {index < trip.legs.length - 1 && <IconChevronRight size={16} className="self-center" />}
                     </div>
                 ))}
