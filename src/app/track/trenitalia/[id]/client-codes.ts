@@ -5,5 +5,5 @@ export const clientNames = {
     4: "trenitalia",
     18: "trenitalia",
     63: "trenord",
-    64: "obb"
+    64: "bahn"
 }

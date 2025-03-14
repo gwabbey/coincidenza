@@ -3,31 +3,16 @@
 import { agencies } from "@/agencies";
 import { Directions, Leg } from "@/api/otp/types";
 import LeafletMap from "@/components/leaflet";
+import { RouteModal } from "@/components/modal";
 import Timeline from "@/components/timeline";
 import { getTrainCategory, trainCodeLogos } from "@/train-categories";
 import { formatDuration, getDelayColor } from "@/utils";
-import { Accordion, AccordionItem, Button, cn, Link, Modal, ModalBody, ModalContent, ModalHeader, Selection, useDisclosure } from "@heroui/react";
+import { Accordion, AccordionItem, Button, cn, Link, Selection, useDisclosure } from "@heroui/react";
 import { IconAccessPoint, IconBus, IconInfoTriangleFilled, IconMap, IconTrain, IconWalk } from "@tabler/icons-react";
 import { format } from "date-fns";
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import Steps from "./steps";
-
-type RouteModalProps = {
-    isOpen: boolean;
-    onOpenChange: (isOpen: boolean) => void;
-    title: string;
-    children: React.ReactNode;
-};
-
-const RouteModal = ({ isOpen, onOpenChange, title, children }: RouteModalProps) => (
-    <Modal isOpen={isOpen} onOpenChange={onOpenChange} backdrop="blur" scrollBehavior="inside">
-        <ModalContent className="pb-2">
-            <ModalHeader className="flex flex-col gap-1">{title}</ModalHeader>
-            <ModalBody>{children}</ModalBody>
-        </ModalContent>
-    </Modal>
-);
 
 export default function Results({ directions }: { directions: Directions }) {
     const infoModal = useDisclosure();
@@ -72,7 +57,7 @@ export default function Results({ directions }: { directions: Directions }) {
                     title={
                         <div className="flex flex-col gap-1">
                             <Steps trip={trip} />
-                            <span className="font-bold text-2xl">{format(new Date(trip.legs[1].aimedStartTime), "HH:mm")}</span>
+                            <span className="font-bold text-2xl">{format(new Date(trip.legs.length > 1 ? trip.legs[1].aimedStartTime : trip.aimedStartTime), "HH:mm")}</span>
                         </div>
                     }
                     subtitle={
@@ -262,6 +247,7 @@ export default function Results({ directions }: { directions: Directions }) {
                                 </div>
                             ))}
                     </div>
+
                     <RouteModal
                         isOpen={mapModal.isOpen}
                         onOpenChange={mapModal.onOpenChange}

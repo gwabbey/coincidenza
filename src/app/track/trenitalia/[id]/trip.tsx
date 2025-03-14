@@ -1,15 +1,16 @@
 'use client';
 
 import { Canvas, Stop, Trip as TripProps } from "@/api/trenitalia/types";
+import { RouteModal } from "@/components/modal";
 import Timeline from "@/components/timeline";
 import stations from "@/stations.json";
 import { trainCodeLogos } from "@/train-categories";
 import { capitalize, getDelayColor } from "@/utils";
-import { Button, Card, Divider } from "@heroui/react";
-import { IconAlertTriangleFilled, IconArrowUp } from "@tabler/icons-react";
+import { Button, Card, Divider, useDisclosure } from "@heroui/react";
+import { IconAlertTriangleFilled, IconArrowUp, IconInfoTriangleFilled } from "@tabler/icons-react";
 import { formatDate } from "date-fns";
 import Image from "next/image";
-import Link from "next/link";
+import NextLink from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from 'react';
 
@@ -119,6 +120,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
     const [scroll, setScroll] = useState({ y: 0 });
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
     const isCanceled = trip.provvedimento === 1
+    const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -269,6 +271,18 @@ export default function Trip({ trip }: { trip: TripProps }) {
 
             {!isCanceled ? (
                 <div className="max-w-md w-full mx-auto">
+                    {trip.info && trip.info.length > 0 && (
+                        <Button
+                            variant="flat"
+                            color="warning"
+                            fullWidth
+                            className="flex items-center font-bold sm:w-fit mx-auto mb-6"
+                            startContent={<IconInfoTriangleFilled />}
+                            onPress={onOpen}
+                        >
+                            avvisi
+                        </Button>
+                    )}
                     <Timeline
                         steps={trip.fermate.map((stop: Stop, index: number) => {
                             const isFutureStop = preciseActiveIndex <= index;
@@ -291,9 +305,9 @@ export default function Trip({ trip }: { trip: TripProps }) {
                                 content: (
                                     <div className="flex items-start justify-between w-full">
                                         <div className="flex-col">
-                                            <Link className={`break-words font-bold ${stop.actualFermataType === 3 ? "line-through" : ""}`} href={`/departures/${findMatchingStation(stop.stazione) ?? ""}`}>
+                                            <NextLink className={`break-words font-bold ${stop.actualFermataType === 3 ? "line-through" : ""}`} href={`/departures/${findMatchingStation(stop.stazione) ?? ""}`}>
                                                 {capitalize(stop.stazione)}
-                                            </Link>
+                                            </NextLink>
                                             <div className={`text-gray-500 text-sm ${stop.actualFermataType === 3 ? "line-through" : ""}`}>
 
                                                 <div className="flex-col">
@@ -368,14 +382,26 @@ export default function Trip({ trip }: { trip: TripProps }) {
                 </div>
             )}
 
-            {
-                scroll.y > 0 && (
-                    <Button isIconOnly radius="full" startContent={<IconArrowUp size={32} />}
-                        onPress={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                        className="fixed bottom-5 right-5 p-2 shadow-lg"
-                    />
-                )
-            }
-        </div >
+            <RouteModal
+                isOpen={isOpen}
+                onOpenChange={onOpenChange}
+                title="avvisi sulla linea"
+            >
+                {trip.info && trip.info.length > 0 && trip.info.map((alert: any, index: number) => (
+                    <div key={index} className="flex flex-col gap-2">
+                        <span>
+                            {alert.infoNote}
+                        </span>
+                    </div>
+                ))}
+            </RouteModal>
+
+            {scroll.y > 0 && (
+                <Button isIconOnly radius="full" startContent={<IconArrowUp size={32} />}
+                    onPress={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                    className="fixed bottom-5 right-5 p-2 shadow-lg"
+                />
+            )}
+        </div>
     );
 }
