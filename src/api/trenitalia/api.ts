@@ -2,7 +2,7 @@
 
 import { capitalize } from "@/utils";
 import axios from 'axios';
-import { type Trip } from "./types";
+import { Trip } from "./types";
 
 export async function searchStation(query: string) {
     const { data } = await axios.get(`https://app.lefrecce.it/Channels.Website.BFF.WEB/app/locations?name=${query}&limit=5&multi=false`);
@@ -21,7 +21,41 @@ export async function getTripCanvas(code: string, origin: string, date: string) 
     return data;
 }
 
-export async function getTrip(id: string) {
+function normalizeStationName(name: string): string {
+    return name
+        .toLowerCase()
+        .replace(/\bc\.? ?le\b/g, "centrale")
+        .replace("posto comunicazione", "pc")
+        .replace(/[`'']/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function getTripStatus(trip: any) {
+    if (trip.provvedimento === 1) return "canceled";
+    if (trip.nonPartito) return "scheduled";
+    if (trip.arrivato) return "completed";
+    return "active";
+}
+
+function getStopStatus(stop: any) {
+    if (stop.fermata.actualFermataType === 2) return "not_planned";
+    if (stop.fermata.actualFermataType === 3) return "canceled";
+    return "regular";
+}
+
+function getCategory(trip: any) {
+    if (trip.categoria === "REG") return "R";
+    if (!trip.categoria) return trip.compNumeroTreno.trim().split(" ")[0];
+    return trip.categoria;
+}
+
+function getDelay(trip: any) {
+    if (trip.ritardo === 1) return 0;
+    return trip.ritardo;
+}
+
+export async function getTrip(id: string): Promise<Trip | null> {
     const { data } = await axios.get(
         `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`
     );
@@ -63,17 +97,19 @@ export async function getTrip(id: string) {
         .filter(Boolean)
         .sort((a: any, b: any) => a.tripDate.getTime() - b.tripDate.getTime());
 
-    const now = new Date();
-    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
+    const tripDetailsPromises = parsed.map(async (trip: any) => {
+        const { code, origin, timestamp } = trip;
 
-    const todayTrip = parsed.find((trip: Trip) => {
-        const tripDate = new Date(trip.orarioPartenza);
-        return tripDate.toDateString() === now.toDateString();
+        return axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${code}/${timestamp}`)
+            .then(response => ({
+                trip,
+                data: response.data
+            }));
     });
 
-    const selectedTrip = parsed[0].timestamp < oneHourAgo.getTime() && todayTrip
-        ? todayTrip
-        : parsed[0];
+    const tripDetails = await Promise.all(tripDetailsPromises);
+    const selectedTrip = tripDetails.find(({ data }) => !data.arrivato)?.trip || parsed[0];
+    if (!selectedTrip) return null;
 
     const { code, origin, timestamp } = selectedTrip;
     const formattedDate = new Intl.DateTimeFormat("it-IT", {
@@ -86,10 +122,48 @@ export async function getTrip(id: string) {
         .reverse()
         .join("-");
 
-    const trip = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${code}/${timestamp}`);
-    if (trip.data.categoria === "REG") trip.data.categoria = "R";
-    if (!trip.data.categoria) trip.data.categoria = trip.data.compNumeroTreno.trim().split(" ")[0]
+    const { data: trip } = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${code}/${timestamp}`);
     const info = await getTripSmartCaring(code, origin, formattedDate);
     const canvas = await getTripCanvas(code, origin, timestamp);
-    return { ...trip.data, info, canvas };
+    const currentStopIndex = canvas.findIndex((item: any) => item.stazioneCorrente);
+
+    return {
+        currentStopIndex,
+        lastKnownLocation: capitalize(normalizeStationName(trip.stazioneUltimoRilevamento || "--")),
+        lastUpdate: trip.oraUltimoRilevamento ? new Date(trip.oraUltimoRilevamento) : null,
+        status: getTripStatus(trip),
+        category: getCategory(trip),
+        number: trip.numeroTreno,
+        origin: capitalize(normalizeStationName(trip.origineEstera || trip.origine)),
+        destination: capitalize(normalizeStationName(trip.destinazioneEstera || trip.destinazione)),
+        departureTime: new Date(trip.orarioPartenzaEstera || trip.orarioPartenza),
+        arrivalTime: new Date(trip.orarioArrivoEstera || trip.orarioArrivo),
+        delay: getDelay(trip),
+        alertMessage: trip.subTitle,
+        stops: canvas.map((stop: any, index: number) => {
+            const scheduledArrival = stop.fermata.arrivo_teorico ? new Date(stop.fermata.arrivo_teorico) : null;
+            const scheduledDeparture = stop.fermata.partenza_teorica ? new Date(stop.fermata.partenza_teorica) : null;
+
+            const actualArrival = stop.fermata.arrivoReale ? new Date(stop.fermata.arrivoReale) : null;
+            const actualDeparture = stop.fermata.partenzaReale ? new Date(stop.fermata.partenzaReale) : null;
+
+            return {
+                id: stop.id,
+                name: capitalize(normalizeStationName(stop.stazione)),
+                scheduledArrival,
+                scheduledDeparture,
+                actualArrival,
+                actualDeparture,
+                arrivalDelay: stop.fermata.ritardoArrivo,
+                departureDelay: stop.fermata.ritardoPartenza,
+                scheduledPlatform: index === 0 ? stop.fermata.binarioProgrammatoPartenzaDescrizione : stop.fermata.binarioProgrammatoArrivoDescrizione,
+                actualPlatform: index === 0 ? stop.fermata.binarioEffettivoPartenzaDescrizione : stop.fermata.binarioEffettivoArrivoDescrizione,
+                status: getStopStatus(stop),
+            };
+        }),
+        info: info && info.map((alert: any) => ({
+            id: alert.id,
+            message: alert.infoNote
+        }))
+    };
 }

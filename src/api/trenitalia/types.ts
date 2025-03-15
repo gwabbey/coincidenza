@@ -1,172 +1,42 @@
 export interface Trip {
-    tipoTreno: string
-    orientamento: any
-    codiceCliente: number
-    fermateSoppresse: any[]
-    dataPartenza: string
-    fermate: Stop[]
-    anormalita: any[]
-    provvedimenti: any[]
-    segnalazioni: any[]
-    oraUltimoRilevamento: number
-    stazioneUltimoRilevamento: string
-    idDestinazione: string
-    idOrigine: string
-    cambiNumero: any[]
-    hasProvvedimenti: boolean
-    descOrientamento: string[]
-    compOraUltimoRilevamento: string
-    motivoRitardoPrevalente: any
-    descrizioneVCO: string
-    materiale_label: any
-    arrivato: boolean
-    dataPartenzaTrenoAsDate: string
-    dataPartenzaTreno: number
-    partenzaTreno: any
-    millisDataPartenza: any
-    numeroTreno: number
-    categoria: string
-    categoriaDescrizione: any
-    origine: string
-    codOrigine: any
-    destinazione: string
-    codDestinazione: any
-    origineEstera: any
-    destinazioneEstera: any
-    oraPartenzaEstera: any
-    oraArrivoEstera: any
-    tratta: number
-    regione: number
-    origineZero: string
-    destinazioneZero: string
-    orarioPartenzaZero: number
-    orarioArrivoZero: any
-    circolante: boolean
-    binarioEffettivoArrivoCodice: any
-    binarioEffettivoArrivoDescrizione: any
-    binarioEffettivoArrivoTipo: any
-    binarioProgrammatoArrivoCodice: any
-    binarioProgrammatoArrivoDescrizione: any
-    binarioEffettivoPartenzaCodice: any
-    binarioEffettivoPartenzaDescrizione: any
-    binarioEffettivoPartenzaTipo: any
-    binarioProgrammatoPartenzaCodice: any
-    binarioProgrammatoPartenzaDescrizione: any
-    subTitle: string
-    esisteCorsaZero: string
-    inStazione: boolean
-    haCambiNumero: boolean
-    nonPartito: boolean
-    provvedimento: number
-    riprogrammazione: any
-    orarioPartenza: number
-    orarioArrivo: number
-    stazionePartenza: any
-    stazioneArrivo: any
-    statoTreno: any
-    corrispondenze: any[]
-    servizi: any[]
-    ritardo: number
-    tipoProdotto: string
-    compOrarioPartenzaZeroEffettivo: string
-    compOrarioArrivoZeroEffettivo: any
-    compOrarioPartenzaZero: string
-    compOrarioArrivoZero: any
-    compOrarioArrivo: string
-    compOrarioPartenza: string
-    compNumeroTreno: string
-    compOrientamento: string[]
-    compTipologiaTreno: string
-    compClassRitardoTxt: string
-    compClassRitardoLine: string
-    compImgRitardo2: string
-    compImgRitardo: string
-    compRitardo: string[]
-    compRitardoAndamento: string[]
-    compInStazionePartenza: string[]
-    compInStazioneArrivo: string[]
-    compOrarioEffettivoArrivo: string
-    compDurata: string
-    compImgCambiNumerazione: string
-    ultimoRilev: number
-    iconTreno: any
-    canvas: Canvas[]
-    info: Info[]
-}
-
-export interface Info {
-    id: number
-    idNoteInfopush: number
-    infoNote: string
-    infoNoteEn: string
-    trains: any[]
-    daysOfWeek: any
-    startTime: number
-    endTime: number
-    startValidity: number
-    endValidity: number
-    insertTimestamp: number
+    currentStopIndex: number,
+    lastKnownLocation: string | null,
+    lastUpdate: Date | null,
+    status: "scheduled" | "active" | "completed" | "canceled",
+    category: string | null,
+    number: string,
+    origin: string,
+    destination: string,
+    departureTime: Date,
+    arrivalTime: Date,
+    delay: number,
+    alertMessage: string | null,
+    stops: Stop[],
+    info: {
+        id: number;
+        message: string;
+        url: string;
+    }[];
 }
 
 export interface Stop {
-    orientamento: any
-    kcNumTreno: any
-    stazione: string
-    codLocOrig?: string
-    id: string
-    listaCorrispondenze: any[]
-    programmata: number
-    programmataZero: any
-    effettiva?: number
-    ritardo: number
-    partenzaTeoricaZero?: number
-    arrivoTeoricoZero?: number
-    partenza_teorica?: number
-    arrivo_teorico?: number
-    isNextChanged: boolean
-    partenzaReale?: number
-    arrivoReale?: number
-    ritardoPartenza: number
-    ritardoArrivo: number
-    progressivo: number
-    binarioEffettivoArrivoCodice?: string
-    binarioEffettivoArrivoTipo?: string
-    binarioEffettivoArrivoDescrizione?: string
-    binarioProgrammatoArrivoCodice?: string
-    binarioProgrammatoArrivoDescrizione?: string
-    binarioEffettivoPartenzaCodice?: string
-    binarioEffettivoPartenzaTipo?: string
-    binarioEffettivoPartenzaDescrizione?: string
-    binarioProgrammatoPartenzaCodice?: string
-    binarioProgrammatoPartenzaDescrizione?: string
-    tipoFermata: string
-    visualizzaPrevista: boolean
-    nextChanged: boolean
-    nextTrattaType: number
-    actualFermataType: number
-    materiale_label: any
+    id: string;
+    name: string;
+    scheduledArrival: Date;
+    scheduledDeparture: Date;
+    actualArrival: Date | null;
+    actualDeparture: Date | null;
+    arrivalDelay: number | null;
+    departureDelay: number | null;
+    scheduledPlatform: string | null;
+    actualPlatform: string | null;
+    status: "regular" | "not_planned" | "canceled";
 }
 
-export interface Canvas {
-    last: boolean
-    stazioneCorrente: boolean
-    id: string
-    stazione: string
-    fermata: Stop
-    partenzaReale: boolean
-    arrivoReale: boolean
-    first: boolean
-    orientamento: string[]
-    nextTrattaType: number
-    actualFermataType: number
-    previousTrattaType?: number
-    trattaType: number
-}
-
-
-export interface TrainStop {
-    location: string;
-    time: string;
+export interface Info {
+    id: number;
+    message: string;
+    url: string;
 }
 
 export interface Train {
@@ -179,7 +49,10 @@ export interface Train {
     delay: string;
     platform: string;
     departing: boolean;
-    stops: TrainStop[];
+    stops: {
+        location: string;
+        time: string;
+    }[];
 }
 
 export interface StationMonitor {

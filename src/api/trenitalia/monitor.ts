@@ -4,7 +4,7 @@ import { trainCategoryShortNames } from "@/train-categories";
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import * as cheerio from 'cheerio';
-import { StationMonitor, Train, TrainStop } from "./types";
+import { MonitorStop, StationMonitor, Train } from "./types";
 
 async function getRfiMonitor(id: string) {
     const client = axios.create();
@@ -72,7 +72,7 @@ async function getRfiMonitor(id: string) {
 
         company = getCompany(company);
 
-        let stops: TrainStop[] = [];
+        let stops: MonitorStop[] = [];
         const stopsText = $(element)
             .find('td[id="RDettagli"] div[class="FermateSuccessivePopupStyle"] div[class="testoinfoaggiuntive"]')
             .first()
