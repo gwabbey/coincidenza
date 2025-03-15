@@ -145,7 +145,7 @@ export default function Results({ directions }: { directions: Directions }) {
                                     </div>
                                     {leg.mode !== "foot" && (
                                         <div className="pl-10 flex flex-col gap-4">
-                                            {leg.realtime.alerts && leg.realtime.alerts.length > 0 && (
+                                            {leg.realtime.info && leg.realtime.info.length > 0 && (
                                                 <Button
                                                     variant="flat"
                                                     color="warning"
@@ -261,7 +261,7 @@ export default function Results({ directions }: { directions: Directions }) {
                         onOpenChange={infoModal.onOpenChange}
                         title="avvisi sulla linea"
                     >
-                        {selectedLeg && selectedLeg.realtime?.alerts && selectedLeg.realtime.alerts.map((alert: any, index: number) => (
+                        {selectedLeg && selectedLeg.realtime?.info && selectedLeg.realtime.info.map((alert: any, index: number) => (
                             <div key={index} className="flex flex-col gap-2">
                                 {alert.url ? (
                                     <Link isExternal showAnchorIcon href={alert.url}>

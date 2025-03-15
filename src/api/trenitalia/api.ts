@@ -2,7 +2,7 @@
 
 import { capitalize } from "@/utils";
 import axios from 'axios';
-import { Trip } from "./types";
+import { Trip } from "../types";
 
 export async function searchStation(query: string) {
     const { data } = await axios.get(`https://app.lefrecce.it/Channels.Website.BFF.WEB/app/locations?name=${query}&limit=5&multi=false`);
@@ -26,7 +26,7 @@ function normalizeStationName(name: string): string {
         .toLowerCase()
         .replace(/\bc\.? ?le\b/g, "centrale")
         .replace("posto comunicazione", "pc")
-        .replace(/[`'']/g, '')
+        .replace("`", "'")
         .replace(/\s+/g, ' ')
         .trim();
 }
@@ -51,7 +51,7 @@ function getCategory(trip: any) {
 }
 
 function getDelay(trip: any) {
-    if (trip.ritardo === 1) return 0;
+    // if (trip.ritardo === 1) return 0;
     return trip.ritardo;
 }
 

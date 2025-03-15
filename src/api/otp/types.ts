@@ -1,3 +1,5 @@
+import { Info } from "../types";
+
 export interface Coordinates {
     lat: number;
     lon: number;
@@ -73,13 +75,8 @@ export interface Authority {
     name: string
 }
 
-export interface Alert {
-    description: string
-    url: string
-}
-
 export interface Realtime {
     delay: number | null
     destination: string | null
-    alerts: Alert[] | null
+    info: Info[] | null
 }

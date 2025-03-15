@@ -1,6 +1,6 @@
 'use client';
 
-import { Info, Stop, Trip as TripProps } from "@/api/trenitalia/types";
+import { Info, Stop, Trip as TripProps } from "@/api/types";
 import { RouteModal } from "@/components/modal";
 import Timeline from "@/components/timeline";
 import stations from "@/stations.json";

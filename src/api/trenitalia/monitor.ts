@@ -4,7 +4,7 @@ import { trainCategoryShortNames } from "@/train-categories";
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import * as cheerio from 'cheerio';
-import { MonitorStop, StationMonitor, Train } from "./types";
+import { StationMonitor, Train } from "../types";
 
 async function getRfiMonitor(id: string) {
     const client = axios.create();
@@ -72,7 +72,7 @@ async function getRfiMonitor(id: string) {
 
         company = getCompany(company);
 
-        let stops: MonitorStop[] = [];
+        let stops: any[] = [];
         const stopsText = $(element)
             .find('td[id="RDettagli"] div[class="FermateSuccessivePopupStyle"] div[class="testoinfoaggiuntive"]')
             .first()
@@ -108,7 +108,7 @@ export async function getMonitor(id: string): Promise<StationMonitor> {
     try {
         return await getRfiMonitor(id);
     } catch (error: any) {
-        console.error(error.message);
-        return { trains: [], alerts: "", error: "Errore nel recupero dei dati" };
+        console.log(error.message);
+        return { trains: [], alerts: "" };
     }
 }
