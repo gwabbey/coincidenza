@@ -10,7 +10,7 @@ export async function getRealtimeData(agencyId: string, tripId: string) {
                 delay: trip.delay,
                 destination: trip.tripHeadsign,
                 info: trip.route?.news?.map((alert: any) => ({
-                    description: alert.header,
+                    message: alert.header,
                     url: alert.url
                 }))
             }

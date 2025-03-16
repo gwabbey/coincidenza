@@ -16,8 +16,8 @@ interface SelectedLocations {
 
 export default function Directions() {
     const [selectedLocations, setSelectedLocations] = useState<SelectedLocations>({
-        from: null,
-        to: null
+        from: { lat: 45.89051, lon: 11.03433 },
+        to: { lat: 46.07094, lon: 11.11992 }
     });
     const [date, setDate] = useState<CalendarDate>(new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()));
     const [time, setTime] = useState<Time>(new Time(new Date().getHours(), new Date().getMinutes()));

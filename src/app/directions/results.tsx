@@ -96,7 +96,7 @@ export default function Results({ directions }: { directions: Directions }) {
                                                                     alt={leg.code || ""}
                                                                     width={100}
                                                                     height={20}
-                                                                    className={trainCodeLogos.find(code => code.code === leg.line?.category)?.className + " flex self-center h-4 w-full"}
+                                                                    className={trainCodeLogos.find(code => code.code === leg.line?.category)?.className + " flex self-center w-full"}
                                                                 />
                                                             ) : (
                                                                 leg.line?.category
@@ -145,7 +145,7 @@ export default function Results({ directions }: { directions: Directions }) {
                                     </div>
                                     {leg.mode !== "foot" && (
                                         <div className="pl-10 flex flex-col gap-4">
-                                            {leg.realtime.info && leg.realtime.info.length > 0 && (
+                                            {leg.realtime?.info && leg.realtime?.info.length > 0 && (
                                                 <Button
                                                     variant="flat"
                                                     color="warning"
@@ -169,7 +169,7 @@ export default function Results({ directions }: { directions: Directions }) {
                                                 vedi sulla mappa
                                             </Button>
 
-                                            {leg.realtime && leg.realtime.delay !== null && (
+                                            {leg.realtime && leg.realtime?.delay !== null && (
                                                 <span className="flex flex-row items-center gap-x-1">
                                                     <div className="relative inline-flex">
                                                         <div className="rounded-full bg-green-400 h-[8px] w-[8px] inline-block mr-1"></div>
@@ -191,9 +191,9 @@ export default function Results({ directions }: { directions: Directions }) {
                                                             <span
                                                                 className={cn(
                                                                     "text-sm",
-                                                                    leg.realtime.delay === null
+                                                                    !leg.realtime?.delay
                                                                         ? "text-gray-500"
-                                                                        : leg.realtime.delay === 0
+                                                                        : leg.realtime?.delay === 0
                                                                             ? "font-bold text-success"
                                                                             : "text-gray-500 line-through"
                                                                 )}
@@ -224,9 +224,9 @@ export default function Results({ directions }: { directions: Directions }) {
                                                             <span
                                                                 className={cn(
                                                                     "text-sm",
-                                                                    leg.realtime.delay === null
+                                                                    !leg.realtime?.delay
                                                                         ? "text-gray-500"
-                                                                        : leg.realtime.delay === 0
+                                                                        : leg.realtime?.delay === 0
                                                                             ? "font-bold text-success"
                                                                             : "text-gray-500 line-through"
                                                                 )}
@@ -261,15 +261,15 @@ export default function Results({ directions }: { directions: Directions }) {
                         onOpenChange={infoModal.onOpenChange}
                         title="avvisi sulla linea"
                     >
-                        {selectedLeg && selectedLeg.realtime?.info && selectedLeg.realtime.info.map((alert: any, index: number) => (
+                        {selectedLeg && selectedLeg.realtime?.info && selectedLeg.realtime?.info.map((alert: any, index: number) => (
                             <div key={index} className="flex flex-col gap-2">
                                 {alert.url ? (
                                     <Link isExternal showAnchorIcon href={alert.url}>
-                                        {alert.description}
+                                        {alert.message}
                                     </Link>
                                 ) : (
                                     <span>
-                                        {alert.description}
+                                        {alert.message}
                                     </span>
                                 )}
                             </div>

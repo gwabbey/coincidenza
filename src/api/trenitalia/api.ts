@@ -50,11 +50,6 @@ function getCategory(trip: any) {
     return trip.categoria;
 }
 
-function getDelay(trip: any) {
-    // if (trip.ritardo === 1) return 0;
-    return trip.ritardo;
-}
-
 export async function getTrip(id: string): Promise<Trip | null> {
     const { data } = await axios.get(
         `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`
@@ -138,7 +133,7 @@ export async function getTrip(id: string): Promise<Trip | null> {
         destination: capitalize(normalizeStationName(trip.destinazioneEstera || trip.destinazione)),
         departureTime: new Date(trip.orarioPartenzaEstera || trip.orarioPartenza),
         arrivalTime: new Date(trip.orarioArrivoEstera || trip.orarioArrivo),
-        delay: getDelay(trip),
+        delay: trip.ritardo,
         alertMessage: trip.subTitle,
         stops: canvas.map((stop: any, index: number) => {
             const scheduledArrival = stop.fermata.arrivo_teorico ? new Date(stop.fermata.arrivo_teorico) : null;
