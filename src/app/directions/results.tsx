@@ -7,10 +7,9 @@ import { RouteModal } from "@/components/modal";
 import Timeline from "@/components/timeline";
 import { getTrainCategory, trainCodeLogos } from "@/train-categories";
 import { formatDuration, getDelayColor } from "@/utils";
-import { Accordion, AccordionItem, Button, cn, Link, Selection, useDisclosure } from "@heroui/react";
+import { Accordion, AccordionItem, Button, cn, Image, Link, Selection, useDisclosure } from "@heroui/react";
 import { IconAccessPoint, IconBus, IconInfoTriangleFilled, IconMap, IconTrain, IconWalk } from "@tabler/icons-react";
 import { format } from "date-fns";
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import Steps from "./steps";
 
@@ -84,7 +83,7 @@ export default function Results({ directions }: { directions: Directions }) {
                                             <div className="flex flex-col justify-center">
                                                 {leg.mode !== "foot" ? (
                                                     <div className="flex flex-row items-center gap-x-1">
-                                                        <span className="sm:text-lg text-md font-bold w-fit rounded-small flex flex-row items-center gap-x-1" style={{
+                                                        <span className="sm:text-lg text-md font-bold w-fit rounded-small flex flex-row items-center gap-x-1 text-white" style={{
                                                             backgroundColor: leg.line?.color ? `#${leg.line.color}` : "transparent",
                                                             padding: leg.line?.color ? "0.1rem 0.5rem" : "0",
                                                             textAlign: leg.line?.color ? "center" : "left",
@@ -94,9 +93,8 @@ export default function Results({ directions }: { directions: Directions }) {
                                                                 <Image
                                                                     src={trainCodeLogos.find(code => code.code === leg.line?.category)?.url ?? ""}
                                                                     alt={leg.code || ""}
-                                                                    width={100}
-                                                                    height={20}
-                                                                    className={trainCodeLogos.find(code => code.code === leg.line?.category)?.className + " flex self-center w-full"}
+                                                                    radius="none"
+                                                                    className={`${trainCodeLogos.find(code => code.code === leg.line?.category)?.className} flex self-center w-full`}
                                                                 />
                                                             ) : (
                                                                 leg.line?.category
