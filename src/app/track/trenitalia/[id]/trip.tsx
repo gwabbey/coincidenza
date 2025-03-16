@@ -161,7 +161,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                             src={trainCodeLogos.find(code => code.code === trip.category)?.url ?? ""}
                             alt={trip.category || ""}
                             radius="none"
-                            className={`${trainCodeLogos.find(code => code.code === trip.category)?.className} flex self-center w-full`}
+                            className="flex h-4 self-center w-auto max-w-full invert"
                         />
                     ) : (
                         trip.category
@@ -314,7 +314,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                                                         {stop.scheduledDeparture && (
                                                             <span className={`${isDepartureDelayed
                                                                 ? 'line-through text-gray-500'
-                                                                : `font-bold ${(!isFutureStop || (isFutureStop && trip.delay === 0 && trip.status !== "scheduled")) ? 'text-success' : ''}`
+                                                                : `font-bold ${(!isFutureStop || (isFutureStop && trip.delay <= 0 && trip.status !== "scheduled")) ? 'text-success' : ''}`
                                                                 }`}>
                                                                 {formatDate(new Date(stop.scheduledDeparture || expectedDepartureWithDelay), 'HH:mm')}
                                                             </span>

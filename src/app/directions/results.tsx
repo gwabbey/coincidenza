@@ -94,7 +94,7 @@ export default function Results({ directions }: { directions: Directions }) {
                                                                     src={trainCodeLogos.find(code => code.code === leg.line?.category)?.url ?? ""}
                                                                     alt={leg.code || ""}
                                                                     radius="none"
-                                                                    className={`${trainCodeLogos.find(code => code.code === leg.line?.category)?.className} flex self-center w-full`}
+                                                                    className="flex h-4 self-center w-auto max-w-full invert"
                                                                 />
                                                             ) : (
                                                                 leg.line?.category
