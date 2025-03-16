@@ -153,7 +153,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
     return (
         <div className="flex flex-col gap-4 sm:pb-0 pb-12">
             <div className="flex justify-center items-center text-center flex-row gap-x-2">
-                <span className={`sm:text-lg text-md font-bold w-fit rounded-small flex flex-row items-center gap-x-1 text-white ${trip.category?.toLowerCase().startsWith("ic") ? "bg-primary" : "bg-danger"}`} style={{
+                <span className={`sm:text-lg text-md font-bold max-w-fit rounded-small flex flex-row items-center gap-x-1 text-white ${trip.category?.toLowerCase().startsWith("ic") ? "bg-primary" : "bg-danger"}`} style={{
                     padding: "0.1rem 0.5rem",
                 }}>
                     {trainCodeLogos.find(code => code.code === trip.category)?.url ? (
