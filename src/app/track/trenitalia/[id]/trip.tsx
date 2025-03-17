@@ -259,13 +259,28 @@ export default function Trip({ trip }: { trip: TripProps }) {
                             const effectiveDelayDeparture = !isFutureStop ? stop.departureDelay : (trip.delay >= 0 ? trip.delay : 0);
 
                             const expectedDepartureWithDelay = stop.scheduledDeparture ? new Date(stop.scheduledDeparture.getTime()) : null;
-                            if (expectedDepartureWithDelay && effectiveDelayDeparture) {
-                                expectedDepartureWithDelay.setMinutes(expectedDepartureWithDelay.getMinutes() + effectiveDelayDeparture);
-                            }
-
                             const expectedArrivalWithDelay = stop.scheduledArrival ? new Date(stop.scheduledArrival.getTime()) : null;
-                            if (expectedArrivalWithDelay && effectiveDelayArrival) {
-                                expectedArrivalWithDelay.setMinutes(expectedArrivalWithDelay.getMinutes() + effectiveDelayArrival);
+
+                            if (trip.delay < 0 && isFutureStop) {
+                                if (index === Math.ceil(preciseActiveIndex)) {
+                                    if (expectedArrivalWithDelay) {
+                                        expectedArrivalWithDelay.setMinutes(expectedArrivalWithDelay.getMinutes() + trip.delay);
+                                    }
+                                } else if (index <= Math.ceil(preciseActiveIndex)) {
+                                    if (expectedDepartureWithDelay && effectiveDelayDeparture) {
+                                        expectedDepartureWithDelay.setMinutes(expectedDepartureWithDelay.getMinutes() + effectiveDelayDeparture);
+                                    }
+                                    if (expectedArrivalWithDelay && effectiveDelayArrival) {
+                                        expectedArrivalWithDelay.setMinutes(expectedArrivalWithDelay.getMinutes() + effectiveDelayArrival);
+                                    }
+                                }
+                            } else {
+                                if (expectedDepartureWithDelay && effectiveDelayDeparture) {
+                                    expectedDepartureWithDelay.setMinutes(expectedDepartureWithDelay.getMinutes() + effectiveDelayDeparture);
+                                }
+                                if (expectedArrivalWithDelay && effectiveDelayArrival) {
+                                    expectedArrivalWithDelay.setMinutes(expectedArrivalWithDelay.getMinutes() + effectiveDelayArrival);
+                                }
                             }
 
                             const isDepartureDelayed = stop.scheduledDeparture && expectedDepartureWithDelay &&
@@ -295,14 +310,14 @@ export default function Trip({ trip }: { trip: TripProps }) {
                                                         {stop.scheduledArrival && (
                                                             <span className={`${isArrivalDelayed
                                                                 ? 'line-through text-gray-500'
-                                                                : `font-bold ${isFutureStop && trip.delay === 0 && trip.status !== "scheduled" ? 'text-success' : ''}`
+                                                                : `font-bold ${(!isFutureStop && stop.actualArrival) || (isFutureStop && trip.delay <= 0 && trip.status !== "scheduled") ? 'text-success' : ''}`
                                                                 }`}>
                                                                 {formatDate(new Date(stop.scheduledArrival), 'HH:mm')}
                                                             </span>
                                                         )}
 
                                                         {isArrivalDelayed && stop.scheduledArrival && (
-                                                            <span className={`font-bold ${!stop.actualArrival ? 'italic' : ''} text-${getDelayColor(stop.arrivalDelay || trip.delay)}`}>
+                                                            <span className={`font-bold ${!stop.actualArrival && !isFutureStop ? 'italic' : `text-${getDelayColor(stop.arrivalDelay || trip.delay)}`}`}>
                                                                 {formatDate(new Date(stop.actualArrival || expectedArrivalWithDelay), 'HH:mm')}
                                                             </span>
                                                         )}
@@ -314,14 +329,14 @@ export default function Trip({ trip }: { trip: TripProps }) {
                                                         {stop.scheduledDeparture && (
                                                             <span className={`${isDepartureDelayed
                                                                 ? 'line-through text-gray-500'
-                                                                : `font-bold ${(!isFutureStop || (isFutureStop && trip.delay <= 0 && trip.status !== "scheduled")) ? 'text-success' : ''}`
+                                                                : `font-bold ${(!isFutureStop && stop.actualDeparture) || (isFutureStop && trip.delay <= 0 && trip.status !== "scheduled") ? 'text-success' : ''}`
                                                                 }`}>
-                                                                {formatDate(new Date(stop.scheduledDeparture || expectedDepartureWithDelay), 'HH:mm')}
+                                                                {formatDate(new Date(stop.scheduledDeparture), 'HH:mm')}
                                                             </span>
                                                         )}
 
                                                         {isDepartureDelayed && stop.scheduledDeparture && (
-                                                            <span className={`font-bold ${!stop.actualDeparture ? 'italic' : ''} text-${getDelayColor(stop.departureDelay || trip.delay)}`}>
+                                                            <span className={`font-bold ${!stop.actualDeparture && !isFutureStop ? 'italic' : `text-${getDelayColor(stop.departureDelay || trip.delay)}`}`}>
                                                                 {formatDate(new Date(stop.actualDeparture || expectedDepartureWithDelay), 'HH:mm')}
                                                             </span>
                                                         )}
