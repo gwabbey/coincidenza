@@ -96,13 +96,12 @@ export async function getTrip(id: string): Promise<Trip | null> {
         const { code, origin, timestamp } = trip;
 
         return axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${code}/${timestamp}`)
-            .then(response => ({
-                trip,
-                data: response.data
-            }));
+            .then(response => response.status !== 204 ? { trip, data: response.data } : null)
+            .catch(() => null);
     });
 
-    const tripDetails = await Promise.all(tripDetailsPromises);
+    const tripDetails = (await Promise.all(tripDetailsPromises)).filter(Boolean);
+
     const selectedTrip = tripDetails.find(({ data }) => !data.arrivato)?.trip || parsed[0];
     if (!selectedTrip) return null;
 
@@ -120,7 +119,7 @@ export async function getTrip(id: string): Promise<Trip | null> {
     const { data: trip } = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${code}/${timestamp}`);
     const info = await getTripSmartCaring(code, origin, formattedDate);
     const canvas = await getTripCanvas(code, origin, timestamp);
-    const currentStopIndex = canvas.findIndex((item: any) => item.stazioneCorrente);
+    const currentStopIndex = canvas.findIndex((item: any) => item.stazioneCorrente) || -1;
 
     return {
         currentStopIndex,

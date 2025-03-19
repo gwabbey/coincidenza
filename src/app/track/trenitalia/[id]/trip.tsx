@@ -40,24 +40,38 @@ function findMatchingStation(stationName: string): string | null {
 const calculatePreciseActiveIndex = (trip: TripProps) => {
     const delay = trip.delay || 0;
     const currentMinutes = getCurrentMinutes();
-    const currentStopIndex = trip.currentStopIndex
-    if (trip.currentStopIndex === -1) return -1;
 
-    const firstStopDate = new Date(trip.stops[0].scheduledDeparture || 0);
-    const firstStopMinutes = timeToMinutes(formatDate(firstStopDate, 'HH:mm'), firstStopDate);
-    if (currentMinutes < firstStopMinutes) return -1;
+    // Filter out canceled stops
+    const activeStops = trip.stops.filter(stop => stop.status !== "canceled");
 
-    if (trip.stops[trip.stops.length - 1].actualArrival) return trip.stops.length - 1;
+    // Find the current non-canceled stop index
+    const currentStopIndex = trip.currentStopIndex === -1 ? -1 :
+        activeStops.findIndex((_, i) => {
+            const originalIndex = trip.stops.findIndex(s =>
+                !s.status || s.status !== "canceled" &&
+                trip.stops.filter(stop => stop.status !== "canceled").indexOf(s) === i
+            );
+            return originalIndex === trip.currentStopIndex;
+        });
+
+    if (currentStopIndex === -1) {
+        // No active stops or trip hasn't started
+        const firstStopDate = new Date(activeStops[0]?.scheduledDeparture || 0);
+        const firstStopMinutes = timeToMinutes(formatDate(firstStopDate, 'HH:mm'), firstStopDate);
+        if (currentMinutes < firstStopMinutes || activeStops.length === 0) return -1;
+    }
+
+    if (activeStops[activeStops.length - 1]?.actualArrival) return activeStops.length - 1;
 
     if (currentStopIndex !== -1) {
-        const stop = trip.stops[currentStopIndex];
+        const stop = activeStops[currentStopIndex];
         if (stop.actualArrival && !stop.actualDeparture) return currentStopIndex;
 
-        if (stop.actualDeparture && currentStopIndex < trip.stops.length - 1) {
+        if (stop.actualDeparture && currentStopIndex < activeStops.length - 1) {
             const departureDate = new Date(stop.actualDeparture || 0);
             const departureMinutes = timeToMinutes(formatDate(departureDate, 'HH:mm'), departureDate);
 
-            const nextArrivalDate = new Date(trip.stops[currentStopIndex + 1].scheduledArrival || 0);
+            const nextArrivalDate = new Date(activeStops[currentStopIndex + 1].scheduledArrival || 0);
             const nextArrivalMinutes = timeToMinutes(formatDate(nextArrivalDate, 'HH:mm'), nextArrivalDate) + delay;
 
             if (currentMinutes >= departureMinutes && currentMinutes <= nextArrivalMinutes) {
@@ -69,18 +83,18 @@ const calculatePreciseActiveIndex = (trip: TripProps) => {
     }
 
     let lastPassedStopIndex = -1;
-    for (let i = 0; i < trip.stops.length - 1; i++) {
-        if (!trip.stops[i].scheduledDeparture || !trip.stops[i + 1].scheduledArrival) continue;
+    for (let i = 0; i < activeStops.length - 1; i++) {
+        if (!activeStops[i].scheduledDeparture || !activeStops[i + 1].scheduledArrival) continue;
 
-        if (!trip.stops[i].actualDeparture) {
+        if (!activeStops[i].actualDeparture) {
             if (i === currentStopIndex) return i;
             continue;
         }
 
-        const departureDate = new Date(trip.stops[i].actualDeparture || 0);
+        const departureDate = new Date(activeStops[i].actualDeparture || 0);
         const departureMinutes = timeToMinutes(formatDate(departureDate, 'HH:mm'), departureDate);
 
-        const nextStopDate = new Date(trip.stops[i + 1].scheduledArrival || 0);
+        const nextStopDate = new Date(activeStops[i + 1].scheduledArrival || 0);
         const nextStopMinutes = timeToMinutes(formatDate(nextStopDate, 'HH:mm'), nextStopDate) + delay;
 
         if (currentMinutes >= departureMinutes) lastPassedStopIndex = i;
@@ -197,7 +211,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                     <div className="flex flex-col flex-grow min-w-0">
                         {trip.status !== "canceled" ? (
                             <p className="text-lg sm:text-xl font-bold text-left sm:text-center truncate flex-grow min-w-0">
-                                {trip.status === "scheduled" ? "non ancora partito" : capitalize(trip.lastKnownLocation || "--")}
+                                {trip.status === "scheduled" ? "Non ancora partito" : capitalize(trip.lastKnownLocation || "--")}
                             </p>
                         ) : (
                             <p className="text-xl font-bold text-center">
@@ -214,7 +228,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                         </div>
                     </div>
 
-                    {trip.status !== "scheduled" && (
+                    {(!["scheduled", "canceled"].includes(trip.status)) && (
                         <Button
                             className={`p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors text-white bg-${getDelayColor(trip.delay)}`}
                             radius="sm"
@@ -366,8 +380,8 @@ export default function Trip({ trip }: { trip: TripProps }) {
                     />
                 </div>
             ) : (
-                <div className="flex flex-col gap-2">
-                    {trip.info.slice(0, 2).filter(Boolean).map((alert, index) => (
+                <div className="flex flex-col gap-2 max-w-md mx-auto">
+                    {trip.info && trip.info.filter(Boolean).map((alert, index) => (
                         <span key={index} className="flex flex-row gap-2">
                             <IconAlertTriangleFilled className="text-warning flex-shrink-0 mt-1" size={16} />
                             {alert.message}
