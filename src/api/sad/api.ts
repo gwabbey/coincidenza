@@ -116,56 +116,48 @@ export async function getTrip(id: string): Promise<Trip | null> {
         .reverse()
         .join("-");
 
-    const response = await axios.get(
-        `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${code}/${timestamp}`
-    );
+    const { data: trip } = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${code}/${timestamp}`);
+    const info = await getTripSmartCaring(code, origin, formattedDate);
+    const canvas = await getTripCanvas(code, origin, timestamp);
+    const currentStopIndex = canvas.findIndex((item: any) => item.stazioneCorrente) || -1;
 
-    if (response.status === 200) {
-        const trip = response.data;
-        const info = await getTripSmartCaring(code, origin, formattedDate);
-        const canvas = await getTripCanvas(code, origin, timestamp);
-        const currentStopIndex = canvas.findIndex((item: any) => item.stazioneCorrente) || -1;
+    return {
+        currentStopIndex,
+        lastKnownLocation: capitalize(normalizeStationName(trip.stazioneUltimoRilevamento || "--")),
+        lastUpdate: trip.oraUltimoRilevamento ? new Date(trip.oraUltimoRilevamento) : null,
+        status: getTripStatus(trip),
+        category: getCategory(trip),
+        number: trip.numeroTreno,
+        origin: capitalize(normalizeStationName(trip.origineEstera || trip.origine)),
+        destination: capitalize(normalizeStationName(trip.destinazioneEstera || trip.destinazione)),
+        departureTime: new Date(trip.orarioPartenzaEstera || trip.orarioPartenza),
+        arrivalTime: new Date(trip.orarioArrivoEstera || trip.orarioArrivo),
+        delay: trip.ritardo,
+        alertMessage: trip.subTitle,
+        stops: canvas.map((stop: any, index: number) => {
+            const scheduledArrival = stop.fermata.arrivo_teorico ? new Date(stop.fermata.arrivo_teorico) : null;
+            const scheduledDeparture = stop.fermata.partenza_teorica ? new Date(stop.fermata.partenza_teorica) : null;
 
-        return {
-            currentStopIndex,
-            lastKnownLocation: capitalize(normalizeStationName(trip.stazioneUltimoRilevamento || "--")),
-            lastUpdate: trip.oraUltimoRilevamento ? new Date(trip.oraUltimoRilevamento) : null,
-            status: getTripStatus(trip),
-            category: getCategory(trip),
-            number: trip.numeroTreno,
-            origin: capitalize(normalizeStationName(trip.origineEstera || trip.origine)),
-            destination: capitalize(normalizeStationName(trip.destinazioneEstera || trip.destinazione)),
-            departureTime: new Date(trip.orarioPartenzaEstera || trip.orarioPartenza),
-            arrivalTime: new Date(trip.orarioArrivoEstera || trip.orarioArrivo),
-            delay: trip.ritardo,
-            alertMessage: trip.subTitle,
-            stops: canvas.map((stop: any, index: number) => {
-                const scheduledArrival = stop.fermata.arrivo_teorico ? new Date(stop.fermata.arrivo_teorico) : null;
-                const scheduledDeparture = stop.fermata.partenza_teorica ? new Date(stop.fermata.partenza_teorica) : null;
+            const actualArrival = stop.fermata.arrivoReale ? new Date(stop.fermata.arrivoReale) : null;
+            const actualDeparture = stop.fermata.partenzaReale ? new Date(stop.fermata.partenzaReale) : null;
 
-                const actualArrival = stop.fermata.arrivoReale ? new Date(stop.fermata.arrivoReale) : null;
-                const actualDeparture = stop.fermata.partenzaReale ? new Date(stop.fermata.partenzaReale) : null;
-
-                return {
-                    id: stop.id,
-                    name: capitalize(normalizeStationName(stop.stazione)),
-                    scheduledArrival,
-                    scheduledDeparture,
-                    actualArrival,
-                    actualDeparture,
-                    arrivalDelay: stop.fermata.ritardoArrivo,
-                    departureDelay: stop.fermata.ritardoPartenza,
-                    scheduledPlatform: index === 0 ? stop.fermata.binarioProgrammatoPartenzaDescrizione : stop.fermata.binarioProgrammatoArrivoDescrizione,
-                    actualPlatform: index === 0 ? stop.fermata.binarioEffettivoPartenzaDescrizione : stop.fermata.binarioEffettivoArrivoDescrizione,
-                    status: getStopStatus(stop),
-                };
-            }),
-            info: info && info.map((alert: any) => ({
-                id: alert.id,
-                message: alert.infoNote
-            }))
-        };
-    } else {
-        return null;
-    }
+            return {
+                id: stop.id,
+                name: capitalize(normalizeStationName(stop.stazione)),
+                scheduledArrival,
+                scheduledDeparture,
+                actualArrival,
+                actualDeparture,
+                arrivalDelay: stop.fermata.ritardoArrivo,
+                departureDelay: stop.fermata.ritardoPartenza,
+                scheduledPlatform: index === 0 ? stop.fermata.binarioProgrammatoPartenzaDescrizione : stop.fermata.binarioProgrammatoArrivoDescrizione,
+                actualPlatform: index === 0 ? stop.fermata.binarioEffettivoPartenzaDescrizione : stop.fermata.binarioEffettivoArrivoDescrizione,
+                status: getStopStatus(stop),
+            };
+        }),
+        info: info && info.map((alert: any) => ({
+            id: alert.id,
+            message: alert.infoNote
+        }))
+    };
 }

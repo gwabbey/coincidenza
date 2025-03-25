@@ -118,6 +118,7 @@ export default function Directions() {
                         variant="underlined"
                         label="ora"
                         size="lg"
+                        hourCycle={24}
                         defaultValue={new Time(new Date().getHours(), new Date().getMinutes())}
                         onChange={(time) => setTime(time instanceof Time ? time : new Time(new Date().getHours(), new Date().getMinutes()))}
                     />
@@ -135,7 +136,14 @@ export default function Directions() {
                 {!isLoading && "cerca!"}
             </Button>
             {directions && <Results directions={directions} />}
-            {directions?.nextPageCursor && (
+            {directions && directions.trips.length === 0 && (
+                <div className="pointer-events-auto text-center max-w-2xl mx-auto">
+                    <h1 className="text-2xl font-bold">nessun itinerario trovato</h1>
+                    potresti aver cercato un viaggio in un'area non supportata dall'applicazione,
+                    oppure non ci sono viaggi nell'orario selezionato.
+                </div>
+            )}
+            {directions && directions.trips.length > 0 && directions.nextPageCursor && (
                 <Button
                     startContent={!isLoadingMore && <IconArrowDown />}
                     variant="ghost"

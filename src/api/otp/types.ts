@@ -68,6 +68,7 @@ export interface Line {
     name: string
     category: string
     color: string
+    code: string
 }
 
 export interface Authority {

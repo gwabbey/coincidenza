@@ -5,15 +5,16 @@ import { Directions, Leg } from "@/api/otp/types";
 import LeafletMap from "@/components/leaflet";
 import { RouteModal } from "@/components/modal";
 import Timeline from "@/components/timeline";
-import { getTrainCategory, trainCodeLogos } from "@/train-categories";
+import { trainCodeLogos } from "@/train-categories";
 import { formatDuration, getDelayColor } from "@/utils";
-import { Accordion, AccordionItem, Button, cn, Image, Link, Selection, useDisclosure } from "@heroui/react";
+import { Accordion, AccordionItem, Button, Image, Link, Selection, useDisclosure } from "@heroui/react";
 import { IconAccessPoint, IconBus, IconInfoTriangleFilled, IconMap, IconTrain, IconWalk } from "@tabler/icons-react";
 import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import Steps from "./steps";
 
 export default function Results({ directions }: { directions: Directions }) {
+    console.log(directions);
     const infoModal = useDisclosure();
     const mapModal = useDisclosure();
     const [selectedLeg, setSelectedLeg] = useState<Leg | null>(null);
@@ -30,10 +31,10 @@ export default function Results({ directions }: { directions: Directions }) {
         if (leg.mode === "foot") {
             const distanceInKm = leg.distance / 1000;
             const roundedMeters = Math.round(leg.distance / 100) * 100;
-            const distanceStr = distanceInKm > 1 ? `${distanceInKm.toFixed(1)} km` : `circa ${roundedMeters} metri`;
+            const distanceStr = distanceInKm > 1 ? `circa ${distanceInKm.toFixed(0)} km` : `circa ${roundedMeters} metri`;
             return `${formatDuration(Math.round(leg.duration / 60))} · ${distanceStr}`;
         }
-        return getTrainCategory(leg.line?.name || "") || leg.line?.name || "";
+        return leg.line?.name || "";
     };
 
     const openModal = (leg: Leg, modalType: 'map' | 'info') => {
@@ -75,8 +76,8 @@ export default function Results({ directions }: { directions: Directions }) {
                     <div className="flex flex-col space-y-8 pb-4">
                         {trip.legs
                             .filter(leg => leg.distance >= 50)
-                            .map((leg, legIndex) => (
-                                <div key={legIndex} className="flex flex-col gap-4">
+                            .map((leg, index) => (
+                                <div key={index} className="flex flex-col gap-4">
                                     <div className="flex flex-row justify-between">
                                         <div className="flex flex-row gap-2 items-center">
                                             {icons[leg.mode]}
@@ -114,14 +115,14 @@ export default function Results({ directions }: { directions: Directions }) {
                                                 </span>
                                             </div>
                                         </div>
-                                        {leg.mode !== "foot" && (
+                                        {leg.mode !== "foot" && leg.realtime && (
                                             <Button
                                                 as={Link}
                                                 href={`/track/${agencies[leg.authority?.id as keyof typeof agencies]}/${leg.tripId || leg.code}`}
                                                 variant="bordered"
                                                 isIconOnly
                                                 isExternal
-                                                startContent={<IconAccessPoint size={24} />}
+                                                startContent={<IconAccessPoint />}
                                                 radius="full"
                                                 className="border-gray-500 border-1 self-center"
                                                 aria-label={`${leg.line?.category || ""} ${leg.code || ""} in tempo reale`}
@@ -186,16 +187,7 @@ export default function Results({ directions }: { directions: Directions }) {
                                                             {leg.fromPlace.name}
                                                         </span>
                                                         <div className="flex gap-1 items-center">
-                                                            <span
-                                                                className={cn(
-                                                                    "text-sm",
-                                                                    !leg.realtime?.delay
-                                                                        ? "text-gray-500"
-                                                                        : leg.realtime?.delay === 0
-                                                                            ? "font-bold text-success"
-                                                                            : "text-gray-500 line-through"
-                                                                )}
-                                                            >
+                                                            <span className={`text-sm ${leg.realtime.delay !== null && leg.realtime.delay === 0 ? "font-bold" : "line-through"} ${leg.realtime.delay === 0 ? "text-success" : "text-gray-500"}`}>
                                                                 {format(new Date(leg.aimedStartTime), "HH:mm")}
                                                             </span>
                                                             {leg.realtime && leg.realtime.delay !== 0 && leg.realtime.delay !== null && (
@@ -204,11 +196,9 @@ export default function Results({ directions }: { directions: Directions }) {
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        {leg.intermediateQuays.length > 0 && (
-                                                            <span className="text-gray-500 text-sm -mb-4 mt-3 leading-none">
-                                                                {leg.intermediateQuays.length} fermat{leg.intermediateQuays.length === 1 ? "a" : "e"}, {formatDuration(Math.round(leg.duration / 60))}
-                                                            </span>
-                                                        )}
+                                                        <span className="text-gray-500 text-sm -mb-4 mt-3 leading-none">
+                                                            {leg.intermediateQuays.length > 0 ? leg.intermediateQuays.length : "nessuna"} fermat{leg.intermediateQuays.length <= 1 ? "a" : "e"}, {formatDuration(Math.round(leg.duration / 60))}
+                                                        </span>
                                                     </div>
                                                 )
                                             },
@@ -219,16 +209,7 @@ export default function Results({ directions }: { directions: Directions }) {
                                                             {leg.toPlace.name}
                                                         </span>
                                                         <div className="flex gap-1 items-center">
-                                                            <span
-                                                                className={cn(
-                                                                    "text-sm",
-                                                                    !leg.realtime?.delay
-                                                                        ? "text-gray-500"
-                                                                        : leg.realtime?.delay === 0
-                                                                            ? "font-bold text-success"
-                                                                            : "text-gray-500 line-through"
-                                                                )}
-                                                            >
+                                                            <span className={`text-sm ${leg.realtime.delay !== null && leg.realtime.delay === 0 ? "font-bold" : "line-through"} ${leg.realtime.delay === 0 ? "text-success" : "text-gray-500"}`}>
                                                                 {format(new Date(leg.aimedEndTime), "HH:mm")}
                                                             </span>
                                                             {leg.realtime && leg.realtime.delay !== 0 && leg.realtime.delay !== null && (
@@ -249,7 +230,7 @@ export default function Results({ directions }: { directions: Directions }) {
                     <RouteModal
                         isOpen={mapModal.isOpen}
                         onOpenChange={mapModal.onOpenChange}
-                        title={selectedLeg ? `percorso ${selectedLeg.line?.category} ${selectedLeg.realtime?.destination}` : 'percorso'}
+                        title={selectedLeg ? `percorso ${selectedLeg.line?.category || ''} ${selectedLeg.realtime?.destination || ''}` : 'percorso'}
                     >
                         {selectedLeg && <LeafletMap leg={selectedLeg} className="rounded-small" />}
                     </RouteModal>
@@ -274,7 +255,8 @@ export default function Results({ directions }: { directions: Directions }) {
                         ))}
                     </RouteModal>
                 </AccordionItem>
-            ))}
-        </Accordion>
+            ))
+            }
+        </Accordion >
     );
 }

@@ -1,6 +1,7 @@
 "use server";
 
 import { agencies } from '@/agencies';
+import { trainCategoryLongNames } from '@/train-categories';
 import { Coordinates } from '@/types';
 import { capitalize } from '@/utils';
 import axios from 'axios';
@@ -9,7 +10,7 @@ import { getRealtimeData } from './realtime';
 const OTP_SERVER_IP = process.env.OTP_SERVER_IP || "localhost:8080"
 
 const getCode = (leg: any) => {
-    if (leg.mode === "rail" && leg.authority?.id === "TRENITALIA_VENETO:Dummy-GMT" && leg.serviceJourney?.id) {
+    if (leg.mode === "rail" && leg.authority?.id?.startsWith("TRENITALIA_VENETO") && leg.serviceJourney?.id) {
         const match = leg.serviceJourney?.id?.match(/VehicleJourney:\d+-(\d+)-/);
         return match ? match[1] : null;
     }
@@ -18,30 +19,29 @@ const getCode = (leg: any) => {
 }
 
 const getLine = (leg: any) => {
-    let name = "";
-    let code = "";
+    let name = trainCategoryLongNames[leg.line?.name as keyof typeof trainCategoryLongNames] || leg.line?.name;
+    let category = "";
     let color = "";
     const agency = agencies[leg.authority?.id as keyof typeof agencies];
 
     if (leg.line?.name === "REG") {
-        name = "R";
-        code = "R";
+        category = "R";
     }
 
     if (leg.mode === "rail" && agency === "trenitalia" && leg.serviceJourney?.id) {
         switch (leg.line?.name) {
             case "Regionale Veloce":
-                code = "RV";
+                category = "RV";
                 break;
             case "Regionale":
-                code = "R";
+                category = "R";
                 break;
             default:
                 break;
         }
     }
 
-    if (agency === "trenord" && leg.line?.publicCode?.startsWith("RE")) code = "RE";
+    if (agency === "trenord" && leg.line?.publicCode?.startsWith("RE")) category = "RE";
     if (agency === "trentino-trasporti" && leg.authority?.id?.split(":")[0] === "TT_URBANO" && !leg.line?.presentation?.colour) color = "17c964";
     if (agency === "trentino-trasporti" && leg.authority?.id?.split(":")[0] === "TT_EXTRAURBANO" && !leg.line?.presentation?.colour) color = "006FEE";
     if (agency === "trenitalia" && leg.mode === "rail" && !leg.line?.presentation?.colour) color = "f31260";
@@ -49,8 +49,8 @@ const getLine = (leg: any) => {
     return {
         id: leg.line?.id,
         name: name || leg.line?.name,
-        category: code || leg.line?.publicCode,
-        color: color || leg.line?.presentation?.colour
+        category: category || leg.line?.publicCode,
+        color: color || leg.line?.presentation?.colour || "006FEE"
     }
 }
 
@@ -65,7 +65,7 @@ const processTripData = async (data: { tripPatterns: any[]; nextPageCursor?: str
         const processedLegs = await Promise.all(trip.legs.map(async (leg: any) => {
             const agency = agencies[leg.authority?.id as keyof typeof agencies];
             const serviceJourneyId = agency === "trentino-trasporti" ? leg.serviceJourney?.id.split(":")[1] : getCode(leg);
-            const realtime = await getRealtimeData(leg.authority?.id, serviceJourneyId);
+            const realtime = await getRealtimeData(agency, serviceJourneyId);
 
             return {
                 code: getCode(leg),

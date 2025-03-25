@@ -18,14 +18,22 @@ export const trainCategoryShortNames = {
     "interregionale": "iR",
 }
 
-export function getTrainCategory(input: string) {
-    if (input.includes("AV")) {
-        return "alta velocità";
-    }
-    return (
-        trainCategoryShortNames[input as keyof typeof trainCategoryShortNames] ||
-        (Object.entries(trainCategoryShortNames).find(([_, v]) => v === input)?.[0] ?? null)
-    );
+export const trainCategoryLongNames = {
+    "R": "Regionale",
+    "REG": "Regionale",
+    "RV": "Regionale Veloce",
+    "RE": "Regio Express",
+    "FR": "Frecciarossa",
+    "FB": "Frecciabianca",
+    "EC": "Eurocity",
+    "RJ": "Railjet",
+    "IC": "Intercity",
+    "AV": "Alta Velocità",
+    "ICN": "Intercity Notte",
+    "MXP": "Malpensa Express",
+    "M": "Metropolitano",
+    "E": "Espresso",
+    "iR": "Interregionale",
 }
 
 export const trainCodeLogos = [{
