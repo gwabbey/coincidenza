@@ -10,14 +10,16 @@ export async function getRealtimeData(agency: string, tripId: string) {
             info: trip?.route?.news?.map((alert: any) => ({
                 message: alert.header,
                 url: alert.url
-            })) || null
+            })) || null,
+            status: trip ? "tracked" : "not_tracked"
         }
     } else if (agency === "trenitalia") {
         const trip = await getTrenitaliaTrip(tripId);
         return {
             delay: trip?.delay || null,
             destination: trip?.destination || null,
-            info: trip?.info || null
+            info: trip?.info || null,
+            status: trip ? "tracked" : "not_tracked"
         }
     }
 }

@@ -80,4 +80,5 @@ export interface Realtime {
     delay: number | null
     destination: string | null
     info: Info[] | null
+    status: "tracked" | "not_tracked"
 }

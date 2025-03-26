@@ -115,7 +115,7 @@ export default function Results({ directions }: { directions: Directions }) {
                                                 </span>
                                             </div>
                                         </div>
-                                        {leg.mode !== "foot" && leg.realtime && (
+                                        {leg.mode !== "foot" && leg.realtime.status === "tracked" && (
                                             <Button
                                                 as={Link}
                                                 href={`/track/${agencies[leg.authority?.id as keyof typeof agencies]}/${leg.tripId || leg.code}`}
