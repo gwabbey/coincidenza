@@ -5,12 +5,12 @@ export async function getRealtimeData(agency: string, tripId: string) {
     if (agency === "trentino-trasporti") {
         const trip = await getTrentinoTrip(tripId);
         return {
-            delay: trip.delay,
-            destination: trip.tripHeadsign,
-            info: trip.route?.news?.map((alert: any) => ({
+            delay: trip?.delay || null,
+            destination: trip?.tripHeadsign || null,
+            info: trip?.route?.news?.map((alert: any) => ({
                 message: alert.header,
                 url: alert.url
-            }))
+            })) || null
         }
     } else if (agency === "trenitalia") {
         const trip = await getTrenitaliaTrip(tripId);

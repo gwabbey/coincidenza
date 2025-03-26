@@ -11,6 +11,9 @@ export async function fetchData(endpoint: string, options: { params?: Record<str
         url += `?${searchParams.toString()}`;
     }
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000); // abort after 5s
+
     const httpsAgent = new HttpsProxyAgent(process.env.PROXY_AGENT as string);
 
     const client = axios.create({
@@ -22,7 +25,8 @@ export async function fetchData(endpoint: string, options: { params?: Record<str
             Authorization: `Basic ${Buffer.from(
                 `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
             ).toString("base64")}`
-        }
+        },
+        signal: controller.signal, // attach abort signal
     });
 
     axiosRetry(client, {
@@ -32,8 +36,12 @@ export async function fetchData(endpoint: string, options: { params?: Record<str
 
     try {
         const response = await client.get(url);
+        clearTimeout(timeout);
         return response.data;
     } catch (error: any) {
+        if (axios.isCancel(error)) {
+            return null;
+        }
         throw new Error(`trentino trasporti data fetch error: ${error.message}`);
     }
 }
@@ -60,16 +68,18 @@ export async function getRoutes(type: string) {
 
 export async function getTrip(id: string) {
     const trip = await fetchData(`trips/${id}`);
+    if (!trip) return null;
     const routes = await getRoutes(trip.type);
     return { ...trip, route: routes.find((route: any) => route.routeId === trip.routeId) };
 }
 
 export async function getTripDetails(id: string) {
     const trip = await fetchData(`trips/${id}`);
+    if (!trip) return null;
     const stops = await getStops(trip.type);
     const routes = await getRoutes(trip.type);
 
-    if (!trip) return null;
+    if (!trip || !stops || !routes) return null;
 
     const stopMap = new Map(
         stops.map((stop: Stop) => [stop.stopId, stop.stopName])

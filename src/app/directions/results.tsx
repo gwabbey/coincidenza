@@ -174,8 +174,8 @@ export default function Results({ directions }: { directions: Directions }) {
                                                         <div className="rounded-full bg-green-400 h-[8px] w-[8px] inline-block mr-1"></div>
                                                         <div className="absolute animate-ping rounded-full bg-green-400 h-[8px] w-[8px] mr-1"></div>
                                                     </div>
-                                                    <span className={`font-bold text-sm text-${getDelayColor(leg.realtime.delay)}`}>
-                                                        {leg.realtime.delay !== 0 && formatDuration(leg.realtime.delay, true)} in {leg.realtime.delay > 0 ? "ritardo" : leg.realtime.delay < 0 ? "anticipo" : "orario"}
+                                                    <span className={`font-bold text-sm text-${getDelayColor(leg.realtime?.delay)}`}>
+                                                        {leg.realtime?.delay !== 0 && formatDuration(leg.realtime?.delay, true)} in {leg.realtime?.delay > 0 ? "ritardo" : leg.realtime?.delay < 0 ? "anticipo" : "orario"}
                                                     </span>
                                                 </span>
                                             )}
@@ -187,12 +187,12 @@ export default function Results({ directions }: { directions: Directions }) {
                                                             {leg.fromPlace.name}
                                                         </span>
                                                         <div className="flex gap-1 items-center">
-                                                            <span className={`text-sm ${leg.realtime.delay !== null && leg.realtime.delay === 0 ? "font-bold" : "line-through"} ${leg.realtime.delay === 0 ? "text-success" : "text-gray-500"}`}>
+                                                            <span className={`text-sm ${!leg.realtime?.delay ? "" : leg.realtime.delay && leg.realtime?.delay === 0 ? "font-bold" : "line-through"} ${leg.realtime?.delay === 0 ? "text-success" : "text-gray-500"}`}>
                                                                 {format(new Date(leg.aimedStartTime), "HH:mm")}
                                                             </span>
-                                                            {leg.realtime && leg.realtime.delay !== 0 && leg.realtime.delay !== null && (
-                                                                <span className={`font-bold text-sm text-${getDelayColor(leg.realtime.delay)}`}>
-                                                                    {format(new Date(leg.aimedStartTime).getTime() + (leg.realtime.delay * 60 * 1000), "HH:mm")}
+                                                            {leg.realtime && leg.realtime?.delay !== 0 && leg.realtime?.delay !== null && (
+                                                                <span className={`font-bold text-sm text-${getDelayColor(leg.realtime?.delay)}`}>
+                                                                    {format(new Date(leg.aimedStartTime).getTime() + (leg.realtime?.delay * 60 * 1000), "HH:mm")}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -209,12 +209,12 @@ export default function Results({ directions }: { directions: Directions }) {
                                                             {leg.toPlace.name}
                                                         </span>
                                                         <div className="flex gap-1 items-center">
-                                                            <span className={`text-sm ${leg.realtime.delay !== null && leg.realtime.delay === 0 ? "font-bold" : "line-through"} ${leg.realtime.delay === 0 ? "text-success" : "text-gray-500"}`}>
+                                                            <span className={`text-sm ${!leg.realtime?.delay ? "" : leg.realtime.delay && leg.realtime?.delay === 0 ? "font-bold" : "line-through"} ${leg.realtime?.delay === 0 ? "text-success" : "text-gray-500"}`}>
                                                                 {format(new Date(leg.aimedEndTime), "HH:mm")}
                                                             </span>
-                                                            {leg.realtime && leg.realtime.delay !== 0 && leg.realtime.delay !== null && (
-                                                                <span className={`font-bold text-sm text-${getDelayColor(leg.realtime.delay)}`}>
-                                                                    {format(new Date(leg.aimedEndTime).getTime() + (leg.realtime.delay * 60 * 1000), "HH:mm")}
+                                                            {leg.realtime && leg.realtime?.delay !== 0 && leg.realtime?.delay !== null && (
+                                                                <span className={`font-bold text-sm text-${getDelayColor(leg.realtime?.delay)}`}>
+                                                                    {format(new Date(leg.aimedEndTime).getTime() + (leg.realtime?.delay * 60 * 1000), "HH:mm")}
                                                                 </span>
                                                             )}
                                                         </div>

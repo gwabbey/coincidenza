@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Info, Stop, Trip as TripProps } from "@/api/types";

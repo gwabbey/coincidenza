@@ -64,8 +64,8 @@ const processTripData = async (data: { tripPatterns: any[]; nextPageCursor?: str
     const processedTrips = await Promise.all(data.tripPatterns.map(async (trip) => {
         const processedLegs = await Promise.all(trip.legs.map(async (leg: any) => {
             const agency = agencies[leg.authority?.id as keyof typeof agencies];
-            const serviceJourneyId = agency === "trentino-trasporti" ? leg.serviceJourney?.id.split(":")[1] : getCode(leg);
-            const realtime = await getRealtimeData(agency, serviceJourneyId);
+            const tripId = agency === "trentino-trasporti" ? leg.serviceJourney?.id.split(":")[1] : getCode(leg);
+            const realtime = await getRealtimeData(agency, tripId);
 
             return {
                 code: getCode(leg),
@@ -101,7 +101,7 @@ const processTripData = async (data: { tripPatterns: any[]; nextPageCursor?: str
                 authority: leg.authority,
                 interchangeTo: leg.interchangeTo,
                 interchangeFrom: leg.interchangeFrom,
-                tripId: serviceJourneyId,
+                tripId,
                 realtime
             };
         }));
@@ -111,6 +111,8 @@ const processTripData = async (data: { tripPatterns: any[]; nextPageCursor?: str
             legs: processedLegs
         };
     }));
+
+    console.log(processedTrips)
 
     return {
         trips: processedTrips,
