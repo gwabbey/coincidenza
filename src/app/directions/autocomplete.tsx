@@ -1,9 +1,10 @@
 "use client";
 
 import { geocodeAddress } from "@/api/apple-maps/geocoding";
+import { searchStation } from "@/api/bahn/api";
 import { Coordinates } from "@/types";
 import { Autocomplete, AutocompleteItem, Spinner } from "@heroui/react";
-import { IconMapPin } from "@tabler/icons-react";
+import { IconMapPin, IconTrain } from "@tabler/icons-react";
 import { Key, useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { useDebouncedCallback } from 'use-debounce';
@@ -25,6 +26,7 @@ interface LocationData {
     textValue?: string;
     address?: string;
     coordinates: Coordinates;
+    isBahnStation?: boolean;
 }
 
 export const LocationAutocomplete = ({
@@ -132,6 +134,19 @@ export const LocationAutocomplete = ({
         setLoading(true);
 
         try {
+            const bahnStations = await searchStation(query);
+            const bahnStationLocations = bahnStations.map((station: any) => ({
+                value: `bahn-${station.id}`,
+                label: station.name,
+                textValue: station.name,
+                address: "Stazione",
+                coordinates: {
+                    lat: station.lat,
+                    lon: station.lon
+                },
+                isBahnStation: true
+            }));
+
             const search = await geocodeAddress(query, {
                 limitToCountries: 'IT',
                 lang: 'it-IT',
@@ -153,7 +168,7 @@ export const LocationAutocomplete = ({
                 }
             }));
 
-            setData(locations);
+            setData([...bahnStationLocations, ...locations]);
         } catch (error) {
             if ((error as Error).name === 'AbortError') {
                 console.log("Request aborted");
@@ -197,6 +212,7 @@ export const LocationAutocomplete = ({
                 <AutocompleteItem
                     key={item.value}
                     textValue={item.textValue || (typeof item.label === 'string' ? item.label : 'La tua posizione')}
+                    startContent={item.isBahnStation ? <IconTrain stroke={1.5} /> : undefined}
                 >
                     {typeof item.label === 'string' ? (
                         <div className="flex flex-col">

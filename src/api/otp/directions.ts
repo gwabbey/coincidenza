@@ -76,33 +76,39 @@ const processTripData = async (data: { tripPatterns: any[]; nextPageCursor?: str
                 mode: leg.mode,
                 aimedStartTime: leg.aimedStartTime,
                 aimedEndTime: leg.aimedEndTime,
-                expectedEndTime: leg.expectedEndTime,
                 expectedStartTime: leg.expectedStartTime,
+                expectedEndTime: leg.expectedEndTime,
                 distance: leg.distance,
-                intermediateQuays: leg.intermediateQuays.map((quay: any) => ({
-                    id: quay.id,
-                    name: getStop(quay.name),
-                    latitude: quay.latitude,
-                    longitude: quay.longitude
-                })),
+                intermediateQuays: leg.intermediateQuays.map((quay: any) => {
+                    const matchingCall = leg.intermediateEstimatedCalls.find(
+                        (call: any) => call.quay.id === quay.id
+                    );
+                    return {
+                        id: quay.id,
+                        name: getStop(quay.name),
+                        latitude: quay.latitude,
+                        longitude: quay.longitude,
+                        expectedDepartureTime: matchingCall?.expectedDepartureTime || null,
+                    };
+                }),
                 duration: leg.duration,
                 fromPlace: {
                     name: getStop(leg.fromPlace.name),
                     quay: leg.fromPlace.quay?.id,
                     latitude: leg.fromPlace.latitude,
-                    longitude: leg.fromPlace.longitude
+                    longitude: leg.fromPlace.longitude,
                 },
                 toPlace: {
                     name: getStop(leg.toPlace.name),
                     quay: leg.toPlace.quay?.id,
                     latitude: leg.toPlace.latitude,
-                    longitude: leg.toPlace.longitude
+                    longitude: leg.toPlace.longitude,
                 },
                 authority: leg.authority,
                 interchangeTo: leg.interchangeTo,
                 interchangeFrom: leg.interchangeFrom,
                 tripId,
-                realtime
+                realtime,
             };
         }));
 
@@ -133,7 +139,7 @@ export async function getDirections(
             url: `http://${OTP_SERVER_IP}/otp/transmodel/v3`,
             headers: { 'Content-Type': 'application/json' },
             data: {
-                query: 'query trip($from: Location!, $to: Location!, $arriveBy: Boolean, $dateTime: DateTime, $numTripPatterns: Int, $searchWindow: Int, $modes: Modes, $itineraryFiltersDebug: ItineraryFilterDebugProfile, $wheelchairAccessible: Boolean, $pageCursor: String) {trip( from: $from to: $to arriveBy: $arriveBy dateTime: $dateTime numTripPatterns: $numTripPatterns searchWindow: $searchWindow modes: $modes itineraryFilters: {debug: $itineraryFiltersDebug} wheelchairAccessible: $wheelchairAccessible pageCursor: $pageCursor) { previousPageCursor nextPageCursor tripPatterns { aimedStartTime aimedEndTime expectedEndTime expectedStartTime duration distance legs { id serviceJourney { id publicCode } mode aimedStartTime aimedEndTime expectedEndTime expectedStartTime realtime distance intermediateQuays { id name latitude longitude } duration fromPlace { name latitude longitude quay { id } } toPlace { name latitude longitude quay { id } } toEstimatedCall { destinationDisplay { frontText } } line { publicCode name id presentation { colour } } authority { name id } pointsOnLink { points } interchangeTo { staySeated } interchangeFrom { staySeated } } systemNotices { tag } }}}',
+                query: 'query trip($from: Location!, $to: Location!, $arriveBy: Boolean, $dateTime: DateTime, $numTripPatterns: Int, $searchWindow: Int, $modes: Modes, $itineraryFiltersDebug: ItineraryFilterDebugProfile, $wheelchairAccessible: Boolean, $pageCursor: String) {trip( from: $from to: $to arriveBy: $arriveBy dateTime: $dateTime numTripPatterns: $numTripPatterns searchWindow: $searchWindow modes: $modes itineraryFilters: {debug: $itineraryFiltersDebug} wheelchairAccessible: $wheelchairAccessible pageCursor: $pageCursor) { previousPageCursor nextPageCursor tripPatterns { aimedStartTime aimedEndTime expectedEndTime expectedStartTime duration distance legs { id serviceJourney { id publicCode } mode aimedStartTime aimedEndTime expectedEndTime expectedStartTime realtime distance intermediateEstimatedCalls { quay { id } expectedDepartureTime } intermediateQuays { id name latitude longitude } duration fromPlace { name latitude longitude quay { id } } toPlace { name latitude longitude quay { id } } toEstimatedCall { destinationDisplay { frontText } } line { publicCode name id presentation { colour } } authority { name id } pointsOnLink { points } interchangeTo { staySeated } interchangeFrom { staySeated } } systemNotices { tag } }}}',
                 variables: {
                     from: { coordinates: { latitude: from.lat, longitude: from.lon } },
                     to: { coordinates: { latitude: to.lat, longitude: to.lon } },

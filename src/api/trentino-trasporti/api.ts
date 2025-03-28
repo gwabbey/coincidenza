@@ -12,7 +12,7 @@ export async function fetchData(endpoint: string, options: { params?: Record<str
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 5000); // abort after 5s
+    const timeout = setTimeout(() => controller.abort(), 10000);
 
     const httpsAgent = new HttpsProxyAgent(process.env.PROXY_AGENT as string);
 
@@ -26,7 +26,7 @@ export async function fetchData(endpoint: string, options: { params?: Record<str
                 `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
             ).toString("base64")}`
         },
-        signal: controller.signal, // attach abort signal
+        signal: controller.signal,
     });
 
     axiosRetry(client, {

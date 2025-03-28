@@ -8,13 +8,13 @@ import Timeline from "@/components/timeline";
 import { trainCodeLogos } from "@/train-categories";
 import { formatDuration, getDelayColor } from "@/utils";
 import { Accordion, AccordionItem, Button, Image, Link, Selection, useDisclosure } from "@heroui/react";
-import { IconAccessPoint, IconBus, IconInfoTriangleFilled, IconMap, IconTrain, IconWalk } from "@tabler/icons-react";
+import { IconAccessPoint, IconBus, IconChevronDown, IconInfoTriangleFilled, IconMap, IconTrain, IconWalk } from "@tabler/icons-react";
 import { format } from "date-fns";
+import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import Steps from "./steps";
 
 export default function Results({ directions }: { directions: Directions }) {
-    console.log(directions);
     const infoModal = useDisclosure();
     const mapModal = useDisclosure();
     const [selectedLeg, setSelectedLeg] = useState<Leg | null>(null);
@@ -101,7 +101,7 @@ export default function Results({ directions }: { directions: Directions }) {
                                                                 leg.line?.category
                                                             )} {leg.code}
                                                         </span>
-                                                        <span className="sm:text-lg text-md font-bold truncate">
+                                                        <span className="sm:text-lg text-md font-bold">
                                                             {leg.realtime?.destination || leg.destination}
                                                         </span>
                                                     </div>
@@ -115,7 +115,7 @@ export default function Results({ directions }: { directions: Directions }) {
                                                 </span>
                                             </div>
                                         </div>
-                                        {leg.mode !== "foot" && leg.realtime.status === "tracked" && (
+                                        {leg.mode !== "foot" && leg.realtime?.status === "tracked" && (
                                             <Button
                                                 as={Link}
                                                 href={`/track/${agencies[leg.authority?.id as keyof typeof agencies]}/${leg.tripId || leg.code}`}
@@ -187,7 +187,14 @@ export default function Results({ directions }: { directions: Directions }) {
                                                             {leg.fromPlace.name}
                                                         </span>
                                                         <div className="flex gap-1 items-center">
-                                                            <span className={`text-sm ${!leg.realtime?.delay ? "" : leg.realtime.delay && leg.realtime?.delay === 0 ? "font-bold" : "line-through"} ${leg.realtime?.delay === 0 ? "text-success" : "text-gray-500"}`}>
+                                                            <span
+                                                                className={`text-sm ${leg.realtime?.delay === 0
+                                                                    ? "font-bold text-success"
+                                                                    : leg.realtime?.delay
+                                                                        ? "line-through text-gray-500"
+                                                                        : "text-gray-500"
+                                                                    }`}
+                                                            >
                                                                 {format(new Date(leg.aimedStartTime), "HH:mm")}
                                                             </span>
                                                             {leg.realtime && leg.realtime?.delay !== 0 && leg.realtime?.delay !== null && (
@@ -196,9 +203,49 @@ export default function Results({ directions }: { directions: Directions }) {
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        <span className="text-gray-500 text-sm -mb-4 mt-3 leading-none">
-                                                            {leg.intermediateQuays.length > 0 ? leg.intermediateQuays.length : "nessuna"} fermat{leg.intermediateQuays.length <= 1 ? "a" : "e"}, {formatDuration(Math.round(leg.duration / 60))}
-                                                        </span>
+
+                                                        <div
+                                                            className={`flex items-center justify-start -mb-4 mt-2 ${leg.intermediateQuays.length > 0 ? "cursor-pointer" : ""}`}
+                                                            onClick={() => {
+                                                                const newSelectedKeys = new Set(selectedKeys);
+                                                                const currentKey = `item-${index}-leg-stops`;
+                                                                if (Array.from(selectedKeys).includes(currentKey)) {
+                                                                    newSelectedKeys.delete(currentKey);
+                                                                } else {
+                                                                    newSelectedKeys.add(currentKey);
+                                                                }
+                                                                leg.intermediateQuays.length > 0 && setSelectedKeys(newSelectedKeys);
+                                                            }}
+                                                        >
+                                                            <span className="text-gray-500 text-sm leading-none">
+                                                                {leg.intermediateQuays.length === 0 ? "nessuna" : leg.intermediateQuays.length} fermat{leg.intermediateQuays.length <= 1 ? "a" : "e"}, {formatDuration(Math.round(leg.duration / 60))}
+                                                            </span>
+                                                            {leg.intermediateQuays.length > 0 && (
+                                                                <motion.div
+                                                                    animate={{ rotate: Array.from(selectedKeys).includes(`item-${index}-leg-stops`) ? 180 : 0 }}
+                                                                    transition={{ duration: 0.2 }}
+                                                                    className="ml-1"
+                                                                >
+                                                                    <IconChevronDown size={16} className="text-gray-500" />
+                                                                </motion.div>
+                                                            )}
+                                                        </div>
+                                                        <motion.div
+                                                            initial={{ height: 0, opacity: 0 }}
+                                                            animate={{
+                                                                height: Array.from(selectedKeys).includes(`item-${index}-leg-stops`) ? "auto" : 0,
+                                                                opacity: Array.from(selectedKeys).includes(`item-${index}-leg-stops`) ? 1 : 0
+                                                            }}
+                                                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                                                        >
+                                                            <div className="text-sm text-gray-500 mt-6 -mb-4">
+                                                                {leg.intermediateQuays.map((quay: any) => (
+                                                                    <ul key={quay.id} className="list-disc ml-4">
+                                                                        <li>{quay.name} ({format(new Date(quay.expectedDepartureTime).getTime() + ((leg.realtime?.delay || 0) * 60 * 1000), "HH:mm")})</li>
+                                                                    </ul>
+                                                                ))}
+                                                            </div>
+                                                        </motion.div>
                                                     </div>
                                                 )
                                             },
@@ -209,7 +256,14 @@ export default function Results({ directions }: { directions: Directions }) {
                                                             {leg.toPlace.name}
                                                         </span>
                                                         <div className="flex gap-1 items-center">
-                                                            <span className={`text-sm ${!leg.realtime?.delay ? "" : leg.realtime.delay && leg.realtime?.delay === 0 ? "font-bold" : "line-through"} ${leg.realtime?.delay === 0 ? "text-success" : "text-gray-500"}`}>
+                                                            <span
+                                                                className={`text-sm ${leg.realtime?.delay === 0
+                                                                    ? "font-bold text-success"
+                                                                    : leg.realtime?.delay
+                                                                        ? "line-through text-gray-500"
+                                                                        : "text-gray-500"
+                                                                    }`}
+                                                            >
                                                                 {format(new Date(leg.aimedEndTime), "HH:mm")}
                                                             </span>
                                                             {leg.realtime && leg.realtime?.delay !== 0 && leg.realtime?.delay !== null && (
