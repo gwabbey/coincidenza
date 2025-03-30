@@ -15,6 +15,7 @@ import { useEffect, useState } from "react";
 import Steps from "./steps";
 
 export default function Results({ directions }: { directions: Directions }) {
+    console.log(directions);
     const infoModal = useDisclosure();
     const mapModal = useDisclosure();
     const [selectedLeg, setSelectedLeg] = useState<Leg | null>(null);

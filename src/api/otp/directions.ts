@@ -10,6 +10,7 @@ import { getRealtimeData } from './realtime';
 const OTP_SERVER_IP = process.env.OTP_SERVER_IP || "localhost:8080"
 
 const getCode = (leg: any) => {
+    console.log(leg)
     if (leg.mode === "rail" && leg.authority?.id?.startsWith("TRENITALIA_VENETO") && leg.serviceJourney?.id) {
         const match = leg.serviceJourney?.id?.match(/VehicleJourney:\d+-(\d+)-/);
         return match ? match[1] : null;

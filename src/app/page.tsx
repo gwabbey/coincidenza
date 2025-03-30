@@ -10,8 +10,8 @@ const links = [
 export default function Page() {
     return (
         <div className="flex flex-col items-center justify-start gap-4 text-center">
-            <h1 className="text-2xl font-bold">ciao!</h1>
-            <h1 className="text-2xl max-w-2xl">pianifica un viaggio con i mezzi pubblici senza problemi :)</h1>
+            <h1 className="text-2xl font-bold">Ciao!</h1>
+            <h1 className="text-2xl max-w-2xl">Pianifica un viaggio con i mezzi pubblici senza problemi ✨</h1>
             {links.map((link, index) => (
                 <Button variant="solid"
                     startContent={<link.icon />}

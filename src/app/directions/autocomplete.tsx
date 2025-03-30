@@ -139,7 +139,6 @@ export const LocationAutocomplete = ({
                 value: `bahn-${station.id}`,
                 label: station.name,
                 textValue: station.name,
-                address: "Stazione",
                 coordinates: {
                     lat: station.lat,
                     lon: station.lon

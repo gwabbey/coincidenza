@@ -91,7 +91,7 @@ export default function Directions() {
 
     return (
         <div className="flex flex-col gap-4">
-            <h1 className="text-2xl font-bold text-center">cerca itinerario</h1>
+            <h1 className="text-2xl font-bold text-center">Cerca itinerario</h1>
             <div className="flex flex-col md:flex-row justify-center items-center gap-4">
                 <LocationAutocomplete
                     name="from"

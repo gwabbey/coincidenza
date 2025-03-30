@@ -12,7 +12,7 @@ export async function fetchData(endpoint: string, options: { params?: Record<str
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    const timeout = setTimeout(() => controller.abort(), 30000);
 
     const httpsAgent = new HttpsProxyAgent(process.env.PROXY_AGENT as string);
 
