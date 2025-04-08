@@ -27,6 +27,7 @@ function normalizeStationName(name: string): string {
         .replace(/\bc\.? ?le\b/g, "centrale")
         .replace("posto comunicazione", "pc")
         .replace("`", "'")
+        .replace(/\s*-\s*/g, "-")
         .replace(/\s+/g, ' ')
         .trim();
 }

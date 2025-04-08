@@ -1,7 +1,7 @@
 "use server";
 
 import { agencies } from '@/agencies';
-import { trainCategoryLongNames } from '@/train-categories';
+import { trainCategoryLongNames, trainCategoryShortNames } from '@/train-categories';
 import { Coordinates } from '@/types';
 import { capitalize } from '@/utils';
 import axios from 'axios';
@@ -12,7 +12,7 @@ const OTP_SERVER_IP = process.env.OTP_SERVER_IP || "localhost:8080"
 const getCode = (leg: any) => {
     console.log(leg)
     if (leg.mode === "rail" && leg.authority?.id?.startsWith("TRENITALIA_VENETO") && leg.serviceJourney?.id) {
-        const match = leg.serviceJourney?.id?.match(/VehicleJourney:\d+-(\d+)-/);
+        const match = leg.serviceJourney?.id?.match(/ServiceJourney:\d+-(\d+)-/);
         return match ? match[1] : null;
     }
 
@@ -21,7 +21,7 @@ const getCode = (leg: any) => {
 
 const getLine = (leg: any) => {
     let name = trainCategoryLongNames[leg.line?.name as keyof typeof trainCategoryLongNames] || leg.line?.name;
-    let category = "";
+    let category = trainCategoryShortNames[leg.line?.name.toLowerCase() as keyof typeof trainCategoryShortNames] || "";
     let color = "";
     const agency = agencies[leg.authority?.id as keyof typeof agencies];
 
@@ -56,8 +56,8 @@ const getLine = (leg: any) => {
 }
 
 const getStop = (name: string) => {
-    const match = name.match(/Stazione di (.+)/i);
-    const extracted = match ? match[1] : name;
+    const match = name.match(/^(?:Stazione di\s+(.+)|(.+?),?\s*Stazione)$/i);
+    const extracted = match?.[1] || match?.[2] || "";
     return capitalize(extracted);
 }
 

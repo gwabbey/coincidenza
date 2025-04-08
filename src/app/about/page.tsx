@@ -7,7 +7,7 @@ export default async function About() {
             <h1 className="text-2xl font-bold">Il progetto</h1>
             <div>Ho realizzato questo sito per semplificare i viaggi col trasporto pubblico in Trentino.</div>
             <div>L'obiettivo è fornire un'unica interfaccia dove trovare tutte le informazioni necessarie da tutte le compagnie e linee presenti in regione.</div>
-            <Alert className="p-4 text-center" hideIcon variant="faded" color="warning">
+            <Alert className="p-4 text-center max-w-2xl mx-auto" hideIcon variant="faded" color="warning">
                 Questo progetto è realizzato esclusivamente a scopo personale e didattico. Tutti i dati utilizzati sono reperiti da fonti pubblicamente accessibili online.
                 Tutti i diritti sui dati e sui contenuti appartengono ai rispettivi proprietari.
             </Alert>

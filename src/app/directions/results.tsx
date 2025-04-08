@@ -8,14 +8,13 @@ import Timeline from "@/components/timeline";
 import { trainCodeLogos } from "@/train-categories";
 import { formatDuration, getDelayColor } from "@/utils";
 import { Accordion, AccordionItem, Button, Image, Link, Selection, useDisclosure } from "@heroui/react";
-import { IconAccessPoint, IconBus, IconChevronDown, IconInfoTriangleFilled, IconMap, IconTrain, IconWalk } from "@tabler/icons-react";
+import { IconAccessPoint, IconBus, IconChevronDown, IconExternalLink, IconInfoTriangleFilled, IconMap, IconTrain, IconWalk } from "@tabler/icons-react";
 import { format } from "date-fns";
 import { motion } from "motion/react";
 import { useEffect, useState } from "react";
 import Steps from "./steps";
 
 export default function Results({ directions }: { directions: Directions }) {
-    console.log(directions);
     const infoModal = useDisclosure();
     const mapModal = useDisclosure();
     const [selectedLeg, setSelectedLeg] = useState<Leg | null>(null);
@@ -68,8 +67,9 @@ export default function Results({ directions }: { directions: Directions }) {
                                     .filter(leg => leg.mode !== "foot")
                                     .length - 1;
                                 const duration = formatDuration(Math.round(trip.duration / 60));
+                                if (trip.legs.length === 1 && trip.legs[0].mode === "foot") return `circa ${duration} · a piedi`;
 
-                                return `${duration} · ${transfers < 1 ? "diretto" : transfers + " " + (transfers > 1 ? "cambi" : "cambio")}`;
+                                return `${duration} · ${transfers < 1 ? "nessun cambio" : transfers + " " + (transfers > 1 ? "cambi" : "cambio")}`;
                             })()}
                         </div>
                     }
@@ -298,7 +298,7 @@ export default function Results({ directions }: { directions: Directions }) {
                         {selectedLeg && selectedLeg.realtime?.info && selectedLeg.realtime?.info.map((alert: any, index: number) => (
                             <div key={index} className="flex flex-col gap-2">
                                 {alert.url ? (
-                                    <Link isExternal showAnchorIcon href={alert.url}>
+                                    <Link isExternal showAnchorIcon href={alert.url} anchorIcon={<IconExternalLink className="flex-shrink-0 ml-2" size={16} />}>
                                         {alert.message}
                                     </Link>
                                 ) : (

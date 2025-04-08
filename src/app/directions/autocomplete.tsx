@@ -96,7 +96,7 @@ export const LocationAutocomplete = ({
                     : "Errore nel recupero della posizione.";
 
                 toast.error(errorMessage);
-                console.error('Error getting current position:', error);
+                console.error('error getting current position:', error);
                 return;
             }
         }
