@@ -56,16 +56,26 @@ const getLine = (leg: any) => {
 }
 
 const getStop = (name: string) => {
-    const match = name.match(/^(?:Stazione di\s+(.+)|(.+?),?\s*Stazione)$/i);
-    const extracted = match?.[1] || match?.[2] || "";
-    return capitalize(extracted);
-}
+    // case 1: "Luogo, Stazione di Luogo" → "Luogo"
+    const stazioneDiMatch = name.match(/Stazione di\s+(.+)/i);
+    if (stazioneDiMatch) return capitalize(stazioneDiMatch[1]);
+
+    // case 2: "Luogo, Stazione" → "Luogo"
+    const luogoStazioneMatch = name.match(/^(.+?),\s*Stazione$/i);
+    if (luogoStazioneMatch) return capitalize(luogoStazioneMatch[1]);
+
+    // case 3: "Luogo (Provincia), Luogo" → "Luogo"
+    const parensMatch = name.match(/^([^(]+)\s*\(.*?\),\s*\1$/);
+    if (parensMatch) return capitalize(parensMatch[1].trim());
+
+    return capitalize(name);
+};
 
 const processTripData = async (data: { tripPatterns: any[]; nextPageCursor?: string }) => {
     const processedTrips = await Promise.all(data.tripPatterns.map(async (trip) => {
         const processedLegs = await Promise.all(trip.legs.map(async (leg: any) => {
             const agency = agencies[leg.authority?.id as keyof typeof agencies];
-            const tripId = agency === "trentino-trasporti" ? leg.serviceJourney?.id.split(":")[1] : getCode(leg);
+            const tripId = agency === "trentino-trasporti" ? leg.serviceJourney?.id.split(":")[1] : leg.serviceJourney?.publicCode ? leg.serviceJourney.publicCode.split(' ')[1] : getCode(leg);
             const realtime = await getRealtimeData(agency, tripId);
 
             return {
@@ -118,8 +128,6 @@ const processTripData = async (data: { tripPatterns: any[]; nextPageCursor?: str
             legs: processedLegs
         };
     }));
-
-    console.log(processedTrips)
 
     return {
         trips: processedTrips,

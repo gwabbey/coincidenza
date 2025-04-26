@@ -61,9 +61,8 @@ async function getRfiMonitor(id: string) {
 
         const shortCategory = getShortCategory(category);
 
-        let company = $(element).find('td[id="RVettore"] img').attr('alt')?.toLowerCase().trim() || null;
-        const getCompany = (company: string | null): string | null => {
-            if (!company) return null;
+        let company = $(element).find('td[id="RVettore"] img').attr('alt')?.toLowerCase()?.trim() || "";
+        const getCompany = (company: string): string => {
             if (company === 'ente volturno autonomo') return 'EAV';
             if (company === 'sad - trasporto locale spa') return 'SAD';
             if (company.startsWith('obb')) return 'OBB';

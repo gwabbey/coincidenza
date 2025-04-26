@@ -2,7 +2,7 @@
 import axios from "axios";
 
 export async function searchStation(query: string) {
-    const { data } = await axios.get(`https://int.bahn.de/web/api/reiseloesung/orte?suchbegriff=${query}&typ=ALL&limit=2`);
+    const { data } = await axios.get(`https://int.bahn.de/web/api/reiseloesung/orte?suchbegriff=${query}%20&typ=ALL&limit=2`);
     if (!data) return [];
     return data.filter(
         (item: any) =>

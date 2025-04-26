@@ -29,8 +29,12 @@ function findMatchingStation(stationName: string): string | null {
         return null;
     }
 
+    const normalize = (s: string) => s.replace(/\s*[-.]\s*/g, match => match.trim()).trim();
+
+    const normalizedInput = normalize(stationName);
+
     for (const [id, name] of Object.entries(stations)) {
-        if (stationName === name) {
+        if (normalizedInput === normalize(name)) {
             return id;
         }
     }

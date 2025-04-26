@@ -1,4 +1,6 @@
 export const agencies = {
+    "test:TI": "trenitalia",
+    "test:TN": "trenord",
     "TT_URBANO:12": "trentino-trasporti",
     "TT_EXTRAURBANO:12": "trentino-trasporti",
     "TRENITALIA_VENETO:Dummy-Europe/Rome": "trenitalia",
