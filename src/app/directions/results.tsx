@@ -5,9 +5,8 @@ import { Directions, Leg } from "@/api/otp/types";
 import LeafletMap from "@/components/leaflet";
 import { RouteModal } from "@/components/modal";
 import Timeline from "@/components/timeline";
-import { trainCodeLogos } from "@/train-categories";
 import { formatDuration, getDelayColor } from "@/utils";
-import { Accordion, AccordionItem, Button, Image, Link, Selection, useDisclosure } from "@heroui/react";
+import { Accordion, AccordionItem, Button, Link, Selection, useDisclosure } from "@heroui/react";
 import { IconAccessPoint, IconBus, IconChevronDown, IconExternalLink, IconInfoTriangleFilled, IconMap, IconTrain, IconWalk } from "@tabler/icons-react";
 import { format } from "date-fns";
 import { motion } from "motion/react";
@@ -63,13 +62,20 @@ export default function Results({ directions }: { directions: Directions }) {
                     subtitle={
                         <div className="flex flex-col gap-1">
                             {(() => {
-                                const transfers = trip.legs
-                                    .filter(leg => leg.mode !== "foot")
-                                    .length - 1;
-                                const duration = formatDuration(Math.round(trip.duration / 60));
-                                if (trip.legs.length === 1 && trip.legs[0].mode === "foot") return `circa ${duration} · a piedi`;
+                                let effectiveDuration = trip.duration;
+                                if (trip.legs.length > 1) {
+                                    if (trip.legs[0].mode === "foot") effectiveDuration -= trip.legs[0].duration;
+                                    if (trip.legs[trip.legs.length - 1].mode === "foot") effectiveDuration -= trip.legs[trip.legs.length - 1].duration;
+                                }
+                                const transfers = trip.legs.filter(leg => leg.mode !== "foot").length - 1;
+                                const duration = formatDuration(Math.round(effectiveDuration / 60));
+                                if (trip.legs.length === 1 && trip.legs[0].mode === "foot")
+                                    return `circa ${duration} · a piedi`;
 
-                                return `${duration} · ${transfers < 1 ? "nessun cambio" : transfers + " " + (transfers > 1 ? "cambi" : "cambio")}`;
+                                return `${duration} · ${transfers < 1
+                                    ? "nessun cambio"
+                                    : transfers + " " + (transfers > 1 ? "cambi" : "cambio")
+                                    }`;
                             })()}
                         </div>
                     }
@@ -91,19 +97,19 @@ export default function Results({ directions }: { directions: Directions }) {
                                                             textAlign: leg.line?.color ? "center" : "left",
                                                             color: leg.line?.color ? "white" : "inherit",
                                                         }}>
-                                                            {trainCodeLogos.find(code => code.code === leg.line?.category)?.url ? (
+                                                            {/* {trainCodeLogos.find(code => code.code === leg.line?.category)?.url ? (
                                                                 <Image
                                                                     src={trainCodeLogos.find(code => code.code === leg.line?.category)?.url ?? ""}
                                                                     alt={leg.code || ""}
                                                                     radius="none"
                                                                     className="flex h-4 self-center w-auto max-w-full invert"
                                                                 />
-                                                            ) : (
-                                                                leg.line?.category
-                                                            )} {leg.code}
+                                                            ) : ( */}
+                                                            {leg.line?.category}
+                                                            {/* )}  */} {leg.code}
                                                         </span>
                                                         <span className="sm:text-lg text-md font-bold">
-                                                            {leg.realtime?.destination || leg.destination}
+                                                            {leg.destination || leg.realtime?.destination}
                                                         </span>
                                                     </div>
                                                 ) : (
@@ -312,6 +318,6 @@ export default function Results({ directions }: { directions: Directions }) {
                 </AccordionItem>
             ))
             }
-        </Accordion >
+        </Accordion>
     );
 }

@@ -34,7 +34,7 @@ function normalizeStationName(name: string): string {
 
 function getTripStatus(trip: any) {
     if (trip.provvedimento === 1) return "canceled";
-    if (trip.nonPartito) return "scheduled";
+    if (trip.nonPartito && !trip.oraUltimoRilevamento) return "scheduled";
     if (trip.arrivato) return "completed";
     return "active";
 }

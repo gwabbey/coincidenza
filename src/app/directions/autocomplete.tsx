@@ -1,6 +1,5 @@
 "use client";
 
-import { geocodeAddress } from "@/api/apple-maps/geocoding";
 import { searchStation } from "@/api/bahn/api";
 import { Coordinates } from "@/types";
 import { Autocomplete, AutocompleteItem, Spinner } from "@heroui/react";
@@ -146,28 +145,29 @@ export const LocationAutocomplete = ({
                 isBahnStation: true
             }));
 
-            const search = await geocodeAddress(query, {
-                limitToCountries: 'IT',
-                lang: 'it-IT',
-                userLocation: userLocation ? `${userLocation.lat},${userLocation.lon}` : undefined,
-                searchLocation: '46.0722416,11.1193186'
-            });
+            // const search = await geocodeAddress(query, {
+            //     limitToCountries: 'IT',
+            //     lang: 'it-IT',
+            //     userLocation: userLocation ? `${userLocation.lat},${userLocation.lon}` : undefined,
+            //     searchLocation: '46.0722416,11.1193186'
+            // });
 
-            const locations = search.results.map((location: any) => ({
-                value: JSON.stringify(location),
-                label: location.displayLines[0],
-                textValue: location.displayLines[0],
-                address: [
-                    location.structuredAddress?.locality ?? location.displayLines[1],
-                    location.structuredAddress?.fullThoroughfare ?? location.structuredAddress?.subLocality
-                ].filter(Boolean).join(', '),
-                coordinates: {
-                    lat: location.location.latitude,
-                    lon: location.location.longitude
-                }
-            }));
+            // const locations = search.results.map((location: any) => ({
+            //     value: JSON.stringify(location),
+            //     label: location.displayLines[0],
+            //     textValue: location.displayLines[0],
+            //     address: [
+            //         location.structuredAddress?.locality ?? location.displayLines[1],
+            //         location.structuredAddress?.fullThoroughfare ?? location.structuredAddress?.subLocality
+            //     ].filter(Boolean).join(', '),
+            //     coordinates: {
+            //         lat: location.location.latitude,
+            //         lon: location.location.longitude
+            //     }
+            // }));
 
-            setData([...bahnStationLocations, ...locations]);
+            // setData([...bahnStationLocations, ...locations]);
+            setData([...bahnStationLocations]);
         } catch (error) {
             if ((error as Error).name === 'AbortError') {
                 console.log("Request aborted");

@@ -216,7 +216,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                     <div className="flex flex-col flex-grow min-w-0">
                         {trip.status !== "canceled" ? (
                             <p className="text-lg sm:text-xl font-bold text-left sm:text-center truncate flex-grow min-w-0">
-                                {trip.status === "scheduled" ? "Non ancora partito" : capitalize(trip.lastKnownLocation || "--")}
+                                {trip.status === "scheduled" ? "non ancora partito" : capitalize(trip.lastKnownLocation || "--")}
                             </p>
                         ) : (
                             <p className="text-xl font-bold text-center">

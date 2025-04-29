@@ -35,6 +35,8 @@ function getTrackUrl(company: string, trainNumber: string): string | null {
             return `/track/trenitalia/${trainNumber}`;
         case "italo":
             return null;
+        case "öbb":
+            return null;
         default:
             return `/track/trenitalia/${trainNumber}`;
     }
@@ -69,7 +71,7 @@ export function Monitor({ monitor }: { monitor: any }) {
     if (monitor.trains.length === 0) {
         return (
             <p className="text-center text-lg text-gray-500 font-bold p-4">
-                nessun treno in partenza
+                nessuna corsa in partenza
             </p>
         );
     }

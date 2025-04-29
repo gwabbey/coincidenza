@@ -135,7 +135,11 @@ export default function Directions() {
             >
                 {!isLoading && "cerca!"}
             </Button>
+
             {directions && <Results directions={directions} />}
+
+
+
             {directions && directions.trips.length === 0 && (
                 <div className="pointer-events-auto text-center max-w-2xl mx-auto">
                     <h1 className="text-2xl font-bold">nessun itinerario trovato</h1>

@@ -13,7 +13,7 @@ export async function getRealtimeData(agency: string, tripId: string) {
             })) || null,
             status: trip ? "tracked" : "not_tracked"
         }
-    } else if (agency === "trenitalia") {
+    } else if (agency === "trenitalia" || agency === "trenord") {
         const trip = await getTrenitaliaTrip(tripId);
         return {
             delay: trip?.delay || null,

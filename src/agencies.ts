@@ -6,6 +6,6 @@ export const agencies = {
     "TRENITALIA_VENETO:Dummy-Europe/Rome": "trenitalia",
     "STA:südtirolmobil - altoadigemobilità": "trenitalia",
     "STA:Dummy-Europe/Rome": "trenitalia",
-    "TRENORD:1": "trenord",
+    "TRENORD:1": "trenitalia",
     "OEBB:1": "oebb",
 }
