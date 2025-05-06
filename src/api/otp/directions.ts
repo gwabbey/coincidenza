@@ -9,6 +9,85 @@ import { getRealtimeData } from './realtime';
 
 const OTP_SERVER_IP = process.env.OTP_SERVER_IP || "localhost:8080";
 
+// Configuration for walking bypass
+const WALKING_BYPASS = {
+    enabled: true,
+    threshold: 500, // meters
+    walkingFactor: 1.3, // multiplier for straight-line distance
+    walkingSpeed: 1.4, // m/s
+};
+
+/**
+ * Calculate Haversine distance between two points in meters
+ */
+function calculateHaversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371000; // Earth radius in meters
+    const dLat = toRadians(lat2 - lat1);
+    const dLon = toRadians(lon2 - lon1);
+
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in meters
+}
+
+/**
+ * Convert degrees to radians
+ */
+function toRadians(degrees: number): number {
+    return degrees * Math.PI / 180;
+}
+
+/**
+ * Process walking legs to bypass OTP for short distances
+ */
+function processWalkingLeg(leg: any): any {
+    // Skip if bypass is disabled or this isn't a walking leg
+    if (!WALKING_BYPASS.enabled || leg.mode !== 'foot') {
+        return leg;
+    }
+
+    // Get coordinates
+    const fromCoords = {
+        latitude: leg.fromPlace?.latitude,
+        longitude: leg.fromPlace?.longitude
+    };
+
+    const toCoords = {
+        latitude: leg.toPlace?.latitude,
+        longitude: leg.toPlace?.longitude
+    };
+
+    // Calculate straight-line distance
+    const straightLineDistance = calculateHaversineDistance(
+        fromCoords.latitude, fromCoords.longitude,
+        toCoords.latitude, toCoords.longitude
+    );
+
+    // If within threshold, replace with straight-line estimate
+    if (straightLineDistance <= WALKING_BYPASS.threshold) {
+        // Estimate actual walking distance with factor
+        const estimatedDistance = straightLineDistance * WALKING_BYPASS.walkingFactor;
+
+        // Calculate estimated duration in seconds
+        const estimatedDuration = Math.ceil(estimatedDistance / WALKING_BYPASS.walkingSpeed);
+
+        // Update leg with our estimates
+        return {
+            ...leg,
+            distance: estimatedDistance,
+            duration: estimatedDuration,
+            // Flag this leg as externally routed
+            useExternalDirections: true,
+        };
+    }
+
+    return leg;
+}
+
 /**
  * Extracts the train/service code from a leg
  */
@@ -17,11 +96,14 @@ const getCode = (leg: any): string | null => {
 
     const id = leg.serviceJourney.id;
 
-    // Handle TRENITALIA_VENETO format
     if (id.startsWith("TRENITALIA_VENETO")) {
         const match = id.match(/ServiceJourney:\d+-([\w\d]+)-/);
-        if (match) return match[1];
-        return null;
+        return match ? match[1] : null;
+    }
+
+    if (id.startsWith("STA")) {
+        const match = id.match(/:ServiceJourney:[^-]+-TI-(\d+)-/);
+        return match ? match[1] : null;
     }
 
     // Use publicCode if available
@@ -37,12 +119,11 @@ const getCode = (leg: any): string | null => {
  * Processes line information with consistent formatting and categorization
  */
 const getLine = (leg: any) => {
-    let name = trainCategoryLongNames[leg.line?.name as keyof typeof trainCategoryLongNames] || leg.line?.name;
-    let category = trainCategoryShortNames[leg.line?.name.toLowerCase() as keyof typeof trainCategoryShortNames] || "";
+    let name = trainCategoryLongNames[leg.line?.name as keyof typeof trainCategoryLongNames];
+    let category = trainCategoryShortNames[leg.line?.name.toLowerCase() as keyof typeof trainCategoryShortNames];
     let color = "";
     const agency = agencies[leg.authority?.id as keyof typeof agencies];
 
-    // Handle specific cases for different agencies
     if (leg.line?.name === "REG") {
         category = "R";
     }
@@ -55,7 +136,6 @@ const getLine = (leg: any) => {
     if (agency === "trenord" && leg.line?.publicCode?.startsWith("R")) category = "R";
     if (agency === "trenord" && leg.line?.publicCode?.startsWith("RE")) category = "RE";
 
-    // Default colors for specific agencies
     if (agency === "trentino-trasporti" && leg.authority?.id?.split(":")[0] === "TT_URBANO" && !leg.line?.presentation?.colour) color = "17c964";
     if (agency === "trentino-trasporti" && leg.authority?.id?.split(":")[0] === "TT_EXTRAURBANO" && !leg.line?.presentation?.colour) color = "006FEE";
     if (agency === "trenitalia" && leg.mode === "rail" && !leg.line?.presentation?.colour) color = "f31260";
@@ -90,139 +170,112 @@ const getStop = (name: string): string => {
 };
 
 /**
- * Creates a unique signature for a trip leg to identify duplicates
- */
-const getTripLegSignature = (leg: any): string => {
-    const code = getCode(leg) || '';
-    const agency = agencies[leg.authority?.id as keyof typeof agencies] || '';
-    const line = leg.line?.name || '';
-    const category = getLine(leg).category || '';
-    const trainNumber = leg.serviceJourney?.publicCode || '';
-
-    return `${agency}-${line}-${category}-${code}-${trainNumber}`;
-};
-
-/**
- * Generates a signature for the entire trip based on its transit legs
- */
-const getTripSignature = (trip: any): string => {
-    // Filter to only include transit legs (not walking/cycling)
-    const transitLegs = trip.legs.filter((leg: any) =>
-        leg.mode !== 'foot' && leg.mode !== 'bicycle');
-
-    if (transitLegs.length === 0) return 'walking-only';
-
-    // Create signature from transit legs
-    return transitLegs
-        .map(getTripLegSignature)
-        .join('|');
-};
-
-/**
- * Processes trip data from OTP API into a cleaner format
+ * Processes trip data from OTP API into a cleaner format with destination filtering
  */
 const processTripData = async (data: { tripPatterns: any[]; nextPageCursor?: string }) => {
     if (!data.tripPatterns || !Array.isArray(data.tripPatterns)) {
         return { trips: [], nextPageCursor: data.nextPageCursor };
     }
 
-    // First pass: Process trips without realtime data for deduplication
-    const processedTrips = data.tripPatterns.map((trip) => {
-        const processedLegs = trip.legs.map((leg: any) => {
-            const agency = agencies[leg.authority?.id as keyof typeof agencies];
-            const tripId = agency === "trentino-trasporti"
-                ? leg.serviceJourney?.id?.split(":")[1]
-                : getCode(leg);
+    // Process all trips and filter those with destination mismatches
+    const processedTrips = await Promise.all(
+        data.tripPatterns.map(async (trip) => {
+            // Process each leg, handling walking segments specially
+            const processedLegs = await Promise.all(trip.legs.map(async (leg: any) => {
+                // Apply walking bypass for foot segments
+                const processedLeg = leg.mode === 'foot' ? processWalkingLeg(leg) : leg;
 
-            // Determine transport mode
-            const mode = leg.line?.name?.toLowerCase()?.includes("autobus")
-                ? "bus"
-                : leg.mode;
+                const agency = agencies[processedLeg.authority?.id as keyof typeof agencies];
+                const tripId = agency === "trentino-trasporti" ? processedLeg.serviceJourney?.id?.split(":")[1] : /[a-zA-Z]/g.test(getCode(processedLeg) || "") ? processedLeg.serviceJourney?.publicCode.split(" ")[1] : getCode(processedLeg);
+
+                // Determine transport mode
+                const mode = processedLeg.line?.name?.toLowerCase()?.includes("autobus")
+                    ? "bus"
+                    : processedLeg.mode;
+
+                // Get realtime data if available
+                const realtime = tripId ? await getRealtimeData(agency, tripId) : null;
+
+                // Get the original destination
+                const originalDestination = capitalize(processedLeg.toEstimatedCall?.destinationDisplay?.frontText || "");
+
+                return {
+                    code: getCode(processedLeg),
+                    line: getLine(processedLeg),
+                    destination: originalDestination,
+                    points: processedLeg.pointsOnLink?.points || [],
+                    id: processedLeg.id,
+                    mode: mode,
+                    aimedStartTime: processedLeg.aimedStartTime,
+                    aimedEndTime: processedLeg.aimedEndTime,
+                    expectedStartTime: processedLeg.expectedStartTime || processedLeg.aimedStartTime,
+                    expectedEndTime: processedLeg.expectedEndTime || processedLeg.aimedEndTime,
+                    distance: processedLeg.distance,
+                    // Rest of the properties...
+                    intermediateQuays: (processedLeg.intermediateQuays || []).map((quay: any) => {
+                        const matchingCall = (processedLeg.intermediateEstimatedCalls || []).find(
+                            (call: any) => call.quay.id === quay.id
+                        );
+                        return {
+                            id: quay.id,
+                            name: getStop(quay.name),
+                            latitude: quay.latitude,
+                            longitude: quay.longitude,
+                            expectedDepartureTime: matchingCall?.expectedDepartureTime || null,
+                        };
+                    }),
+                    duration: processedLeg.duration,
+                    fromPlace: {
+                        name: getStop(processedLeg.fromPlace?.name),
+                        quay: processedLeg.fromPlace?.quay?.id,
+                        latitude: processedLeg.fromPlace?.latitude,
+                        longitude: processedLeg.fromPlace?.longitude,
+                    },
+                    toPlace: {
+                        name: getStop(processedLeg.toPlace?.name),
+                        quay: processedLeg.toPlace?.quay?.id,
+                        latitude: processedLeg.toPlace?.latitude,
+                        longitude: processedLeg.toPlace?.longitude,
+                    },
+                    authority: processedLeg.authority,
+                    interchangeTo: processedLeg.interchangeTo,
+                    interchangeFrom: processedLeg.interchangeFrom,
+                    tripId,
+                    realtime,
+                    // Flag for destination mismatch
+                    destinationMismatch: realtime?.destination &&
+                        originalDestination &&
+                        realtime.destination !== originalDestination,
+                    useExternalDirections: processedLeg.useExternalDirections,
+                    externalDirectionsUrl: processedLeg.externalDirectionsUrl
+                };
+            }));
+
+            // Check if any non-walking leg has a destination mismatch
+            const hasDestinationMismatch = processedLegs.some(
+                leg => leg.mode !== 'foot' && leg.destinationMismatch
+            );
+
+            // Update trip duration and distance based on modified legs
+            const totalDuration = processedLegs.reduce((sum, leg) => sum + leg.duration, 0);
+            const totalDistance = processedLegs.reduce((sum, leg) => sum + leg.distance, 0);
 
             return {
-                code: getCode(leg),
-                line: getLine(leg),
-                destination: capitalize(leg.toEstimatedCall?.destinationDisplay?.frontText || ""),
-                points: leg.pointsOnLink?.points || [],
-                id: leg.id,
-                mode: mode,
-                aimedStartTime: leg.aimedStartTime,
-                aimedEndTime: leg.aimedEndTime,
-                expectedStartTime: leg.expectedStartTime || leg.aimedStartTime,
-                expectedEndTime: leg.expectedEndTime || leg.aimedEndTime,
-                distance: leg.distance,
-                intermediateQuays: (leg.intermediateQuays || []).map((quay: any) => {
-                    const matchingCall = (leg.intermediateEstimatedCalls || []).find(
-                        (call: any) => call.quay.id === quay.id
-                    );
-                    return {
-                        id: quay.id,
-                        name: getStop(quay.name),
-                        latitude: quay.latitude,
-                        longitude: quay.longitude,
-                        expectedDepartureTime: matchingCall?.expectedDepartureTime || null,
-                    };
-                }),
-                duration: leg.duration,
-                fromPlace: {
-                    name: getStop(leg.fromPlace?.name),
-                    quay: leg.fromPlace?.quay?.id,
-                    latitude: leg.fromPlace?.latitude,
-                    longitude: leg.fromPlace?.longitude,
-                },
-                toPlace: {
-                    name: getStop(leg.toPlace?.name),
-                    quay: leg.toPlace?.quay?.id,
-                    latitude: leg.toPlace?.latitude,
-                    longitude: leg.toPlace?.longitude,
-                },
-                authority: leg.authority,
-                interchangeTo: leg.interchangeTo,
-                interchangeFrom: leg.interchangeFrom,
-                tripId,
-                // Skip realtime data for now
-                realtime: null,
+                ...trip,
+                legs: processedLegs,
+                duration: totalDuration,
+                distance: totalDistance,
+                hasDestinationMismatch // Add flag to the trip
             };
-        });
+        })
+    );
 
-        return {
-            ...trip,
-            legs: processedLegs,
-            signature: getTripSignature({ ...trip, legs: processedLegs })
-        };
-    });
-
-    // Filter out duplicate trips based on signature
-    const uniqueTrips = [];
-    const seenSignatures = new Set();
-
-    for (const trip of processedTrips) {
-        if (!seenSignatures.has(trip.signature)) {
-            seenSignatures.add(trip.signature);
-            uniqueTrips.push(trip);
-        }
-    }
-
-    // Second pass: Fetch realtime data only for unique trips
-    const tripsWithRealtime = await Promise.all(uniqueTrips.map(async (trip) => {
-        const legsWithRealtime = await Promise.all(trip.legs.map(async (leg: any) => {
-            // Only fetch realtime data for transit legs
-            if (leg.mode !== 'foot' && leg.mode !== 'bicycle' && leg.tripId) {
-                const agency = agencies[leg.authority?.id as keyof typeof agencies];
-                const realtime = await getRealtimeData(agency, leg.tripId);
-                return { ...leg, realtime };
-            }
-            return leg;
-        }));
-
-        return { ...trip, legs: legsWithRealtime };
-    }));
+    // Filter out trips with destination mismatches
+    const filteredTrips = processedTrips.filter(trip => !trip.hasDestinationMismatch);
 
     return {
-        trips: tripsWithRealtime,
+        trips: filteredTrips,
         nextPageCursor: data.nextPageCursor,
-        originalTripCount: processedTrips.length,
-        uniqueTripCount: uniqueTrips.length
     };
 };
 
@@ -356,7 +409,7 @@ export async function getDirections(
                         dateTime: dateTime,
                         pageCursor: cursor,
                         searchWindow: 180,
-                        numTripPatterns: 5, // Increased to get more patterns before deduplication
+                        numTripPatterns: 4,
                     },
                     operationName: 'trip'
                 },

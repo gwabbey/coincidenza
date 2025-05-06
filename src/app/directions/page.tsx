@@ -1,7 +1,10 @@
 "use client";
 
 import { getDirections } from "@/api/otp/directions";
-import { Coordinates, type Directions } from "@/api/otp/types";
+
+import { type Directions } from "@/api/otp/types";
+import { type Location } from "@/types";
+
 import { Button, DateInput, TimeInput } from "@heroui/react";
 import { CalendarDate, Time } from "@internationalized/date";
 import { IconArrowDown, IconSearch } from "@tabler/icons-react";
@@ -10,8 +13,8 @@ import { LocationAutocomplete } from "./autocomplete";
 import Results from "./results";
 
 interface SelectedLocations {
-    from: Coordinates | null;
-    to: Coordinates | null;
+    from: Location | null;
+    to: Location | null;
 }
 
 export default function Directions() {
@@ -26,10 +29,10 @@ export default function Directions() {
     const [directions, setDirections] = useState<Directions>();
     const toInputRef = useRef<HTMLInputElement>(null);
 
-    const handleLocationSelect = (type: 'from' | 'to', coordinates: Coordinates | null) => {
+    const handleLocationSelect = (type: 'from' | 'to', location: Location | null) => {
         setSelectedLocations(prev => ({
             ...prev,
-            [type]: coordinates
+            [type]: location
         }));
     };
 
@@ -47,7 +50,8 @@ export default function Directions() {
 
                 const localIsoString = combinedDateTime.toISOString();
 
-                const directions = await getDirections(selectedLocations.from, selectedLocations.to, localIsoString);
+                const directions = await getDirections(selectedLocations.from.coordinates, selectedLocations.to.coordinates, localIsoString);
+                console.log(directions)
                 setDirections(directions);
             } finally {
                 setIsLoading(false);
@@ -71,8 +75,8 @@ export default function Directions() {
             const localIsoString = combinedDateTime.toISOString();
 
             const moreDirections = await getDirections(
-                selectedLocations.from!,
-                selectedLocations.to!,
+                selectedLocations.from?.coordinates!,
+                selectedLocations.to?.coordinates!,
                 localIsoString,
                 directions.nextPageCursor
             );
@@ -86,8 +90,8 @@ export default function Directions() {
         }
     };
 
-    const isSameLocation = selectedLocations.from?.lat === selectedLocations.to?.lat &&
-        selectedLocations.from?.lon === selectedLocations.to?.lon;
+    const isSameLocation = selectedLocations.from?.coordinates.lat === selectedLocations.to?.coordinates.lat &&
+        selectedLocations.from?.coordinates.lon === selectedLocations.to?.coordinates.lon;
 
     return (
         <div className="flex flex-col gap-4">
@@ -97,13 +101,13 @@ export default function Directions() {
                     name="from"
                     label="partenza"
                     nextInputRef={toInputRef}
-                    onLocationSelect={(coords) => handleLocationSelect('from', coords)}
+                    onLocationSelect={(location) => handleLocationSelect('from', location)}
                 />
                 <LocationAutocomplete
                     name="to"
                     label="arrivo"
                     ref={toInputRef}
-                    onLocationSelect={(coords) => handleLocationSelect('to', coords)}
+                    onLocationSelect={(location) => handleLocationSelect('to', location)}
                 />
                 <div className="flex flex-row justify-center items-center gap-4 max-w-md w-full">
                     <DateInput
@@ -136,9 +140,8 @@ export default function Directions() {
                 {!isLoading && "cerca!"}
             </Button>
 
+
             {directions && <Results directions={directions} />}
-
-
 
             {directions && directions.trips.length === 0 && (
                 <div className="pointer-events-auto text-center max-w-2xl mx-auto">

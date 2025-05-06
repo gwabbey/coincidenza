@@ -1,7 +1,8 @@
 "use client";
 
 import { searchStation } from "@/api/bahn/api";
-import { Coordinates } from "@/types";
+import { Location } from "@/types";
+import { capitalize } from "@/utils";
 import { Autocomplete, AutocompleteItem, Spinner } from "@heroui/react";
 import { IconMapPin, IconTrain } from "@tabler/icons-react";
 import { Key, useEffect, useState } from "react";
@@ -14,18 +15,9 @@ interface Props {
     selected?: string;
     debounceDelay?: number;
     disabled?: boolean;
-    onLocationSelect: (coords: Coordinates | null) => void;
+    onLocationSelect: (location: Location | null) => void;
     nextInputRef?: React.RefObject<HTMLInputElement>;
     ref?: React.RefObject<HTMLInputElement>;
-}
-
-interface LocationData {
-    value: string;
-    label: string | JSX.Element;
-    textValue?: string;
-    address?: string;
-    coordinates: Coordinates;
-    isBahnStation?: boolean;
 }
 
 export const LocationAutocomplete = ({
@@ -38,10 +30,10 @@ export const LocationAutocomplete = ({
     ref
 }: Props) => {
     const [value, setValue] = useState(selected);
-    const [data, setData] = useState<LocationData[]>([]);
+    const [data, setData] = useState<Location[]>([]);
     const [loading, setLoading] = useState(false);
     const [userLocation, setUserLocation] = useState<{ lat: number, lon: number } | null>(null);
-    const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
+    const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
 
     useEffect(() => {
         if (selected) {
@@ -78,7 +70,7 @@ export const LocationAutocomplete = ({
                 };
 
                 setSelectedLocation(locationData);
-                onLocationSelect(coords);
+                onLocationSelect(locationData);
 
                 setTimeout(() => {
                     nextInputRef?.current?.focus();
@@ -106,7 +98,7 @@ export const LocationAutocomplete = ({
 
             setValue(displayValue);
             setSelectedLocation(selected);
-            onLocationSelect(selected.coordinates);
+            onLocationSelect(selected);
             setTimeout(() => {
                 nextInputRef?.current?.focus();
             }, 50);
@@ -136,8 +128,8 @@ export const LocationAutocomplete = ({
             const bahnStations = await searchStation(query);
             const bahnStationLocations = bahnStations.map((station: any) => ({
                 value: `bahn-${station.id}`,
-                label: station.name,
-                textValue: station.name,
+                label: capitalize(station.name),
+                textValue: capitalize(station.name),
                 coordinates: {
                     lat: station.lat,
                     lon: station.lon
@@ -179,7 +171,7 @@ export const LocationAutocomplete = ({
         }
     }, debounceDelay);
 
-    const currentLocationItem: LocationData = {
+    const currentLocationItem: Location = {
         value: 'current-location',
         label: <div className="flex flex-row items-center gap-2 font-bold"><IconMapPin stroke={1.5} />La tua posizione</div>,
         textValue: 'La tua posizione',
@@ -207,7 +199,7 @@ export const LocationAutocomplete = ({
             }}
             size="lg"
         >
-            {(item: LocationData) => (
+            {(item: Location) => (
                 <AutocompleteItem
                     key={item.value}
                     textValue={item.textValue || (typeof item.label === 'string' ? item.label : 'La tua posizione')}

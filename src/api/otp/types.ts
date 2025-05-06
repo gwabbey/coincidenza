@@ -40,6 +40,7 @@ export interface Leg {
     authority?: Authority
     points: string
     tripId?: string
+
 }
 
 export interface IntermediateQuay {

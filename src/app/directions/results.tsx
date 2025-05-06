@@ -63,13 +63,24 @@ export default function Results({ directions }: { directions: Directions }) {
                         <div className="flex flex-col gap-1">
                             {(() => {
                                 let effectiveDuration = trip.duration;
+                                const firstLeg = trip.legs[0];
+                                const lastLeg = trip.legs[trip.legs.length - 1];
+
+                                const isLongWalk = (leg: any) => leg.mode === "foot" && leg.distance > 1000;
+
                                 if (trip.legs.length > 1) {
-                                    if (trip.legs[0].mode === "foot") effectiveDuration -= trip.legs[0].duration;
-                                    if (trip.legs[trip.legs.length - 1].mode === "foot") effectiveDuration -= trip.legs[trip.legs.length - 1].duration;
+                                    if (firstLeg.mode === "foot" && !isLongWalk(firstLeg)) {
+                                        effectiveDuration -= firstLeg.duration;
+                                    }
+                                    if (lastLeg.mode === "foot" && !isLongWalk(lastLeg)) {
+                                        effectiveDuration -= lastLeg.duration;
+                                    }
                                 }
+
                                 const transfers = trip.legs.filter(leg => leg.mode !== "foot").length - 1;
                                 const duration = formatDuration(Math.round(effectiveDuration / 60));
-                                if (trip.legs.length === 1 && trip.legs[0].mode === "foot")
+
+                                if (trip.legs.length === 1 && firstLeg.mode === "foot")
                                     return `circa ${duration} · a piedi`;
 
                                 return `${duration} · ${transfers < 1
@@ -175,14 +186,14 @@ export default function Results({ directions }: { directions: Directions }) {
                                                 vedi sulla mappa
                                             </Button>
 
-                                            {leg.realtime && leg.realtime?.delay !== null && (
+                                            {leg.realtime && leg.realtime.delay != null && (
                                                 <span className="flex flex-row items-center gap-x-1">
                                                     <div className="relative inline-flex">
                                                         <div className="rounded-full bg-green-400 h-[8px] w-[8px] inline-block mr-1"></div>
                                                         <div className="absolute animate-ping rounded-full bg-green-400 h-[8px] w-[8px] mr-1"></div>
                                                     </div>
-                                                    <span className={`font-bold text-sm text-${getDelayColor(leg.realtime?.delay)}`}>
-                                                        {leg.realtime?.delay !== 0 && formatDuration(leg.realtime?.delay, true)} in {leg.realtime?.delay > 0 ? "ritardo" : leg.realtime?.delay < 0 ? "anticipo" : "orario"}
+                                                    <span className={`font-bold text-sm text-${getDelayColor(leg.realtime.delay)}`}>
+                                                        {leg.realtime.delay !== 0 && formatDuration(leg.realtime.delay, true)} in {leg.realtime.delay > 0 ? "ritardo" : leg.realtime.delay < 0 ? "anticipo" : "orario"}
                                                     </span>
                                                 </span>
                                             )}

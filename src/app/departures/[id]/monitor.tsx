@@ -23,15 +23,10 @@ function getTrackUrl(company: string, trainNumber: string): string | null {
 
     switch (normalizedCompany) {
         case "trenitalia":
-            return `/track/trenitalia/${trainNumber}`;
         case "trenord":
-            // once the trenord tracking is implemented we'll use that one
-            return `/track/trenitalia/${trainNumber}`;
         case "trenitalia tper":
-            return `/track/trenitalia/${trainNumber}`;
         case "sad":
         case "sta":
-            // same with SAD
             return `/track/trenitalia/${trainNumber}`;
         case "italo":
             return null;

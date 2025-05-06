@@ -149,7 +149,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                 <div className="flex sm:flex-col flex-row justify-between items-center gap-y-2 py-4">
                     <div className="flex flex-col">
                         {trip.stopTimes[activeIndex] &&
-                            Math.floor((new Date().getTime() - new Date(trip.lastEventRecivedAt).getTime()) / (1000 * 60)) > 5 &&
+                            Math.floor((new Date().getTime() - new Date(trip.lastEventRecivedAt).getTime()) / (1000 * 60)) > 20 &&
                             activeIndex !== trip.stopTimes.length - 1 ? (
                             <p className={`text-lg sm:text-xl text-left sm:text-center ${activeIndex === -1 ? '' : 'italic'} truncate max-w-[230px] xs:max-w-[450px] md:max-w-full`}>
                                 {trip.stopTimes.reduce((closestStop: any, stopTime: any) => {

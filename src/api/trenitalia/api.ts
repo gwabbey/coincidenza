@@ -103,7 +103,7 @@ export async function getTrip(id: string): Promise<Trip | null> {
 
     const tripDetails = (await Promise.all(tripDetailsPromises)).filter(Boolean);
 
-    const selectedTrip = tripDetails.find(({ data }) => !data.arrivato)?.trip || parsed[0];
+    const selectedTrip = tripDetails.find(({ data }) => !data.arrivato && !data.nonPartito)?.trip || parsed[0];
     if (!selectedTrip) return null;
 
     const { code, origin, timestamp } = selectedTrip;
@@ -138,7 +138,7 @@ export async function getTrip(id: string): Promise<Trip | null> {
             destination: capitalize(normalizeStationName(trip.destinazioneEstera || trip.destinazione)),
             departureTime: new Date(trip.orarioPartenzaEstera || trip.orarioPartenza),
             arrivalTime: new Date(trip.orarioArrivoEstera || trip.orarioArrivo),
-            delay: trip.ritardo,
+            delay: !trip.nonPartito ? trip.ritardo : null,
             alertMessage: trip.subTitle,
             stops: canvas.map((stop: any, index: number) => {
                 const scheduledArrival = stop.fermata.arrivo_teorico ? new Date(stop.fermata.arrivo_teorico) : null;

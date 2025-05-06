@@ -1,6 +1,7 @@
 "use server";
 
 import { trainCategoryShortNames } from "@/train-categories";
+import { capitalize } from "@/utils";
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import * as cheerio from 'cheerio';
@@ -25,6 +26,8 @@ async function getRfiMonitor(id: string) {
     const $ = cheerio.load(response.data);
 
     const trains: Train[] = [];
+    const name = capitalize($('h1[id="nomeStazioneId"]').text().trim());
+    console.log(name)
     const alerts = $('#barraInfoStazioneId > div')
         .find('div[class="marqueeinfosupp"] div')
         .text()
@@ -100,7 +103,7 @@ async function getRfiMonitor(id: string) {
         }
     });
 
-    return { trains, alerts };
+    return { name, trains, alerts };
 }
 
 export async function getMonitor(id: string): Promise<StationMonitor> {
@@ -108,6 +111,6 @@ export async function getMonitor(id: string): Promise<StationMonitor> {
         return await getRfiMonitor(id);
     } catch (error: any) {
         console.log(error.message);
-        return { trains: [], alerts: "" };
+        return { name: "", trains: [], alerts: "" };
     }
 }
