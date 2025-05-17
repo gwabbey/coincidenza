@@ -20,7 +20,6 @@ export interface Trip {
     legs: Leg[]
 }
 
-
 export interface Leg {
     id?: string
     code?: string

@@ -1,5 +1,6 @@
 import { type StationMonitor } from "@/api/types";
 import stations from "@/stations.json";
+import { capitalize } from "@/utils";
 import { Card, Link } from "@heroui/react";
 import { IconChevronRight } from "@tabler/icons-react";
 
@@ -13,14 +14,14 @@ export default function Departures({
     );
     const id = stationEntry?.[0] ?? "-";
 
-    /*     const groupedAndSorted = Object.entries(
-            departures.trains.reduce((acc, train) => {
-                const dest = train.destination;
-                if (!acc[dest]) acc[dest] = [];
-                acc[dest].push(train);
-                return acc;
-            }, {} as Record<string, typeof departures.trains>)
-        ).sort((a, b) => b[1].length - a[1].length); */
+    const groupedAndSorted = Object.entries(
+        departures.trains.reduce((acc, train) => {
+            const dest = train.destination;
+            if (!acc[dest]) acc[dest] = [];
+            acc[dest].push(train);
+            return acc;
+        }, {} as Record<string, typeof departures.trains>)
+    ).sort((a, b) => b[1].length - a[1].length);
 
     return (
         <Card className="flex flex-col gap-4 p-4">
@@ -32,7 +33,7 @@ export default function Departures({
                 <IconChevronRight className="w-5 h-5" />
             </Link>
 
-            {/* <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4">
                 {groupedAndSorted.map(([dest, trains]) => (
                     <div key={dest} className="flex items-start gap-4">
                         <div className="w-1/3 shrink-0 font-medium">per {capitalize(dest || "")}</div>
@@ -46,7 +47,7 @@ export default function Departures({
                         </div>
                     </div>
                 ))}
-            </div> */}
+            </div>
         </Card>
     );
 }

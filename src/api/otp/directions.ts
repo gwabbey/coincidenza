@@ -9,19 +9,15 @@ import { getRealtimeData } from './realtime';
 
 const OTP_SERVER_IP = process.env.OTP_SERVER_IP || "localhost:8080";
 
-// Configuration for walking bypass
 const WALKING_BYPASS = {
     enabled: true,
-    threshold: 500, // meters
-    walkingFactor: 1.3, // multiplier for straight-line distance
-    walkingSpeed: 1.4, // m/s
+    threshold: 500,
+    walkingFactor: 1.3,
+    walkingSpeed: 1.4
 };
 
-/**
- * Calculate Haversine distance between two points in meters
- */
 function calculateHaversineDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-    const R = 6371000; // Earth radius in meters
+    const R = 6371000;
     const dLat = toRadians(lat2 - lat1);
     const dLon = toRadians(lon2 - lon1);
 
@@ -31,26 +27,18 @@ function calculateHaversineDistance(lat1: number, lon1: number, lat2: number, lo
         Math.sin(dLon / 2) * Math.sin(dLon / 2);
 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // Distance in meters
+    return R * c;
 }
 
-/**
- * Convert degrees to radians
- */
 function toRadians(degrees: number): number {
     return degrees * Math.PI / 180;
 }
 
-/**
- * Process walking legs to bypass OTP for short distances
- */
 function processWalkingLeg(leg: any): any {
-    // Skip if bypass is disabled or this isn't a walking leg
     if (!WALKING_BYPASS.enabled || leg.mode !== 'foot') {
         return leg;
     }
 
-    // Get coordinates
     const fromCoords = {
         latitude: leg.fromPlace?.latitude,
         longitude: leg.fromPlace?.longitude
@@ -61,36 +49,28 @@ function processWalkingLeg(leg: any): any {
         longitude: leg.toPlace?.longitude
     };
 
-    // Calculate straight-line distance
     const straightLineDistance = calculateHaversineDistance(
         fromCoords.latitude, fromCoords.longitude,
         toCoords.latitude, toCoords.longitude
     );
 
-    // If within threshold, replace with straight-line estimate
     if (straightLineDistance <= WALKING_BYPASS.threshold) {
-        // Estimate actual walking distance with factor
         const estimatedDistance = straightLineDistance * WALKING_BYPASS.walkingFactor;
 
-        // Calculate estimated duration in seconds
         const estimatedDuration = Math.ceil(estimatedDistance / WALKING_BYPASS.walkingSpeed);
 
-        // Update leg with our estimates
+        console.log(estimatedDistance, estimatedDuration)
+
         return {
             ...leg,
             distance: estimatedDistance,
             duration: estimatedDuration,
-            // Flag this leg as externally routed
-            useExternalDirections: true,
         };
     }
 
     return leg;
 }
 
-/**
- * Extracts the train/service code from a leg
- */
 const getCode = (leg: any): string | null => {
     if (!leg?.serviceJourney?.id) return null;
 
@@ -106,7 +86,6 @@ const getCode = (leg: any): string | null => {
         return match ? match[1] : null;
     }
 
-    // Use publicCode if available
     if (leg.serviceJourney.publicCode) {
         const parts = leg.serviceJourney.publicCode.split('-');
         return parts.length ? parts[parts.length - 1].trim() : null;
@@ -115,9 +94,6 @@ const getCode = (leg: any): string | null => {
     return null;
 };
 
-/**
- * Processes line information with consistent formatting and categorization
- */
 const getLine = (leg: any) => {
     let name = trainCategoryLongNames[leg.line?.name as keyof typeof trainCategoryLongNames];
     let category = trainCategoryShortNames[leg.line?.name.toLowerCase() as keyof typeof trainCategoryShortNames];
@@ -148,9 +124,6 @@ const getLine = (leg: any) => {
     };
 };
 
-/**
- * Cleans and formats station/stop names
- */
 const getStop = (name: string): string => {
     if (!name) return "";
 
@@ -169,34 +142,25 @@ const getStop = (name: string): string => {
     return capitalize(name);
 };
 
-/**
- * Processes trip data from OTP API into a cleaner format with destination filtering
- */
 const processTripData = async (data: { tripPatterns: any[]; nextPageCursor?: string }) => {
     if (!data.tripPatterns || !Array.isArray(data.tripPatterns)) {
         return { trips: [], nextPageCursor: data.nextPageCursor };
     }
 
-    // Process all trips and filter those with destination mismatches
     const processedTrips = await Promise.all(
         data.tripPatterns.map(async (trip) => {
-            // Process each leg, handling walking segments specially
             const processedLegs = await Promise.all(trip.legs.map(async (leg: any) => {
-                // Apply walking bypass for foot segments
                 const processedLeg = leg.mode === 'foot' ? processWalkingLeg(leg) : leg;
 
                 const agency = agencies[processedLeg.authority?.id as keyof typeof agencies];
                 const tripId = agency === "trentino-trasporti" ? processedLeg.serviceJourney?.id?.split(":")[1] : /[a-zA-Z]/g.test(getCode(processedLeg) || "") ? processedLeg.serviceJourney?.publicCode.split(" ")[1] : getCode(processedLeg);
 
-                // Determine transport mode
                 const mode = processedLeg.line?.name?.toLowerCase()?.includes("autobus")
                     ? "bus"
                     : processedLeg.mode;
 
-                // Get realtime data if available
                 const realtime = tripId ? await getRealtimeData(agency, tripId) : null;
 
-                // Get the original destination
                 const originalDestination = capitalize(processedLeg.toEstimatedCall?.destinationDisplay?.frontText || "");
 
                 return {
@@ -211,7 +175,6 @@ const processTripData = async (data: { tripPatterns: any[]; nextPageCursor?: str
                     expectedStartTime: processedLeg.expectedStartTime || processedLeg.aimedStartTime,
                     expectedEndTime: processedLeg.expectedEndTime || processedLeg.aimedEndTime,
                     distance: processedLeg.distance,
-                    // Rest of the properties...
                     intermediateQuays: (processedLeg.intermediateQuays || []).map((quay: any) => {
                         const matchingCall = (processedLeg.intermediateEstimatedCalls || []).find(
                             (call: any) => call.quay.id === quay.id
@@ -242,21 +205,16 @@ const processTripData = async (data: { tripPatterns: any[]; nextPageCursor?: str
                     interchangeFrom: processedLeg.interchangeFrom,
                     tripId,
                     realtime,
-                    // Flag for destination mismatch
                     destinationMismatch: realtime?.destination &&
                         originalDestination &&
-                        realtime.destination !== originalDestination,
-                    useExternalDirections: processedLeg.useExternalDirections,
-                    externalDirectionsUrl: processedLeg.externalDirectionsUrl
+                        realtime.destination !== originalDestination
                 };
             }));
 
-            // Check if any non-walking leg has a destination mismatch
             const hasDestinationMismatch = processedLegs.some(
                 leg => leg.mode !== 'foot' && leg.destinationMismatch
             );
 
-            // Update trip duration and distance based on modified legs
             const totalDuration = processedLegs.reduce((sum, leg) => sum + leg.duration, 0);
             const totalDistance = processedLegs.reduce((sum, leg) => sum + leg.distance, 0);
 
@@ -265,12 +223,11 @@ const processTripData = async (data: { tripPatterns: any[]; nextPageCursor?: str
                 legs: processedLegs,
                 duration: totalDuration,
                 distance: totalDistance,
-                hasDestinationMismatch // Add flag to the trip
+                hasDestinationMismatch
             };
         })
     );
 
-    // Filter out trips with destination mismatches
     const filteredTrips = processedTrips.filter(trip => !trip.hasDestinationMismatch);
 
     return {
@@ -279,9 +236,6 @@ const processTripData = async (data: { tripPatterns: any[]; nextPageCursor?: str
     };
 };
 
-/**
- * Main function to get directions between two points
- */
 export async function getDirections(
     from: Coordinates,
     to: Coordinates,
@@ -289,7 +243,6 @@ export async function getDirections(
     pageCursor?: string,
     maxAttempts = 3
 ): Promise<any> {
-    // GraphQL query for the OTP API
     const graphqlQuery = `
         query trip(
             $from: Location!, 
@@ -413,7 +366,7 @@ export async function getDirections(
                     },
                     operationName: 'trip'
                 },
-                timeout: 10000 // 10 second timeout
+                timeout: 10000
             };
 
             const response = await axios.request(options);
@@ -436,39 +389,10 @@ export async function getDirections(
     let attempts = 0;
     let result = await fetchData(pageCursor);
 
-    // If no results and we have a next page, try additional pages
     while (attempts < maxAttempts && result.tripPatterns.length === 0 && result.nextPageCursor != null) {
         attempts++;
         result = await fetchData(result.nextPageCursor);
     }
 
-    // Process and deduplicate results
     return processTripData(result);
-}
-
-/**
- * Function to convert coordinates to address using Apple Maps API
- */
-export async function reverseGeocode(latitude: number, longitude: number, token: string) {
-    try {
-        if (!token) {
-            throw new Error("Authentication token is required for reverse geocoding");
-        }
-
-        const response = await axios.get('https://maps-api.apple.com/v1/reverseGeocode', {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
-            params: {
-                loc: `${latitude},${longitude}`,
-                lang: 'it-IT'
-            },
-            timeout: 5000 // 5 second timeout
-        });
-
-        return response.data;
-    } catch (error) {
-        console.error("Error performing reverse geocode:", error);
-        throw new Error("Failed to perform reverse geocoding");
-    }
 }

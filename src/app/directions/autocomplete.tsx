@@ -1,5 +1,6 @@
 "use client";
 
+import { geocodeAddress } from "@/api/apple-maps/geocoding";
 import { searchStation } from "@/api/bahn/api";
 import { Location } from "@/types";
 import { capitalize } from "@/utils";
@@ -23,7 +24,7 @@ interface Props {
 export const LocationAutocomplete = ({
     label = "",
     selected = "",
-    debounceDelay = 500,
+    debounceDelay = 1000,
     disabled = false,
     onLocationSelect,
     nextInputRef,
@@ -87,7 +88,7 @@ export const LocationAutocomplete = ({
                     : "Errore nel recupero della posizione.";
 
                 toast.error(errorMessage);
-                console.error('error getting current position:', error);
+                console.error('Error getting current position:', error);
                 return;
             }
         }
@@ -117,7 +118,7 @@ export const LocationAutocomplete = ({
     };
 
     const fetchData = useDebouncedCallback(async (query: string) => {
-        if (!query) {
+        if (!query || query.trim().length === 0) {
             setData([]);
             return;
         }
@@ -137,29 +138,28 @@ export const LocationAutocomplete = ({
                 isBahnStation: true
             }));
 
-            // const search = await geocodeAddress(query, {
-            //     limitToCountries: 'IT',
-            //     lang: 'it-IT',
-            //     userLocation: userLocation ? `${userLocation.lat},${userLocation.lon}` : undefined,
-            //     searchLocation: '46.0722416,11.1193186'
-            // });
+            const search = await geocodeAddress(query, {
+                limitToCountries: 'IT',
+                lang: 'it-IT',
+                userLocation: userLocation ? `${userLocation.lat},${userLocation.lon}` : undefined,
+                searchLocation: '46.0722416,11.1193186'
+            });
 
-            // const locations = search.results.map((location: any) => ({
-            //     value: JSON.stringify(location),
-            //     label: location.displayLines[0],
-            //     textValue: location.displayLines[0],
-            //     address: [
-            //         location.structuredAddress?.locality ?? location.displayLines[1],
-            //         location.structuredAddress?.fullThoroughfare ?? location.structuredAddress?.subLocality
-            //     ].filter(Boolean).join(', '),
-            //     coordinates: {
-            //         lat: location.location.latitude,
-            //         lon: location.location.longitude
-            //     }
-            // }));
+            const locations = search.results.map((location: any) => ({
+                value: JSON.stringify(location),
+                label: location.displayLines[0],
+                textValue: location.displayLines[0],
+                address: [
+                    location.structuredAddress?.locality ?? location.displayLines[1],
+                    location.structuredAddress?.fullThoroughfare ?? location.structuredAddress?.subLocality
+                ].filter(Boolean).join(', '),
+                coordinates: {
+                    lat: location.location.latitude,
+                    lon: location.location.longitude
+                }
+            }));
 
-            // setData([...bahnStationLocations, ...locations]);
-            setData([...bahnStationLocations]);
+            setData([...bahnStationLocations, ...locations]);
         } catch (error) {
             if ((error as Error).name === 'AbortError') {
                 console.log("Request aborted");

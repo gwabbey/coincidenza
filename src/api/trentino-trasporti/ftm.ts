@@ -1,4 +1,4 @@
-{
+/* {
     new Stazione(147, 1, "Trento"), new Stazione(2159, 3, "Trento Nord"), new Stazione(4323, 4, "Gardolo"), new Stazione(5656, 5, "Zona industriale"),
         new Stazione(6400, 6, "Lamar"), new Stazione(7741, 7, "Lavis"), new Stazione(9538, 8, "Zambana"), new Stazione(11685, 9, "Nave s. Felice"), new Stazione(14834, 11, "Grumo s. Michele"),
         new Stazione(16500, 12, "Mezzocorona F."), new Stazione(17750, 13, "Mezzocorona B."), new Stazione(19736, 14, "Mezzolombardo"), new Stazione(23457, 15, "Masi di Vigo"),
@@ -8,4 +8,4 @@
         new Stazione(52201, 31, "Caldes"), new Stazione(54095, 32, "Terzolas"), new Stazione(55493, 33, "Malé"), new Stazione(56953, 34, "Croviana"), new Stazione(58813, 35, "Monclassico"),
         new Stazione(60186, 36, "Dimaro - Presson"), new Stazione(62365, 37, "Mastellina"), new Stazione(63385, 38, "Daolasa"), new Stazione(64093, 39, "Piano"),
         new Stazione(65299, 40, "Marilleva 900"), new Stazione(66099, 41, "Mezzana")
-};
+}; */

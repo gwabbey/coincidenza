@@ -51,7 +51,6 @@ export default function Directions() {
                 const localIsoString = combinedDateTime.toISOString();
 
                 const directions = await getDirections(selectedLocations.from.coordinates, selectedLocations.to.coordinates, localIsoString);
-                console.log(directions)
                 setDirections(directions);
             } finally {
                 setIsLoading(false);
@@ -139,7 +138,6 @@ export default function Directions() {
             >
                 {!isLoading && "cerca!"}
             </Button>
-
 
             {directions && <Results directions={directions} />}
 
