@@ -1,7 +1,5 @@
-# trasporti.g3b.dev
+# trasporti.g3b.dev :^)
 
-un modo semplice e veloce di viaggiare con i mezzi pubblici.
+un'app next.js per trovare il percorso migliore usando i mezzi pubblici. si connette a un'istanza locale di opentripplanner e a diverse api esterne (trenitalia, rfi, sta, oebb, trenord e molte altre in futuro!!) per fornire indicazioni precise e ottimizzate, combinando treni, bus, tram, funivie e tratti a piedi efficienti.
 
-## obiettivo
-
-l'obiettivo è quello di fornire un’interfaccia unica per pianificare spostamenti con i mezzi pubblici (treno, bus, tram, funivia) e ricevere le indicazioni ottimali anche per le tratte a piedi
+l’obiettivo è offrire soluzioni di viaggio comode, rapide e precise, basate su dati dei mezzi aggiornati in tempo reale.
