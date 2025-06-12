@@ -26,3 +26,35 @@ export const formatDuration = (duration: number, verbose: boolean = false) => {
 export const capitalize = (str: string) => {
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase()).replace(/([-.])\s*(\w)/g, (_, symbol, char) => `${symbol} ${char.toUpperCase()}`);
 };
+
+
+export function getTrackUrl(company: string, trainNumber: string): string | null {
+    const normalizedCompany = company.toLowerCase().trim();
+
+    if (
+        normalizedCompany === "frecciarossa" ||
+        normalizedCompany === "frecciargento" ||
+        normalizedCompany === "frecciabianca" ||
+        normalizedCompany === "intercity" ||
+        normalizedCompany === "intercity notte" ||
+        normalizedCompany === "treno storico" ||
+        normalizedCompany === "espresso"
+    ) {
+        return `/track/trenitalia/${trainNumber}`;
+    }
+
+    switch (normalizedCompany) {
+        case "trenitalia":
+        case "trenord":
+        case "trenitalia tper":
+        case "sad":
+        case "sta":
+            return `/track/trenitalia/${trainNumber}`;
+        case "italo":
+            return null;
+        case "öbb":
+            return null;
+        default:
+            return `/track/trenitalia/${trainNumber}`;
+    }
+}

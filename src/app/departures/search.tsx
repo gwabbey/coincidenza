@@ -8,7 +8,7 @@ export default function Search({ selected }: { selected?: string }) {
     return (
         <Autocomplete className="max-w-4xl mx-auto" label="seleziona una stazione" size="lg" isClearable={false} isVirtualized variant="underlined" allowsCustomValue={true} listboxProps={{
             emptyContent: "nessun risultato."
-        }} defaultSelectedKey={selected}>
+        }} defaultSelectedKey={selected} autoFocus={selected == null}>
             {Object.entries(stations).map(([id, name]) => (
                 <AutocompleteItem key={id} as={Link} href={`/departures/${id}`}>
                     {name}

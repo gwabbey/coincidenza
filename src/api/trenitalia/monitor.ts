@@ -7,110 +7,143 @@ import axiosRetry from 'axios-retry';
 import * as cheerio from 'cheerio';
 import { StationMonitor, Train } from "../types";
 
-async function getRfiMonitor(id: string) {
-    const client = axios.create();
+const vtIdCache = new Map<string, string>();
 
-    axiosRetry(client, {
-        retries: 5,
-        retryDelay: axiosRetry.exponentialDelay,
-        onRetry: (retryCount, error) => {
-            console.log(
-                `retry attempt ${retryCount} for error ${error.response?.statusText}`
-            );
-        },
-    });
+export async function getVtId(name: string): Promise<string> {
+    if (vtIdCache.has(name)) return vtIdCache.get(name)!;
 
-    const response = await client.get(
-        `https://iechub.rfi.it/ArriviPartenze/ArrivalsDepartures/Monitor?placeId=${id}&arrivals=False`
+    const res = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/autocompletaStazione/${name}`);
+    console.log(res.status)
+    const vtId = res.data.split("\n")[0].split("|")[1];
+    vtIdCache.set(name, vtId);
+    return vtId;
+}
+
+async function getVtDepartures(id: string) {
+    const response = await axios.get(
+        `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/partenze/${id}/${new Date().toString()}`
     );
-    const $ = cheerio.load(response.data);
 
-    const trains: Train[] = [];
-    const name = capitalize($('h1[id="nomeStazioneId"]').text().trim());
-    console.log(name)
-    const alerts = $('#barraInfoStazioneId > div')
-        .find('div[class="marqueeinfosupp"] div')
-        .text()
-        .trim();
+    if (response.status === 200) {
+        const data = response.data;
+        return data;
+    }
+    return null;
+}
 
-    $('#bodyTabId > tr').each((_, element) => {
-        const category = $(element)
-            .find('td[id="RCategoria"] img')
-            .attr('alt')
-            ?.replace('Categoria ', '')
-            .replace('CIVITAVECCHIA EXPRESS ', '')
-            .toLowerCase()
-            .trim() || null;
+export async function getMonitor(rfiId: string, vtId: string = ""): Promise<StationMonitor> {
+    try {
+        const client = axios.create();
 
-        const number = $(element).find('td[id="RTreno"]').text().trim();
-        const destination = $(element).find('td[id="RStazione"] div').text().toLowerCase().trim();
-        const departureTime = $(element).find('td[id="ROrario"]').text().trim();
-        const delay = $(element).find('td[id="RRitardo"]').text().trim() || '0';
-        const platform = category === "autocorsa"
-            ? "Piazzale Ferrovia"
-            : $(element).find('td[id="RBinario"] div').text().trim();
-        const departing =
-            $(element).find('td[id="RExLampeggio"] img').attr('alt')?.toLowerCase().trim() === "si";
+        axiosRetry(client, {
+            retries: 5,
+            retryDelay: axiosRetry.exponentialDelay,
+            onRetry: (retryCount, error) => {
+                console.log(
+                    `retry attempt ${retryCount} for error ${error.response?.statusText}`
+                );
+            },
+        });
 
-        const getShortCategory = (category: string | null): string | null => {
-            if (!category) return null;
-            if (category === "railjet") return "EC";
-            if (category.startsWith('suburbano')) return category.split(' ')[1];
-            if (category.startsWith('servizio ferroviario metropolitano')) {
-                return category.replace('servizio ferroviario metropolitano linea', 'SFM');
-            }
-            return trainCategoryShortNames[category as keyof typeof trainCategoryShortNames] || "Treno";
-        };
+        const response = await client.get(
+            `https://iechub.rfi.it/ArriviPartenze/ArrivalsDepartures/Monitor?placeId=${rfiId}&arrivals=False`
+        );
+        const $ = cheerio.load(response.data);
 
-        const shortCategory = getShortCategory(category);
+        const name = capitalize($('h1[id="nomeStazioneId"]').text().trim());
+        const vtData = vtId ? await getVtDepartures(vtId) : [];
 
-        let company = $(element).find('td[id="RVettore"] img').attr('alt')?.toLowerCase()?.trim() || "";
-        const getCompany = (company: string): string => {
-            if (company === 'ente volturno autonomo') return 'EAV';
-            if (company === 'sad - trasporto locale spa') return 'SAD';
-            if (company.startsWith('obb')) return 'ÖBB';
-            return company;
-        };
-
-        company = getCompany(company);
-
-        let stops: any[] = [];
-        const stopsText = $(element)
-            .find('td[id="RDettagli"] div[class="FermateSuccessivePopupStyle"] div[class="testoinfoaggiuntive"]')
-            .first()
+        const trains: Train[] = [];
+        const alerts = $('#barraInfoStazioneId > div')
+            .find('div[class="marqueeinfosupp"] div')
             .text()
             .trim();
 
-        stops = [...stopsText.matchAll(/(?:FERMA A:\s*)?([^()-]+)\s*\((\d{1,2}[:.]\d{2})\)/g)]
-            .map(match => ({
-                location: match[1].trim().replace(/^- /, "").toLowerCase(),
-                time: match[2].replace(".", ":"),
-            }));
+        $('#bodyTabId > tr').each((_, element) => {
+            const category = $(element)
+                .find('td[id="RCategoria"] img')
+                .attr('alt')
+                ?.replace('Categoria ', '')
+                .replace('CIVITAVECCHIA EXPRESS ', '')
+                .toLowerCase()
+                .trim() || null;
 
-        if (number && destination && departureTime) {
-            trains.push({
-                company,
-                category,
-                shortCategory,
-                number,
-                destination,
-                departureTime,
-                delay,
-                platform,
-                departing,
-                stops,
-            });
-        }
-    });
+            const number = $(element).find('td[id="RTreno"]').text().trim();
+            const destination = $(element).find('td[id="RStazione"] div').text().toLowerCase().trim();
+            const departureTime = $(element).find('td[id="ROrario"]').text().trim();
+            let delay = $(element).find('td[id="RRitardo"]').text().trim() || '0';
+            const platform = category === "autocorsa"
+                ? "Piazzale Ferrovia"
+                : $(element).find('td[id="RBinario"] div').text().trim();
+            const departing =
+                $(element).find('td[id="RExLampeggio"] img').attr('alt')?.toLowerCase().trim() === "si";
 
-    return { name, trains, alerts };
-}
+            const vtTrain = vtData.find((vt: any) =>
+                vt.numeroTreno && vt.numeroTreno.toString() === number
+            );
 
-export async function getMonitor(id: string): Promise<StationMonitor> {
-    try {
-        return await getRfiMonitor(id);
+            if (vtTrain) {
+                const rfiDelay = parseInt(delay.replace(/\D/g, '')) || 0;
+                const vtDelay = vtTrain.ritardo || 0;
+
+                if (vtDelay > rfiDelay && vtDelay > 0) {
+                    delay = vtDelay.toString();
+                }
+            }
+
+            const getShortCategory = (category: string | null): string | null => {
+                if (!category) return null;
+                if (category === "railjet") return "EC";
+                if (category.startsWith('suburbano')) return category.split(' ')[1];
+                if (category.startsWith('servizio ferroviario metropolitano')) {
+                    return category.replace('servizio ferroviario metropolitano linea', 'SFM');
+                }
+                return trainCategoryShortNames[category as keyof typeof trainCategoryShortNames] || "Treno";
+            };
+
+            const shortCategory = getShortCategory(category);
+
+            let company = $(element).find('td[id="RVettore"] img').attr('alt')?.toLowerCase()?.trim() || "";
+            const getCompany = (company: string): string => {
+                if (company === 'ente volturno autonomo') return 'EAV';
+                if (company === 'sad - trasporto locale spa') return 'SAD';
+                if (company.startsWith('obb')) return 'ÖBB';
+                return company;
+            };
+
+            company = getCompany(company);
+
+            let stops: any[] = [];
+            const stopsText = $(element)
+                .find('td[id="RDettagli"] div[class="FermateSuccessivePopupStyle"] div[class="testoinfoaggiuntive"]')
+                .first()
+                .text()
+                .trim();
+
+            stops = [...stopsText.matchAll(/(?:FERMA A:\s*)?([^()-]+)\s*\((\d{1,2}[:.]\d{2})\)/g)]
+                .map(match => ({
+                    location: capitalize(match[1].trim().replace(/^- /, "").toLowerCase()),
+                    time: match[2].replace(".", ":"),
+                }));
+
+            if (number && destination && departureTime) {
+                trains.push({
+                    company,
+                    category,
+                    shortCategory,
+                    number,
+                    destination: capitalize(destination),
+                    departureTime,
+                    delay,
+                    platform,
+                    departing,
+                    stops,
+                });
+            }
+        });
+
+        return { name, trains, alerts };
     } catch (error: any) {
-        console.log(error.message);
         return { name: "", trains: [], alerts: "" };
     }
 }

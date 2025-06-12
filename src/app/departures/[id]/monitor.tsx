@@ -1,41 +1,10 @@
 'use client';
-import { capitalize, getDelayColor } from '@/utils';
+import { capitalize, getDelayColor, getTrackUrl } from '@/utils';
 import { Divider } from '@heroui/react';
 import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-
-function getTrackUrl(company: string, trainNumber: string): string | null {
-    const normalizedCompany = company.toLowerCase().trim();
-
-    if (
-        normalizedCompany === "frecciarossa" ||
-        normalizedCompany === "frecciargento" ||
-        normalizedCompany === "frecciabianca" ||
-        normalizedCompany === "intercity" ||
-        normalizedCompany === "intercity notte" ||
-        normalizedCompany === "treno storico" ||
-        normalizedCompany === "espresso"
-    ) {
-        return `/track/trenitalia/${trainNumber}`;
-    }
-
-    switch (normalizedCompany) {
-        case "trenitalia":
-        case "trenord":
-        case "trenitalia tper":
-        case "sad":
-        case "sta":
-            return `/track/trenitalia/${trainNumber}`;
-        case "italo":
-            return null;
-        case "öbb":
-            return null;
-        default:
-            return `/track/trenitalia/${trainNumber}`;
-    }
-}
 
 export function Monitor({ monitor }: { monitor: any }) {
     const router = useRouter();
@@ -76,7 +45,7 @@ export function Monitor({ monitor }: { monitor: any }) {
             <AnimatePresence mode="popLayout">
                 {monitor.trains.map((train: any) => (
                     <motion.div
-                        key={train.number.toString()}
+                        key={`${train.shortCategory || train.company || ""} ${train.number.toString()} ${train.destination}`}
                         layout
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -115,13 +84,13 @@ export function Monitor({ monitor }: { monitor: any }) {
                                             className="text-sm text-gray-500 capitalize"
                                             href={getTrackUrl(train.company, train.number)!}
                                         >
-                                            {train.shortCategory || train.company} {train.number}{" "}
-                                            {train.shortCategory && train.company && `• ${train.company}`}
+                                            {train.shortCategory || "Treno"} {train.number}{" "}
+                                            {train.company && `• ${train.company}`}
                                         </Link>
                                     ) : (
                                         <span className="text-sm text-gray-500 capitalize">
-                                            {train.shortCategory || train.company} {train.number}{" "}
-                                            {train.shortCategory && train.company && `• ${train.company}`}
+                                            {train.shortCategory || "Treno"} {train.number}{" "}
+                                            {train.company && `• ${train.company}`}
                                         </span>
                                     )}
 

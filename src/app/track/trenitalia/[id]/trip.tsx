@@ -242,8 +242,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                             disableRipple
                             disableAnimation
                         >
-                            {trip.delay < 0 ? '' : trip.delay > 0 ? '+' : "in orario"}
-                            {trip.delay !== 0 && `${trip.delay} min`}
+                            {trip.delay > 0 ? `+${trip.delay} min` : trip.delay === 0 ? 'in orario' : trip.delay < 0 ? `${trip.delay} min` : ''}
                         </Button>
                     )}
                 </div>

@@ -22,6 +22,7 @@
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "fs": "0.0.1-security",
+    "fuse.js": "^7.1.0",
     "gray-matter": "^4.0.3",
     "https-proxy-agent": "^7.0.6",
     "jsonwebtoken": "^9.0.2",
