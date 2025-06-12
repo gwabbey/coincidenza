@@ -156,8 +156,8 @@ export async function getTrip(id: string): Promise<Trip | null> {
                     actualDeparture,
                     arrivalDelay: stop.fermata.ritardoArrivo,
                     departureDelay: stop.fermata.ritardoPartenza,
-                    scheduledPlatform: index === 0 ? stop.fermata.binarioProgrammatoPartenzaDescrizione : stop.fermata.binarioProgrammatoArrivoDescrizione,
-                    actualPlatform: index === 0 ? stop.fermata.binarioEffettivoPartenzaDescrizione : stop.fermata.binarioEffettivoArrivoDescrizione,
+                    scheduledPlatform: stop.fermata.binarioProgrammatoPartenzaDescrizione || stop.fermata.binarioProgrammatoArrivoDescrizione,
+                    actualPlatform: stop.fermata.binarioEffettivoPartenzaDescrizione || stop.fermata.binarioEffettivoArrivoDescrizione,
                     status: getStopStatus(stop),
                 };
             }),
