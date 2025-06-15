@@ -11,9 +11,24 @@ export function Favorites({ favorites }: { favorites: Favorite[] }) {
     const router = useRouter();
     if (!favorites) return null;
 
-    async function removeFavorite(favorite: Favorite) {
-        const newFavorites = favorites.filter((f: Favorite) => f.lat !== favorite.lat && f.lon !== favorite.lon);
-        cookieStore.set('favorites', encodeURIComponent(JSON.stringify(newFavorites)));
+    function removeFavorite(favorite: Favorite) {
+        const cookieString = decodeURIComponent(document.cookie
+            .split('; ')
+            .find(row => row.startsWith('favorites='))?.split('=')[1] || '[]');
+
+        let favorites: Favorite[] = [];
+
+        try {
+            favorites = JSON.parse(cookieString);
+        } catch {
+            favorites = [];
+        }
+
+        const newFavorites = favorites.filter(
+            f => Math.abs(f.lat - favorite.lat) > 0.0001 || Math.abs(f.lon - favorite.lon) > 0.0001
+        );
+
+        document.cookie = `favorites=${encodeURIComponent(JSON.stringify(newFavorites))}; path=/; max-age=${60 * 60 * 24 * 365}`;
         router.refresh();
         toast.success("Preferito rimosso!");
     }
