@@ -92,7 +92,7 @@ function Loading() {
     )
 }
 
-export async function Departures({ userLat, userLon }: { userLat: number, userLon: number }) {
+async function Departures({ userLat, userLon }: { userLat: number, userLon: number }) {
     try {
         const allStops = await getClosestBusStops(userLat, userLon)
         const walkableStops = getNearbyStops(allStops, 0.3)
