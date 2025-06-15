@@ -1,6 +1,6 @@
 "use client";
 
-import { geocodeAddress } from "@/api/apple-maps/geocoding";
+import { geocodeAddress } from "@/api/apple-maps/geolocation";
 import { searchStation } from "@/api/bahn/api";
 import { Location } from "@/types";
 import { capitalize } from "@/utils";

@@ -1,7 +1,20 @@
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
-import { HttpsProxyAgent } from 'https-proxy-agent';
 import { Stop, StopTime } from './types';
+
+function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) *
+        Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
 
 export async function fetchData(endpoint: string, options: { params?: Record<string, string> } = {}) {
     let url = `https://app-tpl.tndigit.it/gtlservice/${endpoint}`;
@@ -14,10 +27,7 @@ export async function fetchData(endpoint: string, options: { params?: Record<str
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 30000);
 
-    const httpsAgent = new HttpsProxyAgent(process.env.PROXY_AGENT as string);
-
     const client = axios.create({
-        // httpsAgent,
         headers: {
             "Accept": "application/json",
             "Content-Type": "application/json",
@@ -54,6 +64,44 @@ export async function getStops(type: string) {
     const data = await fetchData('stops', type ? { params: { type } } : undefined);
     stopsCache.set(type, data);
     return data;
+}
+
+export async function getAllStops() {
+    const data = await fetchData('stops');
+    return data;
+}
+
+export async function getClosestBusStops(userLat: number, userLon: number) {
+    const stops = await getAllStops();
+
+    const stopsWithDistance = stops.map((stop: any) => ({
+        ...stop,
+        distance: getDistance(userLat, userLon, stop.stopLat, stop.stopLon),
+    }));
+
+    const sortedStops = stopsWithDistance.sort((a: any, b: any) => a.distance - b.distance);
+
+    return sortedStops;
+}
+
+export async function getStopDepartures(stopId: number, type: string) {
+    const [departures, routes] = await Promise.all([
+        fetchData('trips_new', {
+            params: {
+                type,
+                stopId: stopId.toString(),
+                limit: "3",
+                refDateTime: new Date().toISOString()
+            }
+        }),
+        getRoutes(type)
+    ]);
+
+    if (!departures) return null;
+    return departures.map((trip: any) => ({
+        ...trip,
+        route: routes.find((r: any) => r.routeId === trip.routeId) || null
+    }));
 }
 
 const routesCache = new Map<string, any>();

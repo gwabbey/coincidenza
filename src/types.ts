@@ -11,3 +11,9 @@ export interface Location {
     coordinates: Coordinates;
     isBahnStation?: boolean;
 }
+
+export interface Favorite {
+    lat: number;
+    lon: number;
+    name: string;
+}

@@ -11,7 +11,7 @@ export const trainCategoryShortNames = {
     "intercity notte": "ICN",
     "malpensa express": "MXP",
     "metropolitano": "M",
-    "espresso": "E",
+    "espresso": "EXP",
     "eurostar italia": "ES*",
     "autocorsa": "bus",
     "treno storico": "TS",
@@ -32,7 +32,7 @@ export const trainCategoryLongNames = {
     "ICN": "Intercity Notte",
     "MXP": "Malpensa Express",
     "M": "Metropolitano",
-    "E": "Espresso",
+    "EXP": "Espresso",
     "iR": "Interregionale",
 }
 

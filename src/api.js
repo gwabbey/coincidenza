@@ -1,20 +1,5 @@
 "use server";
 import { cookies } from "next/headers";
-import stops from "./stops.json";
-
-function getDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * (Math.PI / 180);
-    const dLon = (lon2 - lon1) * (Math.PI / 180);
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * (Math.PI / 180)) *
-        Math.cos(lat2 * (Math.PI / 180)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-}
 
 export async function getCookie(name) {
     return (await cookies()).get(name)?.value;
@@ -32,22 +17,6 @@ export async function setCookie(name, value, options = {}) {
         sameSite,
         httpOnly: true,
     });
-}
-
-export async function getClosestBusStops(userLat, userLon) {
-    try {
-        const stopsWithDistance = stops.map(stop => ({
-            ...stop,
-            distance: getDistance(userLat, userLon, stop.stopLat, stop.stopLon),
-        }));
-
-        const sortedStops = stopsWithDistance.sort((a, b) => a.distance - b.distance);
-
-        return sortedStops;
-    } catch (error) {
-        console.error(`Error in getClosestBusStops: ${error.message}`);
-        throw new Error("closest stops fetch error: " + error.message);
-    }
 }
 
 export async function getStopTrips(id, type, routes) {

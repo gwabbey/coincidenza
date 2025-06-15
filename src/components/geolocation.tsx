@@ -1,5 +1,4 @@
 'use client'
-
 import toast from "react-hot-toast";
 
 export function getUserLocation(): Promise<{ lat: number; lon: number }> {
@@ -14,7 +13,7 @@ export function getUserLocation(): Promise<{ lat: number; lon: number }> {
                     if (error.code === error.PERMISSION_DENIED) message = 'Accesso negato alla posizione';
                     else if (error.code === error.POSITION_UNAVAILABLE) message = 'Posizione non disponibile';
                     else if (error.code === error.TIMEOUT) message = 'Timeout durante la richiesta';
-
+                    document.cookie = "locationRejected=true; path=/; max-age=300"
                     toast.error(message);
                 },
                 { enableHighAccuracy: true, maximumAge: 0 }

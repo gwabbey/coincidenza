@@ -1,10 +1,11 @@
 'use client';
 
 import { Trip as TripProps } from "@/api/trentino-trasporti/types";
+import { RouteModal } from "@/components/modal";
 import Timeline from "@/components/timeline";
 import { getDelayColor } from "@/utils";
-import { Button, Card, Divider } from "@heroui/react";
-import { IconAlertTriangleFilled, IconArrowUp } from "@tabler/icons-react";
+import { Button, Card, Divider, Link, useDisclosure } from "@heroui/react";
+import { IconAlertTriangleFilled, IconArrowUp, IconInfoTriangleFilled } from "@tabler/icons-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from 'react';
 
@@ -53,10 +54,10 @@ const calculatePreciseActiveIndex = (stopTimes: any[], delay: number, stopLast: 
 };
 
 export default function Trip({ trip }: { trip: TripProps }) {
-    console.log(trip)
     const router = useRouter();
     const [scroll, setScroll] = useState({ y: 0 });
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
+    const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -146,7 +147,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
             <div className="sticky top-0 bg-white dark:bg-black z-20">
                 <Divider className="my-2" />
 
-                <div className="flex sm:flex-col flex-row justify-between items-center gap-y-2 py-4">
+                <div className="flex sm:flex-col flex-row justify-between items-center gap-y-2 py-4 w-full max-w-md mx-auto">
                     <div className="flex flex-col">
                         {trip.stopTimes[activeIndex] &&
                             Math.floor((new Date().getTime() - new Date(trip.lastEventRecivedAt).getTime()) / (1000 * 60)) > 20 &&
@@ -160,7 +161,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                                 }, null)?.stopName || "--"}
                             </p>
                         ) : (
-                            <p className="text-lg sm:text-xl font-bold text-left sm:text-center truncate max-w-[230px] xs:max-w-[450px] md:max-w-full">
+                            <p className="text-lg sm:text-xl font-bold text-left sm:text-center truncate max-w-[240px] xs:max-w-[450px] md:max-w-full">
                                 {trip.stopTimes.length > 0 && !isDeparting ? trip.stopTimes[activeIndex]?.stopName : "--"}
                             </p>
                         )}
@@ -207,7 +208,19 @@ export default function Trip({ trip }: { trip: TripProps }) {
                 <Divider className="my-2" />
             </div>
 
-            <div className="flex justify-center w-full">
+            <div className="flex flex-col items-center justify-center">
+                {trip.route.news && trip.route.news.length > 0 && (
+                    <Button
+                        variant="flat"
+                        color="warning"
+                        fullWidth
+                        className="flex items-center font-bold sm:w-fit mx-auto mb-6 max-w-md"
+                        startContent={<IconInfoTriangleFilled />}
+                        onPress={onOpen}
+                    >
+                        avvisi
+                    </Button>
+                )}
                 <Timeline
                     steps={trip.stopTimes.map((stop: any, index: number) => {
                         const isPastStop = index <= Math.floor(preciseActiveIndex);
@@ -219,7 +232,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                             hour: '2-digit',
                             minute: '2-digit',
                         });
-                        const longerStopBreak = Math.round((new Date(`2000-01-01 ${stop.departureTime}`).getTime() - new Date(`2000-01-01 ${stop.arrivalTime}`).getTime()) / (60 * 1000));
+                        const stopBreak = Math.round((new Date(`2000-01-01 ${stop.departureTime}`).getTime() - new Date(`2000-01-01 ${stop.arrivalTime}`).getTime()) / (60 * 1000));
 
                         return {
                             content: (
@@ -256,9 +269,9 @@ export default function Trip({ trip }: { trip: TripProps }) {
                                         ) : (
                                             <div>--</div>
                                         )}
-                                        {isLongerStop && longerStopBreak > 1 && (
+                                        {isLongerStop && stopBreak > 1 && (
                                             <span className="text-gray-500">
-                                                sosta di {longerStopBreak} minuti
+                                                sosta di {stopBreak} minuti
                                             </span>
                                         )}
                                     </div>
@@ -269,6 +282,26 @@ export default function Trip({ trip }: { trip: TripProps }) {
                     active={preciseActiveIndex}
                 />
             </div>
+
+            <RouteModal
+                isOpen={isOpen}
+                onOpenChange={onOpenChange}
+                title="avvisi sulla linea"
+            >
+                {trip.route.news && trip.route.news.length > 0 && trip.route.news.map((alert: any, index: number) => (
+                    <div key={index} className="flex flex-col gap-2">
+                        {alert.url ? (
+                            <Link isExternal href={alert.url}>
+                                {alert.header}
+                            </Link>
+                        ) : (
+                            <p>
+                                {alert.header}
+                            </p>
+                        )}
+                    </div>
+                ))}
+            </RouteModal>
 
             {scroll.y > 0 && (
                 <Button isIconOnly radius="full" startContent={<IconArrowUp size={32} />}

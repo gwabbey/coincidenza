@@ -5,9 +5,8 @@ import { Info, Stop, Trip as TripProps } from "@/api/types";
 import { RouteModal } from "@/components/modal";
 import Timeline from "@/components/timeline";
 import stations from "@/stations.json";
-import { trainCodeLogos } from "@/train-categories";
 import { capitalize, getDelayColor } from "@/utils";
-import { Button, Card, Divider, Image, useDisclosure } from "@heroui/react";
+import { Button, Card, Divider, useDisclosure } from "@heroui/react";
 import { IconAlertTriangleFilled, IconArrowUp, IconInfoTriangleFilled } from "@tabler/icons-react";
 import { formatDate } from "date-fns";
 import NextLink from "next/link";
@@ -29,8 +28,7 @@ function findMatchingStation(stationName: string): string | null {
         return null;
     }
 
-    const normalize = (s: string) => s.replace(/\s*[-.]\s*/g, match => match.trim()).trim();
-
+    const normalize = (s: string) => s.replace(/\s*[-.]\s*/g, match => match.trim()).replace(/\b\/Av\b/gi, "").trim();
     const normalizedInput = normalize(stationName);
 
     for (const [id, name] of Object.entries(stations)) {
@@ -46,10 +44,8 @@ const calculatePreciseActiveIndex = (trip: TripProps) => {
     const delay = trip.delay || 0;
     const currentMinutes = getCurrentMinutes();
 
-    // Filter out canceled stops
     const activeStops = trip.stops.filter(stop => stop.status !== "canceled");
 
-    // Find the current non-canceled stop index
     const currentStopIndex = trip.currentStopIndex === -1 ? -1 :
         activeStops.findIndex((_, i) => {
             const originalIndex = trip.stops.findIndex(s =>
@@ -60,7 +56,6 @@ const calculatePreciseActiveIndex = (trip: TripProps) => {
         });
 
     if (currentStopIndex === -1) {
-        // No active stops or trip hasn't started
         const firstStopDate = new Date(activeStops[0]?.scheduledDeparture || 0);
         const firstStopMinutes = timeToMinutes(formatDate(firstStopDate, 'HH:mm'), firstStopDate);
         if (currentMinutes < firstStopMinutes || activeStops.length === 0) return -1;
@@ -175,16 +170,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                 <span className={`sm:text-lg text-md font-bold max-w-fit rounded-small flex flex-row items-center gap-x-1 text-white ${trip.category?.toLowerCase().startsWith("ic") ? "bg-primary" : "bg-danger"}`} style={{
                     padding: "0.1rem 0.5rem",
                 }}>
-                    {trainCodeLogos.find(code => code.code === trip.category)?.url ? (
-                        <Image
-                            src={trainCodeLogos.find(code => code.code === trip.category)?.url ?? ""}
-                            alt={trip.category || ""}
-                            radius="none"
-                            className="flex h-4 self-center w-auto max-w-full invert"
-                        />
-                    ) : (
-                        trip.category
-                    )} {trip.number}
+                    {trip.category} {trip.number}
                 </span>
                 <div className="text-xl font-bold">
                     {capitalize(trip.destination)}

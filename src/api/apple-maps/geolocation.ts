@@ -36,7 +36,8 @@ export async function geocodeAddress(
     return response.data;
 }
 
-export async function reverseGeocode(latitude: number, longitude: number, token: string) {
+export async function reverseGeocode(latitude: number, longitude: number) {
+    const token = await getCachedMapsToken();
     const response = await axios.get('https://maps-api.apple.com/v1/reverseGeocode', {
         headers: {
             Authorization: `Bearer ${token}`,

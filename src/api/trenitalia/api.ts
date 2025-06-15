@@ -1,5 +1,3 @@
-"use server";
-
 import { capitalize } from "@/utils";
 import axios from 'axios';
 import { Trip } from "../types";
@@ -12,6 +10,7 @@ export async function searchStation(query: string) {
 export async function getTripSmartCaring(code: string, origin: string, date: string) {
     const { data } = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/news/smartcaring?commercialTrainNumber=${code}&originCode=${origin}&searchDate=${date}`);
     if (data.length === 0) return null;
+    console.log(data)
     return data;
 }
 
