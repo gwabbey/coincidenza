@@ -176,7 +176,8 @@ export const Search = ({
             const geocodingResults = await geocodeAddress(query, {
                 limitToCountries: 'IT',
                 lang: 'it-IT',
-                userLocation: `${getCookie('userLat') || "46.071756"},${getCookie('userLon') || "11.119511"}`,
+                userLocation: `${getCookie('userLat') || "46.0722416"},${getCookie('userLon') || "11.1193186"}`,
+                searchLocation: '46.0722416,11.1193186'
             });
 
             const geocodedLocations: Location[] = geocodingResults.results.map((location: any) => ({
