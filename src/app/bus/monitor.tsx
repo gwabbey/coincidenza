@@ -1,24 +1,50 @@
 "use client"
 
+import { TimeDisplay } from "@/components/time"
 import { getDelayColor } from "@/utils"
 import { AnimatePresence, motion } from "motion/react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
-function getStopsAway(selectedStopId: number, stopTimes: any[], currentStopId: number) {
-    const currentIndex = stopTimes.findIndex(s => s.stopId === currentStopId);
+function getStopsAway(selectedStopId: number, stopTimes: any[], delay: number | null = 0): number | null {
+    const now = new Date();
+
     const selectedIndex = stopTimes.findIndex(s => s.stopId === selectedStopId);
+    if (selectedIndex === -1) return null;
+    const previousStop = stopTimes[Math.max(selectedIndex - 1, 0)];
 
-    if (currentIndex === -1 || selectedIndex === -1) return null;
+    const getAdjustedTime = (stop: any) => {
+        const [h, m, s] = stop.departureTime.split(':').map(Number);
+        const dep = new Date(now);
+        dep.setHours(h, m, s, 0);
+        dep.setMinutes(dep.getMinutes() + (delay || 0));
+        return dep;
+    };
 
-    const diff = selectedIndex - currentIndex;
-    return diff >= 0 ? diff : null;
+    const selectedTime = getAdjustedTime(stopTimes[selectedIndex]);
+    const prevTime = getAdjustedTime(previousStop);
+
+    const timeUntilSelected = (selectedTime.getTime() - now.getTime()) / 60000;
+    const timeBetweenStops = (selectedTime.getTime() - prevTime.getTime()) / 60000;
+
+    if (selectedIndex === 0 && timeUntilSelected <= 2) return 0;
+    if (timeUntilSelected <= 2 && timeBetweenStops >= 2) return 0;
+
+    const lastPassedIndex = stopTimes.findIndex((stop) => {
+        const adjusted = getAdjustedTime(stop);
+        return adjusted > now;
+    });
+
+    const indexToUse = lastPassedIndex === -1 ? stopTimes.length : lastPassedIndex;
+    const diff = selectedIndex - indexToUse;
+    return diff >= 0 ? diff + 1 : null;
 }
 
 export function Monitor({ trips }: { trips: any[] }) {
     const router = useRouter()
     const [blinkKey, setBlinkKey] = useState(0)
+    const [showRelativeTime, setShowRelativeTime] = useState(false)
 
     useEffect(() => {
         const intervalId = setInterval(() => {
@@ -34,56 +60,64 @@ export function Monitor({ trips }: { trips: any[] }) {
         return () => clearInterval(blinkInterval)
     }, [])
 
+    useEffect(() => {
+        const timeouts: NodeJS.Timeout[] = []
+
+        timeouts.push(setTimeout(() => {
+            setShowRelativeTime(true)
+        }, 2000))
+
+        timeouts.push(setTimeout(() => {
+            setShowRelativeTime(false)
+
+            const interval = setInterval(() => {
+                setShowRelativeTime(prev => !prev)
+            }, 4000)
+            timeouts.push(interval)
+        }, 4000))
+
+        return () => timeouts.forEach(clearTimeout)
+    }, [])
+
     return (
         <div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
             <AnimatePresence mode="popLayout">
                 {trips.map((trip) => {
+                    let arriving = false
+                    const isDelayed = trip.delay !== null
                     const scheduledTime = new Date(trip.oraArrivoProgrammataAFermataSelezionata)
                     const effectiveTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata)
                     const currentTime = new Date()
 
                     const timeUntilScheduled = (scheduledTime.getTime() - currentTime.getTime()) / (1000 * 60)
                     const timeUntilEffective = (effectiveTime.getTime() - currentTime.getTime()) / (1000 * 60)
-                    const timeUntilArrival = effectiveTime && !isNaN(effectiveTime.getTime()) ? timeUntilEffective : timeUntilScheduled
 
-                    const stopsAway = getStopsAway(trip.stopId, trip.stopTimes, trip.stopNext)
+                    const stopsAway = getStopsAway(trip.stopId, trip.stopTimes, trip.delay)
+                    const selectedStop = trip.stopTimes.find((s: any) => s.stopId === trip.stopId);
+                    const selectedSequence = selectedStop?.stopSequence ?? null;
 
-                    let arriving = false
-
-                    // Check if bus is tracked (has real-time data)
-                    if (trip.lastEventRecivedAt !== null) {
-                        // Bus is tracked - use sequence detection
-                        const selectedStop = trip.stopTimes.find((s: any) => s.stopId === trip.stopId)
-                        const selectedStopSequence = selectedStop ? selectedStop.stopSequence : null
-
-                        if (selectedStopSequence !== null && trip.lastSequenceDetection > 0) {
-                            // Find the previous stop sequence
-                            const previousStopSequence = selectedStopSequence - 1
-
-                            // Show arriving if bus is at previous stop or beyond (but hasn't passed selected stop)
-                            arriving = trip.lastSequenceDetection >= previousStopSequence && trip.lastSequenceDetection <= selectedStopSequence
+                    if (trip.lastEventRecivedAt !== null && selectedSequence !== null) {
+                        const prevSequence = selectedSequence - 1;
+                        if (trip.lastSequenceDetection >= prevSequence && trip.lastSequenceDetection <= selectedSequence) {
+                            arriving = true;
                         }
-                    } else {
-                        // Bus is not tracked - use time-based logic
-                        // Show arriving if 2 minutes or less until departure, and keep showing even after departure
-                        const selectedStop = trip.stopTimes.find((s: any) => s.stopId === trip.stopId)
-                        if (selectedStop) {
-                            const [h, m, s] = selectedStop.departureTime.split(":").map(Number)
-                            const departure = new Date(currentTime)
-                            departure.setHours(h, m, s, 0)
+                    } else if (selectedStop) {
+                        const [h, m, s] = selectedStop.departureTime.split(":").map(Number);
+                        const departure = new Date(currentTime);
+                        departure.setHours(h, m, s, 0);
 
-                            // Add delay if present
-                            if (trip.delay !== null && !isNaN(trip.delay)) {
-                                departure.setMinutes(departure.getMinutes() + trip.delay)
-                            }
+                        if (trip.delay != null && !isNaN(trip.delay)) {
+                            departure.setMinutes(departure.getMinutes() + trip.delay);
+                        }
 
-                            const timeUntilDeparture = (departure.getTime() - currentTime.getTime()) / (1000 * 60)
+                        const timeUntilDeparture = (departure.getTime() - currentTime.getTime()) / (1000 * 60);
 
-                            // Show arriving if 2 minutes or less until departure (including past departures)
-                            arriving = timeUntilDeparture <= 2
+                        console.log(stopsAway)
+
+                        if (stopsAway === 0 || timeUntilDeparture <= 2) {
+                            arriving = true;
                         }
                     }
-                    const isDelayed = trip.delay !== null
 
                     return (
                         <motion.div
@@ -97,16 +131,15 @@ export function Monitor({ trips }: { trips: any[] }) {
                         >
                             <div className="flex flex-row justify-between gap-4">
                                 <div className="flex gap-2 w-full">
-                                    <div className="flex items-center justify-center w-full max-w-16 p-2 text-lg font-bold text-center rounded-small bg-gray-500 text-white self-center">
-                                        {scheduledTime.toLocaleTimeString('it-IT', {
-                                            hour: '2-digit',
-                                            minute: '2-digit'
-                                        })}
-                                    </div>
+                                    <TimeDisplay
+                                        scheduledTime={scheduledTime}
+                                        effectiveTime={effectiveTime}
+                                        showRelativeTime={showRelativeTime}
+                                    />
 
                                     <div className="flex flex-col text-left w-full flex-grow min-w-0">
                                         <div className="flex items-center justify-between w-full min-w-0 gap-2">
-                                            <Link href={`/track/trentino-trasporti/${trip.tripId}`}>
+                                            <Link href={`/track/trentino-trasporti/${trip.tripId}`} target="_blank">
                                                 <div className="flex items-center gap-x-1 sm:gap-x-2">
                                                     <div className={`text-base sm:text-lg font-bold text-center rounded-small max-w-fit ${!trip.route?.routeColor && trip.type === "U" ? "bg-success text-white" : "bg-primary text-white"}`} style={{
                                                         backgroundColor: trip.route && trip.route.routeColor ? `#${trip.route.routeColor}` : "",
@@ -130,6 +163,7 @@ export function Monitor({ trips }: { trips: any[] }) {
                                         <Link
                                             className="text-sm text-gray-500"
                                             href={`/track/trentino-trasporti/${trip.tripId}`}
+                                            target="_blank"
                                         >
                                             {stopsAway ? (
                                                 <>a <strong>{stopsAway}</strong> fermat{stopsAway > 1 ? 'e' : 'a'} da {trip.stopName}</>

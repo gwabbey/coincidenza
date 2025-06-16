@@ -1,7 +1,7 @@
 "use client"
 
 import { Favorite } from "@/types";
-import { Button, Card, CardBody, CardHeader } from "@heroui/react";
+import { Button, Card, CardBody, CardHeader, Link } from "@heroui/react";
 import { IconTrash } from "@tabler/icons-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,12 @@ import toast from "react-hot-toast";
 export function Favorites({ favorites }: { favorites: Favorite[] }) {
     const router = useRouter();
     if (!favorites) return null;
+
+    function navigateToFavorite(favorite: Favorite) {
+        document.cookie = `userLat=${favorite.lat}; path=/`;
+        document.cookie = `userLon=${favorite.lon}; path=/`;
+        router.push(`/bus`);
+    }
 
     function removeFavorite(favorite: Favorite) {
         const cookieString = decodeURIComponent(document.cookie
@@ -35,19 +41,23 @@ export function Favorites({ favorites }: { favorites: Favorite[] }) {
 
     return (<Card className="p-2 max-w-2xl w-full">
         <CardHeader className="flex-col items-start">
-            <p className="text-xl font-bold">Preferiti</p>
+            <p className="text-xl font-bold">preferiti</p>
         </CardHeader>
         <CardBody>
             <AnimatePresence mode="wait">
                 {favorites.length ? favorites.map((favorite: Favorite) => (
                     <motion.div
                         key={`${favorite.name}-${favorite.lat},${favorite.lon}`}
+                        transition={{ duration: 0.3 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
                         layout
-                        exit={{ opacity: 0, y: -20, transition: { duration: 0.3 } }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
                     >
-                        <div className="flex justify-between items-center">
-                            <p>{favorite.name}</p>
+                        <div className="flex justify-between items-center py-2">
+                            <Link onPress={() => navigateToFavorite(favorite)} className="cursor-pointer text-default-foreground">
+                                {favorite.name}
+                            </Link>
                             <Button
                                 isIconOnly
                                 onPress={() => removeFavorite(favorite)}
@@ -59,7 +69,7 @@ export function Favorites({ favorites }: { favorites: Favorite[] }) {
                         </div>
                     </motion.div>
                 )) : (
-                    <p className="text-gray-500">ancora nessun preferito :(</p>
+                    <p className="text-gray-500">aggiungi una posizione nei preferiti per controllare le partenze da qui!</p>
                 )}
             </AnimatePresence>
         </CardBody>

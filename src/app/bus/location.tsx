@@ -18,7 +18,7 @@ export default function RequestLocation() {
                 document.cookie = `locationRejected=true; path=/`
             })
             .finally(() => {
-                router.refresh()
+                window.location.reload()
             })
     }, [router])
 

@@ -64,6 +64,7 @@ export function Monitor({ monitor }: { monitor: any }) {
                                             <Link
                                                 className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow"
                                                 href={getTrackUrl(train.company, train.number)!}
+                                                target="_blank"
                                             >
                                                 {capitalize(train.destination)}
                                             </Link>
@@ -83,6 +84,7 @@ export function Monitor({ monitor }: { monitor: any }) {
                                         <Link
                                             className="text-sm text-gray-500 capitalize"
                                             href={getTrackUrl(train.company, train.number)!}
+                                            target="_blank"
                                         >
                                             {train.shortCategory || "Treno"} {train.number}{" "}
                                             {train.company && `• ${train.company}`}
