@@ -65,16 +65,16 @@ export function Monitor({ trips }: { trips: any[] }) {
 
         timeouts.push(setTimeout(() => {
             setShowRelativeTime(true)
-        }, 2000))
+        }, 1000))
 
         timeouts.push(setTimeout(() => {
             setShowRelativeTime(false)
 
             const interval = setInterval(() => {
                 setShowRelativeTime(prev => !prev)
-            }, 4000)
+            }, 5000)
             timeouts.push(interval)
-        }, 4000))
+        }, 3000))
 
         return () => timeouts.forEach(clearTimeout)
     }, [])
@@ -111,9 +111,6 @@ export function Monitor({ trips }: { trips: any[] }) {
                         }
 
                         const timeUntilDeparture = (departure.getTime() - currentTime.getTime()) / (1000 * 60);
-
-                        console.log(stopsAway)
-
                         if (stopsAway === 0 || timeUntilDeparture <= 2) {
                             arriving = true;
                         }
@@ -139,7 +136,7 @@ export function Monitor({ trips }: { trips: any[] }) {
 
                                     <div className="flex flex-col text-left w-full flex-grow min-w-0">
                                         <div className="flex items-center justify-between w-full min-w-0 gap-2">
-                                            <Link href={`/track/trentino-trasporti/${trip.tripId}`} target="_blank">
+                                            <Link href={`/track/trentino-trasporti/${trip.tripId}`} target="_blank" className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow">
                                                 <div className="flex items-center gap-x-1 sm:gap-x-2">
                                                     <div className={`text-base sm:text-lg font-bold text-center rounded-small max-w-fit ${!trip.route?.routeColor && trip.type === "U" ? "bg-success text-white" : "bg-primary text-white"}`} style={{
                                                         backgroundColor: trip.route && trip.route.routeColor ? `#${trip.route.routeColor}` : "",
@@ -147,7 +144,7 @@ export function Monitor({ trips }: { trips: any[] }) {
                                                     }}>
                                                         {trip.route.routeShortName}
                                                     </div>
-                                                    <div className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow">
+                                                    <div className="truncate font-bold text-base sm:text-lg min-w-0">
                                                         {trip.tripHeadsign}
                                                     </div>
                                                 </div>
