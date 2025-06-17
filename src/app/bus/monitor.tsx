@@ -12,7 +12,7 @@ function getStopsAway(selectedStopId: number, stopTimes: any[], delay: number | 
 
     const selectedIndex = stopTimes.findIndex(s => s.stopId === selectedStopId);
     if (selectedIndex === -1) return null;
-    const previousStop = stopTimes[Math.max(selectedIndex - 1, 0)];
+    if (selectedIndex === 0) return null;
 
     const getAdjustedTime = (stop: any) => {
         const [h, m, s] = stop.departureTime.split(':').map(Number);
@@ -22,22 +22,15 @@ function getStopsAway(selectedStopId: number, stopTimes: any[], delay: number | 
         return dep;
     };
 
-    const selectedTime = getAdjustedTime(stopTimes[selectedIndex]);
-    const prevTime = getAdjustedTime(previousStop);
-
-    const timeUntilSelected = (selectedTime.getTime() - now.getTime()) / 60000;
-    const timeBetweenStops = (selectedTime.getTime() - prevTime.getTime()) / 60000;
-
-    if (selectedIndex === 0 && timeUntilSelected <= 2) return 0;
-    if (timeUntilSelected <= 2 && timeBetweenStops >= 2) return 0;
-
     const lastPassedIndex = stopTimes.findIndex((stop) => {
         const adjusted = getAdjustedTime(stop);
         return adjusted > now;
     });
 
-    const indexToUse = lastPassedIndex === -1 ? stopTimes.length : lastPassedIndex;
-    const diff = selectedIndex - indexToUse;
+    const currentStopIndex = lastPassedIndex === -1 ? stopTimes.length : lastPassedIndex;
+    if (currentStopIndex <= 1) return null;
+
+    const diff = selectedIndex - currentStopIndex;
     return diff >= 0 ? diff + 1 : null;
 }
 
@@ -88,9 +81,6 @@ export function Monitor({ trips }: { trips: any[] }) {
                     const scheduledTime = new Date(trip.oraArrivoProgrammataAFermataSelezionata)
                     const effectiveTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata)
                     const currentTime = new Date()
-
-                    const timeUntilScheduled = (scheduledTime.getTime() - currentTime.getTime()) / (1000 * 60)
-                    const timeUntilEffective = (effectiveTime.getTime() - currentTime.getTime()) / (1000 * 60)
 
                     const stopsAway = getStopsAway(trip.stopId, trip.stopTimes, trip.delay)
                     const selectedStop = trip.stopTimes.find((s: any) => s.stopId === trip.stopId);
