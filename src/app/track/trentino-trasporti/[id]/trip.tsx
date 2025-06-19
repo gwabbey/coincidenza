@@ -6,8 +6,7 @@ import Timeline from "@/components/timeline";
 import { getDelayColor } from "@/utils";
 import { Button, Card, Divider, Link, useDisclosure } from "@heroui/react";
 import { IconAlertTriangleFilled, IconArrowUp, IconInfoTriangleFilled } from "@tabler/icons-react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const timeToMinutes = (timeStr: string): number => {
     const [hours, minutes] = timeStr.split(':').map(Number);
@@ -53,11 +52,24 @@ const calculatePreciseActiveIndex = (stopTimes: any[], delay: number, stopLast: 
     return -1;
 };
 
-export default function Trip({ trip }: { trip: TripProps }) {
-    const router = useRouter();
+interface TripUpdateData {
+    tripId: string;
+    delay: number;
+    stopLast: number;
+    lastEventRecivedAt: string;
+    lastSequenceDetection: number;
+    matricolaBus: number;
+    timestamp: string;
+    error?: string;
+}
+
+export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
+    const [trip, setTrip] = useState(initialTrip);
     const [scroll, setScroll] = useState({ y: 0 });
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
+    const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('connecting');
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
+    const eventSourceRef = useRef<EventSource | null>(null);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -68,14 +80,60 @@ export default function Trip({ trip }: { trip: TripProps }) {
     }, []);
 
     useEffect(() => {
-        if (!(trip.lastSequenceDetection === trip.stopTimes.length)) {
-            const intervalId = setInterval(() => {
-                router.refresh();
-            }, parseInt(process.env.AUTO_REFRESH || '10000', 10));
-
-            return () => clearInterval(intervalId);
+        if (trip.lastSequenceDetection === trip.stopTimes.length) {
+            setConnectionStatus('disconnected');
+            return;
         }
-    }, [router, trip.lastSequenceDetection, trip.stopTimes.length]);
+
+        const eventSource = new EventSource(`/track/trentino-trasporti/${trip.tripId}/stream`);
+        eventSourceRef.current = eventSource;
+
+        eventSource.onopen = () => {
+            setConnectionStatus('connected');
+        };
+
+        eventSource.onmessage = (event) => {
+            try {
+                const data: TripUpdateData = JSON.parse(event.data);
+
+                if (data.error) {
+                    console.error('SSE Error:', data.error);
+                    setConnectionStatus('error');
+                    return;
+                }
+
+                setTrip((prevTrip) => ({
+                    ...prevTrip,
+                    delay: data.delay,
+                    stopLast: data.stopLast,
+                    lastEventRecivedAt: data.lastEventRecivedAt,
+                    lastSequenceDetection: data.lastSequenceDetection,
+                    matricolaBus: data.matricolaBus,
+                }));
+
+                setConnectionStatus('connected');
+            } catch (error) {
+                console.error('Error parsing SSE data:', error);
+                setConnectionStatus('error');
+            }
+        };
+
+        eventSource.onerror = (error) => {
+            console.error('SSE Connection error:', error);
+            setConnectionStatus('error');
+
+            setTimeout(() => {
+                if (eventSourceRef.current?.readyState === EventSource.CLOSED) {
+                    setConnectionStatus('connecting');
+                }
+            }, 5000);
+        };
+
+        return () => {
+            eventSource.close();
+            eventSourceRef.current = null;
+        };
+    }, [trip.tripId, trip.lastSequenceDetection, trip.stopTimes.length]);
 
     useEffect(() => {
         const updateIndex = () => {
@@ -114,6 +172,16 @@ export default function Trip({ trip }: { trip: TripProps }) {
 
     return (
         <div className="flex flex-col gap-4">
+            {process.env.NODE_ENV === 'development' && (
+                <div className={`text-xs p-2 rounded ${connectionStatus === 'connected' ? 'bg-green-100 text-green-800' :
+                    connectionStatus === 'connecting' ? 'bg-yellow-100 text-yellow-800' :
+                        connectionStatus === 'error' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                    }`}>
+                    Status: {connectionStatus}
+                </div>
+            )}
+
             <div className="flex justify-center items-center text-center flex-row gap-x-2">
                 <div className={`text-lg font-bold text-center rounded-small max-w-fit ${!trip.route?.routeColor && trip.type === "U" ? "bg-success text-white" : "bg-primary text-white"}`} style={{
                     backgroundColor: trip.route && trip.route.routeColor ? `#${trip.route.routeColor}` : "",

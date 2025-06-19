@@ -142,7 +142,7 @@ async function Departures({ userLat, userLon }: { userLat: number, userLon: numb
         console.error('Error fetching bus data:', error)
         return (
             <div className="p-4 text-center py-8">
-                <h2 className="text-xl font-bold mb-2 text-red-600">errore</h2>
+                <h2 className="text-xl font-bold mb-2">errore</h2>
                 <p className="text-gray-500">c'è stato un problema :( torna più tardi!</p>
             </div>
         )

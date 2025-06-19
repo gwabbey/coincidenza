@@ -6,11 +6,11 @@ export async function getRealtimeData(agency: string, tripId: string) {
         const trip = await getTrentinoTrip(tripId);
         return {
             delay: trip?.delay ?? null,
-            destination: trip?.tripHeadsign || null,
-            info: trip?.route?.news?.map((alert: any) => ({
-                message: alert.header,
-                url: alert.url
-            })) || null,
+            // destination: trip?.tripHeadsign || null,
+            // info: trip?.route?.news?.map((alert: any) => ({
+            //     message: alert.header,
+            //     url: alert.url
+            // })) || null,
             status: trip ? "tracked" : "not_tracked"
         }
     } else if (agency === "trenitalia" || agency === "trenord") {
