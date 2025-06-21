@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@internationalized/date': 3.6.0
+  '@internationalized/date': 3.8.2
 
 importers:
 
@@ -18,8 +18,8 @@ importers:
         specifier: ^2.4.11
         version: 2.4.11(tailwindcss@3.4.17)
       '@internationalized/date':
-        specifier: 3.6.0
-        version: 3.6.0
+        specifier: 3.8.2
+        version: 3.8.2
       '@lottiefiles/dotlottie-react':
         specifier: ^0.12.3
         version: 0.12.3(react@18.3.1)
@@ -814,8 +814,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@internationalized/date@3.6.0':
-    resolution: {integrity: sha512-+z6ti+CcJnRlLHok/emGEsWQhe7kfSmEW+/6qCzvKY67YPh7YOBfvc7+/+NXq+zJlbArg30tYpqLjNgcAYv2YQ==}
+  '@internationalized/date@3.8.2':
+    resolution: {integrity: sha512-/wENk7CbvLbkUvX1tu0mwq49CVkkWpkXubGel6birjRPyo6uQ4nQpnq5xZu823zRCwwn82zgHrvgF1vZyvmVgA==}
 
   '@internationalized/message@3.1.6':
     resolution: {integrity: sha512-JxbK3iAcTIeNr1p0WIFg/wQJjIzJt9l/2KNY/48vXV7GRGZSv3zMxJsce008fZclk2cDC8y0Ig3odceHO7EfNQ==}
@@ -3128,7 +3128,7 @@ snapshots:
       '@heroui/system': 2.4.11(@heroui/theme@2.4.11(tailwindcss@3.4.17))(framer-motion@11.18.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@heroui/theme': 2.4.11(tailwindcss@3.4.17)
       '@heroui/use-aria-button': 2.2.9(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
-      '@internationalized/date': 3.6.0
+      '@internationalized/date': 3.8.2
       '@react-aria/calendar': 3.7.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@react-aria/focus': 3.19.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@react-aria/i18n': 3.12.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3214,7 +3214,7 @@ snapshots:
       '@heroui/shared-utils': 2.1.7
       '@heroui/system': 2.4.11(@heroui/theme@2.4.11(tailwindcss@3.4.17))(framer-motion@11.18.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@heroui/theme': 2.4.11(tailwindcss@3.4.17)
-      '@internationalized/date': 3.6.0
+      '@internationalized/date': 3.8.2
       '@react-aria/datepicker': 3.13.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@react-aria/i18n': 3.12.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@react-aria/utils': 3.27.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3237,7 +3237,7 @@ snapshots:
       '@heroui/shared-utils': 2.1.7
       '@heroui/system': 2.4.11(@heroui/theme@2.4.11(tailwindcss@3.4.17))(framer-motion@11.18.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1))(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@heroui/theme': 2.4.11(tailwindcss@3.4.17)
-      '@internationalized/date': 3.6.0
+      '@internationalized/date': 3.8.2
       '@react-aria/datepicker': 3.13.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@react-aria/i18n': 3.12.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@react-aria/utils': 3.27.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -3796,7 +3796,7 @@ snapshots:
     dependencies:
       '@heroui/react-utils': 2.1.8(react@18.3.1)
       '@heroui/system-rsc': 2.3.10(@heroui/theme@2.4.11(tailwindcss@3.4.17))(react@18.3.1)
-      '@internationalized/date': 3.6.0
+      '@internationalized/date': 3.8.2
       '@react-aria/i18n': 3.12.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@react-aria/overlays': 3.25.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@react-aria/utils': 3.27.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -4134,7 +4134,7 @@ snapshots:
   '@img/sharp-win32-x64@0.33.5':
     optional: true
 
-  '@internationalized/date@3.6.0':
+  '@internationalized/date@3.8.2':
     dependencies:
       '@swc/helpers': 0.5.15
 
@@ -4255,7 +4255,7 @@ snapshots:
 
   '@react-aria/calendar@3.7.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@internationalized/date': 3.6.0
+      '@internationalized/date': 3.8.2
       '@react-aria/i18n': 3.12.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@react-aria/interactions': 3.23.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       '@react-aria/live-announcer': 3.4.1
@@ -4306,7 +4306,7 @@ snapshots:
 
   '@react-aria/datepicker@3.13.0(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@internationalized/date': 3.6.0
+      '@internationalized/date': 3.8.2
       '@internationalized/number': 3.6.0
       '@internationalized/string': 3.2.5
       '@react-aria/focus': 3.19.1(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -4378,7 +4378,7 @@ snapshots:
 
   '@react-aria/i18n@3.12.5(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
     dependencies:
-      '@internationalized/date': 3.6.0
+      '@internationalized/date': 3.8.2
       '@internationalized/message': 3.1.6
       '@internationalized/number': 3.6.0
       '@internationalized/string': 3.2.5
@@ -4689,7 +4689,7 @@ snapshots:
 
   '@react-stately/calendar@3.7.0(react@18.3.1)':
     dependencies:
-      '@internationalized/date': 3.6.0
+      '@internationalized/date': 3.8.2
       '@react-stately/utils': 3.10.5(react@18.3.1)
       '@react-types/calendar': 3.6.0(react@18.3.1)
       '@react-types/shared': 3.27.0(react@18.3.1)
@@ -4726,7 +4726,7 @@ snapshots:
 
   '@react-stately/datepicker@3.12.0(react@18.3.1)':
     dependencies:
-      '@internationalized/date': 3.6.0
+      '@internationalized/date': 3.8.2
       '@internationalized/string': 3.2.5
       '@react-stately/form': 3.1.1(react@18.3.1)
       '@react-stately/overlays': 3.6.13(react@18.3.1)
@@ -4905,7 +4905,7 @@ snapshots:
 
   '@react-types/calendar@3.6.0(react@18.3.1)':
     dependencies:
-      '@internationalized/date': 3.6.0
+      '@internationalized/date': 3.8.2
       '@react-types/shared': 3.27.0(react@18.3.1)
       react: 18.3.1
 
@@ -4921,7 +4921,7 @@ snapshots:
 
   '@react-types/datepicker@3.10.0(react@18.3.1)':
     dependencies:
-      '@internationalized/date': 3.6.0
+      '@internationalized/date': 3.8.2
       '@react-types/calendar': 3.6.0(react@18.3.1)
       '@react-types/overlays': 3.8.12(react@18.3.1)
       '@react-types/shared': 3.27.0(react@18.3.1)

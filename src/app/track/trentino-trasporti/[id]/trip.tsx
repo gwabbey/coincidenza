@@ -133,7 +133,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
             eventSource.close();
             eventSourceRef.current = null;
         };
-    }, [trip.tripId, trip.lastSequenceDetection, trip.stopTimes.length]);
+    }, []);
 
     useEffect(() => {
         const updateIndex = () => {
@@ -260,7 +260,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
 
                     {trip.delay !== null && (
                         <Button
-                            className={`p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors text-white bg-${trip.lastSequenceDetection === trip.stopTimes.length ? "default" : getDelayColor(trip.delay)}`}
+                            className={`p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors text-white bg-${trip.lastSequenceDetection === trip.stopTimes.length ? "default-400" : getDelayColor(trip.delay)}`}
                             radius="sm"
                             variant="solid"
                             disabled

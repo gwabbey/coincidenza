@@ -55,7 +55,11 @@
   },
   "pnpm": {
     "overrides": {
-      "@internationalized/date": "3.6.0"
-    }
+      "@internationalized/date": "3.8.2"
+    },
+    "onlyBuiltDependencies": [
+      "@heroui/shared-utils",
+      "sharp"
+    ]
   }
 }
