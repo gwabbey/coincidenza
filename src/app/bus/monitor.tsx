@@ -126,7 +126,7 @@ export function Monitor({ trips }: { trips: any[] }) {
 
                                     <div className="flex flex-col text-left w-full flex-grow min-w-0">
                                         <div className="flex items-center justify-between w-full min-w-0 gap-2">
-                                            <Link href={`/track/trentino-trasporti/${trip.tripId}`} target="_blank" className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow">
+                                            <Link href={`/track/trentino-trasporti/${trip.tripId}`} className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow">
                                                 <div className="flex items-center gap-x-1 sm:gap-x-2">
                                                     <div className={`text-base sm:text-lg font-bold text-center rounded-small max-w-fit ${!trip.route?.routeColor && trip.type === "U" ? "bg-success text-white" : "bg-primary text-white"}`} style={{
                                                         backgroundColor: trip.route && trip.route.routeColor ? `#${trip.route.routeColor}` : "",
@@ -150,7 +150,6 @@ export function Monitor({ trips }: { trips: any[] }) {
                                         <Link
                                             className="text-sm text-gray-500"
                                             href={`/track/trentino-trasporti/${trip.tripId}`}
-                                            target="_blank"
                                         >
                                             {stopsAway ? (
                                                 <>a <strong>{stopsAway}</strong> fermat{stopsAway > 1 ? 'e' : 'a'} da {trip.stopName}</>
