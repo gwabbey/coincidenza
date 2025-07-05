@@ -6,7 +6,7 @@ import Timeline from "@/components/timeline";
 import { getDelayColor } from "@/utils";
 import { Button, Card, Divider, Link, useDisclosure } from "@heroui/react";
 import { IconAlertTriangleFilled, IconArrowUp, IconInfoTriangleFilled } from "@tabler/icons-react";
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface TripUpdateData {
     tripId: string;
@@ -68,7 +68,6 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
     const [scroll, setScroll] = useState({ y: 0 });
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
-    const eventSourceRef = useRef<EventSource | null>(null);
 
     useEffect(() => {
         const handleScroll = () => {
@@ -80,7 +79,6 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
 
     useEffect(() => {
         const eventSource = new EventSource(`/track/trentino-trasporti/${trip.tripId}/stream`);
-        eventSourceRef.current = eventSource;
 
         eventSource.onmessage = (event) => {
             try {
@@ -110,7 +108,6 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
 
         return () => {
             eventSource.close();
-            eventSourceRef.current = null;
         };
     }, []);
 

@@ -39,7 +39,7 @@ export async function GET(
             const currentHash = hashObject(currentTripData);
             const hasChanged = !lastTripHash || lastTripHash !== currentHash;
 
-            if (hasChanged) {
+            if (hasChanged && session.isConnected) {
                 lastTripHash = currentHash;
 
                 session.push({

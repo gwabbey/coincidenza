@@ -3,7 +3,7 @@
 import { geocodeAddress } from "@/api/apple-maps/geolocation";
 import { reverseGeocode } from "@/api/nominatim/geolocation";
 import { getUserLocation } from '@/components/geolocation';
-import { Location } from "@/types";
+import { Favorite, Location } from "@/types";
 import { Autocomplete, AutocompleteItem, Button, Spinner } from "@heroui/react";
 import { IconMapPin, IconStar, IconStarFilled } from "@tabler/icons-react";
 import { motion } from "motion/react";
@@ -39,7 +39,7 @@ interface LocationAutocompleteProps {
     label?: string;
     disabled?: boolean;
     debounceDelay?: number;
-    favorites?: { lat: number, lon: number, name: string }[];
+    favorites?: Favorite[];
     initialLocationName?: string;
 }
 
@@ -98,7 +98,7 @@ export const Search = ({
             favorites.splice(i, 1);
             setIsStarred(false);
         } else {
-            favorites.push({ lat, lon, name });
+            favorites.push({ lat, lon, name, type: 'bus', createdAt: new Date().toISOString() });
             setIsStarred(true);
         }
 

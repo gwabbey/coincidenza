@@ -14,6 +14,7 @@ export async function getVtId(name: string): Promise<string> {
 
     const res = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/autocompletaStazione/${name}`);
     const vtId = res.data.split("\n")[0].split("|")[1];
+
     vtIdCache.set(name, vtId);
     return vtId;
 }
@@ -50,7 +51,7 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
         const $ = cheerio.load(response.data);
 
         const name = capitalize($('h1[id="nomeStazioneId"]').text().trim());
-        const vtData = vtId ? await getVtDepartures(vtId) : [];
+        const vtData = vtId ? await getVtDepartures(vtId) : null;
 
         const trains: Train[] = [];
         const alerts = $('#barraInfoStazioneId > div')
@@ -97,7 +98,7 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
                 if (category.startsWith('servizio ferroviario metropolitano')) {
                     return category.replace('servizio ferroviario metropolitano linea', 'SFM');
                 }
-                return trainCategoryShortNames[category as keyof typeof trainCategoryShortNames] || "Treno";
+                return trainCategoryShortNames[category as keyof typeof trainCategoryShortNames];
             };
 
             const shortCategory = getShortCategory(category);
@@ -107,7 +108,7 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
                 if (company === 'ente volturno autonomo') return 'EAV';
                 if (company === 'sad - trasporto locale spa') return 'SAD';
                 if (company.startsWith('obb')) return 'ÖBB';
-                return company;
+                return capitalize(company);
             };
 
             company = getCompany(company);

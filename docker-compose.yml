@@ -1,6 +1,9 @@
 networks:
   web:
     external: true
+    
+volumes:
+  pgdata: {}
 
 services:
   trasporti:
@@ -8,6 +11,28 @@ services:
     build: .
     env_file:
       - .env
+    restart: always
+    networks:
+      - web
+    depends_on:
+      - postgres
+
+  postgres:
+    container_name: trasporti-db
+    image: postgres:17
+    restart: always
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    networks:
+      - web
+
+  redis:
+    container_name: trasporti-redis
+    image: redis:8
     restart: always
     networks:
       - web

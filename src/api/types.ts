@@ -12,11 +12,7 @@ export interface Trip {
     delay: number,
     alertMessage: string | null,
     stops: Stop[],
-    info: {
-        id: number;
-        message: string;
-        url: string;
-    }[];
+    info: Info[];
 }
 
 export interface Stop {
@@ -37,6 +33,7 @@ export interface Info {
     id: number;
     message: string;
     url: string;
+    date: Date;
 }
 
 export interface Train {

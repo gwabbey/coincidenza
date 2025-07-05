@@ -1,0 +1,81 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Subscription {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  deviceId String
+  
+  endpoint String
+  p256dh   String
+  auth     String
+  
+  deviceType String?
+  platform   String?
+  userAgent  String?
+  
+  isActive   Boolean  @default(true)
+  lastSent   DateTime?
+  failCount  Int      @default(0)
+  
+  tripAlerts    TripAlert[]
+  
+  @@unique([endpoint, deviceId])
+  @@index([deviceId])
+  @@index([isActive])
+}
+
+model TripAlert {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscriptionId String
+  
+  ids    Json      @default("{}") // { "trenitalia": "22476", "viaggiatreno": "12345-2024-06-30", "deutschebahn": "ICE123" }
+  operators       String[]   // ["Trenitalia", "OEBB", "Trenord"]
+  type       TripType
+  
+  departureStationId String
+  arrivalStationId   String
+  departureTime      DateTime
+
+  daysOfWeek String[] @default([])
+  
+  alertTypes         AlertType[]
+  
+  isActive           Boolean   @default(true)
+  
+  @@index([departureStationId])
+  @@index([arrivalStationId])
+  @@index([departureTime])
+  @@index([subscriptionId])
+}
+
+enum TripType {
+  TRAIN
+  BUS
+}
+
+enum AlertType {
+  TRIP_DELAY
+  TRIP_CANCELLATION
+  TRIP_PLATFORM_CHANGE
+  TRIP_EARLY_DEPARTURE
+  TRIP_SERVICE_UPDATE
+}

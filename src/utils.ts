@@ -58,3 +58,44 @@ export function getTrackUrl(company: string, trainNumber: string): string | null
             return `/track/trenitalia/${trainNumber}`;
     }
 }
+
+export function generateDeviceId(): string {
+    return 'device_' + Date.now().toString(36) + Math.random().toString(36).substr(2)
+}
+
+export function getOrCreateDeviceId(): string {
+    const STORAGE_KEY = 'device_id'
+
+    let deviceId = localStorage.getItem(STORAGE_KEY)
+
+    if (!deviceId) {
+        deviceId = generateDeviceId()
+        localStorage.setItem(STORAGE_KEY, deviceId)
+        sessionStorage.setItem(STORAGE_KEY, deviceId)
+
+        console.log('Created new device ID:', deviceId)
+    }
+
+    return deviceId
+}
+
+export function detectDeviceType(userAgent: string): string {
+    if (/Mobile|Android|iPhone|iPad/.test(userAgent)) {
+        if (/iPad/.test(userAgent)) return 'tablet'
+        return 'mobile'
+    }
+    return 'desktop'
+}
+
+export function detectPlatform(userAgent: string): string {
+    if (/iPhone|iPad/.test(userAgent)) return 'ios'
+    if (/Android/.test(userAgent)) return 'android'
+    if (/Windows/.test(userAgent)) return 'windows'
+    if (/Mac/.test(userAgent)) return 'macos'
+    return 'unknown'
+}
+
+export function encodeKey(buffer: ArrayBuffer | null): string {
+    if (!buffer) return ''
+    return Buffer.from(new Uint8Array(buffer)).toString('base64')
+}

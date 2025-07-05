@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Info, Stop, Trip as TripProps } from "@/api/types";
+import { Stop, Trip as TripProps } from "@/api/types";
 import { RouteModal } from "@/components/modal";
 import Timeline from "@/components/timeline";
 import stations from "@/stations.json";
@@ -10,7 +10,6 @@ import { Button, Card, Divider, useDisclosure } from "@heroui/react";
 import { IconAlertTriangleFilled, IconArrowUp, IconInfoTriangleFilled } from "@tabler/icons-react";
 import { formatDate } from "date-fns";
 import NextLink from "next/link";
-import { useRouter } from "next/navigation";
 import { useEffect, useState } from 'react';
 
 const timeToMinutes = (timeString: string, date: Date) => {
@@ -106,8 +105,8 @@ const calculatePreciseActiveIndex = (trip: TripProps) => {
     return lastPassedStopIndex !== -1 ? lastPassedStopIndex + 0.99 : Math.max(0, currentStopIndex);
 };
 
-export default function Trip({ trip }: { trip: TripProps }) {
-    const router = useRouter();
+export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
+    const [trip, setTrip] = useState<TripProps>(initialTrip);
     const [scroll, setScroll] = useState({ y: 0 });
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -133,11 +132,46 @@ export default function Trip({ trip }: { trip: TripProps }) {
     }, [trip.stops, trip.delay]);
 
     useEffect(() => {
-        const intervalId = setInterval(() => {
-            router.refresh();
-        }, parseInt(process.env.AUTO_REFRESH || '10000', 10));
-        return () => clearInterval(intervalId);
-    }, [router]);
+        if (trip.status === "completed" || trip.status === "canceled") {
+            return;
+        }
+
+        const eventSource = new EventSource(`/track/trenitalia/${trip.number}/stream`);
+
+        eventSource.onmessage = (event) => {
+            try {
+                const message = JSON.parse(event.data);
+
+                if (message.stops) {
+                    setTrip({
+                        ...trip,
+                        ...message,
+                        stops: message.stops.map((stop: Stop) => ({
+                            ...stop,
+                            scheduledArrival: stop.scheduledArrival ? new Date(stop.scheduledArrival) : null,
+                            scheduledDeparture: stop.scheduledDeparture ? new Date(stop.scheduledDeparture) : null,
+                            actualArrival: stop.actualArrival ? new Date(stop.actualArrival) : null,
+                            actualDeparture: stop.actualDeparture ? new Date(stop.actualDeparture) : null,
+                        }))
+                    });
+                } else if (message.type === 'trip_update' && message.data) {
+                    setTrip(message.data);
+                } else if (message.type === 'error') {
+                    console.error('SSE error:', message.message);
+                }
+            } catch (error) {
+                console.error('Error parsing SSE data:', error);
+            }
+        };
+
+        eventSource.onerror = (error) => {
+            console.error('SSE Connection error:', error);
+        };
+
+        return () => {
+            eventSource.close();
+        };
+    }, [trip.number]);
 
     function formatDuration(start: Date, end: Date): string {
         const startHours = start.getHours();
@@ -201,8 +235,8 @@ export default function Trip({ trip }: { trip: TripProps }) {
                 <div className="flex sm:flex-col flex-row justify-between items-center gap-y-2 py-4 max-w-md w-full mx-auto">
                     <div className="flex flex-col flex-grow min-w-0">
                         {trip.status !== "canceled" ? (
-                            <p className="text-lg sm:text-xl font-bold text-left sm:text-center truncate flex-grow min-w-0">
-                                {trip.status === "scheduled" ? "non ancora partito" : capitalize(trip.lastKnownLocation || "--")}
+                            <p className={`${trip.status === "scheduled" ? "text-center" : ""} text-lg sm:text-xl font-bold text-left sm:text-center truncate flex-grow min-w-0`}>
+                                {trip.status === "scheduled" ? "Non ancora partito" : capitalize(trip.lastKnownLocation || "--")}
                             </p>
                         ) : (
                             <p className="text-xl font-bold text-center">
@@ -257,7 +291,7 @@ export default function Trip({ trip }: { trip: TripProps }) {
                         </Button>
                     )}
                     <Timeline
-                        steps={trip.stops.filter(stop => stop.status !== "canceled").map((stop: Stop, index: number) => {
+                        steps={trip.stops.filter(stop => stop.status !== "canceled").map((stop, index) => {
                             const isFutureStop = preciseActiveIndex <= index;
                             const effectiveDelayArrival = !isFutureStop ? stop.arrivalDelay : trip.delay;
                             const effectiveDelayDeparture = !isFutureStop ? stop.departureDelay : (trip.delay >= 0 ? trip.delay : 0);
@@ -385,10 +419,17 @@ export default function Trip({ trip }: { trip: TripProps }) {
                 onOpenChange={onOpenChange}
                 title="avvisi sulla linea"
             >
-                {trip.info && trip.info.length > 0 && trip.info.map((alert: Info, index: number) => (
-                    <div key={index} className="flex flex-col gap-2">
+                {trip.info && trip.info.length > 0 && trip.info.map((alert, index) => (
+                    <div key={index} className="flex flex-col">
                         <span>
                             {alert.message}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                            {alert.date.toLocaleTimeString('it-IT', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: false,
+                            })}
                         </span>
                     </div>
                 ))}

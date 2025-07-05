@@ -1,23 +1,26 @@
-import { Button } from "@heroui/react";
+import { getRfiAlerts } from "@/api/trenitalia/api";
+import { Button, Card } from "@heroui/react";
 import { IconBus, IconInfoCircle, IconTrain } from "@tabler/icons-react";
 import { cookies } from "next/headers";
 import Link from "next/link";
 import { Favorites } from "./favorites";
 
 const links = [
-    { href: "/bus", label: "partenze da una fermata", icon: IconBus, className: "bg-gradient-to-r dark:from-green-500 dark:to-purple-500 from-green-300 to-purple-300" },
-    { href: "/departures", label: "partenze da una stazione", icon: IconTrain, className: "bg-gradient-to-r dark:from-cyan-500 dark:to-blue-500 from-cyan-300 to-blue-300" },
+    { href: "/bus", label: "partenze da una fermata", icon: IconBus, className: "bg-gradient-to-r dark:from-green-500 dark:to-blue-500 from-green-300 to-blue-300" },
+    { href: "/departures", label: "partenze da una stazione", icon: IconTrain, className: "bg-gradient-to-r dark:from-red-500 dark:to-pink-500 from-red-300 to-pink-300" },
     { href: "/about", label: "info sul progetto", icon: IconInfoCircle, className: "bg-gradient-to-r dark:from-gray-500 dark:to-slate-500 from-gray-300 to-slate-300" },
 ]
 
 export default async function Page() {
     const cookieStore = await cookies();
     const favorites = JSON.parse(decodeURIComponent(cookieStore.get('favorites')?.value ?? '[]'));
+    const rfiAlerts = await getRfiAlerts(["Trentino Alto Adige", "Veneto"]);
 
     return (
         <div className="flex flex-col items-center justify-start gap-4 text-center">
-            <h1 className="text-2xl font-bold">hey 👋</h1>
+            <h1 className="text-2xl font-bold">ciao!</h1>
             <h1 className="text-2xl max-w-2xl">pianifica il tuo viaggio senza problemi ✨</h1>
+
             {links.map((link, index) => (
                 <Button variant="solid"
                     startContent={<link.icon />}
@@ -28,7 +31,25 @@ export default async function Page() {
                     {link.label}
                 </Button>
             ))}
+
+            {rfiAlerts.length > 0 && <div className="flex flex-col gap-2">
+                <div className="text-lg font-bold">⚠️ avvisi sulla linea ferroviaria ⚠️</div>
+                {rfiAlerts && rfiAlerts.map((alert) => (
+                    <Card className="max-w-2xl p-4 text-left">
+                        <p>{alert.title}</p>
+                        <p className="text-sm text-gray-500">
+                            {new Date(alert.pubDate).toLocaleTimeString('it-IT', {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                                hour12: false,
+                            })}
+                        </p>
+                    </Card>
+                ))}
+            </div>}
+
             <Favorites favorites={favorites} />
+
         </div>
     )
 }

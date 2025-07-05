@@ -1,6 +1,45 @@
 import { capitalize } from "@/utils";
 import axios from 'axios';
+import { parseStringPromise } from "xml2js";
 import { Trip } from "../types";
+
+export async function getRfiAlerts(regions?: string[]) {
+    const { data } = await axios.get("https://www.rfi.it/content/rfi/it/news-e-media/infomobilita.rss.updates.xml",
+        { responseType: "text" }
+    )
+
+    const parsed = await parseStringPromise(data, {
+        explicitArray: false,
+        mergeAttrs: true,
+    })
+
+    const items = parsed.rss.channel.item
+    const alerts = Array.isArray(items) ? items : [items]
+
+    const now = new Date();
+    const midnight = new Date().setHours(0, 0, 0, 0);
+
+    const cutoff = new Date(midnight);
+    if (now.getHours() < 1) {
+        cutoff.setHours(cutoff.getHours() - 1);
+    }
+
+    return alerts
+        .map(item => {
+            const regionList = item["rfi:region"].split(",").map((r: string) => r.trim())
+
+            return {
+                title: item.title,
+                link: item.link,
+                pubDate: new Date(item.pubDate),
+                regions: regionList,
+            }
+        })
+        .filter(
+            (alert) =>
+                (!regions?.length || alert.regions.some((r: string) => regions.includes(r))) && alert.pubDate >= cutoff
+        )
+}
 
 export async function searchStation(query: string) {
     const { data } = await axios.get(`https://app.lefrecce.it/Channels.Website.BFF.WEB/app/locations?name=${query}&limit=5&multi=false`);
@@ -10,7 +49,6 @@ export async function searchStation(query: string) {
 export async function getTripSmartCaring(code: string, origin: string, date: string) {
     const { data } = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/news/smartcaring?commercialTrainNumber=${code}&originCode=${origin}&searchDate=${date}`);
     if (data.length === 0) return null;
-    console.log(data)
     return data;
 }
 
@@ -125,10 +163,11 @@ export async function getTrip(id: string): Promise<Trip | null> {
         const info = await getTripSmartCaring(code, origin, formattedDate);
         const canvas = await getTripCanvas(code, origin, timestamp);
         const currentStopIndex = canvas.findIndex((item: any) => item.stazioneCorrente) || -1;
+        const currentStopName = canvas.find((item: any) => item.stazioneCorrente)?.stazione;
 
         return {
             currentStopIndex,
-            lastKnownLocation: capitalize(normalizeStationName(trip.stazioneUltimoRilevamento || "--")),
+            lastKnownLocation: capitalize(normalizeStationName(currentStopName === trip.stazioneUltimoRilevamento ? currentStopName : trip.stazioneUltimoRilevamento || "--")),
             lastUpdate: trip.oraUltimoRilevamento ? new Date(trip.oraUltimoRilevamento) : null,
             status: getTripStatus(trip),
             category: getCategory(trip),
@@ -137,9 +176,9 @@ export async function getTrip(id: string): Promise<Trip | null> {
             destination: capitalize(normalizeStationName(trip.destinazioneEstera || trip.destinazione)),
             departureTime: new Date(trip.orarioPartenzaEstera || trip.orarioPartenza),
             arrivalTime: new Date(trip.orarioArrivoEstera || trip.orarioArrivo),
-            delay: !trip.nonPartito ? trip.ritardo : null,
+            delay: trip.ritardo,
             alertMessage: trip.subTitle,
-            stops: canvas.map((stop: any, index: number) => {
+            stops: canvas.map((stop: any) => {
                 const scheduledArrival = stop.fermata.arrivo_teorico ? new Date(stop.fermata.arrivo_teorico) : null;
                 const scheduledDeparture = stop.fermata.partenza_teorica ? new Date(stop.fermata.partenza_teorica) : null;
 
@@ -162,7 +201,8 @@ export async function getTrip(id: string): Promise<Trip | null> {
             }),
             info: info && info.map((alert: any) => ({
                 id: alert.id,
-                message: alert.infoNote
+                message: alert.infoNote,
+                date: new Date(alert.insertTimestamp)
             }))
         };
     } else {
