@@ -199,11 +199,13 @@ export async function getTrip(id: string): Promise<Trip | null> {
                     status: getStopStatus(stop),
                 };
             }),
-            info: info && info.map((alert: any) => ({
+            info: info ? info.map((alert: any) => ({
                 id: alert.id,
                 message: alert.infoNote,
                 date: new Date(alert.insertTimestamp)
-            }))
+            })).filter((alert: any, i: number, self: any[]) =>
+                self.findIndex(a => a.message === alert.message) === i
+            ) : []
         };
     } else {
         return null;
