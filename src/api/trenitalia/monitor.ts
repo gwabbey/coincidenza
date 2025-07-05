@@ -73,7 +73,7 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
             const departureTime = $(element).find('td[id="ROrario"]').text().trim();
             let delay = $(element).find('td[id="RRitardo"]').text().trim() || '0';
             const platform = category === "autocorsa"
-                ? "Piazzale Ferrovia"
+                ? "Piazzale Esterno"
                 : $(element).find('td[id="RBinario"] div').text().trim();
             const departing =
                 $(element).find('td[id="RExLampeggio"] img').attr('alt')?.toLowerCase().trim() === "si";

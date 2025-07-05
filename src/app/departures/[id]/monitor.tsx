@@ -96,7 +96,7 @@ export function Monitor({ monitor }: { monitor: any }) {
 
                                     {!train.departing ? (
                                         <div className="flex items-center gap-1 whitespace-pre">
-                                            {train.platform !== "Piazzale Ferrovia" && (
+                                            {train.platform !== "Piazzale Esterno" && (
                                                 <p className="text-sm text-gray-500">
                                                     {train.platform ? "binario" : ""}
                                                 </p>
@@ -111,7 +111,7 @@ export function Monitor({ monitor }: { monitor: any }) {
                                                 in partenza
                                             </p>
                                             {train.platform &&
-                                                train.platform !== "Piazzale Ferrovia" && (
+                                                train.platform !== "Piazzale Esterno" && (
                                                     <p className="text-sm text-gray-500">• binario</p>
                                                 )}
                                             <motion.div
