@@ -11,12 +11,12 @@ export function Favorites({ favorites }: { favorites: Favorite[] }) {
     if (!favorites) return null;
 
     function navigateToFavorite(favorite: Favorite) {
-        if (favorite.type === "bus") {
+        if (favorite.type === "train") {
+            router.push(`/departures/${favorite.id ?? ""}`)
+        } else {
             document.cookie = `userLat=${favorite.lat}; path=/`;
             document.cookie = `userLon=${favorite.lon}; path=/`;
             router.push(`/bus`);
-        } else {
-            router.push(`/departures/${favorite.id ?? ""}`)
         }
     }
 
