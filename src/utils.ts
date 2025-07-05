@@ -1,3 +1,5 @@
+import stations from "@/stations.json";
+
 export const getDelayColor = (delay: number | null) => {
     if (delay === null) return 'gray';
     if (delay >= 10) return 'danger';
@@ -57,6 +59,23 @@ export function getTrackUrl(company: string, trainNumber: string): string | null
         default:
             return `/track/trenitalia/${trainNumber}`;
     }
+}
+
+export function findMatchingStation(stationName: string): string | null {
+    if (!stationName || stationName.trim() === '') {
+        return null;
+    }
+
+    const normalize = (s: string) => s.replace(/\s*[-.]\s*/g, match => match.trim()).replace(/\b\/Av\b/gi, "").trim();
+    const normalizedInput = normalize(stationName);
+
+    for (const [id, name] of Object.entries(stations)) {
+        if (normalizedInput === normalize(name)) {
+            return id;
+        }
+    }
+
+    return null;
 }
 
 export function generateDeviceId(): string {

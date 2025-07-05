@@ -4,8 +4,7 @@
 import { Stop, Trip as TripProps } from "@/api/types";
 import { RouteModal } from "@/components/modal";
 import Timeline from "@/components/timeline";
-import stations from "@/stations.json";
-import { capitalize, getDelayColor } from "@/utils";
+import { capitalize, findMatchingStation, getDelayColor } from "@/utils";
 import { Button, Card, Divider, useDisclosure } from "@heroui/react";
 import { IconAlertTriangleFilled, IconArrowUp, IconInfoTriangleFilled } from "@tabler/icons-react";
 import { formatDate } from "date-fns";
@@ -21,23 +20,6 @@ const getCurrentMinutes = () => {
     const now = new Date();
     return (now.getDate() * 24 * 60) + (now.getHours() * 60) + now.getMinutes() + (now.getSeconds() / 60);
 };
-
-function findMatchingStation(stationName: string): string | null {
-    if (!stationName || stationName.trim() === '') {
-        return null;
-    }
-
-    const normalize = (s: string) => s.replace(/\s*[-.]\s*/g, match => match.trim()).replace(/\b\/Av\b/gi, "").trim();
-    const normalizedInput = normalize(stationName);
-
-    for (const [id, name] of Object.entries(stations)) {
-        if (normalizedInput === normalize(name)) {
-            return id;
-        }
-    }
-
-    return null;
-}
 
 const calculatePreciseActiveIndex = (trip: TripProps) => {
     const delay = trip.delay || 0;
@@ -235,9 +217,16 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                 <div className="flex sm:flex-col flex-row justify-between items-center gap-y-2 py-4 max-w-md w-full mx-auto">
                     <div className="flex flex-col flex-grow min-w-0">
                         {trip.status !== "canceled" ? (
-                            <p className={`${trip.status === "scheduled" ? "text-center" : ""} text-lg sm:text-xl font-bold text-left sm:text-center truncate flex-grow min-w-0`}>
-                                {trip.status === "scheduled" ? "Non ancora partito" : capitalize(trip.lastKnownLocation || "--")}
-                            </p>
+                            <div className="flex-col">
+                                <p className={`${trip.status === "scheduled" ? "text-center" : ""} text-lg sm:text-xl font-bold text-left sm:text-center truncate flex-grow min-w-0`}>
+                                    {trip.status === "scheduled" ? "Non ancora partito" : capitalize(trip.lastKnownLocation || "--")}
+                                </p>
+                                {!trip.lastUpdate && trip.delay && (
+                                    <p className={"text-center sm:text-xl font-bold sm:text-center truncate flex-grow min-w-0"}>
+                                        Partenza prevista con un ritardo di <span className={`text-${getDelayColor(trip.delay)}`}>{trip.delay}</span> min
+                                    </p>
+                                )}
+                            </div>
                         ) : (
                             <p className="text-xl font-bold text-center">
                                 {trip.alertMessage}

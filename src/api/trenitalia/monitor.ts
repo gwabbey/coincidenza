@@ -51,7 +51,7 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
         const $ = cheerio.load(response.data);
 
         const name = capitalize($('h1[id="nomeStazioneId"]').text().trim());
-        const vtData = vtId ? await getVtDepartures(vtId) : null;
+        const vtData = vtId !== "" ? await getVtDepartures(vtId) : [];
 
         const trains: Train[] = [];
         const alerts = $('#barraInfoStazioneId > div')

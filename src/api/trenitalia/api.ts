@@ -1,7 +1,8 @@
-import { capitalize } from "@/utils";
+import { capitalize, findMatchingStation } from "@/utils";
 import axios from 'axios';
 import { parseStringPromise } from "xml2js";
 import { Trip } from "../types";
+import { getMonitor } from "./monitor";
 
 export async function getRfiAlerts(regions?: string[]) {
     const { data } = await axios.get("https://www.rfi.it/content/rfi/it/news-e-media/infomobilita.rss.updates.xml",
@@ -88,6 +89,14 @@ function getCategory(trip: any) {
     return trip.categoria;
 }
 
+export async function getMonitorTripDelay(rfiId: string, tripId: string) {
+    const monitor = await getMonitor(rfiId);
+    const train = monitor.trains.find(train => String(train.number) === String(tripId));
+    if (!train) return null;
+    return Number(train.delay)
+}
+
+
 export async function getTrip(id: string): Promise<Trip | null> {
     const { data } = await axios.get(
         `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`
@@ -165,6 +174,23 @@ export async function getTrip(id: string): Promise<Trip | null> {
         const currentStopIndex = canvas.findIndex((item: any) => item.stazioneCorrente) || -1;
         const currentStopName = canvas.find((item: any) => item.stazioneCorrente)?.stazione;
 
+        let preDepartureDelay = null
+
+        if (trip.nonPartito) {
+            const now = Date.now()
+            const scheduledDeparture = new Date(trip.orarioPartenzaEstera || trip.orarioPartenza)
+
+            if (now - scheduledDeparture.getTime() >= 2 * 60 * 1000) {
+                const rfiId = findMatchingStation(capitalize(canvas[0].stazione))
+                if (rfiId) {
+                    const monitorDelay = await getMonitorTripDelay(rfiId, trip.numeroTreno)
+                    if (monitorDelay != null) {
+                        preDepartureDelay = monitorDelay
+                    }
+                }
+            }
+        }
+
         return {
             currentStopIndex,
             lastKnownLocation: capitalize(normalizeStationName(currentStopName === trip.stazioneUltimoRilevamento ? currentStopName : trip.stazioneUltimoRilevamento || "--")),
@@ -176,7 +202,7 @@ export async function getTrip(id: string): Promise<Trip | null> {
             destination: capitalize(normalizeStationName(trip.destinazioneEstera || trip.destinazione)),
             departureTime: new Date(trip.orarioPartenzaEstera || trip.orarioPartenza),
             arrivalTime: new Date(trip.orarioArrivoEstera || trip.orarioArrivo),
-            delay: trip.ritardo,
+            delay: preDepartureDelay ?? trip.ritardo,
             alertMessage: trip.subTitle,
             stops: canvas.map((stop: any) => {
                 const scheduledArrival = stop.fermata.arrivo_teorico ? new Date(stop.fermata.arrivo_teorico) : null;
