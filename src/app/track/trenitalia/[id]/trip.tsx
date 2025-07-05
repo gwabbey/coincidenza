@@ -182,13 +182,14 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
 
     return (
         <div className="flex flex-col gap-4 sm:pb-0 pb-12">
-            <div className="flex justify-center items-center text-center flex-row gap-x-2">
-                <span className={`sm:text-lg text-md font-bold max-w-fit rounded-small flex flex-row items-center gap-x-1 text-white ${trip.category?.toLowerCase().startsWith("ic") ? "bg-primary" : "bg-danger"}`} style={{
-                    padding: "0.1rem 0.5rem",
-                }}>
+            <div className="flex justify-center items-center text-center flex-wrap gap-x-2 gap-y-1 max-w-full">
+                <span
+                    className={`text-md sm:text-lg font-bold rounded-small flex items-center gap-x-1 text-white whitespace-nowrap ${trip.category?.toLowerCase().startsWith("ic") ? "bg-primary" : "bg-danger"}`}
+                    style={{ padding: "0.1rem 0.5rem" }}
+                >
                     {trip.category} {trip.number}
                 </span>
-                <div className="text-xl font-bold">
+                <div className="text-lg font-bold min-w-0 truncate">
                     {capitalize(trip.destination)}
                 </div>
             </div>
@@ -218,14 +219,14 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                     <div className="flex flex-col flex-grow min-w-0">
                         {trip.status !== "canceled" ? (
                             <div className="flex-col">
-                                <p className={`${trip.status === "scheduled" ? "text-center" : ""} text-lg sm:text-xl font-bold text-left sm:text-center truncate flex-grow min-w-0`}>
+                                <p className={`${trip.status === "scheduled" ? "text-center" : ""} text-lg font-bold text-left sm:text-center truncate flex-grow min-w-0`}>
                                     {trip.status === "scheduled" ? "Non ancora partito" : capitalize(trip.lastKnownLocation || "--")}
                                 </p>
-                                {!trip.lastUpdate && trip.delay && (
-                                    <p className={"text-center sm:text-xl font-bold sm:text-center truncate flex-grow min-w-0"}>
+                                {(!trip.lastUpdate && trip.delay) ? (
+                                    <p className={"text-center font-bold sm:text-center flex-grow min-w-0"}>
                                         Partenza prevista con un ritardo di <span className={`text-${getDelayColor(trip.delay)}`}>{trip.delay}</span> min
                                     </p>
-                                )}
+                                ) : null}
                             </div>
                         ) : (
                             <p className="text-xl font-bold text-center">
