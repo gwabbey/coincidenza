@@ -1,3 +1,4 @@
+import { Favorite } from "@/types";
 import { cookies } from "next/headers";
 import { Search } from "./search";
 
@@ -11,7 +12,7 @@ export default async function Layout({
     const userLat = cookieStore.get('userLat')?.value;
     const userLon = cookieStore.get('userLon')?.value;
 
-    let favorites: { lat: number, lon: number, name: string }[] = [];
+    let favorites: Favorite[] = [];
     try {
         favorites = JSON.parse(decodeURIComponent(favoritesRaw));
     } catch { }
