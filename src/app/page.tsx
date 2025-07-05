@@ -32,8 +32,8 @@ export default async function Page() {
                 </Button>
             ))}
 
-            {rfiAlerts.length > 0 && <div className="flex flex-col gap-2">
-                <div className="text-lg font-bold">⚠️ avvisi sulla linea ferroviaria ⚠️</div>
+            {rfiAlerts.length > 0 && <div className="flex flex-col gap-2 p-2 border-opacity-50 border-gray-500 border-1 max-w-2xl rounded-large">
+                <div className="text-lg font-bold">⚠️ avvisi sulla rete ferroviaria ⚠️</div>
                 {rfiAlerts && rfiAlerts.map((alert) => (
                     <Card className="max-w-2xl p-4 text-left">
                         <p>{alert.title}</p>
