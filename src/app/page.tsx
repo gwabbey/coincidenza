@@ -1,8 +1,8 @@
-import { getRfiAlerts } from "@/api/trenitalia/api";
-import { Button, Card } from "@heroui/react";
+import { getRfiAlerts, getRfiNotices } from "@/api/trenitalia/api";
+import { Button, Card, Link } from "@heroui/react";
 import { IconBus, IconInfoCircle, IconTrain } from "@tabler/icons-react";
 import { cookies } from "next/headers";
-import Link from "next/link";
+import NextLink from "next/link";
 import { Favorites } from "./favorites";
 
 const links = [
@@ -15,6 +15,9 @@ export default async function Page() {
     const cookieStore = await cookies();
     const favorites = JSON.parse(decodeURIComponent(cookieStore.get('favorites')?.value ?? '[]'));
     const rfiAlerts = await getRfiAlerts(["Trentino Alto Adige", "Veneto"]);
+    const rfiNotices = await getRfiNotices(["Trentino Alto Adige", "Veneto"]);
+    console.log(rfiAlerts)
+    console.log(rfiNotices)
 
     return (
         <div className="flex flex-col items-center justify-start gap-4 text-center">
@@ -26,30 +29,32 @@ export default async function Page() {
                     startContent={<link.icon />}
                     key={index}
                     className={`max-w-2xl w-full flex items-center justify-start h-16 font-bold sm:text-2xl text-lg shadow-medium ${link.className}`}
-                    radius="md" size="lg" as={Link} href={link.href}
+                    radius="md" size="lg" as={NextLink} href={link.href}
                 >
                     {link.label}
                 </Button>
             ))}
 
-            {rfiAlerts.length > 0 && <div className="flex flex-col gap-2 p-2 border-opacity-50 border-gray-500 border-1 max-w-2xl rounded-large">
+            {rfiAlerts.length > 0 && <div className="flex flex-col gap-2 p-2 border-opacity-50 border-gray-500 border-1 max-w-2xl w-full rounded-large">
                 <div className="text-lg font-bold">⚠️ avvisi sulla rete ferroviaria ⚠️</div>
                 {rfiAlerts && rfiAlerts.map((alert) => (
-                    <Card className="max-w-2xl p-4 text-left">
+                    <Card className="max-w-2xl p-4 text-left" as={NextLink} href={alert.link}>
                         <p>{alert.title}</p>
-                        <p className="text-sm text-gray-500">
-                            {new Date(alert.pubDate).toLocaleTimeString('it-IT', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: false,
-                            })}
-                        </p>
                     </Card>
                 ))}
             </div>}
 
+
             <Favorites favorites={favorites} />
 
+            {rfiNotices.length > 0 && <div className="flex flex-col gap-2 p-2 border-opacity-50 border-gray-500 border-1 max-w-2xl w-full rounded-large shadow-medium">
+                <div className="text-lg font-bold">ℹ informazioni utili</div>
+                {rfiNotices && rfiNotices.map((alert) => (
+                    <div className={`"flex flex-col p-2 text-left ${alert.title.toLowerCase().includes("sciopero") ? "font-bold" : ""}`}>
+                        <Link href={alert.link} isExternal>{alert.title}</Link>
+                    </div>
+                ))}
+            </div>}
         </div>
     )
 }

@@ -69,7 +69,7 @@ export default function Search({ selected }: { selected?: string }) {
 
     return (
         <div className="flex items-center justify-center gap-x-2 max-w-4xl w-full mx-auto">
-            <Autocomplete className="flex-grow" label="cerca una stazione" size="lg" isClearable={false} isVirtualized variant="underlined" allowsCustomValue={true} listboxProps={{
+            <Autocomplete className="flex-grow" label="cerca una stazione" size="lg" isVirtualized variant="underlined" allowsCustomValue={true} listboxProps={{
                 emptyContent: "nessun risultato."
             }} defaultSelectedKey={selected} autoFocus={selected == null}>
                 {Object.entries(stations).map(([id, name]) => (

@@ -4,42 +4,54 @@ import { parseStringPromise } from "xml2js";
 import { Trip } from "../types";
 import { getMonitor } from "./monitor";
 
-export async function getRfiAlerts(regions?: string[]) {
-    const { data } = await axios.get("https://www.rfi.it/content/rfi/it/news-e-media/infomobilita.rss.updates.xml",
-        { responseType: "text" }
-    )
+interface RfiItem {
+    title: string;
+    link: string;
+    pubDate: Date;
+    regions: string[];
+}
 
+async function getRfiData(url: string, regions?: string[], dateFilter?: (date: Date) => boolean): Promise<RfiItem[]> {
+    const { data } = await axios.get(url, { responseType: "text" });
     const parsed = await parseStringPromise(data, {
         explicitArray: false,
         mergeAttrs: true,
-    })
+    });
+    const items = Array.isArray(parsed.rss.channel.item) ? parsed.rss.channel.item : [parsed.rss.channel.item];
 
-    const items = parsed.rss.channel.item
-    const alerts = Array.isArray(items) ? items : [items]
+    return items
+        .map((item: any) => ({
+            title: item.title,
+            link: item.link,
+            pubDate: new Date(item.pubDate),
+            regions: item["rfi:region"].split(",").map((r: string) => r.trim()),
+        }))
+        .filter((item: any) =>
+            (!regions?.length || item.regions.some((r: string) => regions.includes(r))) &&
+            (!dateFilter || dateFilter(item.pubDate))
+        );
+}
 
+export async function getRfiAlerts(regions?: string[]): Promise<RfiItem[]> {
     const now = new Date();
-    const midnight = new Date().setHours(0, 0, 0, 0);
+    const cutoff = new Date().setHours(now.getHours() < 1 ? -1 : 0, 0, 0, 0);
 
-    const cutoff = new Date(midnight);
-    if (now.getHours() < 1) {
-        cutoff.setHours(cutoff.getHours() - 1);
-    }
+    return getRfiData(
+        "https://www.rfi.it/content/rfi/it/news-e-media/infomobilita.rss.updates.xml",
+        regions,
+        date => date >= new Date(cutoff)
+    );
+}
 
-    return alerts
-        .map(item => {
-            const regionList = item["rfi:region"].split(",").map((r: string) => r.trim())
+export async function getRfiNotices(regions?: string[], targetDate?: Date): Promise<RfiItem[]> {
+    const endOfDay = new Date(targetDate || new Date());
+    endOfDay.setHours(23, 59, 59, 999);
 
-            return {
-                title: item.title,
-                link: item.link,
-                pubDate: new Date(item.pubDate),
-                regions: regionList,
-            }
-        })
-        .filter(
-            (alert) =>
-                (!regions?.length || alert.regions.some((r: string) => regions.includes(r))) && alert.pubDate >= cutoff
-        )
+    return getRfiData(
+        "https://www.rfi.it/content/rfi/it/news-e-media/infomobilita.rss.notices.xml",
+        regions,
+        date => date >= endOfDay
+    );
 }
 
 export async function searchStation(query: string) {
@@ -99,7 +111,6 @@ export async function getMonitorTripDelay(rfiId: string, tripId: string) {
     if (!train) return null;
     return Number(train.delay)
 }
-
 
 export async function getTrip(id: string): Promise<Trip | null> {
     const { data } = await axios.get(

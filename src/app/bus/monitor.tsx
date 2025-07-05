@@ -9,29 +9,22 @@ import { useEffect, useState } from "react"
 
 function getStopsAway(selectedStopId: number, stopTimes: any[], delay: number | null = 0): number | null {
     const now = new Date();
-
     const selectedIndex = stopTimes.findIndex(s => s.stopId === selectedStopId);
     if (selectedIndex === -1) return null;
-    if (selectedIndex === 0) return null;
 
     const getAdjustedTime = (stop: any) => {
         const [h, m, s] = stop.departureTime.split(':').map(Number);
-        const dep = new Date(now);
-        dep.setHours(h, m, s, 0);
-        dep.setMinutes(dep.getMinutes() + (delay || 0));
+        const dep = new Date();
+        dep.setHours(h, m, s || 0, 0);
+        if (delay) dep.setMinutes(dep.getMinutes() + delay);
         return dep;
     };
 
-    const lastPassedIndex = stopTimes.findIndex((stop) => {
-        const adjusted = getAdjustedTime(stop);
-        return adjusted > now;
-    });
+    const passedIndex = stopTimes.findLastIndex(stop => getAdjustedTime(stop) <= now);
+    if (passedIndex === -1) return selectedIndex + 1; // none passed yet
 
-    const currentStopIndex = lastPassedIndex === -1 ? stopTimes.length : lastPassedIndex;
-    if (currentStopIndex <= 1) return null;
-
-    const diff = selectedIndex - currentStopIndex;
-    return diff >= 0 ? diff + 1 : null;
+    const stopsAway = selectedIndex - passedIndex;
+    return stopsAway <= 0 ? 0 : stopsAway; // never negative
 }
 
 export function Monitor({ trips }: { trips: any[] }) {

@@ -113,6 +113,7 @@ export const Search = ({
             setCookie('userLon', lon.toString());
             setValue('La tua posizione');
             checkIfStarred();
+            router.refresh();
         } catch (error) {
             console.error('Error getting user location:', error);
         }
@@ -223,7 +224,6 @@ export const Search = ({
                     emptyContent: "nessun risultato.",
                 }}
                 size="lg"
-                isClearable={false}
             >
                 {(item: Location) => (
                     <AutocompleteItem
