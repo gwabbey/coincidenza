@@ -85,7 +85,11 @@ function getStopStatus(stop: any) {
 
 function getCategory(trip: any) {
     if (trip.categoria === "REG") return "R";
-    if (!trip.categoria) return trip.compNumeroTreno.trim().split(" ")[0];
+    if (!trip.categoria) {
+        const fullTrainId = trip.compNumeroTreno.trim().split(" ")
+        if (fullTrainId.length < 2) return "Treno"
+        return fullTrainId[0]
+    }
     return trip.categoria;
 }
 
