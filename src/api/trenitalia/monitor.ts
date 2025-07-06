@@ -13,10 +13,34 @@ export async function getVtId(name: string): Promise<string> {
     if (vtIdCache.has(name)) return vtIdCache.get(name)!;
 
     const res = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/autocompletaStazione/${name}`);
-    const vtId = res.data.split("\n")[0].split("|")[1];
+    const lines = res.data.trim().split("\n").filter(Boolean);
 
-    vtIdCache.set(name, vtId);
-    return vtId;
+    if (lines.length === 0) throw new Error("No results from autocomplete");
+
+    const parsed = lines.map((line: string) => {
+        const [label, id] = line.split("|");
+        return { label: label.trim(), id: id.trim() };
+    });
+
+    const [first, second] = parsed;
+
+    if (second && first.label.toLowerCase() === second.label.toLowerCase()) {
+        const now = new Date();
+        const hour = now.getHours();
+
+        if (hour >= 4 && hour <= 23) {
+            const testRes = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/partenze/${first.id}/0`)
+                .catch(() => null);
+
+            if (!testRes?.data || Array.isArray(testRes.data) && testRes.data.length === 0) {
+                vtIdCache.set(name, second.id);
+                return second.id;
+            }
+        }
+    }
+
+    vtIdCache.set(name, first.id);
+    return first.id;
 }
 
 async function getVtDepartures(id: string) {

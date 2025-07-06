@@ -1,5 +1,5 @@
 import { getRfiAlerts, getRfiNotices } from "@/api/trenitalia/api";
-import { Button, Card, Link } from "@heroui/react";
+import { Button, Card, CardBody, CardHeader, Link } from "@heroui/react";
 import { IconBus, IconInfoCircle, IconTrain } from "@tabler/icons-react";
 import { cookies } from "next/headers";
 import NextLink from "next/link";
@@ -16,8 +16,6 @@ export default async function Page() {
     const favorites = JSON.parse(decodeURIComponent(cookieStore.get('favorites')?.value ?? '[]'));
     const rfiAlerts = await getRfiAlerts(["Trentino Alto Adige", "Veneto"]);
     const rfiNotices = await getRfiNotices(["Trentino Alto Adige", "Veneto"]);
-    console.log(rfiAlerts)
-    console.log(rfiNotices)
 
     return (
         <div className="flex flex-col items-center justify-start gap-4 text-center">
@@ -47,14 +45,16 @@ export default async function Page() {
 
             <Favorites favorites={favorites} />
 
-            {rfiNotices.length > 0 && <div className="flex flex-col gap-2 p-2 border-opacity-50 border-gray-500 border-1 max-w-2xl w-full rounded-large shadow-medium">
-                <div className="text-lg font-bold">ℹ informazioni utili</div>
-                {rfiNotices && rfiNotices.map((alert) => (
-                    <div className={`"flex flex-col p-2 text-left ${alert.title.toLowerCase().includes("sciopero") ? "font-bold" : ""}`}>
-                        <Link href={alert.link} isExternal>{alert.title}</Link>
-                    </div>
-                ))}
-            </div>}
+            {rfiNotices.length > 0 && <Card className="flex flex-col p-2 gap-2 max-w-2xl w-full rounded-large shadow-medium text-left">
+                <CardHeader className="text-xl font-bold pb-0">informazioni utili</CardHeader>
+                <CardBody className="gap-2">
+                    {rfiNotices && rfiNotices.map((alert, index) => (
+                        <div key={index} className={`"flex flex-col ${alert.title.toLowerCase().includes("sciopero") ? "font-bold" : ""}`}>
+                            <Link href={alert.link} isExternal>{alert.title}</Link>
+                        </div>
+                    ))}
+                </CardBody>
+            </Card>}
         </div>
     )
 }

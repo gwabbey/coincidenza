@@ -114,44 +114,67 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
     }, [trip.stops, trip.delay]);
 
     useEffect(() => {
-        if (trip.status === "completed" || trip.status === "canceled") {
-            return;
-        }
+        if (trip.status === "completed" || trip.status === "canceled") return;
 
-        const eventSource = new EventSource(`/track/trenitalia/${trip.number}/stream`);
+        let eventSource: EventSource | null = null;
+        let reconnectTimer: NodeJS.Timeout | null = null;
 
-        eventSource.onmessage = (event) => {
-            try {
-                const message = JSON.parse(event.data);
+        const setupSSE = () => {
+            if (eventSource) eventSource.close();
 
-                if (message.stops) {
-                    setTrip({
-                        ...trip,
-                        ...message,
-                        stops: message.stops.map((stop: Stop) => ({
-                            ...stop,
-                            scheduledArrival: stop.scheduledArrival ? new Date(stop.scheduledArrival) : null,
-                            scheduledDeparture: stop.scheduledDeparture ? new Date(stop.scheduledDeparture) : null,
-                            actualArrival: stop.actualArrival ? new Date(stop.actualArrival) : null,
-                            actualDeparture: stop.actualDeparture ? new Date(stop.actualDeparture) : null,
-                        }))
-                    });
-                } else if (message.type === 'trip_update' && message.data) {
-                    setTrip(message.data);
-                } else if (message.type === 'error') {
-                    console.error('SSE error:', message.message);
+            eventSource = new EventSource(`/track/trenitalia/${trip.number}/stream`);
+
+            eventSource.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+
+                    if (message.stops) {
+                        setTrip(prev => ({
+                            ...prev,
+                            ...message,
+                            stops: message.stops.map((stop: Stop) => ({
+                                ...stop,
+                                scheduledArrival: stop.scheduledArrival ? new Date(stop.scheduledArrival) : null,
+                                scheduledDeparture: stop.scheduledDeparture ? new Date(stop.scheduledDeparture) : null,
+                                actualArrival: stop.actualArrival ? new Date(stop.actualArrival) : null,
+                                actualDeparture: stop.actualDeparture ? new Date(stop.actualDeparture) : null,
+                            }))
+                        }));
+                    } else if (message.type === 'trip_update' && message.data) {
+                        setTrip(message.data);
+                    } else if (message.type === 'error') {
+                        console.error('SSE error:', message.message);
+                    }
+                } catch (e) {
+                    console.error('Error parsing SSE:', e);
                 }
-            } catch (error) {
-                console.error('Error parsing SSE data:', error);
+            };
+
+            eventSource.onerror = (error) => {
+                console.error('SSE error:', error);
+                if (eventSource) {
+                    eventSource.close();
+                }
+                reconnectTimer = setTimeout(() => setupSSE(), 5000);
+            };
+        };
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+                setupSSE();
+            } else {
+                if (eventSource) eventSource.close();
+                if (reconnectTimer) clearTimeout(reconnectTimer);
             }
         };
 
-        eventSource.onerror = (error) => {
-            console.error('SSE Connection error:', error);
-        };
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+        setupSSE();
 
         return () => {
-            eventSource.close();
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+            if (eventSource) eventSource.close();
+            if (reconnectTimer) clearTimeout(reconnectTimer);
         };
     }, [trip.number]);
 

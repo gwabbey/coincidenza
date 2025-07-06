@@ -17,6 +17,9 @@ async function getRfiData(url: string, regions?: string[], dateFilter?: (date: D
         explicitArray: false,
         mergeAttrs: true,
     });
+
+    if (!parsed) return [];
+
     const items = Array.isArray(parsed.rss.channel.item) ? parsed.rss.channel.item : [parsed.rss.channel.item];
 
     return items
@@ -206,9 +209,26 @@ export async function getTrip(id: string): Promise<Trip | null> {
             }
         }
 
+        let lastKnownLocation: string | null = null;
+
+        if (currentStopIndex >= 0) {
+            const currentStop = canvas[currentStopIndex];
+            const departedFromCurrentStop = !!currentStop.fermata?.partenzaReale;
+
+            if (!departedFromCurrentStop) {
+                lastKnownLocation = currentStopName;
+            } else {
+                lastKnownLocation = trip.stazioneUltimoRilevamento;
+            }
+        } else {
+            lastKnownLocation = trip.stazioneUltimoRilevamento;
+        }
+
+        lastKnownLocation = capitalize(normalizeStationName(lastKnownLocation || "--"));
+
         return {
             currentStopIndex,
-            lastKnownLocation: capitalize(normalizeStationName(currentStopName === trip.stazioneUltimoRilevamento ? currentStopName : trip.stazioneUltimoRilevamento || "--")),
+            lastKnownLocation,
             lastUpdate: trip.oraUltimoRilevamento ? new Date(trip.oraUltimoRilevamento) : null,
             status: getTripStatus(trip),
             category: getCategory(trip),
