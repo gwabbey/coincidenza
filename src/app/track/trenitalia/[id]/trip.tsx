@@ -117,7 +117,6 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
         if (trip.status === "completed" || trip.status === "canceled") return;
 
         let eventSource: EventSource | null = null;
-        let reconnectTimer: NodeJS.Timeout | null = null;
 
         const setupSSE = () => {
             if (eventSource) eventSource.close();
@@ -155,26 +154,13 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                 if (eventSource) {
                     eventSource.close();
                 }
-                reconnectTimer = setTimeout(() => setupSSE(), 5000);
             };
         };
 
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === "visible") {
-                setupSSE();
-            } else {
-                if (eventSource) eventSource.close();
-                if (reconnectTimer) clearTimeout(reconnectTimer);
-            }
-        };
-
-        document.addEventListener("visibilitychange", handleVisibilityChange);
         setupSSE();
 
         return () => {
-            document.removeEventListener("visibilitychange", handleVisibilityChange);
             if (eventSource) eventSource.close();
-            if (reconnectTimer) clearTimeout(reconnectTimer);
         };
     }, [trip.number]);
 

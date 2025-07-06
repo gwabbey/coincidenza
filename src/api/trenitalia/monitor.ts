@@ -15,7 +15,7 @@ export async function getVtId(name: string): Promise<string> {
     const res = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/autocompletaStazione/${name}`);
     const lines = res.data.trim().split("\n").filter(Boolean);
 
-    if (lines.length === 0) throw new Error("No results from autocomplete");
+    if (lines.length === 0) return "";
 
     const parsed = lines.map((line: string) => {
         const [label, id] = line.split("|");

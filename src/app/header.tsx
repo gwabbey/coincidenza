@@ -7,12 +7,14 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export function Header() {
-    const [mounted, setMounted] = useState(false)
     const { theme, setTheme } = useTheme()
+    const [mounted, setMounted] = useState(false)
 
     useEffect(() => {
         setMounted(true)
     }, [])
+
+    const isDark = theme === 'dark' || (theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches)
 
     return (
         <div className="flex justify-between items-center p-4">
@@ -28,12 +30,12 @@ export function Header() {
                 >
                     {mounted && (
                         <motion.div
-                            key={theme}
+                            key={isDark ? 'dark' : 'light'}
                             initial={{ rotate: -30 }}
                             animate={{ rotate: 0 }}
                             transition={{ type: "spring", stiffness: 300, damping: 15 }}
                         >
-                            {theme === 'light' ? (<IconMoon />) : (<IconSun />)}
+                            {isDark ? <IconSun /> : <IconMoon />}
                         </motion.div>
                     )}
                 </Button>

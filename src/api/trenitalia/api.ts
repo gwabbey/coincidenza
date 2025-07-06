@@ -46,14 +46,14 @@ export async function getRfiAlerts(regions?: string[]): Promise<RfiItem[]> {
     );
 }
 
-export async function getRfiNotices(regions?: string[], targetDate?: Date): Promise<RfiItem[]> {
-    const endOfDay = new Date(targetDate || new Date());
-    endOfDay.setHours(23, 59, 59, 999);
+export async function getRfiNotices(regions?: string[]): Promise<RfiItem[]> {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
 
     return getRfiData(
         "https://www.rfi.it/content/rfi/it/news-e-media/infomobilita.rss.notices.xml",
         regions,
-        date => date >= endOfDay
+        date => date >= startOfToday
     );
 }
 
@@ -181,54 +181,31 @@ export async function getTrip(id: string): Promise<Trip | null> {
         .reverse()
         .join("-");
 
-    const response = await axios.get(
-        `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${code}/${timestamp}`
-    );
+    const [response, info, canvas] = await Promise.all([
+        axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${code}/${timestamp}`),
+        getTripSmartCaring(code, origin, formattedDate),
+        getTripCanvas(code, origin, timestamp)
+    ]);
 
     if (response.status === 200) {
         const trip = response.data;
-        const info = await getTripSmartCaring(code, origin, formattedDate);
-        const canvas = await getTripCanvas(code, origin, timestamp);
         const currentStopIndex = canvas.findIndex((item: any) => item.stazioneCorrente) || -1;
-        const currentStopName = canvas.find((item: any) => item.stazioneCorrente)?.stazione;
 
         let preDepartureDelay = null
 
         if (trip.nonPartito) {
-            const now = Date.now()
-            const scheduledDeparture = new Date(trip.orarioPartenzaEstera || trip.orarioPartenza)
-
-            if (now - scheduledDeparture.getTime() >= 2 * 60 * 1000) {
-                const rfiId = findMatchingStation(capitalize(canvas[0].stazione))
-                if (rfiId) {
-                    const monitorDelay = await getMonitorTripDelay(rfiId, trip.numeroTreno)
-                    if (monitorDelay != null) {
-                        preDepartureDelay = monitorDelay
-                    }
+            const rfiId = findMatchingStation(capitalize(canvas[0].stazione))
+            if (rfiId) {
+                const monitorDelay = await getMonitorTripDelay(rfiId, trip.numeroTreno)
+                if (monitorDelay != null) {
+                    preDepartureDelay = monitorDelay
                 }
             }
         }
 
-        let lastKnownLocation: string | null = null;
-
-        if (currentStopIndex >= 0) {
-            const currentStop = canvas[currentStopIndex];
-            const departedFromCurrentStop = !!currentStop.fermata?.partenzaReale;
-
-            if (!departedFromCurrentStop) {
-                lastKnownLocation = currentStopName;
-            } else {
-                lastKnownLocation = trip.stazioneUltimoRilevamento;
-            }
-        } else {
-            lastKnownLocation = trip.stazioneUltimoRilevamento;
-        }
-
-        lastKnownLocation = capitalize(normalizeStationName(lastKnownLocation || "--"));
-
         return {
             currentStopIndex,
-            lastKnownLocation,
+            lastKnownLocation: capitalize(trip.stazioneUltimoRilevamento) || "",
             lastUpdate: trip.oraUltimoRilevamento ? new Date(trip.oraUltimoRilevamento) : null,
             status: getTripStatus(trip),
             category: getCategory(trip),

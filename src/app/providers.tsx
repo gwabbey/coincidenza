@@ -12,16 +12,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
-                router.refresh();
+                router.refresh()
             }
-        };
+        }
 
-        document.addEventListener('visibilitychange', handleVisibilityChange);
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+        window.addEventListener('focus', handleVisibilityChange)
 
         return () => {
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-        };
-    }, []);
+            document.removeEventListener('visibilitychange', handleVisibilityChange)
+            window.removeEventListener('focus', handleVisibilityChange)
+        }
+    }, [])
 
     return <HeroUIProvider navigate={router.push}>
         <NextThemesProvider attribute="class" defaultTheme="dark">
