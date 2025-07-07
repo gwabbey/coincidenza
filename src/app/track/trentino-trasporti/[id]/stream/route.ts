@@ -33,7 +33,6 @@ export async function GET(
                 stopLast: trip.stopLast,
                 lastEventRecivedAt: trip.lastEventRecivedAt,
                 lastSequenceDetection: trip.lastSequenceDetection,
-                matricolaBus: trip.matricolaBus,
             };
 
             const currentHash = hashObject(currentTripData);

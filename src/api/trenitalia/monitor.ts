@@ -161,13 +161,13 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
                     delay,
                     platform,
                     departing,
-                    stops,
+                    stops
                 });
             }
         });
 
         return { name, trains, alerts };
-    } catch (error: any) {
+    } catch (error) {
         return { name: "", trains: [], alerts: "" };
     }
 }

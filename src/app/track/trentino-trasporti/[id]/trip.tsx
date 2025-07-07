@@ -8,17 +8,6 @@ import { Button, Card, Divider, Link, useDisclosure } from "@heroui/react";
 import { IconAlertTriangleFilled, IconArrowUp, IconInfoTriangleFilled } from "@tabler/icons-react";
 import { useEffect, useState } from 'react';
 
-interface TripUpdateData {
-    tripId: string;
-    delay: number;
-    stopLast: number;
-    lastEventRecivedAt: string;
-    lastSequenceDetection: number;
-    matricolaBus: number;
-    timestamp: string;
-    error?: string;
-}
-
 const timeToMinutes = (timeStr: string): number => {
     const [hours, minutes] = timeStr.split(':').map(Number);
     return hours * 60 + minutes;
@@ -82,7 +71,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
 
         eventSource.onmessage = (event) => {
             try {
-                const data: TripUpdateData = JSON.parse(event.data);
+                const data = JSON.parse(event.data);
 
                 if (data.error) {
                     console.error('SSE Error:', data.error);
@@ -95,7 +84,6 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                     stopLast: data.stopLast,
                     lastEventRecivedAt: data.lastEventRecivedAt,
                     lastSequenceDetection: data.lastSequenceDetection,
-                    matricolaBus: data.matricolaBus,
                 }));
             } catch (error) {
                 console.error('Error parsing SSE data:', error);
@@ -123,7 +111,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
         return () => clearInterval(intervalId);
     }, [trip.stopTimes, trip.delay, trip.stopLast]);
 
-    const activeIndex = trip.stopTimes.findIndex((stop: { stopId: number }) => stop.stopId === trip.stopLast);
+    const activeIndex = trip.stopTimes.findIndex((stop) => stop.stopId === trip.stopLast);
     const isDeparting = trip.delay === 0 && trip.lastEventRecivedAt && activeIndex === -1;
 
     const calculateDuration = (arrival: string, departure: string) =>
@@ -148,14 +136,15 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex justify-center items-center text-center flex-row gap-x-2">
-                <div className={`text-lg font-bold text-center rounded-small max-w-fit ${!trip.route?.routeColor && trip.type === "U" ? "bg-success text-white" : "bg-primary text-white"}`} style={{
-                    backgroundColor: trip.route && trip.route.routeColor ? `#${trip.route.routeColor}` : "",
-                    padding: "0.1rem 0.5rem"
-                }}>
+            <div className="flex justify-center items-center text-center flex-wrap gap-x-2 gap-y-1 max-w-full">
+                <span
+                    className={`text-md font-bold rounded-small flex items-center gap-x-1 text-white whitespace-nowrap ${!trip.route?.routeColor && trip.type === "U" ? "bg-success text-white" : "bg-primary text-white"}`} style={{
+                        backgroundColor: trip.route && trip.route.routeColor ? `#${trip.route.routeColor}` : "",
+                        padding: "0.1rem 0.5rem"
+                    }}>
                     {trip.route.routeShortName}
-                </div>
-                <div className="text-xl font-bold">
+                </span>
+                <div className="text-lg font-bold min-w-0 truncate">
                     {trip.stopTimes[trip.stopTimes.length - 1].stopName}
                 </div>
             </div>
@@ -182,11 +171,11 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                 <Divider className="my-2" />
 
                 <div className="flex sm:flex-col flex-row justify-between items-center gap-y-2 py-4 w-full max-w-md mx-auto">
-                    <div className="flex flex-col">
+                    <div className="flex flex-col flex-grow min-w-0">
                         {trip.stopTimes[activeIndex] &&
                             Math.floor((new Date().getTime() - new Date(trip.lastEventRecivedAt).getTime()) / (1000 * 60)) > 20 &&
                             activeIndex !== trip.stopTimes.length - 1 ? (
-                            <p className={`text-lg sm:text-xl text-left sm:text-center ${activeIndex === -1 ? '' : 'italic'} truncate max-w-[230px] xs:max-w-[450px] md:max-w-full`}>
+                            <p className={`text-lg ${activeIndex === -1 ? '' : 'italic'} font-bold text-left sm:text-center truncate flex-grow min-w-0`}>
                                 {trip.stopTimes.reduce((closestStop: any, stopTime: any) => {
                                     const currentTime = new Date();
                                     const [hour, minute] = stopTime.arrivalTime.split(':').map(Number);
@@ -195,13 +184,13 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                                 }, null)?.stopName || "--"}
                             </p>
                         ) : (
-                            <p className="text-lg sm:text-xl font-bold text-left sm:text-center truncate max-w-[240px] xs:max-w-[450px] md:max-w-full">
+                            <p className="text-lg font-bold text-left sm:text-center truncate flex-grow min-w-0">
                                 {trip.stopTimes.length > 0 && !isDeparting ? trip.stopTimes[activeIndex]?.stopName : "--"}
                             </p>
                         )}
 
                         {!isDeparting && !trip.stopTimes[activeIndex] && (
-                            <p className="text-lg sm:text-xl font-bold text-left sm:text-center truncate">
+                            <p className="text-lg font-bold text-left sm:text-center truncate flex-grow min-w-0">
                                 dati in tempo reale non disponibili
                             </p>
                         )}
@@ -213,7 +202,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                                     activeIndex !== trip.stopTimes.length - 1 && (
                                         <IconAlertTriangleFilled className="text-warning self-center mr-1" size={16} />
                                     )}
-                                <p className="text-xs sm:text-sm text-gray-500">
+                                <p className="text-xs sm:text-sm text-gray-500 truncate">
                                     ultimo rilevamento: {new Date(trip.lastEventRecivedAt).toLocaleTimeString('it-IT', {
                                         hour: '2-digit',
                                         minute: '2-digit',
@@ -225,17 +214,19 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                     </div>
 
                     {trip.delay !== null && (
-                        <Button
-                            className={`p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors text-white bg-${trip.lastSequenceDetection === trip.stopTimes.length ? "default-400" : getDelayColor(trip.delay)}`}
-                            radius="sm"
-                            variant="solid"
-                            disabled
-                            disableRipple
-                            disableAnimation
-                        >
-                            {trip.delay < 0 ? '' : trip.delay > 0 ? '+' : trip.lastSequenceDetection === trip.stopTimes.length ? "arrivato" : "in orario"}
-                            {trip.delay !== 0 && `${trip.delay} min`}
-                        </Button>
+                        <div className="shrink-0">
+                            <Button
+                                className={`p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors text-white bg-${trip.lastSequenceDetection === trip.stopTimes.length ? "default-400" : getDelayColor(trip.delay)}`}
+                                radius="sm"
+                                variant="solid"
+                                disabled
+                                disableRipple
+                                disableAnimation
+                            >
+                                {trip.delay < 0 ? '' : trip.delay > 0 ? '+' : trip.lastSequenceDetection === trip.stopTimes.length ? "arrivato" : "in orario"}
+                                {trip.delay !== 0 && `${trip.delay} min`}
+                            </Button>
+                        </div>
                     )}
                 </div>
 

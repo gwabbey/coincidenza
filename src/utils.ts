@@ -30,7 +30,7 @@ export const capitalize = (str: string) => {
 };
 
 
-export function getTrackUrl(company: string, trainNumber: string): string | null {
+export function getTrackUrl(company: string, trainInfo: string): string | null {
     const normalizedCompany = company.toLowerCase().trim();
 
     if (
@@ -42,7 +42,7 @@ export function getTrackUrl(company: string, trainNumber: string): string | null
         normalizedCompany === "treno storico" ||
         normalizedCompany === "espresso"
     ) {
-        return `/track/trenitalia/${trainNumber}`;
+        return `/track/trenitalia/${trainInfo}`;
     }
 
     switch (normalizedCompany) {
@@ -51,13 +51,13 @@ export function getTrackUrl(company: string, trainNumber: string): string | null
         case "trenitalia tper":
         case "sad":
         case "sta":
-            return `/track/trenitalia/${trainNumber}`;
+            return `/track/trenitalia/${trainInfo}`;
         case "italo":
             return null;
         case "öbb":
             return null;
         default:
-            return `/track/trenitalia/${trainNumber}`;
+            return `/track/trenitalia/${trainInfo}`;
     }
 }
 

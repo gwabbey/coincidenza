@@ -1,12 +1,14 @@
 'use client';
+import { StationMonitor } from '@/api/types';
 import { capitalize, getDelayColor, getTrackUrl } from '@/utils';
-import { Divider } from '@heroui/react';
+import { Alert } from '@heroui/react';
+import { IconInfoCircleFilled } from '@tabler/icons-react';
 import { AnimatePresence, motion } from 'motion/react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-export function Monitor({ monitor }: { monitor: any }) {
+export function Monitor({ monitor }: { monitor: StationMonitor }) {
     const router = useRouter();
     const [blinkKey, setBlinkKey] = useState(0);
 
@@ -24,14 +26,6 @@ export function Monitor({ monitor }: { monitor: any }) {
         return () => clearInterval(blinkInterval);
     }, []);
 
-    if (monitor.error) {
-        return (
-            <p className="text-center text-lg text-gray-500 font-bold p-4">
-                {monitor.error}
-            </p>
-        );
-    }
-
     if (monitor.trains.length === 0) {
         return (
             <p className="text-center text-lg text-gray-500 font-bold p-4">
@@ -42,104 +36,103 @@ export function Monitor({ monitor }: { monitor: any }) {
 
     return (
         <div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
-            <AnimatePresence mode="popLayout">
-                {monitor.trains.map((train: any) => (
-                    <motion.div
-                        key={`${train.shortCategory || train.company || ""} ${train.number.toString()} ${train.destination}`}
-                        layout
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20, transition: { duration: 0.3 } }}
-                        transition={{ duration: 0.3, ease: "easeInOut" }}
-                    >
-                        <div className="flex flex-row justify-between gap-4">
-                            <div className="flex gap-2 w-full">
-                                <div className="flex items-center justify-center w-full max-w-16 p-2 text-lg font-bold text-center rounded-small bg-gray-500 text-white self-center">
-                                    {train.departureTime}
-                                </div>
-
-                                <div className="flex flex-col text-left w-full flex-grow min-w-0">
-                                    <div className="flex items-center justify-between w-full min-w-0 gap-2">
-                                        {getTrackUrl(train.company, train.number) && train.category !== "autocorsa" ? (
-                                            <Link
-                                                className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow"
-                                                href={getTrackUrl(train.company, train.number)!}
-                                            >
-                                                {capitalize(train.destination)}
-                                            </Link>
-                                        ) : (
-                                            <span className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow">
-                                                {capitalize(train.destination)}
-                                            </span>
-                                        )}
-                                        {train.delay !== "0" && (
-                                            <p className={`text-lg font-bold uppercase flex-shrink-0 whitespace-nowrap text-${getDelayColor(train.delay)}`}>
-                                                {parseInt(train.delay) > 0 ? `+${train.delay}'` : train.delay}
-                                            </p>
-                                        )}
+            {monitor && (
+                <AnimatePresence mode="popLayout">
+                    {monitor.alerts && <Alert color="warning" className="transition-colors shadow-medium text-left" icon={<IconInfoCircleFilled />}>{monitor.alerts}</Alert>}
+                    {monitor.trains.map((train: any) => (
+                        <motion.div
+                            key={`${train.shortCategory || train.company || ""} ${train.number.toString()} ${train.destination}`}
+                            layout
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20, transition: { duration: 0.3 } }}
+                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                        >
+                            <div className="flex flex-row justify-between gap-4">
+                                <div className="flex gap-2 w-full">
+                                    <div className="flex items-center justify-center w-full max-w-16 p-2 text-lg font-bold text-center rounded-small bg-gray-500 text-white self-center">
+                                        {train.departureTime}
                                     </div>
 
-                                    {getTrackUrl(train.company, train.number) && train.category !== "autocorsa" ? (
-                                        <Link
-                                            className="text-sm text-gray-500 capitalize"
-                                            href={getTrackUrl(train.company, train.number)!}
-                                        >
-                                            {train.shortCategory || "Treno"} {train.number}{" "}
-                                            {train.company && `• ${train.company}`}
-                                        </Link>
-                                    ) : (
-                                        <span className="text-sm text-gray-500 capitalize">
-                                            {train.shortCategory || "Treno"} {train.number}{" "}
-                                            {train.company && `• ${train.company}`}
-                                        </span>
-                                    )}
-
-                                    {!train.departing ? (
-                                        <div className="flex items-center gap-1 whitespace-pre">
-                                            {train.platform !== "Piazzale Esterno" && (
-                                                <p className="text-sm text-gray-500">
-                                                    {train.platform ? "binario" : ""}
+                                    <div className="flex flex-col text-left w-full flex-grow min-w-0">
+                                        <div className="flex items-center justify-between w-full min-w-0 gap-2">
+                                            {getTrackUrl(train.company, train.number) && train.category !== "autocorsa" ? (
+                                                <Link
+                                                    className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow"
+                                                    href={getTrackUrl(train.company, train.number)!}
+                                                >
+                                                    {capitalize(train.destination)}
+                                                </Link>
+                                            ) : (
+                                                <span className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow">
+                                                    {capitalize(train.destination)}
+                                                </span>
+                                            )}
+                                            {train.delay !== "0" && (
+                                                <p className={`text-lg font-bold uppercase flex-shrink-0 whitespace-nowrap text-${getDelayColor(train.delay)}`}>
+                                                    {parseInt(train.delay) > 0 ? `+${train.delay}'` : train.delay}
                                                 </p>
                                             )}
-                                            <p className="text-sm text-blue-500 font-bold">
-                                                {train.platform}
-                                            </p>
                                         </div>
-                                    ) : (
-                                        <div className="flex items-center gap-1 whitespace-pre">
-                                            <p className="text-sm text-green-500 font-bold">
-                                                in partenza
-                                            </p>
-                                            {train.platform &&
-                                                train.platform !== "Piazzale Esterno" && (
-                                                    <p className="text-sm text-gray-500">• binario</p>
-                                                )}
-                                            <motion.div
-                                                key={blinkKey}
-                                                initial={{ opacity: 1 }}
-                                                animate={{ opacity: [1, 0, 1] }}
-                                                transition={{
-                                                    duration: 1,
-                                                    times: [0, 0.5, 1],
-                                                    ease: "easeInOut",
-                                                }}
+
+                                        {getTrackUrl(train.company, train.number) && train.category !== "autocorsa" ? (
+                                            <Link
+                                                className="text-sm text-gray-500 capitalize"
+                                                href={getTrackUrl(train.company, train.number)!}
                                             >
+                                                {train.shortCategory || "Treno"} {train.number}{" "}
+                                                {train.company && `• ${train.company}`}
+                                            </Link>
+                                        ) : (
+                                            <span className="text-sm text-gray-500 capitalize">
+                                                {train.shortCategory || "Treno"} {train.number}{" "}
+                                                {train.company && `• ${train.company}`}
+                                            </span>
+                                        )}
+
+                                        {!train.departing ? (
+                                            <div className="flex items-center gap-1 whitespace-pre">
+                                                {train.platform !== "Piazzale Esterno" && (
+                                                    <p className="text-sm text-gray-500">
+                                                        {train.platform ? "binario" : ""}
+                                                    </p>
+                                                )}
                                                 <p className="text-sm text-blue-500 font-bold">
                                                     {train.platform}
                                                 </p>
-                                            </motion.div>
-                                        </div>
-                                    )}
+                                            </div>
+                                        ) : (
+                                            <div className="flex items-center gap-1 whitespace-pre">
+                                                <p className="text-sm text-green-500 font-bold">
+                                                    in partenza
+                                                </p>
+                                                {train.platform &&
+                                                    train.platform !== "Piazzale Esterno" && (
+                                                        <p className="text-sm text-gray-500">• binario</p>
+                                                    )}
+                                                <motion.div
+                                                    key={blinkKey}
+                                                    initial={{ opacity: 1 }}
+                                                    animate={{ opacity: [1, 0, 1] }}
+                                                    transition={{
+                                                        duration: 1,
+                                                        times: [0, 0.5, 1],
+                                                        ease: "easeInOut",
+                                                    }}
+                                                >
+                                                    <p className="text-sm text-blue-500 font-bold">
+                                                        {train.platform}
+                                                    </p>
+                                                </motion.div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </motion.div>
-                ))}
-            </AnimatePresence>
-
-            <Divider />
-
-            <p className="text-gray-500 text-center">{monitor.alerts}</p>
+                        </motion.div>
+                    ))}
+                </AnimatePresence>
+            )}
         </div>
     );
 }

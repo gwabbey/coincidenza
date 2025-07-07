@@ -193,7 +193,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
         <div className="flex flex-col gap-4 sm:pb-0 pb-12">
             <div className="flex justify-center items-center text-center flex-wrap gap-x-2 gap-y-1 max-w-full">
                 <span
-                    className={`text-md sm:text-lg font-bold rounded-small flex items-center gap-x-1 text-white whitespace-nowrap ${trip.category?.toLowerCase().startsWith("ic") ? "bg-primary" : "bg-danger"}`}
+                    className={`text-md font-bold rounded-small flex items-center gap-x-1 text-white whitespace-nowrap ${trip.category?.toLowerCase().startsWith("ic") ? "bg-primary" : "bg-danger"}`}
                     style={{ padding: "0.1rem 0.5rem" }}
                 >
                     {trip.category} {trip.number}
@@ -238,7 +238,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                                 ) : null}
                             </div>
                         ) : (
-                            <p className="text-xl font-bold text-center">
+                            <p className="text-lg font-bold text-center">
                                 {trip.alertMessage}
                             </p>
                         )}

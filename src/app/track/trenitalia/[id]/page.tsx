@@ -2,6 +2,8 @@ import { getTrip } from "@/api/trenitalia/api";
 import { notFound } from "next/navigation";
 import Trip from "./trip";
 
+export const dynamic = 'force-dynamic'
+
 export default async function Page({ params }: {
     params: Promise<{ id: string }>
 }) {

@@ -10,23 +10,43 @@ export async function GET(
     const id = (await params).id;
 
     return createResponse(request, async (session: Session) => {
-        let lastTripHash = "";
-        let consecutiveErrors = 0;
-        let intervalId: NodeJS.Timeout | null = null;
+        const state = {
+            lastTripHash: "",
+            consecutiveErrors: 0,
+            intervalId: null as NodeJS.Timeout | null
+        };
 
-        const hashObject = (obj: any) =>
-            crypto.createHash('md5').update(JSON.stringify(obj)).digest('hex');
+        const hashTrip = (trip: any) =>
+            crypto.createHash('md5').update(JSON.stringify({
+                status: trip.status,
+                delay: trip.delay,
+                lastKnownLocation: trip.lastKnownLocation,
+                lastUpdate: trip.lastUpdate,
+                currentStopIndex: trip.currentStopIndex,
+                stops: trip.stops.map((stop: any) => ({
+                    id: stop.id,
+                    name: stop.name,
+                    scheduledPlatform: stop.scheduledPlatform,
+                    actualPlatform: stop.actualPlatform,
+                    scheduledArrival: stop.scheduledArrival,
+                    actualArrival: stop.actualArrival,
+                    scheduledDeparture: stop.scheduledDeparture,
+                    actualDeparture: stop.actualDeparture,
+                    departureDelay: stop.departureDelay,
+                    arrivalDelay: stop.arrivalDelay,
+                    status: stop.status
+                }))
+            })).digest('hex');
 
         const cleanup = () => {
-            if (intervalId) {
-                clearInterval(intervalId);
-                intervalId = null;
+            if (state.intervalId) {
+                clearInterval(state.intervalId);
+                state.intervalId = null;
             }
         };
 
-        const safePush = (data: any): boolean => {
+        const pushSafe = (data: any) => {
             if (!session.isConnected) {
-                console.log('Session no longer active or connected, skipping push');
                 cleanup();
                 return false;
             }
@@ -35,130 +55,82 @@ export async function GET(
                 session.push(data);
                 return true;
             } catch (error) {
-                console.error('Error pushing data to session (likely disconnected):', error);
+                console.error('Failed to push data:', error);
                 cleanup();
                 return false;
             }
         };
 
-        const sendUpdate = async (): Promise<boolean> => {
+        const handleTripUpdate = async () => {
             if (!session.isConnected) {
-                return true;
+                cleanup();
+                return;
             }
 
             try {
                 const trip = await getTrip(id);
 
                 if (!trip) {
-                    safePush({ error: "Trip not found" });
-                    return true;
+                    pushSafe({ error: "Trip not found" });
+                    cleanup();
+                    return;
                 }
 
                 if (trip.status === "completed" || trip.status === "canceled") {
-                    safePush({
+                    pushSafe({
                         data: trip,
                         message: 'Trip completed, stopping updates'
                     });
-                    return true;
+                    cleanup();
+                    return;
                 }
 
-                const currentTripData = {
-                    status: trip.status,
-                    delay: trip.delay,
-                    lastKnownLocation: trip.lastKnownLocation,
-                    lastUpdate: trip.lastUpdate,
-                    currentStopIndex: trip.currentStopIndex,
-                    stopUpdates: trip.stops.map(stop => ({
-                        id: stop.id,
-                        name: stop.name,
-                        scheduledPlatform: stop.scheduledPlatform,
-                        actualPlatform: stop.actualPlatform,
-                        scheduledArrival: stop.scheduledArrival,
-                        actualArrival: stop.actualArrival,
-                        scheduledDeparture: stop.scheduledDeparture,
-                        actualDeparture: stop.actualDeparture,
-                        departureDelay: stop.departureDelay,
-                        arrivalDelay: stop.arrivalDelay,
-                        status: stop.status
-                    }))
-                };
+                const currentHash = hashTrip(trip);
 
-                const currentHash = hashObject(currentTripData);
-                const hasChanged = !lastTripHash || lastTripHash !== currentHash;
+                if (currentHash !== state.lastTripHash) {
+                    state.lastTripHash = currentHash;
+                    state.consecutiveErrors = 0;
 
-                if (hasChanged) {
-                    lastTripHash = currentHash;
-                    consecutiveErrors = 0;
-
-                    const success = safePush({
+                    const success = pushSafe({
                         status: trip.status,
                         delay: trip.delay,
                         lastKnownLocation: trip.lastKnownLocation,
                         currentStopIndex: trip.currentStopIndex,
                         lastUpdate: trip.lastUpdate,
-                        stops: trip.stops.map(stop => ({
-                            id: stop.id,
-                            name: stop.name,
-                            scheduledPlatform: stop.scheduledPlatform,
-                            actualPlatform: stop.actualPlatform,
-                            scheduledArrival: stop.scheduledArrival,
-                            actualArrival: stop.actualArrival,
-                            scheduledDeparture: stop.scheduledDeparture,
-                            actualDeparture: stop.actualDeparture,
-                            departureDelay: stop.departureDelay,
-                            arrivalDelay: stop.arrivalDelay,
-                            status: stop.status
-                        })),
+                        stops: trip.stops,
                         timestamp: Date.now()
                     });
 
-                    if (!success) {
-                        return true;
-                    }
+                    if (!success) cleanup();
                 }
 
-                return false;
             } catch (error) {
-                consecutiveErrors++;
-                console.error('Error fetching trip data:', error);
+                state.consecutiveErrors++;
+                console.error('Error fetching trip:', error);
 
-                if (consecutiveErrors > 5) {
-                    safePush({
+                if (state.consecutiveErrors > 5) {
+                    pushSafe({
                         type: 'error',
-                        message: 'Too many consecutive errors, stopping updates'
+                        message: 'Too many errors, stopping updates'
                     });
                     cleanup();
-                    return true;
+                    return;
                 }
 
                 if (session.isConnected) {
-                    safePush({
+                    pushSafe({
                         message: 'Failed to fetch trip data',
                         retryable: true
                     });
                 }
-                return false;
             }
         };
 
-        session.addListener('disconnected', () => {
-            console.log('Session disconnected');
-            cleanup();
-        });
+        session.addListener('disconnected', cleanup);
+        request.signal.addEventListener('abort', cleanup);
 
-        request.signal.addEventListener('abort', () => {
-            console.log('Request aborted');
-            cleanup();
-        });
+        state.intervalId = setInterval(handleTripUpdate, 15000);
 
-        setInterval(async () => {
-            if (!session.isConnected) {
-                cleanup();
-                return;
-            }
-            if (await sendUpdate()) {
-                cleanup();
-            }
-        }, 15000);
+        handleTripUpdate();
     });
 }
