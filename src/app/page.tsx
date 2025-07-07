@@ -33,15 +33,16 @@ export default async function Page() {
                 </Button>
             ))}
 
-            {rfiAlerts.length > 0 && <div className="flex flex-col gap-2 p-2 border-opacity-50 border-gray-500 border-1 max-w-2xl w-full rounded-large">
-                <div className="text-lg font-bold">⚠️ avvisi sulla rete ferroviaria ⚠️</div>
-                {rfiAlerts && rfiAlerts.map((alert) => (
-                    <Card className="max-w-2xl p-4 text-left" as={NextLink} href={alert.link}>
-                        <p>{alert.title}</p>
-                    </Card>
-                ))}
-            </div>}
-
+            {rfiAlerts.length > 0 && <Card className="flex flex-col p-2 gap-2 max-w-2xl w-full rounded-large shadow-medium text-left">
+                <CardHeader className="text-xl font-bold pb-0">⚠️ avvisi sulla rete ferroviaria ⚠️</CardHeader>
+                <CardBody className="gap-2">
+                    {rfiAlerts && rfiAlerts.map((alert, index) => (
+                        <div key={index} className="flex flex-col">
+                            <Link href={alert.link} isExternal>{alert.title}</Link>
+                        </div>
+                    ))}
+                </CardBody>
+            </Card>}
 
             <Favorites favorites={favorites} />
 

@@ -69,35 +69,26 @@ export function Monitor({ trips }: { trips: any[] }) {
         <div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
             <AnimatePresence mode="popLayout">
                 {trips.map((trip) => {
-                    let arriving = false
+                    const now = Date.now();
                     const isDelayed = trip.delay !== null
                     const scheduledTime = new Date(trip.oraArrivoProgrammataAFermataSelezionata)
                     const effectiveTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata)
-                    const currentTime = new Date()
 
                     const stopsAway = getStopsAway(trip.stopId, trip.stopTimes, trip.delay)
-                    const selectedStop = trip.stopTimes.find((s: any) => s.stopId === trip.stopId);
-                    const selectedSequence = selectedStop?.stopSequence ?? null;
 
-                    if (trip.lastEventRecivedAt !== null && selectedSequence !== null) {
-                        const prevSequence = selectedSequence - 1;
-                        if (trip.lastSequenceDetection >= prevSequence && trip.lastSequenceDetection <= selectedSequence) {
-                            arriving = true;
-                        }
-                    } else if (selectedStop) {
-                        const [h, m, s] = selectedStop.departureTime.split(":").map(Number);
-                        const departure = new Date(currentTime);
-                        departure.setHours(h, m, s, 0);
+                    const arrivalTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata).getTime();
+                    const arriving =
+                        trip.oraArrivoEffettivaAFermataSelezionata &&
+                        arrivalTime - now <= 2 * 60 * 1000 &&
+                        trip.lastEventRecivedAt !== null &&
+                        stopsAway === 0;
 
-                        if (trip.delay != null && !isNaN(trip.delay)) {
-                            departure.setMinutes(departure.getMinutes() + trip.delay);
-                        }
+                    const isDeparting = trip.stopTimes[0]?.stopId === trip.stopId;
 
-                        const timeUntilDeparture = (departure.getTime() - currentTime.getTime()) / (1000 * 60);
-                        if (stopsAway === 0 || timeUntilDeparture <= 2) {
-                            arriving = true;
-                        }
-                    }
+                    const hasDeparted =
+                        trip.lastEventRecivedAt !== null &&
+                        stopsAway !== null &&
+                        stopsAway > 0;
 
                     return (
                         <motion.div
@@ -144,7 +135,7 @@ export function Monitor({ trips }: { trips: any[] }) {
                                             className="text-sm text-gray-500"
                                             href={`/track/trentino-trasporti/${trip.tripId}`}
                                         >
-                                            {stopsAway ? (
+                                            {stopsAway && hasDeparted ? (
                                                 <>a <strong>{stopsAway}</strong> fermat{stopsAway > 1 ? 'e' : 'a'} da {trip.stopName}</>
                                             ) : (
                                                 <div className="flex items-center gap-1 whitespace-pre">
@@ -161,7 +152,7 @@ export function Monitor({ trips }: { trips: any[] }) {
                                                                 }}
                                                             >
                                                                 <p className="text-sm text-green-500 font-bold">
-                                                                    {trip.stopTimes[0].stopId === trip.stopId ? "in partenza" : "in arrivo"}
+                                                                    {isDeparting ? "in partenza" : "in arrivo"}
                                                                 </p>
                                                             </motion.div>
                                                             <p className="text-sm">
@@ -169,7 +160,9 @@ export function Monitor({ trips }: { trips: any[] }) {
                                                             </p>
                                                         </div>
                                                     ) : (
-                                                        <>{trip.stopTimes[0].stopId === trip.stopId ? "parte da" : "passa per"} {trip.stopName}</>
+                                                        <p className="text-sm">
+                                                            {isDeparting ? "parte da" : "passa per"} {trip.stopName}
+                                                        </p>
                                                     )}
                                                 </div>
                                             )}

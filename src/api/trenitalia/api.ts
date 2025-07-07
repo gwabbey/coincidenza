@@ -27,10 +27,10 @@ async function getRfiData(url: string, regions?: string[], dateFilter?: (date: D
             title: item.title,
             link: item.link,
             pubDate: new Date(item.pubDate),
-            regions: item["rfi:region"].split(",").map((r: string) => r.trim()),
+            regions: item["rfi:region"]?.split(",").map((r: string) => r.trim()),
         }))
         .filter((item: any) =>
-            (!regions?.length || item.regions.some((r: string) => regions.includes(r))) &&
+            (!regions?.length || item.regions?.some((r: string) => regions.includes(r))) &&
             (!dateFilter || dateFilter(item.pubDate))
         );
 }
