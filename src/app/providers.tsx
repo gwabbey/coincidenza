@@ -1,10 +1,9 @@
 "use client";
 
-import { HeroUIProvider } from '@heroui/react';
+import { HeroUIProvider, ToastProvider } from '@heroui/react';
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { Toaster } from 'react-hot-toast';
 
 export default function Providers({ children }: { children: React.ReactNode }) {
     const router = useRouter();
@@ -25,15 +24,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         }
     }, [])
 
-    return <NextThemesProvider attribute="class"
-        defaultTheme="system"
-        enableSystem
-        disableTransitionOnChange
-        storageKey="theme"
-    >
+    return <NextThemesProvider attribute="class" disableTransitionOnChange storageKey="theme">
         <HeroUIProvider navigate={router.push}>
             {children}
-            <Toaster />
+            <ToastProvider />
         </HeroUIProvider>
     </NextThemesProvider>
 }

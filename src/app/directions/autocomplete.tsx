@@ -4,10 +4,9 @@ import { geocodeAddress } from "@/api/apple-maps/geolocation";
 import { searchStation } from "@/api/bahn/api";
 import { Location } from "@/types";
 import { capitalize } from "@/utils";
-import { Autocomplete, AutocompleteItem, Spinner } from "@heroui/react";
+import { addToast, Autocomplete, AutocompleteItem, Spinner } from "@heroui/react";
 import { IconMapPin, IconTrain } from "@tabler/icons-react";
 import { Key, useEffect, useState } from "react";
-import { toast } from "react-hot-toast";
 import { useDebouncedCallback } from 'use-debounce';
 
 interface Props {
@@ -87,7 +86,7 @@ export const LocationAutocomplete = ({
                             : "Timeout nel recupero della posizione."
                     : "Errore nel recupero della posizione.";
 
-                toast.error(errorMessage);
+                addToast({ title: errorMessage });
                 console.error('Error getting current position:', error);
                 return;
             }

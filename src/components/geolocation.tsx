@@ -1,5 +1,6 @@
 'use client'
-import toast from "react-hot-toast";
+
+import { addToast } from "@heroui/react";
 
 export function getUserLocation(): Promise<{ lat: number; lon: number }> {
     return new Promise((resolve, reject) => {
@@ -14,7 +15,7 @@ export function getUserLocation(): Promise<{ lat: number; lon: number }> {
                     else if (error.code === error.POSITION_UNAVAILABLE) message = 'Posizione non disponibile';
                     else if (error.code === error.TIMEOUT) message = 'Timeout durante la richiesta';
                     document.cookie = "locationRejected=true; path=/; max-age=300"
-                    toast.error(message);
+                    addToast({ title: message });
                 },
                 { enableHighAccuracy: true, maximumAge: 0 }
             );

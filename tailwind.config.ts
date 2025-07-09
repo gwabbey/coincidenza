@@ -12,7 +12,7 @@ const config: Config = {
     theme: {
         extend: {},
     },
-    darkMode: "class",
+    darkMode: "selector",
     plugins: [
         heroui(),
         typography,
