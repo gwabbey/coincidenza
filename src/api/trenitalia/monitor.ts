@@ -55,32 +55,6 @@ async function getVtDepartures(id: string) {
     return null;
 }
 
-function parseTimeString(timeStr: string): Date {
-    const now = new Date();
-    const [hourStr, minuteStr] = timeStr.split(":");
-    const hour = parseInt(hourStr, 10);
-    const minute = parseInt(minuteStr, 10);
-
-    const today = new Date(now);
-    today.setHours(hour, minute, 0, 0);
-
-    const tomorrow = new Date(today);
-    tomorrow.setDate(today.getDate() + 1);
-
-    const yesterday = new Date(today);
-    yesterday.setDate(today.getDate() - 1);
-
-    const diffToday = Math.abs(today.getTime() - now.getTime());
-    const diffTomorrow = Math.abs(tomorrow.getTime() - now.getTime());
-    const diffYesterday = Math.abs(yesterday.getTime() - now.getTime());
-
-    const closest = Math.min(diffToday, diffTomorrow, diffYesterday);
-
-    if (closest === diffToday) return today;
-    if (closest === diffTomorrow) return tomorrow;
-    return yesterday;
-}
-
 export async function getMonitor(rfiId: string, vtId: string = ""): Promise<StationMonitor> {
     try {
         const client = axios.create();
@@ -122,7 +96,7 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
                 .trim() || null;
             const number = $(element).find('td[id="RTreno"]').text().trim();
             const destination = $(element).find('td[id="RStazione"] div').text().toLowerCase().trim();
-            const departureTime = parseTimeString($(element).find('td[id="ROrario"]').text().trim());
+            const departureTime = $(element).find('td[id="ROrario"]').text().trim();
 
             let delay = $(element).find('td[id="RRitardo"]').text().trim() || '0';
             const platform = category === "autocorsa"

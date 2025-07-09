@@ -42,7 +42,7 @@ export interface Train {
     shortCategory: string | null;
     number: string;
     destination: string;
-    departureTime: Date;
+    departureTime: string;
     delay: string;
     platform: string;
     departing: boolean;
