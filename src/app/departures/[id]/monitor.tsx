@@ -72,10 +72,7 @@ export function Monitor({ monitor }: { monitor: StationMonitor }) {
                             <div className="flex flex-row justify-between gap-4">
                                 <div className="flex gap-2 w-full">
                                     <div className="flex items-center justify-center w-full max-w-16 p-2 text-lg font-bold text-center rounded-small bg-gray-500 text-white self-center">
-                                        {new Date(train.departureTime).toLocaleTimeString('it-IT', {
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                        })}
+                                        {train.departureTime}
                                     </div>
 
                                     <div className="flex flex-col text-left w-full flex-grow min-w-0">
