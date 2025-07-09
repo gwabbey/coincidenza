@@ -74,7 +74,6 @@ export function Monitor({ trips }: { trips: any[] }) {
                     const isDelayed = trip.delay !== null
                     const scheduledTime = new Date(trip.oraArrivoProgrammataAFermataSelezionata)
                     const effectiveTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata)
-                    console.log(scheduledTime, effectiveTime)
                     const arrivalTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata).getTime();
 
                     const stopsAway = getStopsAway(trip.stopId, trip.stopTimes, trip.delay)
