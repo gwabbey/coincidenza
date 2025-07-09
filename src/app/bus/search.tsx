@@ -218,6 +218,10 @@ export const Search = ({
                 onInputChange={onInputChange}
                 onSelectionChange={onSelectionChange}
                 isDisabled={disabled}
+                classNames={{
+                    selectorButton: "hidden",
+                    endContentWrapper: "mr-1"
+                }}
                 endContent={loading && <Spinner size="sm" color="default" />}
                 items={data}
                 listboxProps={{
