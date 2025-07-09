@@ -13,22 +13,11 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="en" suppressHydrationWarning>
+        <html lang="en">
             <head>
-                <script
-                    dangerouslySetInnerHTML={{
-                        __html: `
-(function () {
-  try {
-    const ls = localStorage.getItem("theme");
-    const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    const theme = ls || (systemDark ? "dark" : "light");
-    document.documentElement.classList.add(theme);
-  } catch (_) {}
-})();
-`
-                    }}
-                />
+                <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
+                <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+                <meta name="theme-color" content="#000000" />
             </head>
             <body>
                 <Providers>
