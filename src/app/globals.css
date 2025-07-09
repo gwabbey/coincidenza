@@ -1,9 +1,24 @@
 html {
-    background-color: #000000;
+    background-color: #ffffff;
+    color-scheme: light;
+    overscroll-behavior: none;
   }
   
-  html.light {
-    background-color: #ffffff;
+  html.dark {
+    background-color: #000000;
+    color-scheme: dark;
+  }
+  
+  body {
+    background-color: inherit;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  @supports (-webkit-touch-callout: none) {
+    html {
+      background-color: inherit !important;
+    }
   }
   
   @tailwind base;
