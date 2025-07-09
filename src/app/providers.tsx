@@ -25,10 +25,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
         }
     }, [])
 
-    return <HeroUIProvider navigate={router.push}>
-        <NextThemesProvider attribute="class" enableSystem={false} storageKey="theme">
+    return <NextThemesProvider attribute="class">
+        <HeroUIProvider navigate={router.push}>
             {children}
             <Toaster />
-        </NextThemesProvider>
-    </HeroUIProvider>;
+        </HeroUIProvider>
+    </NextThemesProvider>
 }

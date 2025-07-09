@@ -18,19 +18,15 @@ export default function RootLayout({
                 <script
                     dangerouslySetInnerHTML={{
                         __html: `
-      try {
-        const theme = localStorage.getItem('theme');
-        const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const finalTheme = theme === 'dark' || (!theme && systemDark) ? 'dark' : 'light';
-        document.documentElement.classList.add(finalTheme);
-        document.documentElement.classList.add('transition-none');
-        localStorage.setItem('theme', finalTheme);
-
-        window.addEventListener('DOMContentLoaded', () => {
-          document.documentElement.classList.remove('transition-none');
-        });
-      } catch (_) {}
-    `
+(function () {
+  try {
+    const ls = localStorage.getItem("theme");
+    const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const theme = ls || (systemDark ? "dark" : "light");
+    document.documentElement.classList.add(theme);
+  } catch (_) {}
+})();
+`
                     }}
                 />
             </head>
