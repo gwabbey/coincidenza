@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react';
 export function Monitor({ monitor }: { monitor: StationMonitor }) {
     const router = useRouter();
     const [blinkKey, setBlinkKey] = useState(0);
+    const [showRelativeTime, setShowRelativeTime] = useState(false);
 
     useEffect(() => {
         const intervalId = setInterval(() => {
@@ -25,6 +26,26 @@ export function Monitor({ monitor }: { monitor: StationMonitor }) {
         }, 1000);
         return () => clearInterval(blinkInterval);
     }, []);
+
+
+    useEffect(() => {
+        const timeouts: NodeJS.Timeout[] = []
+
+        timeouts.push(setTimeout(() => {
+            setShowRelativeTime(true)
+        }, 1000))
+
+        timeouts.push(setTimeout(() => {
+            setShowRelativeTime(false)
+
+            const interval = setInterval(() => {
+                setShowRelativeTime(prev => !prev)
+            }, 5000)
+            timeouts.push(interval)
+        }, 3000))
+
+        return () => timeouts.forEach(clearTimeout)
+    }, [])
 
     if (monitor.trains.length === 0) {
         return (
@@ -51,7 +72,10 @@ export function Monitor({ monitor }: { monitor: StationMonitor }) {
                             <div className="flex flex-row justify-between gap-4">
                                 <div className="flex gap-2 w-full">
                                     <div className="flex items-center justify-center w-full max-w-16 p-2 text-lg font-bold text-center rounded-small bg-gray-500 text-white self-center">
-                                        {train.departureTime}
+                                        {new Date(train.departureTime).toLocaleTimeString('it-IT', {
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        })}
                                     </div>
 
                                     <div className="flex flex-col text-left w-full flex-grow min-w-0">

@@ -69,7 +69,7 @@ function filterTrips(trips: Trip[]): Trip[] {
 
         const diff = now.getTime() - departure.getTime();
 
-        if (diff > 60000 && trip.stopNext !== trip.stopId) return false;
+        if (diff > 120000 && trip.stopNext !== trip.stopId) return false;
 
         return true;
     });

@@ -55,6 +55,32 @@ async function getVtDepartures(id: string) {
     return null;
 }
 
+function parseTimeString(timeStr: string): Date {
+    const now = new Date();
+    const [hourStr, minuteStr] = timeStr.split(":");
+    const hour = parseInt(hourStr, 10);
+    const minute = parseInt(minuteStr, 10);
+
+    const today = new Date(now);
+    today.setHours(hour, minute, 0, 0);
+
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    const diffToday = Math.abs(today.getTime() - now.getTime());
+    const diffTomorrow = Math.abs(tomorrow.getTime() - now.getTime());
+    const diffYesterday = Math.abs(yesterday.getTime() - now.getTime());
+
+    const closest = Math.min(diffToday, diffTomorrow, diffYesterday);
+
+    if (closest === diffToday) return today;
+    if (closest === diffTomorrow) return tomorrow;
+    return yesterday;
+}
+
 export async function getMonitor(rfiId: string, vtId: string = ""): Promise<StationMonitor> {
     try {
         const client = axios.create();
@@ -84,6 +110,9 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
             .trim();
 
         $('#bodyTabId > tr').each((_, element) => {
+            const hasContent = $(element).find('td').toArray().some(td => $(td).text().trim());
+            if (!hasContent) return;
+
             const category = $(element)
                 .find('td[id="RCategoria"] img')
                 .attr('alt')
@@ -91,10 +120,10 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
                 .replace('CIVITAVECCHIA EXPRESS ', '')
                 .toLowerCase()
                 .trim() || null;
-
             const number = $(element).find('td[id="RTreno"]').text().trim();
             const destination = $(element).find('td[id="RStazione"] div').text().toLowerCase().trim();
-            const departureTime = $(element).find('td[id="ROrario"]').text().trim();
+            const departureTime = parseTimeString($(element).find('td[id="ROrario"]').text().trim());
+
             let delay = $(element).find('td[id="RRitardo"]').text().trim() || '0';
             const platform = category === "autocorsa"
                 ? "Piazzale Esterno"
@@ -144,11 +173,25 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
                 .text()
                 .trim();
 
-            stops = [...stopsText.matchAll(/(?:FERMA A:\s*)?([^()-]+)\s*\((\d{1,2}[:.]\d{2})\)/g)]
-                .map(match => ({
-                    location: capitalize(match[1].trim().replace(/^- /, "").toLowerCase()),
-                    time: match[2].replace(".", ":"),
-                }));
+            stops = stopsText
+                .replace(/^FERMA A:\s*/i, "")
+                .split(" - ")
+                .map(raw => {
+                    const match = raw.match(/^([^()]+)\s*\((\d{1,2}[:.]\d{2})\)$/);
+                    if (!match) return null;
+
+                    return {
+                        name: capitalize(
+                            match[1]
+                                .trim()
+                                .toLowerCase()
+                                .replace(/'/g, "")
+                                .replace(/-/g, " ")
+                        ),
+                        time: match[2].replace(".", ":"),
+                    };
+                })
+                .filter(Boolean);
 
             if (number && destination && departureTime) {
                 trains.push({

@@ -194,16 +194,11 @@ export async function getTrip(id: string): Promise<Trip | null> {
         let preDepartureDelay = null
 
         if (trip.nonPartito) {
-            const now = Date.now()
-            const scheduledDeparture = new Date(trip.orarioPartenzaEstera || trip.orarioPartenza)
-
-            if (now - scheduledDeparture.getTime() >= 2 * 60 * 1000) {
-                const rfiId = findMatchingStation(capitalize(canvas[0].stazione))
-                if (rfiId) {
-                    const monitorDelay = await getMonitorTripDelay(rfiId, trip.numeroTreno)
-                    if (monitorDelay != null) {
-                        preDepartureDelay = monitorDelay
-                    }
+            const rfiId = findMatchingStation(capitalize(canvas[0].stazione))
+            if (rfiId) {
+                const monitorDelay = await getMonitorTripDelay(rfiId, trip.numeroTreno)
+                if (monitorDelay) {
+                    preDepartureDelay = monitorDelay
                 }
             }
         }

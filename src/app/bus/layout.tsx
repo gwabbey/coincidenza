@@ -28,17 +28,17 @@ export default async function Layout({
             currentLocationName = favorite.name;
         }
     }
-
-    return (
-        <div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
-            <h1 className="text-2xl font-bold text-center">partenze da fermate vicino a te</h1>
-            <Search
-                favorites={favorites}
-                initialLocationName={currentLocationName}
-            />
-            <div>
-                {children}
+    if (cookieStore)
+        return (
+            <div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
+                <h1 className="text-2xl font-bold text-center">partenze da fermate vicine</h1>
+                <Search
+                    favorites={favorites}
+                    initialLocationName={currentLocationName}
+                />
+                <div>
+                    {children}
+                </div>
             </div>
-        </div>
-    );
+        );
 }

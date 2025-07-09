@@ -42,12 +42,12 @@ export interface Train {
     shortCategory: string | null;
     number: string;
     destination: string;
-    departureTime: string;
+    departureTime: Date;
     delay: string;
     platform: string;
     departing: boolean;
     stops: {
-        location: string;
+        name: string;
         time: string;
     }[];
 }

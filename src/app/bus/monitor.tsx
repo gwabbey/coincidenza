@@ -2,6 +2,7 @@
 
 import { TimeDisplay } from "@/components/time"
 import { getDelayColor } from "@/utils"
+import { IconAntennaBarsOff } from "@tabler/icons-react"
 import { AnimatePresence, motion } from "motion/react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -21,10 +22,10 @@ function getStopsAway(selectedStopId: number, stopTimes: any[], delay: number | 
     };
 
     const passedIndex = stopTimes.findLastIndex(stop => getAdjustedTime(stop) <= now);
-    if (passedIndex === -1) return selectedIndex + 1; // none passed yet
+    if (passedIndex === -1) return selectedIndex + 1;
 
     const stopsAway = selectedIndex - passedIndex;
-    return stopsAway <= 0 ? 0 : stopsAway; // never negative
+    return stopsAway <= 0 ? 0 : stopsAway;
 }
 
 export function Monitor({ trips }: { trips: any[] }) {
@@ -73,17 +74,16 @@ export function Monitor({ trips }: { trips: any[] }) {
                     const isDelayed = trip.delay !== null
                     const scheduledTime = new Date(trip.oraArrivoProgrammataAFermataSelezionata)
                     const effectiveTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata)
+                    console.log(scheduledTime, effectiveTime)
+                    const arrivalTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata).getTime();
 
                     const stopsAway = getStopsAway(trip.stopId, trip.stopTimes, trip.delay)
+                    const startsFromSelectedStop = trip.stopTimes[0]?.stopId === trip.stopId;
 
-                    const arrivalTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata).getTime();
-                    const arriving =
+                    const isArriving =
                         trip.oraArrivoEffettivaAFermataSelezionata &&
                         arrivalTime - now <= 2 * 60 * 1000 &&
-                        trip.lastEventRecivedAt !== null &&
-                        stopsAway === 0;
-
-                    const isDeparting = trip.stopTimes[0]?.stopId === trip.stopId;
+                        stopsAway === 0 && !startsFromSelectedStop;
 
                     const hasDeparted =
                         trip.lastEventRecivedAt !== null &&
@@ -123,6 +123,11 @@ export function Monitor({ trips }: { trips: any[] }) {
                                                     </div>
                                                 </div>
                                             </Link>
+                                            {!trip.lastEventRecivedAt && (
+                                                <p className="text-lg font-bold uppercase flex-shrink-0 whitespace-nowrap text-gray-500">
+                                                    <IconAntennaBarsOff />
+                                                </p>
+                                            )}
                                             {isDelayed && (
                                                 <p className={`text-lg font-bold uppercase flex-shrink-0 whitespace-nowrap text-${getDelayColor(trip.delay)}`}>
                                                     {trip.delay < 0 ? '' : trip.delay > 0 ? '+' : ""}
@@ -139,7 +144,7 @@ export function Monitor({ trips }: { trips: any[] }) {
                                                 <>a <strong>{stopsAway}</strong> fermat{stopsAway > 1 ? 'e' : 'a'} da {trip.stopName}</>
                                             ) : (
                                                 <div className="flex items-center gap-1 whitespace-pre">
-                                                    {arriving ? (
+                                                    {isArriving ? (
                                                         <div className="flex items-center gap-1 whitespace-pre">
                                                             <motion.div
                                                                 key={blinkKey}
@@ -152,7 +157,7 @@ export function Monitor({ trips }: { trips: any[] }) {
                                                                 }}
                                                             >
                                                                 <p className="text-sm text-green-500 font-bold">
-                                                                    {isDeparting ? "in partenza" : "in arrivo"}
+                                                                    {startsFromSelectedStop ? "in partenza" : "in arrivo"}
                                                                 </p>
                                                             </motion.div>
                                                             <p className="text-sm">
@@ -161,7 +166,7 @@ export function Monitor({ trips }: { trips: any[] }) {
                                                         </div>
                                                     ) : (
                                                         <p className="text-sm">
-                                                            {isDeparting ? "parte da" : "passa per"} {trip.stopName}
+                                                            {startsFromSelectedStop ? "parte da" : "ferma a"} {trip.stopName}
                                                         </p>
                                                     )}
                                                 </div>
