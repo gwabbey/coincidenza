@@ -40,7 +40,10 @@ export default function Departures({
                         <div className={`grid gap-2 text-sm sm:grid-cols-2 grid-cols-1`}>
                             {trains.map((train, i) => (
                                 <span key={i}>
-                                    <strong>{train.shortCategory} {train.number}</strong> alle <strong>{train.departureTime}</strong>
+                                    <strong>{train.shortCategory} {train.number}</strong> alle <strong>{new Date(train.departureTime).toLocaleTimeString('it-IT', {
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                    })}</strong>
                                     {train.platform !== "Piazzale Ferrovia" ? " al binario " + train.platform : " nel piazzale"}
                                 </span>
                             ))}
