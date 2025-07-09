@@ -14,18 +14,26 @@ export default function RootLayout({
 }) {
     return (
         <html lang="en" suppressHydrationWarning>
-            <script
-                dangerouslySetInnerHTML={{
-                    __html: `
+            <head>
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
       try {
         const theme = localStorage.getItem('theme');
         const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         const finalTheme = theme === 'dark' || (!theme && systemDark) ? 'dark' : 'light';
         document.documentElement.classList.add(finalTheme);
-      } catch(_) {}
+        document.documentElement.classList.add('transition-none');
+        localStorage.setItem('theme', finalTheme);
+
+        window.addEventListener('DOMContentLoaded', () => {
+          document.documentElement.classList.remove('transition-none');
+        });
+      } catch (_) {}
     `
-                }}
-            />
+                    }}
+                />
+            </head>
             <body>
                 <Providers>
                     <Header />
