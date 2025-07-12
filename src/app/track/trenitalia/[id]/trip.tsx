@@ -5,7 +5,7 @@ import { Stop, Trip as TripProps } from "@/api/types";
 import { RouteModal } from "@/components/modal";
 import Timeline from "@/components/timeline";
 import { capitalize, findMatchingStation, getDelayColor } from "@/utils";
-import { Button, Card, Divider, useDisclosure } from "@heroui/react";
+import { addToast, Button, Card, Divider, useDisclosure } from "@heroui/react";
 import { IconAlertTriangleFilled, IconArrowUp, IconInfoTriangleFilled } from "@tabler/icons-react";
 import { formatDate } from "date-fns";
 import NextLink from "next/link";
@@ -117,11 +117,29 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
         if (trip.status === "completed" || trip.status === "canceled") return;
 
         let eventSource: EventSource | null = null;
+        let reconnectTimeout: NodeJS.Timeout | null = null;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+
+        const cleanup = () => {
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+            if (reconnectTimeout) {
+                clearTimeout(reconnectTimeout);
+                reconnectTimeout = null;
+            }
+        };
 
         const setupSSE = () => {
-            if (eventSource) eventSource.close();
+            cleanup();
 
             eventSource = new EventSource(`/track/trenitalia/${trip.number}/stream`);
+
+            eventSource.onopen = () => {
+                reconnectAttempts = 0;
+            };
 
             eventSource.onmessage = (event) => {
                 try {
@@ -142,27 +160,60 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                     } else if (message.type === 'trip_update' && message.data) {
                         setTrip(message.data);
                     } else if (message.type === 'error') {
-                        console.error('SSE error:', message.message);
+                        addToast({ title: "Errore durante la connessione", color: "danger" })
                     }
                 } catch (e) {
+                    addToast({ title: "Errore durante la connessione", color: "danger" })
                     console.error('Error parsing SSE:', e);
                 }
             };
 
             eventSource.onerror = (error) => {
                 console.error('SSE error:', error);
-                if (eventSource) {
-                    eventSource.close();
+                cleanup();
+
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+                    reconnectAttempts++;
+                    reconnectTimeout = setTimeout(() => {
+                        setupSSE();
+                    }, delay);
+                } else {
+                    addToast({ title: "Errore durante la connessione", color: "danger" })
+                    console.error('Max reconnection attempts reached');
                 }
             };
         };
 
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
+                    reconnectAttempts = 0;
+                    setupSSE();
+                }
+            } else {
+                cleanup();
+            }
+        };
+
+        const handleFocus = () => {
+            if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
+                reconnectAttempts = 0;
+                setupSSE();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('focus', handleFocus);
+
         setupSSE();
 
         return () => {
-            if (eventSource) eventSource.close();
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('focus', handleFocus);
+            cleanup();
         };
-    }, [trip.number]);
+    }, [trip.number, trip.status]);
 
     function formatDuration(start: Date, end: Date): string {
         const startHours = start.getHours();
