@@ -6,6 +6,7 @@ import Timeline from "@/components/timeline";
 import { getDelayColor } from "@/utils";
 import { Button, Card, Divider, Link, useDisclosure } from "@heroui/react";
 import { IconAlertTriangleFilled, IconArrowUp, IconInfoTriangleFilled } from "@tabler/icons-react";
+import NextLink from "next/link";
 import { useEffect, useState } from 'react';
 
 const timeToMinutes = (timeStr: string): number => {
@@ -190,7 +191,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                         )}
 
                         {!isDeparting && !trip.stopTimes[activeIndex] && (
-                            <p className="text-lg font-bold text-left sm:text-center truncate flex-grow min-w-0">
+                            <p className="text-lg font-bold text-center truncate flex-grow min-w-0">
                                 dati in tempo reale non disponibili
                             </p>
                         )}
@@ -307,6 +308,8 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                     active={preciseActiveIndex}
                 />
             </div>
+
+            <p className="text-sm text-gray-500 text-center">dati forniti da <NextLink href="https://www.trenitalia.com" target="_blank" rel="noopener noreferrer">Trentino Trasporti</NextLink></p>
 
             <RouteModal
                 isOpen={isOpen}

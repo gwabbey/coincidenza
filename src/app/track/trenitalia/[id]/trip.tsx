@@ -8,7 +8,7 @@ import { capitalize, findMatchingStation, getDelayColor } from "@/utils";
 import { addToast, Button, Card, Divider, useDisclosure } from "@heroui/react";
 import { IconAlertTriangleFilled, IconArrowUp, IconInfoTriangleFilled } from "@tabler/icons-react";
 import { formatDate } from "date-fns";
-import NextLink from "next/link";
+import { default as Link, default as NextLink } from "next/link";
 import { useEffect, useState } from 'react';
 
 const timeToMinutes = (timeString: string, date: Date) => {
@@ -116,25 +116,26 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
     useEffect(() => {
         if (trip.status === "completed" || trip.status === "canceled") return;
 
-        let eventSource: EventSource | null = null;
-        let reconnectTimeout: NodeJS.Timeout | null = null;
+        let eventSource: EventSource | undefined;
+        let reconnectTimeout: NodeJS.Timeout | undefined;
         let reconnectAttempts = 0;
         const maxReconnectAttempts = 5;
 
         const cleanup = () => {
-            if (eventSource) {
-                eventSource.close();
-                eventSource = null;
-            }
+            eventSource?.close();
+            eventSource = undefined;
             if (reconnectTimeout) {
                 clearTimeout(reconnectTimeout);
-                reconnectTimeout = null;
+                reconnectTimeout = undefined;
             }
+        };
+
+        const showConnectionError = () => {
+            addToast({ title: "Errore durante la connessione", color: "danger" });
         };
 
         const setupSSE = () => {
             cleanup();
-
             eventSource = new EventSource(`/track/trenitalia/${trip.number}/stream`);
 
             eventSource.onopen = () => {
@@ -144,26 +145,30 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
             eventSource.onmessage = (event) => {
                 try {
                     const message = JSON.parse(event.data);
+                    if (message.type === 'data_update' || message.type === 'completed') {
+                        const { type, timestamp, ...data } = message;
 
-                    if (message.stops) {
                         setTrip(prev => ({
                             ...prev,
-                            ...message,
-                            stops: message.stops.map((stop: Stop) => ({
-                                ...stop,
-                                scheduledArrival: stop.scheduledArrival ? new Date(stop.scheduledArrival) : null,
-                                scheduledDeparture: stop.scheduledDeparture ? new Date(stop.scheduledDeparture) : null,
-                                actualArrival: stop.actualArrival ? new Date(stop.actualArrival) : null,
-                                actualDeparture: stop.actualDeparture ? new Date(stop.actualDeparture) : null,
-                            }))
+                            ...data,
+                            lastUpdate: data.lastUpdate ? new Date(data.lastUpdate) : prev.lastUpdate,
+                            stops: data.stops
+                                ? data.stops.map((stop: Stop, i: number) => ({
+                                    ...prev.stops?.[i],
+                                    ...stop,
+                                    scheduledArrival: stop.scheduledArrival ? new Date(stop.scheduledArrival) : null,
+                                    scheduledDeparture: stop.scheduledDeparture ? new Date(stop.scheduledDeparture) : null,
+                                    actualArrival: stop.actualArrival ? new Date(stop.actualArrival) : null,
+                                    actualDeparture: stop.actualDeparture ? new Date(stop.actualDeparture) : null,
+                                }))
+                                : prev.stops
                         }));
-                    } else if (message.type === 'trip_update' && message.data) {
-                        setTrip(message.data);
+                        if (message.type === 'completed') cleanup();
                     } else if (message.type === 'error') {
-                        addToast({ title: "Errore durante la connessione", color: "danger" })
+                        showConnectionError();
                     }
                 } catch (e) {
-                    addToast({ title: "Errore durante la connessione", color: "danger" })
+                    showConnectionError();
                     console.error('Error parsing SSE:', e);
                 }
             };
@@ -173,44 +178,39 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                 cleanup();
 
                 if (reconnectAttempts < maxReconnectAttempts) {
-                    const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+                    const delay = Math.min(1000 * 2 ** reconnectAttempts, 30000);
                     reconnectAttempts++;
-                    reconnectTimeout = setTimeout(() => {
-                        setupSSE();
-                    }, delay);
+                    reconnectTimeout = setTimeout(setupSSE, delay);
                 } else {
-                    addToast({ title: "Errore durante la connessione", color: "danger" })
+                    showConnectionError();
                     console.error('Max reconnection attempts reached');
                 }
             };
         };
 
-        const handleVisibilityChange = () => {
-            if (document.visibilityState === 'visible') {
-                if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
-                    reconnectAttempts = 0;
-                    setupSSE();
-                }
-            } else {
-                cleanup();
-            }
-        };
-
-        const handleFocus = () => {
+        const reconnect = () => {
             if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
                 reconnectAttempts = 0;
                 setupSSE();
             }
         };
 
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') {
+                reconnect();
+            } else {
+                cleanup();
+            }
+        };
+
         document.addEventListener('visibilitychange', handleVisibilityChange);
-        window.addEventListener('focus', handleFocus);
+        window.addEventListener('focus', reconnect);
 
         setupSSE();
 
         return () => {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
-            window.removeEventListener('focus', handleFocus);
+            window.removeEventListener('focus', reconnect);
             cleanup();
         };
     }, [trip.number, trip.status]);
@@ -241,7 +241,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
     }
 
     return (
-        <div className="flex flex-col gap-4 sm:pb-0 pb-12">
+        <div className="flex flex-col gap-4">
             <div className="flex justify-center items-center text-center flex-wrap gap-x-2 gap-y-1 max-w-full">
                 <span
                     className={`text-md font-bold rounded-small flex items-center gap-x-1 text-white whitespace-nowrap ${trip.category?.toLowerCase().startsWith("ic") ? "bg-primary" : "bg-danger"}`}
@@ -462,6 +462,10 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                         </span>
                     ))}
                 </div>
+            )}
+
+            {trip.status !== "canceled" && (
+                <p className="text-sm text-gray-500 text-center">dati forniti da <Link href="https://www.trenitalia.com" target="_blank" rel="noopener noreferrer">Trenitalia</Link>/<Link href="https://www.rfi.it" target="_blank" rel="noopener noreferrer">RFI</Link></p>
             )}
 
             <RouteModal

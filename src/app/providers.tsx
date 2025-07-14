@@ -7,13 +7,12 @@ import { useEffect, useRef } from 'react';
 export default function Providers({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const lastRefreshRef = useRef<number>(0);
-    const refreshCooldown = 5000;
 
     useEffect(() => {
         const handleVisibilityChange = () => {
             if (document.visibilityState === 'visible') {
                 const now = Date.now();
-                if (now - lastRefreshRef.current > refreshCooldown) {
+                if (now - lastRefreshRef.current > 1000) {
                     lastRefreshRef.current = now;
                     router.refresh();
                 }
@@ -22,7 +21,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
 
         const handleFocus = () => {
             const now = Date.now();
-            if (now - lastRefreshRef.current > refreshCooldown) {
+            if (now - lastRefreshRef.current > 1000) {
                 lastRefreshRef.current = now;
                 router.refresh();
             }
