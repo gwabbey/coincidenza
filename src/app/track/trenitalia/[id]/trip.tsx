@@ -6,9 +6,10 @@ import { RouteModal } from "@/components/modal";
 import Timeline from "@/components/timeline";
 import { capitalize, findMatchingStation, getDelayColor } from "@/utils";
 import { addToast, Button, Card, Divider, useDisclosure } from "@heroui/react";
-import { IconAlertTriangleFilled, IconArrowUp, IconInfoTriangleFilled } from "@tabler/icons-react";
+import { IconAlertTriangleFilled, IconInfoTriangleFilled, IconRefresh } from "@tabler/icons-react";
 import { formatDate } from "date-fns";
 import { default as Link, default as NextLink } from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from 'react';
 
 const timeToMinutes = (timeString: string, date: Date) => {
@@ -88,18 +89,10 @@ const calculatePreciseActiveIndex = (trip: TripProps) => {
 };
 
 export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
+    const router = useRouter();
     const [trip, setTrip] = useState<TripProps>(initialTrip);
-    const [scroll, setScroll] = useState({ y: 0 });
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
-
-    useEffect(() => {
-        const handleScroll = () => {
-            setScroll({ y: window.scrollY });
-        };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
 
     useEffect(() => {
         const updateIndex = () => {
@@ -489,12 +482,10 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                 ))}
             </RouteModal>
 
-            {scroll.y > 0 && (
-                <Button isIconOnly radius="full" startContent={<IconArrowUp size={32} />}
-                    onPress={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                    className="fixed bottom-5 right-5 p-2 shadow-lg"
-                />
-            )}
+            <Button isIconOnly radius="full" startContent={<IconRefresh />}
+                onPress={router.refresh}
+                className="fixed bottom-5 right-5 p-2 shadow-lg"
+            />
         </div>
     );
 }

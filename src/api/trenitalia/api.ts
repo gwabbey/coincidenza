@@ -166,7 +166,6 @@ export async function getTrip(id: string): Promise<Trip | null> {
     });
 
     const tripDetails = (await Promise.all(tripDetailsPromises)).filter(Boolean);
-
     const selectedTrip = tripDetails.find(({ data }) => !data.arrivato && !data.nonPartito)?.trip || parsed[0];
     if (!selectedTrip) return null;
 
@@ -189,24 +188,30 @@ export async function getTrip(id: string): Promise<Trip | null> {
 
     if (response.status === 200) {
         const trip = response.data;
+        const currentStopObj = canvas.find((item: any) => item.stazioneCorrente);
         const currentStopIndex = canvas.findIndex((item: any) => item.stazioneCorrente) ?? -1;
+        const isAtCurrentStop = currentStopObj.fermata.partenzaReale === null && currentStopObj.fermata.arrivoReale !== null;
 
-        let preDepartureDelay = null
+        let delay = isAtCurrentStop ? currentStopObj.fermata.ritardoArrivo : trip.ritardo;
 
         if (trip.nonPartito) {
             const rfiId = findMatchingStation(capitalize(canvas[0].stazione))
             if (rfiId) {
                 const monitorDelay = await getMonitorTripDelay(rfiId, trip.numeroTreno)
                 if (monitorDelay) {
-                    preDepartureDelay = monitorDelay
+                    delay = monitorDelay
                 }
             }
         }
 
         return {
             currentStopIndex,
-            lastKnownLocation: capitalize(trip.stazioneUltimoRilevamento) || "",
-            lastUpdate: trip.oraUltimoRilevamento ? new Date(trip.oraUltimoRilevamento) : null,
+            delay,
+            lastKnownLocation: isAtCurrentStop
+                ? capitalize(normalizeStationName(currentStopObj.stazione))
+                : capitalize(trip.stazioneUltimoRilevamento || "--"),
+            lastUpdate: isAtCurrentStop ? currentStopObj.fermata.arrivoReale
+                : (trip.oraUltimoRilevamento ? new Date(trip.oraUltimoRilevamento) : null),
             status: getTripStatus(trip),
             category: getCategory(trip),
             number: trip.numeroTreno,
@@ -214,7 +219,6 @@ export async function getTrip(id: string): Promise<Trip | null> {
             destination: capitalize(normalizeStationName(trip.destinazioneEstera || trip.destinazione)),
             departureTime: new Date(trip.orarioPartenzaEstera || trip.orarioPartenza),
             arrivalTime: new Date(trip.orarioArrivoEstera || trip.orarioArrivo),
-            delay: preDepartureDelay ?? trip.ritardo,
             alertMessage: trip.subTitle,
             stops: canvas.map((stop: any) => {
                 const scheduledArrival = stop.fermata.arrivo_teorico ? new Date(stop.fermata.arrivo_teorico) : null;
