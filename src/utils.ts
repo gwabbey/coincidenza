@@ -1,5 +1,4 @@
 import stations from "@/stations.json";
-import { toZonedTime } from "date-fns-tz";
 
 export const getDelayColor = (delay: number | null) => {
     if (delay === null) return 'gray';
@@ -8,8 +7,6 @@ export const getDelayColor = (delay: number | null) => {
     if (delay >= 0) return 'success';
     return 'secondary';
 };
-
-export const toItalyTime = (timestamp: number) => toZonedTime(timestamp, 'Europe/Rome');
 
 export const formatDuration = (duration: number, verbose: boolean = false) => {
     const durationInMinutes = Math.round(duration);
