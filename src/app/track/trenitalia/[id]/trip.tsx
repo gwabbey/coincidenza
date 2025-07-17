@@ -1,13 +1,13 @@
 
 'use client';
 
-import { Stop, Trip as TripProps } from "@/api/types";
+import { Trip as TripProps } from "@/api/types";
 import { RouteModal } from "@/components/modal";
 import Timeline from "@/components/timeline";
 import { capitalize, findMatchingStation, getDelayColor } from "@/utils";
 import { addToast, Button, Card, Divider, useDisclosure } from "@heroui/react";
 import { IconAlertTriangleFilled, IconInfoTriangleFilled, IconRefresh } from "@tabler/icons-react";
-import { formatDate } from "date-fns";
+import { format } from "date-fns";
 import { default as Link, default as NextLink } from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from 'react';
@@ -39,7 +39,7 @@ const calculatePreciseActiveIndex = (trip: TripProps) => {
 
     if (currentStopIndex === -1) {
         const firstStopDate = new Date(activeStops[0]?.scheduledDeparture || 0);
-        const firstStopMinutes = timeToMinutes(formatDate(firstStopDate, 'HH:mm'), firstStopDate);
+        const firstStopMinutes = timeToMinutes(format(firstStopDate, 'HH:mm'), firstStopDate);
         if (currentMinutes < firstStopMinutes || activeStops.length === 0) return -1;
     }
 
@@ -51,10 +51,10 @@ const calculatePreciseActiveIndex = (trip: TripProps) => {
 
         if (stop.actualDeparture && currentStopIndex < activeStops.length - 1) {
             const departureDate = new Date(stop.actualDeparture || 0);
-            const departureMinutes = timeToMinutes(formatDate(departureDate, 'HH:mm'), departureDate);
+            const departureMinutes = timeToMinutes(format(departureDate, 'HH:mm'), departureDate);
 
             const nextArrivalDate = new Date(activeStops[currentStopIndex + 1].scheduledArrival || 0);
-            const nextArrivalMinutes = timeToMinutes(formatDate(nextArrivalDate, 'HH:mm'), nextArrivalDate) + delay;
+            const nextArrivalMinutes = timeToMinutes(format(nextArrivalDate, 'HH:mm'), nextArrivalDate) + delay;
 
             if (currentMinutes >= departureMinutes && currentMinutes <= nextArrivalMinutes) {
                 return currentStopIndex + Math.min((currentMinutes - departureMinutes) / (nextArrivalMinutes - departureMinutes), 0.99);
@@ -74,10 +74,10 @@ const calculatePreciseActiveIndex = (trip: TripProps) => {
         }
 
         const departureDate = new Date(activeStops[i].actualDeparture || 0);
-        const departureMinutes = timeToMinutes(formatDate(departureDate, 'HH:mm'), departureDate);
+        const departureMinutes = timeToMinutes(format(departureDate, 'HH:mm'), departureDate);
 
         const nextStopDate = new Date(activeStops[i + 1].scheduledArrival || 0);
-        const nextStopMinutes = timeToMinutes(formatDate(nextStopDate, 'HH:mm'), nextStopDate) + delay;
+        const nextStopMinutes = timeToMinutes(format(nextStopDate, 'HH:mm'), nextStopDate) + delay;
 
         if (currentMinutes >= departureMinutes) lastPassedStopIndex = i;
         if (currentMinutes >= departureMinutes && currentMinutes <= nextStopMinutes) {
@@ -146,15 +146,6 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                             ...data,
                             lastUpdate: data.lastUpdate ? new Date(data.lastUpdate) : prev.lastUpdate,
                             stops: data.stops
-                                ? data.stops.map((stop: Stop, i: number) => ({
-                                    ...prev.stops?.[i],
-                                    ...stop,
-                                    scheduledArrival: stop.scheduledArrival ? new Date(stop.scheduledArrival) : null,
-                                    scheduledDeparture: stop.scheduledDeparture ? new Date(stop.scheduledDeparture) : null,
-                                    actualArrival: stop.actualArrival ? new Date(stop.actualArrival) : null,
-                                    actualDeparture: stop.actualDeparture ? new Date(stop.actualDeparture) : null,
-                                }))
-                                : prev.stops
                         }));
                         if (message.type === 'completed') cleanup();
                     } else if (message.type === 'error') {
@@ -250,7 +241,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
             <div className="md:flex hidden justify-center items-center my-4 flex-row gap-4">
                 <Card radius="lg" className="p-4 w-64 text-center">
                     <div className="font-bold truncate">{trip.origin}</div>
-                    <div>{formatDate(new Date(trip.departureTime), 'HH:mm')}</div>
+                    <div>{format(new Date(trip.departureTime), 'HH:mm')}</div>
                 </Card>
 
                 <div className="flex flex-row items-center justify-between gap-2">
@@ -261,7 +252,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
 
                 <Card radius="lg" className="p-4 w-64 text-center">
                     <div className="font-bold truncate">{trip.destination}</div>
-                    <div>{formatDate(new Date(trip.arrivalTime), 'HH:mm')}</div>
+                    <div>{format(new Date(trip.arrivalTime), 'HH:mm')}</div>
                 </Card>
             </div>
 
@@ -290,7 +281,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                         <div className="flex flex-row justify-start sm:justify-center">
                             {trip.lastUpdate && (
                                 <p className="text-xs sm:text-sm text-gray-500">
-                                    ultimo rilevamento: {formatDate(new Date(trip.lastUpdate), 'HH:mm')}
+                                    ultimo rilevamento: {format(new Date(trip.lastUpdate), 'HH:mm')}
                                 </p>
                             )}
                         </div>
@@ -339,6 +330,8 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                             const effectiveDelayArrival = !isFutureStop ? stop.arrivalDelay : trip.delay;
                             const effectiveDelayDeparture = !isFutureStop ? stop.departureDelay : (trip.delay >= 0 ? trip.delay : 0);
 
+                            console.log(stop.scheduledDeparture)
+
                             const expectedDepartureWithDelay = stop.scheduledDeparture ? new Date(stop.scheduledDeparture) : null;
                             const expectedArrivalWithDelay = stop.scheduledArrival ? new Date(stop.scheduledArrival) : null;
 
@@ -365,12 +358,12 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                             }
 
                             const isDepartureDelayed = stop.scheduledDeparture && expectedDepartureWithDelay &&
-                                formatDate(stop.scheduledDeparture, 'HH:mm') !==
-                                formatDate(stop.actualDeparture || expectedDepartureWithDelay, 'HH:mm');
+                                format(stop.scheduledDeparture, 'HH:mm') !==
+                                format(stop.actualDeparture || expectedDepartureWithDelay, 'HH:mm');
 
                             const isArrivalDelayed = stop.scheduledArrival && expectedArrivalWithDelay &&
-                                formatDate(stop.scheduledArrival, 'HH:mm') !==
-                                formatDate(stop.actualArrival || expectedArrivalWithDelay, 'HH:mm');
+                                format(stop.scheduledArrival, 'HH:mm') !==
+                                format(stop.actualArrival || expectedArrivalWithDelay, 'HH:mm');
 
                             return {
                                 content: (
@@ -393,13 +386,13 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                                                                 ? 'line-through text-gray-500'
                                                                 : `font-bold ${(!isFutureStop && stop.actualArrival) || (isFutureStop && trip.delay <= 0 && trip.status !== "scheduled") ? 'text-success' : ''}`
                                                                 }`}>
-                                                                {formatDate(new Date(stop.scheduledArrival), 'HH:mm')}
+                                                                {format(new Date(stop.scheduledArrival), 'HH:mm')}
                                                             </span>
                                                         )}
 
                                                         {isArrivalDelayed && stop.scheduledArrival && (
                                                             <span className={`font-bold ${!stop.actualArrival && !isFutureStop ? 'italic' : `text-${getDelayColor(stop.arrivalDelay || trip.delay)}`}`}>
-                                                                {formatDate(new Date(stop.actualArrival || expectedArrivalWithDelay), 'HH:mm')}
+                                                                {format(new Date(stop.actualArrival || expectedArrivalWithDelay), 'HH:mm')}
                                                             </span>
                                                         )}
                                                     </div>
@@ -412,13 +405,13 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                                                                 ? 'line-through text-gray-500'
                                                                 : `font-bold ${(!isFutureStop && stop.actualDeparture) || (isFutureStop && trip.delay <= 0 && trip.status !== "scheduled") ? 'text-success' : ''}`
                                                                 }`}>
-                                                                {formatDate(new Date(stop.scheduledDeparture), 'HH:mm')}
+                                                                {format(new Date(stop.scheduledDeparture), 'HH:mm')}
                                                             </span>
                                                         )}
 
                                                         {isDepartureDelayed && stop.scheduledDeparture && (
                                                             <span className={`font-bold ${!stop.actualDeparture && !isFutureStop ? 'italic' : `text-${getDelayColor(stop.departureDelay || trip.delay)}`}`}>
-                                                                {formatDate(new Date(stop.actualDeparture || expectedDepartureWithDelay), 'HH:mm')}
+                                                                {format(new Date(stop.actualDeparture || expectedDepartureWithDelay), 'HH:mm')}
                                                             </span>
                                                         )}
                                                     </div>
