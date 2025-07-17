@@ -164,11 +164,6 @@ export async function createSSEHandler<T>(
                 }
 
                 if (shouldStopUpdates(data)) {
-                    pushData({
-                        ...formatForClient(data),
-                        type: 'completed',
-                        message: "Stopping updates"
-                    });
                     cleanup();
                     return;
                 }

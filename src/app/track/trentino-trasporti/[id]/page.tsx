@@ -2,6 +2,8 @@ import { getTripDetails } from "@/api/trentino-trasporti/api";
 import { notFound } from "next/navigation";
 import Trip from "./trip";
 
+export const revalidate = 0
+
 export default async function Page({ params }: {
     params: Promise<{ id: string }>
 }) {

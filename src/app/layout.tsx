@@ -17,7 +17,7 @@ export default function RootLayout({
             <body>
                 <Providers>
                     <Header />
-                    <main className="p-4 sm:pb-0 pb-12">
+                    <main className="p-4">
                         {children}
                     </main>
                 </Providers>

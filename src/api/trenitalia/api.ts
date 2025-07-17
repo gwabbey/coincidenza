@@ -11,6 +11,8 @@ interface RfiItem {
     regions: string[];
 }
 
+const toDate = (timestamp: number | null) => timestamp ? new Date(timestamp).toISOString() : null;
+
 async function getRfiData(url: string, regions?: string[], dateFilter?: (date: Date) => boolean): Promise<RfiItem[]> {
     const { data } = await axios.get(url, { responseType: "text" });
     const parsed = await parseStringPromise(data, {
@@ -26,7 +28,7 @@ async function getRfiData(url: string, regions?: string[], dateFilter?: (date: D
         .map((item: any) => ({
             title: item.title,
             link: item.link,
-            pubDate: new Date(item.pubDate),
+            pubDate: toDate(item.pubDate),
             regions: item["rfi:region"]?.split(",").map((r: string) => r.trim()),
         }))
         .filter((item: any) =>
@@ -85,6 +87,12 @@ function normalizeStationName(name: string): string {
         .trim();
 }
 
+function normalizeToMinute(date: Date): Date {
+    const d = new Date(date);
+    d.setSeconds(0, 0);
+    return d;
+}
+
 function getTripStatus(trip: any) {
     if (trip.provvedimento === 1) return "canceled";
     if (trip.nonPartito && !trip.oraUltimoRilevamento) return "scheduled";
@@ -108,11 +116,11 @@ function getCategory(trip: any) {
     return trip.categoria;
 }
 
-export async function getMonitorTripDelay(rfiId: string, tripId: string) {
+export async function getMonitorTrip(rfiId: string, tripId: string) {
     const monitor = await getMonitor(rfiId);
     const train = monitor.trains.find(train => String(train.number) === String(tripId));
     if (!train) return null;
-    return Number(train.delay)
+    return train;
 }
 
 export async function getTrip(id: string): Promise<Trip | null> {
@@ -187,19 +195,57 @@ export async function getTrip(id: string): Promise<Trip | null> {
     ]);
 
     if (response.status === 200) {
-        const trip = response.data;
-        const currentStopObj = canvas.find((item: any) => item.stazioneCorrente);
-        const currentStopIndex = canvas.findIndex((item: any) => item.stazioneCorrente) ?? -1;
-        const isAtCurrentStop = currentStopObj.fermata.partenzaReale === null && currentStopObj.fermata.arrivoReale !== null;
+        if (response.status !== 200) return null;
 
-        let delay = isAtCurrentStop ? currentStopObj.fermata.ritardoArrivo : trip.ritardo;
+        const trip = response.data;
+        const now = new Date();
+
+        const currentStopIndex = canvas.findIndex((item: any) => item.stazioneCorrente) ?? -1;
+        const currentStop = canvas[currentStopIndex];
+        const nextStop = canvas[currentStopIndex + 1];
+
+        const hasArrived = currentStop?.fermata?.arrivoReale !== null;
+        const hasNotDeparted = !currentStop?.fermata?.partenzaReale;
+        const isAtCurrentStop = hasArrived && hasNotDeparted;
+
+        const isDepartingThisMinute = currentStop?.fermata?.partenzaReale &&
+            normalizeToMinute(new Date(currentStop.fermata.partenzaReale)).getTime() ===
+            normalizeToMinute(now).getTime();
+
+        let delay = currentStop?.fermata?.ritardoArrivo || trip.ritardo;
 
         if (trip.nonPartito) {
-            const rfiId = findMatchingStation(capitalize(canvas[0].stazione))
+            const rfiId = findMatchingStation(capitalize(canvas[0].stazione));
             if (rfiId) {
-                const monitorDelay = await getMonitorTripDelay(rfiId, trip.numeroTreno)
-                if (monitorDelay) {
-                    delay = monitorDelay
+                const monitor = await getMonitorTrip(rfiId, trip.numeroTreno);
+                if (monitor) delay = Number(monitor.delay);
+            }
+        } else {
+            const targetStop = nextStop || currentStop;
+            const scheduledRaw = nextStop
+                ? targetStop.fermata.arrivo_teorico
+                : targetStop.fermata.partenza_teorica;
+
+            const actualDelay = isDepartingThisMinute
+                ? currentStop.fermata.ritardoPartenza
+                : trip.ritardo;
+
+            delay = actualDelay;
+
+            if (scheduledRaw) {
+                const scheduled = new Date(scheduledRaw);
+                const delayed = new Date(scheduled.getTime() + actualDelay * 60000);
+                const lateBy = now.getTime() - delayed.getTime();
+
+                if (lateBy > 2 * 60 * 1000) {
+                    const rfiId = findMatchingStation(capitalize(targetStop.stazione));
+                    if (rfiId) {
+                        const monitor = await getMonitorTrip(rfiId, trip.numeroTreno);
+                        const monitorDelay = Number(monitor?.delay);
+                        if (!isNaN(monitorDelay) && monitorDelay > actualDelay) {
+                            delay = monitorDelay;
+                        }
+                    }
                 }
             }
         }
@@ -207,33 +253,27 @@ export async function getTrip(id: string): Promise<Trip | null> {
         return {
             currentStopIndex,
             delay,
-            lastKnownLocation: isAtCurrentStop
-                ? capitalize(normalizeStationName(currentStopObj.stazione))
+            lastKnownLocation: (isAtCurrentStop || isDepartingThisMinute)
+                ? capitalize(normalizeStationName(currentStop.stazione))
                 : capitalize(trip.stazioneUltimoRilevamento || "--"),
-            lastUpdate: isAtCurrentStop ? currentStopObj.fermata.arrivoReale
-                : (trip.oraUltimoRilevamento ? new Date(trip.oraUltimoRilevamento) : null),
+            lastUpdate: currentStop.fermata.partenzaReale > trip.oraUltimoRilevamento ? toDate(currentStop.fermata.partenzaReale) : trip.oraUltimoRilevamento ? toDate(trip.oraUltimoRilevamento) : null,
             status: getTripStatus(trip),
             category: getCategory(trip),
             number: trip.numeroTreno,
             origin: capitalize(normalizeStationName(trip.origineEstera || trip.origine)),
             destination: capitalize(normalizeStationName(trip.destinazioneEstera || trip.destinazione)),
-            departureTime: new Date(trip.orarioPartenzaEstera || trip.orarioPartenza),
-            arrivalTime: new Date(trip.orarioArrivoEstera || trip.orarioArrivo),
+            departureTime: toDate(trip.orarioPartenzaEstera || trip.orarioPartenza)!,
+            arrivalTime: toDate(trip.orarioArrivoEstera || trip.orarioArrivo)!,
             alertMessage: trip.subTitle,
             stops: canvas.map((stop: any) => {
-                const scheduledArrival = stop.fermata.arrivo_teorico ? new Date(stop.fermata.arrivo_teorico) : null;
-                const scheduledDeparture = stop.fermata.partenza_teorica ? new Date(stop.fermata.partenza_teorica) : null;
-
-                const actualArrival = stop.fermata.arrivoReale ? new Date(stop.fermata.arrivoReale) : null;
-                const actualDeparture = stop.fermata.partenzaReale ? new Date(stop.fermata.partenzaReale) : null;
 
                 return {
                     id: stop.id,
                     name: capitalize(normalizeStationName(stop.stazione)),
-                    scheduledArrival,
-                    scheduledDeparture,
-                    actualArrival,
-                    actualDeparture,
+                    scheduledArrival: toDate(stop.fermata.arrivo_teorico),
+                    scheduledDeparture: toDate(stop.fermata.partenza_teorica),
+                    actualArrival: toDate(stop.fermata.arrivoReale),
+                    actualDeparture: toDate(stop.fermata.partenzaReale),
                     arrivalDelay: stop.fermata.ritardoArrivo,
                     departureDelay: stop.fermata.ritardoPartenza,
                     scheduledPlatform: stop.fermata.binarioProgrammatoPartenzaDescrizione || stop.fermata.binarioProgrammatoArrivoDescrizione,
@@ -241,13 +281,17 @@ export async function getTrip(id: string): Promise<Trip | null> {
                     status: getStopStatus(stop),
                 };
             }),
-            info: info ? info.map((alert: any) => ({
-                id: alert.id,
-                message: alert.infoNote,
-                date: new Date(alert.insertTimestamp)
-            })).filter((alert: any, i: number, self: any[]) =>
-                self.findIndex(a => a.message === alert.message) === i
-            ) : []
+            info: info
+                ? info
+                    .map((alert: any) => ({
+                        id: alert.id,
+                        message: alert.infoNote,
+                        date: toDate(alert.insertTimestamp)
+                    }))
+                    .filter((alert: any, i: number, self: any[]) =>
+                        self.findIndex(a => a.message === alert.message) === i
+                    )
+                : []
         };
     } else {
         return null;

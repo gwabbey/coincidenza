@@ -152,6 +152,7 @@ export function Monitor({ monitor }: { monitor: StationMonitor }) {
                             </div>
                         </motion.div>
                     ))}
+                    <p key="credits" className="text-sm text-gray-500 text-center">dati forniti da <Link href="https://www.rfi.it" target="_blank" rel="noopener noreferrer">RFI</Link></p>
                 </AnimatePresence>
             )}
         </div>

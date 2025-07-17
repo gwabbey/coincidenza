@@ -339,8 +339,8 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                             const effectiveDelayArrival = !isFutureStop ? stop.arrivalDelay : trip.delay;
                             const effectiveDelayDeparture = !isFutureStop ? stop.departureDelay : (trip.delay >= 0 ? trip.delay : 0);
 
-                            const expectedDepartureWithDelay = stop.scheduledDeparture ? new Date(stop.scheduledDeparture.getTime()) : null;
-                            const expectedArrivalWithDelay = stop.scheduledArrival ? new Date(stop.scheduledArrival.getTime()) : null;
+                            const expectedDepartureWithDelay = stop.scheduledDeparture ? new Date(stop.scheduledDeparture) : null;
+                            const expectedArrivalWithDelay = stop.scheduledArrival ? new Date(stop.scheduledArrival) : null;
 
                             if (trip.delay < 0 && isFutureStop) {
                                 if (index === Math.ceil(preciseActiveIndex)) {
