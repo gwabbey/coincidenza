@@ -19,17 +19,14 @@ const format = (date: string) => {
     });
 };
 
-// Helper function to get current time in Rome timezone
 const getCurrentMinutes = () => {
     const now = new Date();
     const romeTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
     return (romeTime.getDate() * 24 * 60) + (romeTime.getHours() * 60) + romeTime.getMinutes() + (romeTime.getSeconds() / 60);
 };
 
-// Helper function to convert time string to minutes, accounting for Rome timezone
-const timeToMinutesInRome = (timeString: string, originalDate: Date) => {
+const timeToMinutes = (timeString: string, originalDate: Date) => {
     const [hours, minutes] = timeString.split(':').map(Number);
-    // Convert the original date to Rome timezone to get the correct date
     const romeDate = new Date(originalDate.toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
     return (romeDate.getDate() * 24 * 60) + (hours * 60) + minutes;
 };
@@ -51,7 +48,7 @@ const calculatePreciseActiveIndex = (trip: TripProps) => {
 
     if (currentStopIndex === -1) {
         const firstStopDate = new Date(activeStops[0]?.scheduledDeparture || 0);
-        const firstStopMinutes = timeToMinutesInRome(format(firstStopDate.toISOString()), firstStopDate);
+        const firstStopMinutes = timeToMinutes(format(firstStopDate.toISOString()), firstStopDate);
         if (currentMinutes < firstStopMinutes || activeStops.length === 0) return -1;
     }
 
@@ -63,10 +60,10 @@ const calculatePreciseActiveIndex = (trip: TripProps) => {
 
         if (stop.actualDeparture && currentStopIndex < activeStops.length - 1) {
             const departureDate = new Date(stop.actualDeparture || 0);
-            const departureMinutes = timeToMinutesInRome(format(departureDate.toISOString()), departureDate);
+            const departureMinutes = timeToMinutes(format(departureDate.toISOString()), departureDate);
 
             const nextArrivalDate = new Date(activeStops[currentStopIndex + 1].scheduledArrival || 0);
-            const nextArrivalMinutes = timeToMinutesInRome(format(nextArrivalDate.toISOString()), nextArrivalDate) + delay;
+            const nextArrivalMinutes = timeToMinutes(format(nextArrivalDate.toISOString()), nextArrivalDate) + delay;
 
             if (currentMinutes >= departureMinutes && currentMinutes <= nextArrivalMinutes) {
                 return currentStopIndex + Math.min((currentMinutes - departureMinutes) / (nextArrivalMinutes - departureMinutes), 0.99);
@@ -86,10 +83,10 @@ const calculatePreciseActiveIndex = (trip: TripProps) => {
         }
 
         const departureDate = new Date(activeStops[i].actualDeparture || 0);
-        const departureMinutes = timeToMinutesInRome(format(departureDate.toISOString()), departureDate);
+        const departureMinutes = timeToMinutes(format(departureDate.toISOString()), departureDate);
 
         const nextStopDate = new Date(activeStops[i + 1].scheduledArrival || 0);
-        const nextStopMinutes = timeToMinutesInRome(format(nextStopDate.toISOString()), nextStopDate) + delay;
+        const nextStopMinutes = timeToMinutes(format(nextStopDate.toISOString()), nextStopDate) + delay;
 
         if (currentMinutes >= departureMinutes) lastPassedStopIndex = i;
         if (currentMinutes >= departureMinutes && currentMinutes <= nextStopMinutes) {
