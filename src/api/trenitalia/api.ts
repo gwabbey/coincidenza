@@ -262,8 +262,8 @@ export async function getTrip(id: string): Promise<Trip | null> {
             number: trip.numeroTreno,
             origin: capitalize(normalizeStationName(trip.origineEstera || trip.origine)),
             destination: capitalize(normalizeStationName(trip.destinazioneEstera || trip.destinazione)),
-            departureTime: toDate(trip.orarioPartenzaEstera || trip.orarioPartenza)!,
-            arrivalTime: toDate(trip.orarioArrivoEstera || trip.orarioArrivo)!,
+            departureTime: toDate(trip.oraPartenzaEstera || trip.orarioPartenza)!,
+            arrivalTime: toDate(trip.oraArrivoEstera || trip.orarioArrivo)!,
             alertMessage: trip.subTitle,
             stops: canvas.map((stop: any) => {
 

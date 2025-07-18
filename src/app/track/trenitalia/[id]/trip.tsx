@@ -465,11 +465,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                             {alert.message}
                         </span>
                         <span className="text-sm text-gray-500">
-                            {alert.date.toLocaleTimeString('it-IT', {
-                                hour: '2-digit',
-                                minute: '2-digit',
-                                hour12: false,
-                            })}
+                            {format(new Date(alert.date), 'HH:mm')}
                         </span>
                     </div>
                 ))}
