@@ -250,7 +250,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
             <div className="md:flex hidden justify-center items-center my-4 flex-row gap-4">
                 <Card radius="lg" className="p-4 w-64 text-center">
                     <div className="font-bold truncate">{trip.origin}</div>
-                    <div>{new Date(trip.departureTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</div>
+                    <div>{format(trip.departureTime)}</div>
                 </Card>
 
                 <div className="flex flex-row items-center justify-between gap-2">
@@ -261,7 +261,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
 
                 <Card radius="lg" className="p-4 w-64 text-center">
                     <div className="font-bold truncate">{trip.destination}</div>
-                    <div>{new Date(trip.arrivalTime).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</div>
+                    <div>{format(trip.arrivalTime)}</div>
                 </Card>
             </div>
 
