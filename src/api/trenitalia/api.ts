@@ -11,7 +11,7 @@ interface RfiItem {
     regions: string[];
 }
 
-const toDate = (timestamp: number | null) => timestamp ? new Date(timestamp).toISOString() : null;
+const timestampToIso = (timestamp: number | null) => timestamp ? new Date(timestamp).toISOString() : null;
 
 async function getRfiData(url: string, regions?: string[], dateFilter?: (date: Date) => boolean): Promise<RfiItem[]> {
     const { data } = await axios.get(url, { responseType: "text" });
@@ -28,7 +28,7 @@ async function getRfiData(url: string, regions?: string[], dateFilter?: (date: D
         .map((item: any) => ({
             title: item.title,
             link: item.link,
-            pubDate: toDate(item.pubDate),
+            pubDate: timestampToIso(item.pubDate),
             regions: item["rfi:region"]?.split(",").map((r: string) => r.trim()),
         }))
         .filter((item: any) =>
@@ -256,24 +256,24 @@ export async function getTrip(id: string): Promise<Trip | null> {
             lastKnownLocation: (isAtCurrentStop || isDepartingThisMinute)
                 ? capitalize(normalizeStationName(currentStop.stazione))
                 : capitalize(trip.stazioneUltimoRilevamento || "--"),
-            lastUpdate: currentStop.fermata.partenzaReale > trip.oraUltimoRilevamento ? toDate(currentStop.fermata.partenzaReale) : trip.oraUltimoRilevamento ? toDate(trip.oraUltimoRilevamento) : null,
+            lastUpdate: currentStop.fermata.partenzaReale > trip.oraUltimoRilevamento ? timestampToIso(currentStop.fermata.partenzaReale) : trip.oraUltimoRilevamento ? timestampToIso(trip.oraUltimoRilevamento) : null,
             status: getTripStatus(trip),
             category: getCategory(trip),
             number: trip.numeroTreno,
             origin: capitalize(normalizeStationName(trip.origineEstera || trip.origine)),
             destination: capitalize(normalizeStationName(trip.destinazioneEstera || trip.destinazione)),
-            departureTime: toDate(trip.oraPartenzaEstera || trip.orarioPartenza)!,
-            arrivalTime: toDate(trip.oraArrivoEstera || trip.orarioArrivo)!,
+            departureTime: timestampToIso(trip.oraPartenzaEstera || trip.orarioPartenza)!,
+            arrivalTime: timestampToIso(trip.oraArrivoEstera || trip.orarioArrivo)!,
             alertMessage: trip.subTitle,
             stops: canvas.map((stop: any) => {
 
                 return {
                     id: stop.id,
                     name: capitalize(normalizeStationName(stop.stazione)),
-                    scheduledArrival: toDate(stop.fermata.arrivo_teorico),
-                    scheduledDeparture: toDate(stop.fermata.partenza_teorica),
-                    actualArrival: toDate(stop.fermata.arrivoReale),
-                    actualDeparture: toDate(stop.fermata.partenzaReale),
+                    scheduledArrival: timestampToIso(stop.fermata.arrivo_teorico),
+                    scheduledDeparture: timestampToIso(stop.fermata.partenza_teorica),
+                    actualArrival: timestampToIso(stop.fermata.arrivoReale),
+                    actualDeparture: timestampToIso(stop.fermata.partenzaReale),
                     arrivalDelay: stop.fermata.ritardoArrivo,
                     departureDelay: stop.fermata.ritardoPartenza,
                     scheduledPlatform: stop.fermata.binarioProgrammatoPartenzaDescrizione || stop.fermata.binarioProgrammatoArrivoDescrizione,
@@ -286,7 +286,7 @@ export async function getTrip(id: string): Promise<Trip | null> {
                     .map((alert: any) => ({
                         id: alert.id,
                         message: alert.infoNote,
-                        date: toDate(alert.insertTimestamp)
+                        date: timestampToIso(alert.insertTimestamp)
                     }))
                     .filter((alert: any, i: number, self: any[]) =>
                         self.findIndex(a => a.message === alert.message) === i

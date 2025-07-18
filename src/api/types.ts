@@ -18,10 +18,10 @@ export interface Trip {
 export interface Stop {
     id: string;
     name: string;
-    scheduledArrival: Date;
-    scheduledDeparture: Date;
-    actualArrival: Date | null;
-    actualDeparture: Date | null;
+    scheduledArrival: string;
+    scheduledDeparture: string;
+    actualArrival: string | null;
+    actualDeparture: string | null;
     arrivalDelay: number | null;
     departureDelay: number | null;
     scheduledPlatform: string | null;
@@ -33,7 +33,7 @@ export interface Info {
     id: number;
     message: string;
     url: string;
-    date: Date;
+    date: string;
 }
 
 export interface Train {
