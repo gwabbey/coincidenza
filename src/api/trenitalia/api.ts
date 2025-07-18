@@ -221,13 +221,13 @@ export async function getTrip(id: string): Promise<Trip | null> {
                 if (monitor) delay = Number(monitor.delay);
             }
         } else {
-            const targetStop = !nextStop.fermata.arrivoReale ? nextStop : currentStop;
+            const targetStop = !nextStop?.fermata?.arrivoReale ? nextStop : currentStop;
             const scheduledRaw = nextStop
-                ? targetStop.fermata.arrivo_teorico
-                : targetStop.fermata.partenza_teorica;
+                ? targetStop?.fermata?.arrivo_teorico
+                : targetStop?.fermata?.partenza_teorica;
 
             const actualDelay = isDepartingThisMinute
-                ? currentStop.fermata.ritardoPartenza
+                ? currentStop?.fermata?.ritardoPartenza
                 : trip.ritardo;
 
             delay = actualDelay;
