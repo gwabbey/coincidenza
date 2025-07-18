@@ -21,20 +21,19 @@ const format = (date: string) => {
 
 const getCurrentMinutes = () => {
     const now = new Date();
-    const romeTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
-    return (romeTime.getDate() * 24 * 60) + (romeTime.getHours() * 60) + romeTime.getMinutes() + (romeTime.getSeconds() / 60);
+    const time = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
+    return (time.getDate() * 24 * 60) + (time.getHours() * 60) + time.getMinutes() + (time.getSeconds() / 60);
 };
 
 const timeToMinutes = (timeString: string, originalDate: Date) => {
     const [hours, minutes] = timeString.split(':').map(Number);
-    const romeDate = new Date(originalDate.toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
-    return (romeDate.getDate() * 24 * 60) + (hours * 60) + minutes;
+    const date = new Date(originalDate.toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
+    return (date.getDate() * 24 * 60) + (hours * 60) + minutes;
 };
 
 const calculatePreciseActiveIndex = (trip: TripProps) => {
     const delay = trip.delay || 0;
     const currentMinutes = getCurrentMinutes();
-
     const activeStops = trip.stops.filter(stop => stop.status !== "canceled");
 
     const currentStopIndex = trip.currentStopIndex === -1 ? -1 :
@@ -383,7 +382,6 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                                             {stop.status === "not_planned" && (<p className="text-sm text-warning font-semibold">fermata straordinaria</p>)}
 
                                             <div className={`text-gray-500 text-sm ${stop.status === "canceled" ? "line-through" : ""}`}>
-
                                                 <div className="flex-col">
                                                     <div className={`flex gap-1 ${!stop.actualArrival ? 'italic' : ''}`}>
                                                         {stop.scheduledArrival && <span>a.</span>}

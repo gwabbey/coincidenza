@@ -11,7 +11,6 @@ import { useEffect, useState } from 'react';
 export function Monitor({ monitor }: { monitor: StationMonitor }) {
     const router = useRouter();
     const [blinkKey, setBlinkKey] = useState(0);
-    const [showRelativeTime, setShowRelativeTime] = useState(false);
 
     useEffect(() => {
         const intervalId = setInterval(() => {
@@ -26,26 +25,6 @@ export function Monitor({ monitor }: { monitor: StationMonitor }) {
         }, 1000);
         return () => clearInterval(blinkInterval);
     }, []);
-
-
-    useEffect(() => {
-        const timeouts: NodeJS.Timeout[] = []
-
-        timeouts.push(setTimeout(() => {
-            setShowRelativeTime(true)
-        }, 1000))
-
-        timeouts.push(setTimeout(() => {
-            setShowRelativeTime(false)
-
-            const interval = setInterval(() => {
-                setShowRelativeTime(prev => !prev)
-            }, 5000)
-            timeouts.push(interval)
-        }, 3000))
-
-        return () => timeouts.forEach(clearTimeout)
-    }, [])
 
     if (monitor.trains.length === 0) {
         return (

@@ -93,9 +93,9 @@ function normalizeToMinute(date: Date): Date {
     return d;
 }
 
-function getTripStatus(trip: any) {
+function getTripStatus(trip: any, canvas: any) {
     if (trip.provvedimento === 1) return "canceled";
-    if (trip.nonPartito && !trip.oraUltimoRilevamento) return "scheduled";
+    if (trip.nonPartito && !trip.oraUltimoRilevamento && !canvas[0].fermata.partenzaReale) return "scheduled";
     if (trip.arrivato) return "completed";
     return "active";
 }
@@ -206,13 +206,13 @@ export async function getTrip(id: string): Promise<Trip | null> {
 
         const hasArrived = currentStop?.fermata?.arrivoReale !== null;
         const hasNotDeparted = !currentStop?.fermata?.partenzaReale;
-        const isAtCurrentStop = hasArrived && hasNotDeparted;
+        const isAtCurrentStop = (hasArrived && hasNotDeparted) || currentStop.fermata.progressivo === 1 && trip.nonPartito;
 
         const isDepartingThisMinute = currentStop?.fermata?.partenzaReale &&
             normalizeToMinute(new Date(currentStop.fermata.partenzaReale)).getTime() ===
             normalizeToMinute(now).getTime();
 
-        let delay = currentStop?.fermata?.ritardoArrivo || trip.ritardo;
+        let delay = isAtCurrentStop ? currentStop?.fermata?.ritardoPartenza : currentStop?.fermata?.ritardoArrivo || trip.ritardo;
 
         if (trip.nonPartito) {
             const rfiId = findMatchingStation(capitalize(canvas[0].stazione));
@@ -221,7 +221,7 @@ export async function getTrip(id: string): Promise<Trip | null> {
                 if (monitor) delay = Number(monitor.delay);
             }
         } else {
-            const targetStop = nextStop || currentStop;
+            const targetStop = !nextStop.fermata.arrivoReale ? nextStop : currentStop;
             const scheduledRaw = nextStop
                 ? targetStop.fermata.arrivo_teorico
                 : targetStop.fermata.partenza_teorica;
@@ -238,6 +238,7 @@ export async function getTrip(id: string): Promise<Trip | null> {
                 const lateBy = now.getTime() - delayed.getTime();
 
                 if (lateBy > 2 * 60 * 1000) {
+                    console.log(lateBy)
                     const rfiId = findMatchingStation(capitalize(targetStop.stazione));
                     if (rfiId) {
                         const monitor = await getMonitorTrip(rfiId, trip.numeroTreno);
@@ -256,8 +257,12 @@ export async function getTrip(id: string): Promise<Trip | null> {
             lastKnownLocation: (isAtCurrentStop || isDepartingThisMinute)
                 ? capitalize(normalizeStationName(currentStop.stazione))
                 : capitalize(trip.stazioneUltimoRilevamento || "--"),
-            lastUpdate: currentStop.fermata.partenzaReale > trip.oraUltimoRilevamento ? timestampToIso(currentStop.fermata.partenzaReale) : trip.oraUltimoRilevamento ? timestampToIso(trip.oraUltimoRilevamento) : null,
-            status: getTripStatus(trip),
+            lastUpdate: currentStop.fermata.partenzaReale && !trip.oraUltimoRilevamento
+                ? timestampToIso(currentStop.fermata.partenzaReale)
+                : trip.oraUltimoRilevamento
+                    ? timestampToIso(trip.oraUltimoRilevamento)
+                    : null,
+            status: getTripStatus(trip, canvas),
             category: getCategory(trip),
             number: trip.numeroTreno,
             origin: capitalize(normalizeStationName(trip.origineEstera || trip.origine)),

@@ -87,7 +87,7 @@ function Loading() {
     return (
         <div className="flex flex-col items-center justify-center py-8">
             <Spinner color="default" size="lg" />
-            <p className="text-center text-gray-500 text-lg mt-4">caricamento in corso...</p>
+            <p className="text-center text-gray-500 text-lg">caricamento in corso...</p>
         </div>
     )
 }
@@ -161,12 +161,12 @@ export default async function Page() {
                 {!rejected ? (
                     <>
                         <Spinner color="default" size="lg" />
-                        <p className="mt-4 text-gray-500">rilevando la tua posizione...</p>
+                        <p className="text-gray-500">rilevando la tua posizione...</p>
                     </>
                 ) : (
                     <>
                         <p className="text-lg font-semibold">posizione non rilevata!</p>
-                        <p className="mt-2 text-gray-500">puoi cercare un luogo manualmente o dare i permessi per la posizione</p>
+                        <p className="text-gray-500">puoi cercare un luogo manualmente o dare i permessi per la posizione</p>
                     </>
                 )}
                 <RequestLocation />
