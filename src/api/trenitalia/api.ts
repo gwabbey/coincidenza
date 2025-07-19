@@ -38,24 +38,20 @@ async function getRfiData(url: string, regions?: string[], dateFilter?: (date: D
 }
 
 export async function getRfiAlerts(regions?: string[]): Promise<RfiItem[]> {
-    const now = new Date();
-    const cutoff = new Date().setHours(now.getHours() < 1 ? -1 : 0, 0, 0, 0);
-
     return getRfiData(
         "https://www.rfi.it/content/rfi/it/news-e-media/infomobilita.rss.updates.xml",
         regions,
-        date => date >= new Date(cutoff)
+        date => {
+            const pub = new Date(date);
+            return pub.toDateString() === new Date().toDateString();
+        }
     );
 }
 
 export async function getRfiNotices(regions?: string[]): Promise<RfiItem[]> {
-    const startOfToday = new Date();
-    startOfToday.setHours(0, 0, 0, 0);
-
     return getRfiData(
         "https://www.rfi.it/content/rfi/it/news-e-media/infomobilita.rss.notices.xml",
-        regions,
-        date => date >= startOfToday
+        regions
     );
 }
 
@@ -194,110 +190,129 @@ export async function getTrip(id: string): Promise<Trip | null> {
         getTripCanvas(code, origin, timestamp)
     ]);
 
-    if (response.status === 200) {
-        if (response.status !== 200) return null;
+    if (response.status !== 200) return null;
 
-        const trip = response.data;
-        const now = new Date();
+    const now = new Date().getTime();
+    const currentStopIndex = canvas.findIndex((item: any) => item.stazioneCorrente) ?? -1;
+    const currentStop = canvas[currentStopIndex];
+    const nextStop = canvas[currentStopIndex + 1];
+    const trip = response.data;
 
-        const currentStopIndex = canvas.findIndex((item: any) => item.stazioneCorrente) ?? -1;
-        const currentStop = canvas[currentStopIndex];
-        const nextStop = canvas[currentStopIndex + 1];
+    let delay = trip.ritardo;
+    let lastKnownLocation = capitalize(trip.stazioneUltimoRilevamento || "--");
 
-        const isAtCurrentStop = (currentStop?.fermata?.arrivoReale && !currentStop?.fermata?.partenzaReale)
-            || currentStop.fermata.progressivo === 1 && trip.nonPartito;
+    if (currentStop?.fermata) {
+        const isStationed = (currentStop?.fermata.arrivoReale && !currentStop?.fermata.partenzaReale) ||
+            (currentStop?.fermata.progressivo === 1 && trip.nonPartito);
 
-        let delay = trip.ritardo;
-
-        if (isAtCurrentStop) {
-            delay = currentStop.fermata.ritardoArrivo
+        if (isStationed) {
+            delay = currentStop?.fermata.ritardoArrivo;
         }
 
-        if (new Date(currentStop?.fermata?.partenzaReale).setSeconds(0, 0) === now.setSeconds(0, 0) &&
-            currentStop?.fermata?.arrivoReale && currentStop?.fermata?.partenzaReale) {
-            delay = currentStop.fermata.ritardoPartenza;
+        const isDepartingNow = currentStop?.fermata.partenzaReale && currentStop?.fermata.arrivoReale &&
+            (new Date(currentStop?.fermata.partenzaReale).setSeconds(0, 0) === new Date().setSeconds(0, 0) ||
+                new Date(currentStop?.fermata.partenzaReale).getTime() - now <= 60000);
+
+        if (isDepartingNow) {
+            delay = currentStop?.fermata.ritardoPartenza;
         }
+    }
 
-        if (trip.nonPartito || currentStop.fermata.partenza_teorica + trip.ritardo * 60000 < now.getTime()) {
-            const rfiId = findMatchingStation(capitalize(currentStop.stazione));
-            if (rfiId) {
-                const monitor = await getMonitorTrip(rfiId, trip.numeroTreno);
-                if (monitor && monitor.delay > trip.delay) delay = Number(monitor.delay);
-            }
-        } else {
-            const targetStop = !nextStop?.fermata?.arrivoReale ? nextStop : currentStop;
-            const scheduledRaw = nextStop
-                ? targetStop?.fermata?.arrivo_teorico
-                : targetStop?.fermata?.partenza_teorica;
+    const getMonitorDelay = async (stop: any, trainNumber: string, tripDelay: number) => {
+        const stationName = stop?.stazione;
+        if (!stationName) return null;
 
-            const actualDelay = trip.ritardo;
+        const rfiId = findMatchingStation(capitalize(stationName));
+        if (!rfiId) return null;
 
-            if (scheduledRaw) {
-                const scheduled = new Date(scheduledRaw);
-                const delayed = new Date(scheduled.getTime() + actualDelay * 60000);
-                const lateBy = now.getTime() - delayed.getTime();
-
-                if (lateBy > 2 * 60 * 1000) {
-                    const rfiId = findMatchingStation(capitalize(targetStop.stazione));
-                    if (rfiId) {
-                        const monitor = await getMonitorTrip(rfiId, trip.numeroTreno);
-                        if (monitor) {
-                            const monitorDelay = Number(monitor.delay);
-                            if (!isNaN(monitorDelay) && monitorDelay > actualDelay) {
-                                delay = monitorDelay;
-                            }
-                        }
-                    }
-                }
-            }
+        const monitor = await getMonitorTrip(rfiId, trainNumber);
+        if (monitor && !isNaN(Number(monitor.delay)) && Number(monitor.delay) > tripDelay) {
+            return Number(monitor.delay);
         }
-
-        return {
-            currentStopIndex,
-            delay,
-            lastKnownLocation: capitalize(trip.stazioneUltimoRilevamento || "--"),
-            lastUpdate: currentStop?.fermata?.partenzaReale > trip.oraUltimoRilevamento
-                ? timestampToIso(currentStop.fermata.partenzaReale)
-                : trip.oraUltimoRilevamento
-                    ? timestampToIso(trip.oraUltimoRilevamento)
-                    : null,
-            status: getTripStatus(trip, canvas),
-            category: getCategory(trip),
-            number: trip.numeroTreno,
-            origin: capitalize(normalizeStationName(trip.origineEstera || trip.origine)),
-            destination: capitalize(normalizeStationName(trip.destinazioneEstera || trip.destinazione)),
-            departureTime: timestampToIso(trip.oraPartenzaEstera || trip.orarioPartenza)!,
-            arrivalTime: timestampToIso(trip.oraArrivoEstera || trip.orarioArrivo)!,
-            alertMessage: trip.subTitle,
-            stops: canvas.map((stop: any) => {
-
-                return {
-                    id: stop.id,
-                    name: capitalize(normalizeStationName(stop.stazione)),
-                    scheduledArrival: timestampToIso(stop.fermata.arrivo_teorico),
-                    scheduledDeparture: timestampToIso(stop.fermata.partenza_teorica),
-                    actualArrival: timestampToIso(stop.fermata.arrivoReale),
-                    actualDeparture: timestampToIso(stop.fermata.partenzaReale),
-                    arrivalDelay: stop.fermata.ritardoArrivo,
-                    departureDelay: stop.fermata.ritardoPartenza,
-                    scheduledPlatform: stop.fermata.binarioProgrammatoPartenzaDescrizione || stop.fermata.binarioProgrammatoArrivoDescrizione,
-                    actualPlatform: stop.fermata.binarioEffettivoPartenzaDescrizione || stop.fermata.binarioEffettivoArrivoDescrizione,
-                    status: getStopStatus(stop),
-                };
-            }),
-            info: info
-                ? info
-                    .map((alert: any) => ({
-                        id: alert.id,
-                        message: alert.infoNote,
-                        date: timestampToIso(alert.insertTimestamp)
-                    }))
-                    .filter((alert: any, i: number, self: any[]) =>
-                        self.findIndex(a => a.message === alert.message) === i
-                    )
-                : []
-        };
-    } else {
         return null;
+    };
+
+    const isLateForDeparture = currentStop?.fermata && !currentStop?.fermata.partenzaReale &&
+        (currentStop?.fermata.partenza_teorica + trip.ritardo * 60000 < now);
+
+    const isLateForArrival = !isLateForDeparture && nextStop?.fermata && !nextStop?.fermata.arrivoReale &&
+        (nextStop?.fermata.arrivo_teorico + trip.ritardo * 60000 < now);
+
+    let rfiDelay = null;
+
+    if (trip.nonPartito || isLateForDeparture) {
+        rfiDelay = await getMonitorDelay(currentStop, trip.numeroTreno, trip.ritardo);
+    } else if (isLateForArrival) {
+        rfiDelay = await getMonitorDelay(nextStop, trip.numeroTreno, trip.ritardo);
+    }
+
+    if (rfiDelay !== null) {
+        delay = rfiDelay;
+    }
+
+    if (currentStop?.fermata) {
+        const arrival = currentStop.fermata.arrivoReale
+            ? new Date(currentStop.fermata.arrivoReale).getTime()
+            : null;
+
+        const departure = currentStop.fermata.partenzaReale
+            ? new Date(currentStop.fermata.partenzaReale).getTime()
+            : null;
+
+        const now = Date.now();
+
+        const closeToStation =
+            (arrival && !departure && now - arrival < 1 * 60 * 1000) ||
+            (departure && now - departure < 1 * 60 * 1000);
+
+        if (closeToStation) {
+            lastKnownLocation = capitalize(currentStop.stazione);
+        }
+    }
+
+    return {
+        currentStopIndex,
+        delay,
+        lastKnownLocation,
+        lastUpdate: currentStop?.fermata?.partenzaReale > trip.oraUltimoRilevamento
+            ? timestampToIso(currentStop.fermata.partenzaReale)
+            : currentStop?.fermata?.arrivoReale > trip.oraUltimoRilevamento
+                ? timestampToIso(currentStop.fermata.arrivoReale)
+                : trip.oraUltimoRilevamento ? timestampToIso(trip.oraUltimoRilevamento) : null,
+        status: getTripStatus(trip, canvas),
+        category: getCategory(trip),
+        number: trip.numeroTreno,
+        origin: capitalize(normalizeStationName(trip.origineEstera || trip.origine)),
+        destination: capitalize(normalizeStationName(trip.destinazioneEstera || trip.destinazione)),
+        departureTime: timestampToIso(trip.oraPartenzaEstera || trip.orarioPartenza)!,
+        arrivalTime: timestampToIso(trip.oraArrivoEstera || trip.orarioArrivo)!,
+        alertMessage: trip.subTitle,
+        stops: canvas.map((stop: any) => {
+
+            return {
+                id: stop.id,
+                name: capitalize(normalizeStationName(stop.stazione)),
+                scheduledArrival: timestampToIso(stop.fermata.arrivo_teorico),
+                scheduledDeparture: timestampToIso(stop.fermata.partenza_teorica),
+                actualArrival: timestampToIso(stop.fermata.arrivoReale),
+                actualDeparture: timestampToIso(stop.fermata.partenzaReale),
+                arrivalDelay: stop.fermata.ritardoArrivo,
+                departureDelay: stop.fermata.ritardoPartenza,
+                scheduledPlatform: stop.fermata.binarioProgrammatoPartenzaDescrizione || stop.fermata.binarioProgrammatoArrivoDescrizione,
+                actualPlatform: stop.fermata.binarioEffettivoPartenzaDescrizione || stop.fermata.binarioEffettivoArrivoDescrizione,
+                status: getStopStatus(stop),
+            };
+        }),
+        info: info
+            ? info
+                .map((alert: any) => ({
+                    id: alert.id,
+                    message: alert.infoNote,
+                    date: timestampToIso(alert.insertTimestamp)
+                }))
+                .filter((alert: any, i: number, self: any[]) =>
+                    self.findIndex(a => a.message === alert.message) === i
+                )
+            : []
     }
 }

@@ -14,8 +14,8 @@ const links = [
 export default async function Page() {
     const cookieStore = await cookies();
     const favorites = JSON.parse(decodeURIComponent(cookieStore.get('favorites')?.value ?? '[]'));
-    const rfiAlerts = await getRfiAlerts(["Trentino Alto Adige", "Veneto"]);
-    const rfiNotices = await getRfiNotices(["Trentino Alto Adige", "Veneto"]);
+    const alerts = await getRfiAlerts(["Trentino Alto Adige", "Veneto", "Lombardia", "Friuli Venezia Giulia"]);
+    const notices = await getRfiNotices(["Trentino Alto Adige"]);
 
     return (
         <div className="flex flex-col items-center justify-start gap-4 text-center">
@@ -33,10 +33,10 @@ export default async function Page() {
                 </Button>
             ))}
 
-            {rfiAlerts.length > 0 && <Card className="flex flex-col p-2 gap-2 max-w-2xl w-full rounded-large shadow-medium text-left">
+            {alerts.length > 0 && <Card className="flex flex-col p-2 gap-2 max-w-2xl w-full rounded-large shadow-medium text-left">
                 <CardHeader className="text-xl font-bold pb-0">⚠️ avvisi sulla rete ferroviaria ⚠️</CardHeader>
                 <CardBody className="gap-2">
-                    {rfiAlerts && rfiAlerts.map((alert, index) => (
+                    {alerts && alerts.map((alert, index) => (
                         <div key={index} className="flex flex-col">
                             <Link href={alert.link} isExternal>{alert.title}</Link>
                         </div>
@@ -46,10 +46,10 @@ export default async function Page() {
 
             <Favorites favorites={favorites} />
 
-            {rfiNotices.length > 0 && <Card className="flex flex-col p-2 gap-2 max-w-2xl w-full rounded-large shadow-medium text-left">
+            {notices.length > 0 && <Card className="flex flex-col p-2 gap-2 max-w-2xl w-full rounded-large shadow-medium text-left">
                 <CardHeader className="text-xl font-bold pb-0">informazioni utili</CardHeader>
                 <CardBody className="gap-2">
-                    {rfiNotices && rfiNotices.map((alert, index) => (
+                    {notices && notices.map((alert, index) => (
                         <div key={index} className={`"flex flex-col ${alert.title.toLowerCase().includes("sciopero") ? "font-bold" : ""}`}>
                             <Link href={alert.link} isExternal>{alert.title}</Link>
                         </div>
