@@ -204,21 +204,25 @@ export async function getTrip(id: string): Promise<Trip | null> {
         const currentStop = canvas[currentStopIndex];
         const nextStop = canvas[currentStopIndex + 1];
 
-        const hasArrived = currentStop?.fermata?.arrivoReale !== null;
-        const hasNotDeparted = !currentStop?.fermata?.partenzaReale;
-        const isAtCurrentStop = (hasArrived && hasNotDeparted) || currentStop.fermata.progressivo === 1 && trip.nonPartito;
+        const isAtCurrentStop = (currentStop?.fermata?.arrivoReale && !currentStop?.fermata?.partenzaReale)
+            || currentStop.fermata.progressivo === 1 && trip.nonPartito;
 
-        const isDepartingThisMinute = currentStop?.fermata?.partenzaReale &&
-            normalizeToMinute(new Date(currentStop.fermata.partenzaReale)).getTime() ===
-            normalizeToMinute(now).getTime();
+        let delay = trip.ritardo;
 
-        let delay = isAtCurrentStop ? currentStop?.fermata?.ritardoPartenza : currentStop?.fermata?.ritardoArrivo || trip.ritardo;
+        if (isAtCurrentStop) {
+            delay = currentStop.fermata.ritardoArrivo
+        }
 
-        if (trip.nonPartito) {
-            const rfiId = findMatchingStation(capitalize(canvas[0].stazione));
+        if (new Date(currentStop?.fermata?.partenzaReale).setSeconds(0, 0) === now.setSeconds(0, 0) &&
+            currentStop?.fermata?.arrivoReale && currentStop?.fermata?.partenzaReale) {
+            delay = currentStop.fermata.ritardoPartenza;
+        }
+
+        if (trip.nonPartito || currentStop.fermata.partenza_teorica + trip.ritardo * 60000 < now.getTime()) {
+            const rfiId = findMatchingStation(capitalize(currentStop.stazione));
             if (rfiId) {
                 const monitor = await getMonitorTrip(rfiId, trip.numeroTreno);
-                if (monitor) delay = Number(monitor.delay);
+                if (monitor && monitor.delay > trip.delay) delay = Number(monitor.delay);
             }
         } else {
             const targetStop = !nextStop?.fermata?.arrivoReale ? nextStop : currentStop;
@@ -226,11 +230,7 @@ export async function getTrip(id: string): Promise<Trip | null> {
                 ? targetStop?.fermata?.arrivo_teorico
                 : targetStop?.fermata?.partenza_teorica;
 
-            const actualDelay = isDepartingThisMinute
-                ? currentStop?.fermata?.ritardoPartenza
-                : trip.ritardo;
-
-            delay = actualDelay;
+            const actualDelay = trip.ritardo;
 
             if (scheduledRaw) {
                 const scheduled = new Date(scheduledRaw);
@@ -238,13 +238,14 @@ export async function getTrip(id: string): Promise<Trip | null> {
                 const lateBy = now.getTime() - delayed.getTime();
 
                 if (lateBy > 2 * 60 * 1000) {
-                    console.log(lateBy)
                     const rfiId = findMatchingStation(capitalize(targetStop.stazione));
                     if (rfiId) {
                         const monitor = await getMonitorTrip(rfiId, trip.numeroTreno);
-                        const monitorDelay = Number(monitor?.delay);
-                        if (!isNaN(monitorDelay) && monitorDelay > actualDelay) {
-                            delay = monitorDelay;
+                        if (monitor) {
+                            const monitorDelay = Number(monitor.delay);
+                            if (!isNaN(monitorDelay) && monitorDelay > actualDelay) {
+                                delay = monitorDelay;
+                            }
                         }
                     }
                 }
@@ -254,10 +255,8 @@ export async function getTrip(id: string): Promise<Trip | null> {
         return {
             currentStopIndex,
             delay,
-            lastKnownLocation: (isAtCurrentStop || isDepartingThisMinute)
-                ? capitalize(normalizeStationName(currentStop.stazione))
-                : capitalize(trip.stazioneUltimoRilevamento || "--"),
-            lastUpdate: currentStop.fermata.partenzaReale && !trip.oraUltimoRilevamento
+            lastKnownLocation: capitalize(trip.stazioneUltimoRilevamento || "--"),
+            lastUpdate: currentStop?.fermata?.partenzaReale > trip.oraUltimoRilevamento
                 ? timestampToIso(currentStop.fermata.partenzaReale)
                 : trip.oraUltimoRilevamento
                     ? timestampToIso(trip.oraUltimoRilevamento)

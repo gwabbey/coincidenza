@@ -47,34 +47,25 @@ model TripAlert {
   subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   subscriptionId String
   
-  ids    Json      @default("{}") // { "trenitalia": "22476", "viaggiatreno": "12345-2024-06-30", "deutschebahn": "ICE123" }
+  ids    Json      @default("{}") // { "rfi": "22476", "viaggiatreno": "12345-2024-06-30", "deutschebahn": "ICE123" }
   operators       String[]   // ["Trenitalia", "OEBB", "Trenord"]
   type       TripType
+  tripStartTime      DateTime
   
   departureStationId String
   arrivalStationId   String
   departureTime      DateTime
-
-  daysOfWeek String[] @default([])
-  
-  alertTypes         AlertType[]
+  arrivalTime      DateTime
+  daysOfWeek String[] @default([]) // ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
   
   isActive           Boolean   @default(true)
   
   @@index([departureStationId])
   @@index([arrivalStationId])
-  @@index([departureTime])
   @@index([subscriptionId])
 }
 
 enum TripType {
   TRAIN
   BUS
-}
-
-enum AlertType {
-  TRIP_DELAY
-  TRIP_CANCELLATION
-  TRIP_PLATFORM_CHANGE
-  TRIP_SERVICE_UPDATE
 }
