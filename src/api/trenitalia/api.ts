@@ -226,7 +226,7 @@ export async function getTrip(id: string): Promise<Trip | null> {
         if (!rfiId) return null;
 
         const monitor = await getMonitorTrip(rfiId, trainNumber);
-        if (monitor && !isNaN(Number(monitor.delay)) && Number(monitor.delay) > tripDelay) {
+        if (monitor && !isNaN(Number(monitor.delay)) && Number(monitor.delay) > tripDelay && Number(monitor.delay) > 0) {
             return Number(monitor.delay);
         }
         return null;
