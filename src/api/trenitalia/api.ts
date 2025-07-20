@@ -259,7 +259,7 @@ export async function getTrip(id: string): Promise<Trip | null> {
         const scheduledDeparture = currentStop.fermata.partenza_teorica;
         const diff = now - scheduledDeparture;
 
-        if (diff >= 5 * 60 * 1000) {
+        if (diff >= 2 * 60 * 1000) {
             const fallbackDelay = Math.round(diff / 60000);
             if (fallbackDelay > delay) {
                 delay = fallbackDelay;
