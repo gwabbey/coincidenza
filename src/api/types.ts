@@ -12,7 +12,8 @@ export interface Trip {
     delay: number,
     alertMessage: string | null,
     stops: Stop[],
-    info: Info[];
+    info: Info[],
+    clientId: number,
 }
 
 export interface Stop {

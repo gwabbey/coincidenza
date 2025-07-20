@@ -250,6 +250,21 @@ export async function getTrip(id: string): Promise<Trip | null> {
 
     if (rfiDelay !== null) {
         delay = rfiDelay;
+    } else if (
+        currentStop?.fermata &&
+        !currentStop?.fermata.partenzaReale &&
+        currentStop?.fermata.partenza_teorica &&
+        currentStop?.fermata.arrivoReale
+    ) {
+        const scheduledDeparture = currentStop.fermata.partenza_teorica;
+        const diff = now - scheduledDeparture;
+
+        if (diff >= 5 * 60 * 1000) {
+            const fallbackDelay = Math.round(diff / 60000);
+            if (fallbackDelay > delay) {
+                delay = fallbackDelay;
+            }
+        }
     }
 
     if (currentStop?.fermata) {
@@ -289,6 +304,7 @@ export async function getTrip(id: string): Promise<Trip | null> {
         departureTime: timestampToIso(trip.oraPartenzaEstera || trip.orarioPartenza)!,
         arrivalTime: timestampToIso(trip.oraArrivoEstera || trip.orarioArrivo)!,
         alertMessage: trip.subTitle,
+        clientId: trip.codiceCliente || 0,
         stops: canvas.map((stop: any) => {
 
             return {
