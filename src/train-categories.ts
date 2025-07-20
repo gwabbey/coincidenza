@@ -35,23 +35,3 @@ export const trainCategoryLongNames = {
     "EXP": "Espresso",
     "iR": "Interregionale",
 }
-
-export const trainCodeLogos = [{
-    "code": "R",
-    "url": "https://www.lefrecce.it/Channels.Website.WEB/web/images/logo/RE.svg",
-}, {
-    "code": "RV",
-    "url": "https://www.lefrecce.it/Channels.Website.WEB/web/images/logo/RV.svg",
-}, {
-    "code": "EC",
-    "url": "https://www.lefrecce.it/Channels.Website.WEB/web/images/logo/EC.svg",
-}, {
-    "code": "RJ",
-    "url": "https://www.lefrecce.it/Channels.Website.WEB/web/images/logo/EC.svg",
-}, {
-    "code": "IC",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/8/86/Treno_Intercity.svg",
-}, {
-    "code": "EXP",
-    "url": "https://upload.wikimedia.org/wikipedia/commons/c/ce/Simbolo_Treno_Espresso.svg",
-}]

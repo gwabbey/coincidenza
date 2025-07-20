@@ -209,11 +209,13 @@ export async function getTrip(id: string): Promise<Trip | null> {
             delay = currentStop?.fermata.ritardoArrivo;
         }
 
-        const isDepartingNow = currentStop?.fermata.partenzaReale && currentStop?.fermata.arrivoReale &&
-            (new Date(currentStop?.fermata.partenzaReale).setSeconds(0, 0) === new Date().setSeconds(0, 0) ||
-                new Date(currentStop?.fermata.partenzaReale).getTime() - now <= 60000);
+        const scheduled = new Date(currentStop.fermata.partenzaReale);
+        const delta = scheduled.getTime() - now;
+        const isDepartingNow = currentStop.fermata.partenzaReale &&
+            currentStop.fermata.arrivoReale &&
+            Math.abs(delta) <= 60000;
 
-        if (isDepartingNow) {
+        if (isDepartingNow && delay !== currentStop?.fermata.ritardoPartenza) {
             delay = currentStop?.fermata.ritardoPartenza;
         }
     }

@@ -117,3 +117,11 @@ export function encodeKey(buffer: ArrayBuffer | null): string {
     if (!buffer) return ''
     return Buffer.from(new Uint8Array(buffer)).toString('base64')
 }
+
+export const formatDate = (date: string) => {
+    return new Date(date).toLocaleTimeString('it-IT', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Europe/Rome'
+    });
+};

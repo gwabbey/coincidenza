@@ -4,19 +4,19 @@ import { Trip as TripProps } from "@/api/trentino-trasporti/types";
 import { RouteModal } from "@/components/modal";
 import Timeline from "@/components/timeline";
 import { getDelayColor } from "@/utils";
-import { Button, Card, Divider, Link, useDisclosure } from "@heroui/react";
-import { IconAlertTriangleFilled, IconArrowUp, IconInfoTriangleFilled } from "@tabler/icons-react";
+import { addToast, Button, Card, Divider, Link, useDisclosure } from "@heroui/react";
+import { IconAlertTriangleFilled, IconInfoTriangleFilled } from "@tabler/icons-react";
 import NextLink from "next/link";
 import { useEffect, useState } from 'react';
-
-const timeToMinutes = (timeStr: string): number => {
-    const [hours, minutes] = timeStr.split(':').map(Number);
-    return hours * 60 + minutes;
-};
 
 const getCurrentMinutes = (): number => {
     const now = new Date();
     return now.getHours() * 60 + now.getMinutes() + (now.getSeconds() / 60);
+};
+
+const timeToMinutes = (timeStr: string): number => {
+    const [hours, minutes] = timeStr.split(':').map(Number);
+    return hours * 60 + minutes;
 };
 
 const calculatePreciseActiveIndex = (stopTimes: any[], delay: number, stopLast: number): number => {
@@ -55,48 +55,83 @@ const calculatePreciseActiveIndex = (stopTimes: any[], delay: number, stopLast: 
 
 export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
     const [trip, setTrip] = useState(initialTrip);
-    const [scroll, setScroll] = useState({ y: 0 });
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
     const { isOpen, onOpen, onOpenChange } = useDisclosure();
 
     useEffect(() => {
-        const handleScroll = () => {
-            setScroll({ y: window.scrollY });
-        };
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
+        if (trip.lastSequenceDetection === trip.stopTimes.length) return;
 
-    useEffect(() => {
-        const eventSource = new EventSource(`/track/trentino-trasporti/${trip.tripId}/stream`);
+        let eventSource: EventSource | undefined;
+        let reconnectTimeout: NodeJS.Timeout | undefined;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
 
-        eventSource.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data);
-
-                if (data.error) {
-                    console.error('SSE Error:', data.error);
-                    return;
-                }
-
-                setTrip((prevTrip) => ({
-                    ...prevTrip,
-                    delay: data.delay,
-                    stopLast: data.stopLast,
-                    lastEventRecivedAt: data.lastEventRecivedAt,
-                    lastSequenceDetection: data.lastSequenceDetection,
-                }));
-            } catch (error) {
-                console.error('Error parsing SSE data:', error);
+        const cleanup = () => {
+            eventSource?.close();
+            eventSource = undefined;
+            if (reconnectTimeout) {
+                clearTimeout(reconnectTimeout);
+                reconnectTimeout = undefined;
             }
         };
 
-        eventSource.onerror = (error) => {
-            console.error('SSE Connection error:', error);
+        const showConnectionError = () => {
+            addToast({ title: "Errore durante la connessione", color: "danger" });
         };
 
+        const setupSSE = () => {
+            cleanup();
+            eventSource = new EventSource(`/track/trentino-trasporti/${trip.tripId}/stream`);
+
+            eventSource.onopen = () => {
+                reconnectAttempts = 0;
+            };
+
+            eventSource.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    setTrip((prevTrip) => ({
+                        ...prevTrip,
+                        delay: data.delay,
+                        stopLast: data.stopLast,
+                        lastEventRecivedAt: data.lastEventRecivedAt,
+                        lastSequenceDetection: data.lastSequenceDetection,
+                    }));
+                    if (data.lastSequenceDetection === trip.stopTimes.length) cleanup();
+                } catch (e) {
+                    showConnectionError();
+                    console.error('Error parsing SSE:', e);
+                }
+            };
+
+            eventSource.onerror = (error) => {
+                console.error('SSE error:', error);
+                cleanup();
+
+                if (reconnectAttempts < maxReconnectAttempts) {
+                    const delay = Math.min(1000 * 2 ** reconnectAttempts, 30000);
+                    reconnectAttempts++;
+                    reconnectTimeout = setTimeout(setupSSE, delay);
+                } else {
+                    showConnectionError();
+                    console.error('Max reconnection attempts reached');
+                }
+            };
+        };
+
+        const reconnect = () => {
+            if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
+                reconnectAttempts = 0;
+                setupSSE();
+            }
+        };
+        window.addEventListener('focus', reconnect);
+
+        setupSSE();
+
         return () => {
-            eventSource.close();
+            window.removeEventListener('focus', reconnect);
+            cleanup();
         };
     }, []);
 
@@ -207,6 +242,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                                     ultimo rilevamento: {new Date(trip.lastEventRecivedAt).toLocaleTimeString('it-IT', {
                                         hour: '2-digit',
                                         minute: '2-digit',
+                                        timeZone: 'Europe/Rome',
                                     }).replace(/,/g, ' ')}
                                     {trip.matricolaBus && ` (bus ${trip.matricolaBus})`}
                                 </p>
@@ -254,9 +290,11 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                         const isLongerStop = new Date(new Date(`2000-01-01 ${stop.departureTime}`).getTime()).toLocaleTimeString('it-IT', {
                             hour: '2-digit',
                             minute: '2-digit',
+                            timeZone: 'Europe/Rome',
                         }) > new Date(new Date(`2000-01-01 ${stop.arrivalTime}`).getTime()).toLocaleTimeString('it-IT', {
                             hour: '2-digit',
                             minute: '2-digit',
+                            timeZone: 'Europe/Rome',
                         });
                         const stopBreak = Math.round((new Date(`2000-01-01 ${stop.departureTime}`).getTime() - new Date(`2000-01-01 ${stop.arrivalTime}`).getTime()) / (60 * 1000));
 
@@ -272,6 +310,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                                                         {new Date(new Date(`2000-01-01 ${stop.arrivalTime}`).getTime()).toLocaleTimeString('it-IT', {
                                                             hour: '2-digit',
                                                             minute: '2-digit',
+                                                            timeZone: 'Europe/Rome',
                                                         })}
                                                     </span>
                                                 )}
@@ -280,6 +319,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                                                         {new Date(new Date(`2000-01-01T${stop.arrivalTime.replace(/^24:/, '00:')}`).getTime()).toLocaleTimeString('it-IT', {
                                                             hour: '2-digit',
                                                             minute: '2-digit',
+                                                            timeZone: 'Europe/Rome',
                                                         })}
                                                     </span>
                                                 )}
@@ -288,6 +328,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                                                         {new Date(new Date(`2000-01-01T${stop.arrivalTime.replace(/^24:/, '00:')}`).getTime() + (trip.delay * 60 * 1000)).toLocaleTimeString('it-IT', {
                                                             hour: '2-digit',
                                                             minute: '2-digit',
+                                                            timeZone: 'Europe/Rome',
                                                         })}
                                                     </span>
                                                 )}
@@ -330,13 +371,6 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                     </div>
                 ))}
             </RouteModal>
-
-            {scroll.y > 0 && (
-                <Button isIconOnly radius="full" startContent={<IconArrowUp size={32} />}
-                    onPress={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                    className="fixed bottom-5 right-5 p-2 shadow-lg"
-                />
-            )}
         </div>
     );
 }
