@@ -92,6 +92,7 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
                 .attr('alt')
                 ?.replace('Categoria ', '')
                 .replace('CIVITAVECCHIA EXPRESS ', '')
+                .replace('TROPEA EXPRESS', 'Regionale')
                 .toLowerCase()
                 .trim() || null;
             const number = $(element).find('td[id="RTreno"]').text().trim();
@@ -132,6 +133,7 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
 
             let company = $(element).find('td[id="RVettore"] img').attr('alt')?.toLowerCase()?.trim() || "";
             const getCompany = (company: string): string => {
+                if (company.startsWith("regionale")) return "Trenitalia"
                 if (company === 'ente volturno autonomo') return 'EAV';
                 if (company === 'sad - trasporto locale spa') return 'SAD';
                 if (company.startsWith('obb')) return 'ÖBB';

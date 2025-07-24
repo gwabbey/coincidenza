@@ -45,16 +45,16 @@ export function getTrackUrl(company: string, trainInfo: string): string | null {
     }
 
     switch (normalizedCompany) {
-        case "trenitalia":
         case "trenord":
-        case "trenitalia tper":
+            return `/track/trenord/${trainInfo}`;
         case "sad":
-        case "sta":
-            return `/track/trenitalia/${trainInfo}`;
+            return null;
         case "italo":
             return null;
         case "öbb":
             return null;
+        case "trenitalia":
+        case "trenitalia tper":
         default:
             return `/track/trenitalia/${trainInfo}`;
     }

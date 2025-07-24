@@ -4,9 +4,9 @@ import { NextRequest } from "next/server";
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: Promise<{ id: string }> }
+    { params }: { params: Promise<{ company: string, id: string }> }
 ) {
-    const id = (await params).id;
+    const { company, id } = await params;
 
     return createSSEHandler(request, id, {
         fetchData: async (id: string) => {
