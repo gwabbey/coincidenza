@@ -87,7 +87,7 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
             const hasContent = $(element).find('td').toArray().some(td => $(td).text().trim());
             if (!hasContent) return;
 
-            const category = $(element)
+            let category = $(element)
                 .find('td[id="RCategoria"] img')
                 .attr('alt')
                 ?.replace('Categoria ', '')
@@ -95,6 +95,9 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
                 .replace('TROPEA EXPRESS', 'Regionale')
                 .toLowerCase()
                 .trim() || null;
+            if (category?.includes('regionale veloce')) {
+                category = 'regionale veloce';
+            }
             const number = $(element).find('td[id="RTreno"]').text().trim();
             const destination = $(element).find('td[id="RStazione"] div').text().toLowerCase().trim();
             const departureTime = $(element).find('td[id="ROrario"]').text().trim();
@@ -122,6 +125,7 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
             const getShortCategory = (category: string | null): string | null => {
                 if (!category) return null;
                 if (category === "railjet") return "EC";
+                if (category.includes('regionale veloce')) return "RV";
                 if (category.startsWith('suburbano')) return category.split(' ')[1];
                 if (category.startsWith('servizio ferroviario metropolitano')) {
                     return category.replace('servizio ferroviario metropolitano linea', 'SFM');
