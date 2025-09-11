@@ -1,4 +1,4 @@
-export const trainCategoryShortNames = {
+export const trainCategoryShortNames: Record<string, string> = {
     "regionale": "R",
     "regionale veloce": "RV",
     "regio express": "RE",
@@ -18,7 +18,7 @@ export const trainCategoryShortNames = {
     "interregionale": "iR",
 }
 
-export const trainCategoryLongNames = {
+export const trainCategoryLongNames: Record<string, string> = {
     "R": "Regionale",
     "REG": "Regionale",
     "RV": "Regionale Veloce",

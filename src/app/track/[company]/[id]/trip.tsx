@@ -1,25 +1,23 @@
-
 'use client';
 
-import { Trip as TripProps } from "@/api/types";
-import { RouteModal } from "@/components/modal";
+import {Trip as TripProps} from "@/api/types";
+import {RouteModal} from "@/components/modal";
 import Timeline from "@/components/timeline";
-import { capitalize, findMatchingStation, formatDate, getDelayColor } from "@/utils";
-import { addToast, Button, Card, Divider, useDisclosure } from "@heroui/react";
-import { IconAlertTriangleFilled, IconInfoTriangleFilled, IconRefresh } from "@tabler/icons-react";
-import { default as Link, default as NextLink } from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from 'react';
+import {capitalize, findMatchingStation, formatDate, getDelayColor} from "@/utils";
+import {addToast, Button, Card, Divider, useDisclosure} from "@heroui/react";
+import {IconAlertTriangleFilled, IconInfoTriangleFilled} from "@tabler/icons-react";
+import {default as Link, default as NextLink} from "next/link";
+import {useEffect, useState} from 'react';
 
 const getCurrentMinutes = () => {
     const now = new Date();
-    const time = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
+    const time = new Date(now.toLocaleString('en-US', {timeZone: 'Europe/Rome'}));
     return (time.getDate() * 24 * 60) + (time.getHours() * 60) + time.getMinutes() + (time.getSeconds() / 60);
 };
 
 const timeToMinutes = (timeString: string, originalDate: Date) => {
     const [hours, minutes] = timeString.split(':').map(Number);
-    const date = new Date(originalDate.toLocaleString('en-US', { timeZone: 'Europe/Rome' }));
+    const date = new Date(originalDate.toLocaleString('en-US', {timeZone: 'Europe/Rome'}));
     return (date.getDate() * 24 * 60) + (hours * 60) + minutes;
 };
 
@@ -88,11 +86,10 @@ const calculatePreciseActiveIndex = (trip: TripProps) => {
     return lastPassedStopIndex !== -1 ? lastPassedStopIndex + 0.99 : Math.max(0, currentStopIndex);
 };
 
-export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
-    const router = useRouter();
+export default function Trip({trip: initialTrip}: { trip: TripProps }) {
     const [trip, setTrip] = useState<TripProps>(initialTrip);
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
-    const { isOpen, onOpen, onOpenChange } = useDisclosure();
+    const {isOpen, onOpen, onOpenChange} = useDisclosure();
 
     useEffect(() => {
         const updateIndex = () => {
@@ -124,12 +121,16 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
         };
 
         const showConnectionError = () => {
-            addToast({ title: "Errore durante la connessione", color: "danger" });
+            addToast({title: "Errore durante la connessione", color: "danger"});
         };
 
         const setupSSE = () => {
             cleanup();
-            eventSource = new EventSource(`/track/trenitalia/${trip.number}/stream`);
+            const searchParams = new URLSearchParams();
+            if (trip.originId) searchParams.append('origin', trip.originId);
+            if (trip.timestamp) searchParams.append('timestamp', trip.timestamp.toString());
+            const queryString = searchParams.toString();
+            eventSource = new EventSource(`/track/${trip.company}/${trip.number}/stream${queryString ? `?${queryString}` : ''}`);
 
             eventSource.onopen = () => {
                 reconnectAttempts = 0;
@@ -139,7 +140,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                 try {
                     const message = JSON.parse(event.data);
                     if (message.type === 'data_update' || message.type === 'completed') {
-                        const { type, timestamp, ...data } = message;
+                        const {type, timestamp, ...data} = message;
 
                         setTrip(prev => ({
                             ...prev,
@@ -219,7 +220,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
             <div className="flex justify-center items-center text-center flex-wrap gap-x-2 gap-y-1 max-w-full">
                 <span
                     className={`text-md font-bold rounded-small flex items-center gap-x-1 text-white whitespace-nowrap ${trip.category?.toLowerCase().startsWith("ic") ? "bg-primary" : "bg-danger"}`}
-                    style={{ padding: "0.1rem 0.5rem" }}
+                    style={{padding: "0.1rem 0.5rem"}}
                 >
                     {trip.category} {trip.number}
                 </span>
@@ -236,7 +237,8 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
 
                 <div className="flex flex-row items-center justify-between gap-2">
                     <Divider className="my-4 w-16" />
-                    <div className="text-center">{formatDuration(new Date(trip.departureTime), new Date(trip.arrivalTime))}</div>
+                    <div
+                        className="text-center">{formatDuration(new Date(trip.departureTime), new Date(trip.arrivalTime))}</div>
                     <Divider className="my-4 w-16" />
                 </div>
 
@@ -249,7 +251,8 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
             <div className="sticky top-0 bg-white dark:bg-black z-20">
                 <Divider className="my-2" />
 
-                <div className="flex sm:flex-col flex-row justify-between items-center gap-y-2 py-4 max-w-md w-full mx-auto">
+                <div
+                    className="flex sm:flex-col flex-row justify-between items-center gap-y-2 py-4 max-w-md w-full mx-auto">
                     <div className="flex flex-col flex-grow min-w-0">
                         {trip.status !== "canceled" ? (
                             <div className="flex-col">
@@ -258,7 +261,8 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                                 </p>
                                 {(!trip.lastUpdate && trip.delay) ? (
                                     <p className={"text-center font-bold sm:text-center flex-grow min-w-0"}>
-                                        Partenza prevista con un ritardo di <span className={`text-${getDelayColor(trip.delay)}`}>{trip.delay}</span> min
+                                        Partenza prevista con un ritardo di <span
+                                        className={`text-${getDelayColor(trip.delay)}`}>{trip.delay}</span> min
                                     </p>
                                 ) : null}
                             </div>
@@ -271,12 +275,12 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
 
                         <div className="flex flex-row justify-start sm:justify-center">
                             {trip.lastUpdate && (
-                                <p className="text-xs sm:text-sm text-gray-500">
+                                <p className="text-xs sm:text-sm text-foreground-500">
                                     ultimo rilevamento: {formatDate(trip.lastUpdate)}
                                 </p>
                             )}
                         </div>
-                    </div >
+                    </div>
 
                     {(!["scheduled", "canceled"].includes(trip.status)) && (
                         <Button
@@ -290,7 +294,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                             {trip.delay > 0 ? `+${trip.delay} min` : trip.delay === 0 ? 'in orario' : trip.delay < 0 ? `${trip.delay} min` : ''}
                         </Button>
                     )}
-                </div >
+                </div>
 
                 {
                     trip.alertMessage && trip.status !== "canceled" && (
@@ -301,7 +305,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                 }
 
                 < Divider className="my-2" />
-            </div >
+            </div>
 
             {
                 trip.status !== "canceled" ? (
@@ -361,47 +365,56 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                                     content: (
                                         <div className="flex items-start justify-between w-full">
                                             <div className="flex-col">
-                                                <NextLink className={`break-words font-bold ${stop.status === "canceled" ? "line-through" : ""}`} href={`/departures/${findMatchingStation(stop.name) ?? ""}`}>
+                                                <NextLink
+                                                    className={`break-words font-bold ${stop.status === "canceled" ? "line-through" : ""}`}
+                                                    href={`/departures-card.tsx/${findMatchingStation(stop.name) ?? ""}`}>
                                                     {stop.name}
                                                 </NextLink>
 
-                                                {stop.status === "not_planned" && (<p className="text-sm text-warning font-semibold">fermata straordinaria</p>)}
+                                                {stop.status === "not_planned" && (
+                                                    <p className="text-sm text-warning font-semibold">fermata
+                                                        straordinaria</p>)}
 
-                                                <div className={`text-gray-500 text-sm ${stop.status === "canceled" ? "line-through" : ""}`}>
+                                                <div
+                                                    className={`text-foreground-500 text-sm ${stop.status === "canceled" ? "line-through" : ""}`}>
                                                     <div className="flex-col">
-                                                        <div className={`flex gap-1 ${!stop.actualArrival ? 'italic' : ''}`}>
+                                                        <div
+                                                            className={`flex gap-1 ${!stop.actualArrival ? 'italic' : ''}`}>
                                                             {stop.scheduledArrival && <span>a.</span>}
 
                                                             {stop.scheduledArrival && (
                                                                 <span className={`${isArrivalDelayed
-                                                                    ? 'line-through text-gray-500'
+                                                                    ? 'line-through text-foreground-500'
                                                                     : `font-bold ${(!isFutureStop && stop.actualArrival) || (isFutureStop && trip.delay <= 0 && trip.status !== "scheduled") ? 'text-success' : ''}`
-                                                                    }`}>
+                                                                }`}>
                                                                     {formatDate(stop.scheduledArrival)}
                                                                 </span>
                                                             )}
 
                                                             {isArrivalDelayed && stop.scheduledArrival && (
-                                                                <span className={`font-bold ${!stop.actualArrival && !isFutureStop ? 'italic' : `text-${getDelayColor(stop.arrivalDelay || trip.delay)}`}`}>
+                                                                <span
+                                                                    className={`font-bold ${!stop.actualArrival && !isFutureStop ? 'italic' : `text-${getDelayColor(stop.arrivalDelay || trip.delay)}`}`}>
                                                                     {formatDate(stop.actualArrival || expectedArrivalWithDelay.toISOString())}
                                                                 </span>
                                                             )}
                                                         </div>
 
-                                                        <div className={`flex gap-1 ${!stop.actualDeparture ? 'italic' : ''}`}>
+                                                        <div
+                                                            className={`flex gap-1 ${!stop.actualDeparture ? 'italic' : ''}`}>
                                                             {stop.scheduledDeparture && <span>p.</span>}
 
                                                             {stop.scheduledDeparture && (
                                                                 <span className={`${isDepartureDelayed
-                                                                    ? 'line-through text-gray-500'
+                                                                    ? 'line-through text-foreground-500'
                                                                     : `font-bold ${(!isFutureStop && stop.actualDeparture) || (isFutureStop && trip.delay <= 0 && trip.status !== "scheduled") ? 'text-success' : ''}`
-                                                                    }`}>
+                                                                }`}>
                                                                     {formatDate(stop.scheduledDeparture)}
                                                                 </span>
                                                             )}
 
                                                             {isDepartureDelayed && stop.scheduledDeparture && (
-                                                                <span className={`font-bold ${!stop.actualDeparture && !isFutureStop ? 'italic' : `text-${getDelayColor(stop.departureDelay || trip.delay)}`}`}>
+                                                                <span
+                                                                    className={`font-bold ${!stop.actualDeparture && !isFutureStop ? 'italic' : `text-${getDelayColor(stop.departureDelay || trip.delay)}`}`}>
                                                                     {formatDate(stop.actualDeparture || expectedDepartureWithDelay.toISOString())}
                                                                 </span>
                                                             )}
@@ -412,7 +425,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
 
                                             {stop.status !== "canceled" && (
                                                 <Button
-                                                    className={`flex p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors whitespace-pre-wrap flex-shrink-0 ${stop.actualPlatform ? 'text-white' : 'text-gray-500'}`}
+                                                    className={`flex p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors whitespace-pre-wrap flex-shrink-0 ${stop.actualPlatform ? 'text-white' : 'text-foreground-500'}`}
                                                     radius="sm"
                                                     variant={stop.actualPlatform ? 'solid' : 'ghost'}
                                                     color={stop.actualPlatform ? 'success' : 'default'}
@@ -444,7 +457,11 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
 
             {
                 trip.status !== "canceled" && (
-                    <p className="text-sm text-gray-500 text-center">dati forniti da <Link href="https://www.trenitalia.com" target="_blank" rel="noopener noreferrer">Trenitalia</Link>/<Link href="https://www.rfi.it" target="_blank" rel="noopener noreferrer">RFI</Link></p>
+                    <p className="text-sm text-foreground-500 text-center">dati forniti da <Link
+                        href="https://www.trenitalia.com"
+                        target="_blank"
+                        rel="noopener noreferrer">Trenitalia</Link>/<Link
+                        href="https://www.rfi.it" target="_blank" rel="noopener noreferrer">RFI</Link></p>
                 )
             }
 
@@ -458,17 +475,12 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                         <span>
                             {alert.message}
                         </span>
-                        <span className="text-sm text-gray-500">
+                        <span className="text-sm text-foreground-500">
                             {formatDate(alert.date)}
                         </span>
                     </div>
                 ))}
             </RouteModal>
-
-            <Button isIconOnly radius="full" startContent={<IconRefresh />}
-                onPress={router.refresh}
-                className="fixed bottom-5 right-5 p-2 shadow-lg"
-            />
-        </div >
+        </div>
     );
 }

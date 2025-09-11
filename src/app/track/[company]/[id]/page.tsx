@@ -1,5 +1,5 @@
-import { getTrip } from "@/api/trenitalia/api";
-import { notFound, redirect } from "next/navigation";
+import {getActualTrip, getTrip} from "@/api/trenitalia/api";
+import {notFound} from "next/navigation";
 import Trip from "./trip";
 
 export const revalidate = 0
@@ -15,27 +15,25 @@ const clients: Record<number, string> = {
     64: "bahn"
 }
 
-export default async function Page({ params }: {
+export default async function Page({params}: {
     params: Promise<{ company: string, id: string }>
 }) {
-    const { company, id } = await params;
+    const {company, id} = await params;
     if (["trenitalia", "trenord"].indexOf(company) === -1) {
         notFound();
     }
 
-    const trip = await getTrip(id);
+    const data = await getActualTrip(id, company, new Date());
+
+    if (!data) {
+        notFound();
+    }
+
+    const trip = await getTrip(data.origin, id, data.timestamp);
 
     if (!trip) {
         notFound();
     }
 
-    const vtCompany = clients[trip?.clientId || 0];
-    if (company === "trenitalia" && vtCompany === "trenord") {
-        redirect(`/track/trenord/${id}`);
-    }
-    if (company === "trenord" && vtCompany === "trenitalia") {
-        redirect(`/track/trenitalia/${id}`);
-    }
-
-    return <Trip trip={trip} />;
+    return <Trip trip={{...trip, company, originId: data.origin, timestamp: data.timestamp}} />;
 }

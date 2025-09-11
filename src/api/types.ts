@@ -14,6 +14,9 @@ export interface Trip {
     stops: Stop[],
     info: Info[],
     clientId: number,
+    company: string,
+    originId?: string;
+    timestamp?: number;
 }
 
 export interface Stop {

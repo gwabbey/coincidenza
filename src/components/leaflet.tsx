@@ -1,18 +1,18 @@
 'use client';
-import { Leg } from '@/api/otp/types';
+import {Leg} from '@/api/motis/types';
 import polyline from '@mapbox/polyline';
 import 'leaflet/dist/leaflet.css';
-import { useTheme } from "next-themes";
-import { useEffect, useRef, useState } from 'react';
+import {useTheme} from "next-themes";
+import {useEffect, useRef, useState} from 'react';
 
 export default function LeafletMap({
-    leg,
-    className,
-}: {
+                                       leg,
+                                       className,
+                                   }: {
     leg: Leg,
     className?: string,
 }) {
-    const { theme } = useTheme();
+    const {theme} = useTheme();
     const mapRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<L.Map | null>(null);
     const tileLayerRef = useRef<L.TileLayer | null>(null);
@@ -30,30 +30,30 @@ export default function LeafletMap({
                 });
             }
 
-            const decodedPath: L.LatLngTuple[] = polyline.decode(leg.points).map(([lat, lon]) => [lat, lon] as L.LatLngTuple);
+            const decodedPath: L.LatLngTuple[] = polyline.decode(leg.legGeometry.points).map(([lat, lon]) => [lat, lon] as L.LatLngTuple);
             const startPoint = decodedPath[0];
             const endPoint = decodedPath[decodedPath.length - 1];
 
-            mapInstanceRef.current = L.map(mapRef.current, { scrollWheelZoom: false }).fitBounds(decodedPath);
+            mapInstanceRef.current = L.map(mapRef.current, {scrollWheelZoom: false}).fitBounds(decodedPath);
 
             tileLayerRef.current = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${theme}_all/{z}/{x}/{y}{r}.png`, {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             }).addTo(mapInstanceRef.current);
 
-            L.polyline(decodedPath, { color: 'blue' }).addTo(mapInstanceRef.current);
+            L.polyline(decodedPath, {color: 'blue'}).addTo(mapInstanceRef.current);
 
             const startMarker = L.marker(startPoint).addTo(mapInstanceRef.current);
-            startMarker.bindPopup(leg.fromPlace.name, {
+            startMarker.bindPopup(leg.from.name, {
                 className: 'quay-label',
             });
 
             const endMarker = L.marker(endPoint).addTo(mapInstanceRef.current);
-            endMarker.bindPopup(leg.toPlace.name, {
+            endMarker.bindPopup(leg.to.name, {
                 className: 'quay-label',
             });
 
-            leg.intermediateQuays.forEach((quay) => {
-                const circleMarker = L.circleMarker([quay.latitude, quay.longitude], {
+            leg.intermediateStops && leg.intermediateStops.forEach((stop) => {
+                const circleMarker = L.circleMarker([stop.lat, stop.lon], {
                     radius: 6,
                     fillColor: 'white',
                     color: 'blue',
@@ -62,7 +62,7 @@ export default function LeafletMap({
                     fillOpacity: 1,
                 }).addTo(mapInstanceRef.current!);
 
-                circleMarker.bindPopup(quay.name, {
+                circleMarker.bindPopup(stop.name, {
                     className: 'quay-label',
                 });
             });
@@ -96,5 +96,5 @@ export default function LeafletMap({
         });
     }, [theme, mapInitialized]);
 
-    return <div ref={mapRef} style={{ height: '400px', width: '100%' }} className={className} />;
+    return <div ref={mapRef} style={{height: '400px', width: '100%'}} className={className} />;
 }

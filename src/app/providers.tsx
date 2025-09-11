@@ -1,10 +1,10 @@
 "use client";
-import { addToast, HeroUIProvider, ToastProvider } from '@heroui/react';
-import { ThemeProvider } from "next-themes";
-import { useRouter } from 'next/navigation';
-import { useEffect, useRef } from 'react';
+import {addToast, HeroUIProvider, ToastProvider} from '@heroui/react';
+import {ThemeProvider} from "next-themes";
+import {useRouter} from 'next/navigation';
+import {useEffect, useRef} from 'react';
 
-export default function Providers({ children }: { children: React.ReactNode }) {
+export default function Providers({children}: { children: React.ReactNode }) {
     const router = useRouter();
     const lastRefreshRef = useRef<number>(0);
 
@@ -66,20 +66,18 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         };
 
         const handleOnline = () => {
-            addToast({ title: "Sei connesso!", color: "success" });
-            const now = Date.now();
-            lastRefreshRef.current = now;
+            addToast({title: "Sei connesso!", color: "success"});
+            lastRefreshRef.current = Date.now();
             router.refresh();
         };
 
         const handleOffline = () => {
-            addToast({ title: "Connessione persa!", color: "danger" });
+            addToast({title: "Connessione persa!", color: "danger"});
         };
 
         const handlePageShow = (event: PageTransitionEvent) => {
             if (event.persisted) {
-                const now = Date.now();
-                lastRefreshRef.current = now;
+                lastRefreshRef.current = Date.now();
                 router.refresh();
             }
         };
@@ -100,10 +98,10 @@ export default function Providers({ children }: { children: React.ReactNode }) {
     }, [router]);
 
     return (
-        <ThemeProvider attribute="class" scriptProps={{ 'data-cfasync': 'false' }}>
+        <ThemeProvider attribute="class" scriptProps={{'data-cfasync': 'false'}}>
             <HeroUIProvider navigate={router.push}>
                 {children}
-                <ToastProvider />
+                <ToastProvider placement="top-center" />
             </HeroUIProvider>
         </ThemeProvider>
     );

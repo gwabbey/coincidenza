@@ -1,16 +1,50 @@
-import { getTrip } from "@/api/trenitalia/api";
-import { createSSEHandler } from "@/app/sse";
-import { NextRequest } from "next/server";
+import {getTrip as getTrenitaliaTrip} from "@/api/trenitalia/api";
+// import { getTrip as getTrenitaliaTrip } from "@/api/trenord/api";
+import {createSSEHandler} from "@/app/sse";
+import {NextRequest} from "next/server";
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: Promise<{ company: string, id: string }> }
+    {params}: { params: Promise<{ company: string, id: string }> }
 ) {
-    const { company, id } = await params;
+    const {company, id} = await params;
+    const searchParams = request.nextUrl.searchParams;
+    const origin = searchParams.get('origin');
+    const timestampStr = searchParams.get('timestamp');
+    const timestamp = timestampStr ? parseInt(timestampStr, 10) : undefined;
 
-    return createSSEHandler(request, id, {
-        fetchData: async (id: string) => {
-            return await getTrip(id);
+    // Determine if this is a train or bus company
+    const isTrainCompany = company === "trenitalia" || company === "trenord";
+
+    // Validate required parameters based on company type
+    if (isTrainCompany && (!origin || !timestamp)) {
+        return new Response(
+            JSON.stringify({error: "Train companies require origin and timestamp parameters"}),
+            {status: 400, headers: {'Content-Type': 'application/json'}}
+        );
+    }
+
+    return createSSEHandler(request, origin, id, timestamp, {
+        fetchData: async (origin: string | null, id: string, timestamp: number | undefined) => {
+            switch (company) {
+                case "trenitalia":
+                case "trenord":
+                    // These require all three parameters
+                    if (!origin || timestamp === undefined) {
+                        throw new Error("Missing required parameters for train API");
+                    }
+                    return getTrenitaliaTrip(origin, id, timestamp);
+                case "trentino-trasporti":
+                    // Bus API - only needs trip ID
+                    // return getTrentinoTrip(id)
+                    throw new Error("Trentino Trasporti API not implemented yet");
+                default:
+                    // Default to train API
+                    if (!origin || timestamp === undefined) {
+                        throw new Error("Missing required parameters for default train API");
+                    }
+                    return getTrenitaliaTrip(origin, id, timestamp);
+            }
         },
 
         formatForClient: (trip) => ({
@@ -36,16 +70,6 @@ export async function GET(
 
         shouldStopUpdates: (trip) => {
             return trip.status === "completed" || trip.status === "canceled";
-        },
-
-        getCompletionMessage: (trip) => {
-            return `Trip ${trip.status}, stopping updates`;
-        },
-
-        errorMessages: {
-            notFound: "Trip not found",
-            tooManyErrors: "Too many errors, stopping trip updates",
-            temporaryError: "Failed to fetch trip data"
         }
     });
 }

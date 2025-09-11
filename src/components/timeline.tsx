@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import {useEffect, useRef, useState} from "react";
 
 interface TimelineItemProps {
     content: React.ReactNode
@@ -10,7 +10,7 @@ interface TimelineProps {
     active?: number
 }
 
-const Timeline = ({ steps, active = steps.length - 1 }: TimelineProps) => {
+const Timeline = ({steps, active = steps.length - 1}: TimelineProps) => {
     const wholeNumber = Math.floor(active)
     const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
     const lineRef = useRef<HTMLDivElement | null>(null);
@@ -47,19 +47,20 @@ const Timeline = ({ steps, active = steps.length - 1 }: TimelineProps) => {
             <div className="relative flex flex-col gap-8">
                 {steps.map((step, index) => {
                     const isActive = index <= wholeNumber
-                    const isCurrent = index === wholeNumber;
 
                     return (
                         <div
                             key={index}
                             className="relative flex items-start gap-4"
                             data-step={index}
-                            ref={el => { stepRefs.current[index] = el }}
+                            ref={el => {
+                                stepRefs.current[index] = el
+                            }}
                         >
                             <div className="relative z-10">
                                 <div
                                     className={`flex justify-center items-center after:shadow-small outline-none w-4 h-4 after:w-3 after:h-3 rounded-full after:rounded-full bg-primary top-1/2 ring-transparent border-0 after:transition-all shadow-small 
-                                        ${isActive ? "after:bg-blue-500" : "bg-gray-200 after:bg-white"} ${isCurrent ? "after:scale-200" : ""}`}
+                                        ${isActive ? "after:bg-blue-500" : "bg-gray-200 after:bg-white"}`}
                                 />
                             </div>
 
@@ -74,7 +75,7 @@ const Timeline = ({ steps, active = steps.length - 1 }: TimelineProps) => {
                 >
                     <div
                         className="absolute w-full bg-blue-500 transition-all duration-1000"
-                        style={{ height: `${fillHeight}%` }}
+                        style={{height: `${fillHeight}%`}}
                     />
                 </div>
             </div>

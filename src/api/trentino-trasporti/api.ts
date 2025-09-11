@@ -1,20 +1,7 @@
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
-import { Stop, StopTime } from './types';
-
-function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * (Math.PI / 180);
-    const dLon = (lon2 - lon1) * (Math.PI / 180);
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * (Math.PI / 180)) *
-        Math.cos(lat2 * (Math.PI / 180)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-}
+import {Stop, StopTime} from './types';
+import {getDistance} from "@/utils";
 
 export async function fetchData(endpoint: string, options: { params?: Record<string, string> } = {}) {
     let url = `https://app-tpl.tndigit.it/gtlservice/${endpoint}`;
@@ -61,14 +48,13 @@ const stopsCache = new Map();
 export async function getStops(type: string) {
     if (stopsCache.has(type)) return stopsCache.get(type);
 
-    const data = await fetchData('stops', type ? { params: { type } } : undefined);
+    const data = await fetchData('stops', type ? {params: {type}} : undefined);
     stopsCache.set(type, data);
     return data;
 }
 
 export async function getAllStops() {
-    const data = await fetchData('stops');
-    return data;
+    return await fetchData('stops');
 }
 
 export async function getClosestBusStops(userLat: number, userLon: number) {
@@ -79,9 +65,7 @@ export async function getClosestBusStops(userLat: number, userLon: number) {
         distance: getDistance(userLat, userLon, stop.stopLat, stop.stopLon),
     }));
 
-    const sortedStops = stopsWithDistance.sort((a: any, b: any) => a.distance - b.distance);
-
-    return sortedStops;
+    return stopsWithDistance.sort((a: any, b: any) => a.distance - b.distance);
 }
 
 export async function getStopDepartures(stopId: number, type: string) {
@@ -109,7 +93,7 @@ const routesCache = new Map<string, any>();
 export async function getRoutes(type: string) {
     if (routesCache.has(type)) return routesCache.get(type);
 
-    const routes = await fetchData('routes', type ? { params: { type } } : undefined);
+    const routes = await fetchData('routes', type ? {params: {type}} : undefined);
     routesCache.set(type, routes);
     return routes;
 }

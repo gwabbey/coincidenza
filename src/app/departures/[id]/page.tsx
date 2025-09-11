@@ -1,19 +1,19 @@
-import { getMonitor, getVtId } from "@/api/trenitalia/monitor";
+import {getMonitor, getVtId} from "@/api/trenitalia/monitor";
 import stations from "@/stations.json";
-import { Spinner } from "@heroui/react";
-import { notFound } from "next/navigation";
-import { Suspense } from 'react';
+import {Spinner} from "@heroui/react";
+import {notFound} from "next/navigation";
+import {Suspense} from 'react';
 import Search from "../search";
-import { Monitor } from "./monitor";
+import {Monitor} from "./monitor";
 
-async function MonitorSuspense({ rfiId, vtId }: { rfiId: string, vtId: string }) {
+async function MonitorSuspense({rfiId, vtId}: { rfiId: string, vtId: string }) {
     const monitor = await getMonitor(rfiId, vtId);
     return <Monitor monitor={monitor} />;
 }
 
 export default async function Page({
-    params,
-}: {
+                                       params,
+                                   }: {
     params: Promise<{ id: string }>
 }) {
     const rfiId = (await params).id;
@@ -29,7 +29,7 @@ export default async function Page({
             <Suspense fallback={
                 <div className="flex-col py-4">
                     <Spinner color="default" size="lg" />
-                    <p className="text-center text-gray-500 text-lg">caricamento in corso...</p>
+                    <p className="text-center text-foreground-500 text-lg">caricamento in corso...</p>
                 </div>
             }>
                 <MonitorSuspense rfiId={rfiId} vtId={vtId} />

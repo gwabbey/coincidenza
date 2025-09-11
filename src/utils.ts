@@ -1,9 +1,35 @@
 import stations from "@/stations.json";
 
+export const clients: Record<number, string> = {
+    0: "trenitalia",
+    1: "trenitalia",
+    2: "trenitalia",
+    3: "trenitalia",
+    4: "trenitalia",
+    18: "trenitalia",
+    63: "trenord",
+    64: "trenitalia",
+    // 64: "bahn"
+};
+
+export function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * (Math.PI / 180);
+    const dLon = (lon2 - lon1) * (Math.PI / 180);
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * (Math.PI / 180)) *
+        Math.cos(lat2 * (Math.PI / 180)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
 export const getDelayColor = (delay: number | null) => {
     if (delay === null) return 'gray';
     if (delay >= 10) return 'danger';
-    if (delay >= 5) return 'warning';
+    if (delay >= 3) return 'warning';
     if (delay >= 0) return 'success';
     return 'secondary';
 };
@@ -28,37 +54,6 @@ export const formatDuration = (duration: number, verbose: boolean = false) => {
 export const capitalize = (str: string) => {
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase()).replace(/([-.])\s*(\w)/g, (_, symbol, char) => `${symbol} ${char.toUpperCase()}`);
 };
-
-export function getTrackUrl(company: string, trainInfo: string): string | null {
-    const normalizedCompany = company.toLowerCase().trim();
-
-    if (
-        normalizedCompany === "frecciarossa" ||
-        normalizedCompany === "frecciargento" ||
-        normalizedCompany === "frecciabianca" ||
-        normalizedCompany === "intercity" ||
-        normalizedCompany === "intercity notte" ||
-        normalizedCompany === "treno storico" ||
-        normalizedCompany === "espresso"
-    ) {
-        return `/track/trenitalia/${trainInfo}`;
-    }
-
-    switch (normalizedCompany) {
-        case "trenord":
-            return `/track/trenord/${trainInfo}`;
-        case "sad":
-            return null;
-        case "italo":
-            return null;
-        case "öbb":
-            return null;
-        case "trenitalia":
-        case "trenitalia tper":
-        default:
-            return `/track/trenitalia/${trainInfo}`;
-    }
-}
 
 export function findMatchingStation(stationName: string): string | null {
     if (!stationName || stationName.trim() === '') {

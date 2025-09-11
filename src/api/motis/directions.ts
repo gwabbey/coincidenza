@@ -1,0 +1,247 @@
+"use server";
+
+import {capitalize} from '@/utils';
+import axios from 'axios';
+import {getRealTimeData} from './realtime';
+import {Directions, GeocodeRequest, GeocodeResult, Location, Trip} from './types';
+import {trainCategoryShortNames} from "@/train-categories";
+import {differenceInMinutes} from "date-fns";
+
+const MOTIS = process.env.MOTIS || "localhost:8080";
+
+function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371000;
+    const dLat = toRadians(lat2 - lat1);
+    const dLon = toRadians(lon2 - lon1);
+
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+function toRadians(degrees: number): number {
+    return degrees * Math.PI / 180;
+}
+
+const getStop = (name: string): string => {
+    if (!name) return "";
+
+    // case 1: "Luogo, Stazione di Luogo" → "Luogo"
+    const stazioneDiMatch = name.match(/Stazione di\s+(.+)/i);
+    if (stazioneDiMatch) return capitalize(stazioneDiMatch[1]);
+
+    // case 2: "Luogo, Stazione" → "Luogo"
+    const luogoStazioneMatch = name.match(/^(.+?),\s*Stazione$/i);
+    if (luogoStazioneMatch) return capitalize(luogoStazioneMatch[1]);
+
+    // case 3: "Luogo (Provincia), Luogo" → "Luogo"
+    const parensMatch = name.match(/^([^(]+)\s*\(.*?\),\s*\1$/);
+    if (parensMatch) return capitalize(parensMatch[1].trim());
+
+    return capitalize(name);
+};
+
+function getTripSignature(trip: Trip): string {
+    const nonWalkLegs = trip.legs.filter((l) => l.mode !== "WALK");
+
+    if (nonWalkLegs.length === 0) {
+        return `WALK_${trip.startTime}_${trip.endTime}`;
+    }
+
+    const allHaveShortName = nonWalkLegs.every((l) => l.tripShortName);
+    if (allHaveShortName) {
+        return nonWalkLegs.map((l) => `${l.tripShortName}_${l.scheduledStartTime}`).join("|");
+    }
+
+    return nonWalkLegs
+        .map(
+            (l) =>
+                `${l.from.name}_${l.to.name}_${l.scheduledStartTime}`
+        )
+        .join("|");
+}
+
+const processTripData = async (data: {
+    itineraries: Trip[];
+    direct: Trip[];
+    pageCursor?: string
+}): Promise<Directions> => {
+    if (!data.itineraries || !Array.isArray(data.itineraries) && !data.direct) {
+        return {trips: [], pageCursor: data.pageCursor, direct: []};
+    }
+
+    const processedItineraries = await Promise.all(
+        data.itineraries.map(async (trip) => {
+            const processedLegs = (await Promise.all(
+                trip.legs.map(async (originalLeg) => {
+                    console.log(originalLeg.tripId)
+                    return {
+                        ...originalLeg,
+                        headsign: capitalize(originalLeg.headsign || ""),
+                        routeShortName: originalLeg.routeShortName && (originalLeg.agencyId === "IT:ITH3:Operator:05403151003:Trenitalia:0"
+                            ? trainCategoryShortNames[originalLeg.routeLongName!.toLowerCase()] :
+                            originalLeg.routeShortName === "REG" ? "R" :
+                                originalLeg.agencyId === "1" ? originalLeg.routeShortName.replace(/\d+/g, '')
+                                    : originalLeg.routeShortName),
+                        from: {
+                            ...originalLeg.from,
+                            name: getStop(originalLeg.from.name),
+                        },
+                        to: {
+                            ...originalLeg.to,
+                            name: getStop(originalLeg.to.name),
+                        },
+                        tripShortName: originalLeg.tripId && (originalLeg.agencyId === "IT:ITH3:Operator:05403151003:Trenitalia:0"
+                            ? originalLeg.tripId.match(/-(\d+)-/)?.[1]
+                            : originalLeg.agencyId === "1" ? originalLeg.tripShortName?.split(" - ")[1]
+                                : originalLeg.tripShortName)
+                    };
+                })
+            )).filter((leg) => {
+                if (!leg.from || !leg.to) return true;
+                if (leg.from.lat === leg.to.lat && leg.from.lon === leg.to.lon) return false;
+                return getDistance(leg.from.lat, leg.from.lon, leg.to.lat, leg.to.lon) >= 100;
+            });
+
+            return {
+                ...trip,
+                legs: processedLegs,
+            };
+        })
+    );
+
+    const seen = new Map<string, Trip>();
+
+    for (const trip of processedItineraries) {
+        const signature = getTripSignature(trip);
+
+        if (!seen.has(signature)) {
+            seen.set(signature, trip);
+        } else {
+            const existing = seen.get(signature)!;
+
+            const rtScore = (t: Trip) => (t.legs.some((l) => l.realTime) ? 1 : 0);
+
+            if (rtScore(trip) > rtScore(existing)) {
+                seen.set(signature, trip);
+                continue;
+            }
+
+            const walkCount = trip.legs.filter((l) => l.mode === "WALK").length;
+            const existingWalkCount = existing.legs.filter((l) => l.mode === "WALK").length;
+
+            if (walkCount < existingWalkCount) {
+                seen.set(signature, trip);
+            }
+        }
+    }
+
+    const trips = await Promise.all(
+        Array.from(seen.values())
+            .slice(0, 5)
+            .map(async (trip) => {
+                const updatedLegs = await Promise.all(
+                    trip.legs.map(async (leg) => {
+                        const realTime = await getRealTimeData(leg);
+                        return {...leg, realTime};
+                    })
+                );
+
+                const firstLeg = updatedLegs[0];
+                const lastLeg = updatedLegs[updatedLegs.length - 1];
+                const prevLeg = updatedLegs[updatedLegs.length - 2];
+
+                const firstStart =
+                    firstLeg.mode !== "WALK" && firstLeg.realTime?.delay
+                        ? new Date(firstLeg.scheduledStartTime).getTime() +
+                        firstLeg.realTime.delay * 60000
+                        : new Date(trip.startTime).getTime();
+
+                const lastEnd =
+                    lastLeg.mode !== "WALK" && lastLeg.realTime?.delay
+                        ? new Date(lastLeg.scheduledEndTime).getTime() +
+                        lastLeg.realTime.delay * 60000
+                        : prevLeg?.realTime?.delay
+                            ? new Date(lastLeg.scheduledEndTime).getTime() +
+                            prevLeg.realTime.delay * 60000
+                            : new Date(trip.endTime).getTime();
+
+                const duration = differenceInMinutes(new Date(lastEnd), new Date(firstStart));
+
+                return {
+                    ...trip,
+                    legs: updatedLegs,
+                    duration,
+                    startTime: new Date(firstStart).toISOString(),
+                    endTime: new Date(lastEnd).toISOString(),
+                };
+            })
+    );
+
+    return {
+        trips,
+        direct: data.direct,
+        pageCursor: data.pageCursor,
+    };
+};
+
+async function geocodeLocation({lat, lon, text}: GeocodeRequest): Promise<string> {
+    try {
+        const {data} = await axios.get<GeocodeResult[]>(
+            `http://${MOTIS}/api/v1/geocode?place=${lat},${lon}&text=${text}&language=it`
+        );
+
+        if (data.length > 0) {
+            const best = data[0];
+            const dist = getDistance(lat, lon, best.lat, best.lon);
+
+            if (dist <= 250 && best.type === "STOP") {
+                return best.id;
+            }
+        }
+
+        return `${lat},${lon}`;
+    } catch (err) {
+        console.error("Geocode error:", err);
+        return `${lat},${lon}`;
+    }
+}
+
+export async function getDirections(
+    from: Location,
+    to: Location,
+    dateTime: string,
+    pageCursor?: string,
+): Promise<Directions> {
+    try {
+        const resolvePlace = async (loc: Location): Promise<string> => {
+            if (loc.text.toLowerCase().trim() === "la tua posizione") {
+                return `${loc.lat},${loc.lon}`;
+            }
+            return geocodeLocation(loc);
+        };
+
+        const [fromPlace, toPlace] = await Promise.all([
+            resolvePlace(from),
+            resolvePlace(to),
+        ]);
+
+        const {data, status} = await axios.get(
+            `http://${MOTIS}/api/v4/plan?fromPlace=${fromPlace}&toPlace=${toPlace}&time=${dateTime}&maxPreTransitTime=3600&maxPostTransitTime=3600${pageCursor ? `&pageCursor=${pageCursor}` : ""}`
+        );
+
+        if (status !== 200) {
+            console.error("Invalid MOTIS response:", data);
+            return {trips: [], pageCursor: "", direct: []};
+        }
+
+        return processTripData(data);
+    } catch (error) {
+        console.error("Error fetching directions:", error);
+        return {trips: [], pageCursor: "", direct: []};
+    }
+}

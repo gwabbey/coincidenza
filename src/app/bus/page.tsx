@@ -1,9 +1,9 @@
-import { getClosestBusStops, getStopDepartures } from '@/api/trentino-trasporti/api'
-import { Spinner } from '@heroui/react'
-import { cookies } from 'next/headers'
-import { Suspense } from 'react'
-import RequestLocation from './location'
-import { Monitor } from './monitor'
+import {getClosestBusStops, getStopDepartures} from '@/api/trentino-trasporti/api'
+import {Spinner} from '@heroui/react'
+import {cookies} from 'next/headers'
+import {Suspense} from 'react'
+import RequestLocation from '../location'
+import {Monitor} from './monitor'
 
 interface BusStop {
     stopId: number
@@ -69,9 +69,7 @@ function filterTrips(trips: Trip[]): Trip[] {
 
         const diff = now.getTime() - departure.getTime();
 
-        if (diff > 120000 && trip.stopNext !== trip.stopId) return false;
-
-        return true;
+        return !(diff > 120000 && trip.stopNext !== trip.stopId);
     });
 }
 
@@ -87,12 +85,12 @@ function Loading() {
     return (
         <div className="flex flex-col items-center justify-center py-8">
             <Spinner color="default" size="lg" />
-            <p className="text-center text-gray-500 text-lg">caricamento in corso...</p>
+            <p className="text-center text-foreground-500 text-lg">caricamento in corso...</p>
         </div>
     )
 }
 
-async function Departures({ userLat, userLon }: { userLat: number, userLon: number }) {
+async function Departures({userLat, userLon}: { userLat: number, userLon: number }) {
     try {
         const allStops = await getClosestBusStops(userLat, userLon)
         const walkableStops = getNearbyStops(allStops, 0.3)
@@ -101,7 +99,7 @@ async function Departures({ userLat, userLon }: { userLat: number, userLon: numb
             return (
                 <div className="text-center py-8">
                     <h2 className="text-xl font-bold mb-2">nessuna fermata vicina</h2>
-                    <p className="text-gray-500">non è stata trovata alcuna fermata vicino a te</p>
+                    <p className="text-foreground-500">non è stata trovata alcuna fermata vicino a te</p>
                 </div>
             )
         }
@@ -132,7 +130,7 @@ async function Departures({ userLat, userLon }: { userLat: number, userLon: numb
 
         return sortedTrips.length === 0 ? (
             <div className="text-center py-8">
-                <p className="text-gray-500">nessuna corsa in partenza al momento</p>
+                <p className="text-foreground-500">nessuna corsa in partenza al momento</p>
             </div>
         ) : (
             <Monitor trips={sortedTrips} />
@@ -143,7 +141,7 @@ async function Departures({ userLat, userLon }: { userLat: number, userLon: numb
         return (
             <div className="p-4 text-center py-8">
                 <h2 className="text-xl font-bold mb-2">errore</h2>
-                <p className="text-gray-500">c'è stato un problema :( torna più tardi!</p>
+                <p className="text-foreground-500">c'è stato un problema :( torna più tardi!</p>
             </div>
         )
     }
@@ -161,12 +159,13 @@ export default async function Page() {
                 {!rejected ? (
                     <>
                         <Spinner color="default" size="lg" />
-                        <p className="text-gray-500">rilevando la tua posizione...</p>
+                        <p className="text-foreground-500">rilevando la tua posizione...</p>
                     </>
                 ) : (
                     <>
                         <p className="text-lg font-semibold">posizione non rilevata!</p>
-                        <p className="text-gray-500">puoi cercare un luogo manualmente o dare i permessi per la posizione</p>
+                        <p className="text-foreground-500">puoi cercare un luogo manualmente o dare i permessi per la
+                            posizione</p>
                     </>
                 )}
                 <RequestLocation />

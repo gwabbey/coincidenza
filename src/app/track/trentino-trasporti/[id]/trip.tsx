@@ -1,13 +1,13 @@
 'use client';
 
-import { Trip as TripProps } from "@/api/trentino-trasporti/types";
-import { RouteModal } from "@/components/modal";
+import {Trip as TripProps} from "@/api/trentino-trasporti/types";
+import {RouteModal} from "@/components/modal";
 import Timeline from "@/components/timeline";
-import { getDelayColor } from "@/utils";
-import { addToast, Button, Card, Divider, Link, useDisclosure } from "@heroui/react";
-import { IconAlertTriangleFilled, IconInfoTriangleFilled } from "@tabler/icons-react";
+import {getDelayColor} from "@/utils";
+import {addToast, Button, Card, Divider, Link, useDisclosure} from "@heroui/react";
+import {IconAlertTriangleFilled, IconInfoTriangleFilled} from "@tabler/icons-react";
 import NextLink from "next/link";
-import { useEffect, useState } from 'react';
+import {useEffect, useState} from 'react';
 
 const getCurrentMinutes = (): number => {
     const now = new Date();
@@ -53,10 +53,10 @@ const calculatePreciseActiveIndex = (stopTimes: any[], delay: number, stopLast: 
     return -1;
 };
 
-export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
+export default function Trip({trip: initialTrip}: { trip: TripProps }) {
     const [trip, setTrip] = useState(initialTrip);
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
-    const { isOpen, onOpen, onOpenChange } = useDisclosure();
+    const {isOpen, onOpen, onOpenChange} = useDisclosure();
 
     useEffect(() => {
         if (trip.lastSequenceDetection === trip.stopTimes.length) return;
@@ -76,7 +76,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
         };
 
         const showConnectionError = () => {
-            addToast({ title: "Errore durante la connessione", color: "danger" });
+            addToast({title: "Errore durante la connessione", color: "danger"});
         };
 
         const setupSSE = () => {
@@ -174,7 +174,8 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
         <div className="flex flex-col gap-4">
             <div className="flex justify-center items-center text-center flex-wrap gap-x-2 gap-y-1 max-w-full">
                 <span
-                    className={`text-md font-bold rounded-small flex items-center gap-x-1 text-white whitespace-nowrap ${!trip.route?.routeColor && trip.type === "U" ? "bg-success text-white" : "bg-primary text-white"}`} style={{
+                    className={`text-md font-bold rounded-small flex items-center gap-x-1 text-white whitespace-nowrap ${!trip.route?.routeColor && trip.type === "U" ? "bg-success text-white" : "bg-primary text-white"}`}
+                    style={{
                         backgroundColor: trip.route && trip.route.routeColor ? `#${trip.route.routeColor}` : "",
                         padding: "0.1rem 0.5rem"
                     }}>
@@ -206,11 +207,12 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
             <div className="sticky top-0 bg-white dark:bg-black z-20">
                 <Divider className="my-2" />
 
-                <div className="flex sm:flex-col flex-row justify-between items-center gap-y-2 py-4 w-full max-w-md mx-auto">
+                <div
+                    className="flex sm:flex-col flex-row justify-between items-center gap-y-2 py-4 w-full max-w-md mx-auto">
                     <div className="flex flex-col flex-grow min-w-0">
                         {trip.stopTimes[activeIndex] &&
-                            Math.floor((new Date().getTime() - new Date(trip.lastEventRecivedAt).getTime()) / (1000 * 60)) > 20 &&
-                            activeIndex !== trip.stopTimes.length - 1 ? (
+                        Math.floor((new Date().getTime() - new Date(trip.lastEventRecivedAt).getTime()) / (1000 * 60)) > 20 &&
+                        activeIndex !== trip.stopTimes.length - 1 ? (
                             <p className={`text-lg ${activeIndex === -1 ? '' : 'italic'} font-bold text-left sm:text-center truncate flex-grow min-w-0`}>
                                 {trip.stopTimes.reduce((closestStop: any, stopTime: any) => {
                                     const currentTime = new Date();
@@ -238,12 +240,12 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                                     activeIndex !== trip.stopTimes.length - 1 && (
                                         <IconAlertTriangleFilled className="text-warning self-center mr-1" size={16} />
                                     )}
-                                <p className="text-xs sm:text-sm text-gray-500 truncate">
+                                <p className="text-xs sm:text-sm text-foreground-500 truncate">
                                     ultimo rilevamento: {new Date(trip.lastEventRecivedAt).toLocaleTimeString('it-IT', {
-                                        hour: '2-digit',
-                                        minute: '2-digit',
-                                        timeZone: 'Europe/Rome',
-                                    }).replace(/,/g, ' ')}
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                    timeZone: 'Europe/Rome',
+                                }).replace(/,/g, ' ')}
                                     {trip.matricolaBus && ` (bus ${trip.matricolaBus})`}
                                 </p>
                             </div>
@@ -302,7 +304,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                             content: (
                                 <div className="flex flex-col">
                                     <span className="font-bold">{stop.stopName}</span>
-                                    <div className="text-gray-500 text-sm">
+                                    <div className="text-foreground-500 text-sm">
                                         {stop.arrivalTime ? (
                                             <div className="flex gap-1">
                                                 {isPastStop && (
@@ -337,7 +339,7 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                                             <div>--</div>
                                         )}
                                         {isLongerStop && stopBreak > 1 && (
-                                            <span className="text-gray-500">
+                                            <span className="text-foreground-500">
                                                 sosta di {stopBreak} minuti
                                             </span>
                                         )}
@@ -350,7 +352,9 @@ export default function Trip({ trip: initialTrip }: { trip: TripProps }) {
                 />
             </div>
 
-            <p className="text-sm text-gray-500 text-center">dati forniti da <NextLink href="https://www.trenitalia.com" target="_blank" rel="noopener noreferrer">Trentino Trasporti</NextLink></p>
+            <p className="text-sm text-foreground-500 text-center">dati forniti da <NextLink
+                href="https://trentinotrasporti.it" target="_blank" rel="noopener noreferrer">Trentino
+                Trasporti</NextLink></p>
 
             <RouteModal
                 isOpen={isOpen}

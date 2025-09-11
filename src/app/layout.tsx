@@ -1,27 +1,31 @@
 import "./globals.css";
-import { Header } from "./header";
+import {Header} from "./header";
 import Providers from "./providers";
+import {ViewTransitions} from "next-view-transitions";
+import React from "react";
 
 export const metadata = {
     title: 'trasporti.g3b.dev',
-    description: 'viaggia con i mezzi pubblici nel chill',
+    description: 'viaggia senza problemi.',
 };
 
 export default function RootLayout({
-    children,
-}: {
+                                       children,
+                                   }: {
     children: React.ReactNode;
 }) {
     return (
-        <html lang="en" suppressHydrationWarning>
+        <ViewTransitions>
+            <html lang="en" suppressHydrationWarning>
             <body>
-                <Providers>
-                    <Header />
-                    <main className="p-4">
-                        {children}
-                    </main>
-                </Providers>
+            <Providers>
+                <Header />
+                <main className="p-4">
+                    {children}
+                </main>
+            </Providers>
             </body>
-        </html>
+            </html>
+        </ViewTransitions>
     );
 }

@@ -1,8 +1,10 @@
-import { capitalize, findMatchingStation } from "@/utils";
+import {capitalize, clients, findMatchingStation, getDistance} from "@/utils";
 import axios from 'axios';
-import { parseStringPromise } from "xml2js";
-import { Trip } from "../types";
-import { getMonitor } from "./monitor";
+import {parseStringPromise} from "xml2js";
+import {Trip} from "../types";
+import {getMonitor} from "./monitor";
+import stationLocations from "@/station-locations.json";
+import stations from "@/stations.json";
 
 interface RfiItem {
     title: string;
@@ -14,7 +16,7 @@ interface RfiItem {
 const timestampToIso = (timestamp: number | null) => timestamp ? new Date(timestamp).toISOString() : null;
 
 async function getRfiData(url: string, regions?: string[], dateFilter?: (date: Date) => boolean): Promise<RfiItem[]> {
-    const { data } = await axios.get(url, { responseType: "text" });
+    const {data} = await axios.get(url, {responseType: "text"});
     const parsed = await parseStringPromise(data, {
         explicitArray: false,
         mergeAttrs: true,
@@ -56,18 +58,18 @@ export async function getRfiNotices(regions?: string[]): Promise<RfiItem[]> {
 }
 
 export async function searchStation(query: string) {
-    const { data } = await axios.get(`https://app.lefrecce.it/Channels.Website.BFF.WEB/app/locations?name=${query}&limit=5&multi=false`);
+    const {data} = await axios.get(`https://app.lefrecce.it/Channels.Website.BFF.WEB/app/locations?name=${query}&limit=5&multi=false`);
     return data;
 }
 
 export async function getTripSmartCaring(code: string, origin: string, date: string) {
-    const { data } = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/news/smartcaring?commercialTrainNumber=${code}&originCode=${origin}&searchDate=${date}`);
+    const {data} = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/news/smartcaring?commercialTrainNumber=${code}&originCode=${origin}&searchDate=${date}`);
     if (data.length === 0) return null;
     return data;
 }
 
-export async function getTripCanvas(code: string, origin: string, date: string) {
-    const { data } = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/tratteCanvas/${origin}/${code}/${date}`);
+export async function getTripCanvas(code: string, origin: string, timestamp: number) {
+    const {data} = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/tratteCanvas/${origin}/${code}/${timestamp}`);
     if (data.length === 0) return null;
     return data;
 }
@@ -81,12 +83,6 @@ function normalizeStationName(name: string): string {
         .replace(/\s*-\s*/g, "-")
         .replace(/\s+/g, ' ')
         .trim();
-}
-
-function normalizeToMinute(date: Date): Date {
-    const d = new Date(date);
-    d.setSeconds(0, 0);
-    return d;
 }
 
 function getTripStatus(trip: any, canvas: any) {
@@ -119,75 +115,135 @@ export async function getMonitorTrip(rfiId: string, tripId: string) {
     return train;
 }
 
-export async function getTrip(id: string): Promise<Trip | null> {
-    const { data } = await axios.get(
+
+export async function getActualTrip(
+    id: string,
+    company: string,
+    date: Date = new Date()
+) {
+    const {data} = await axios.get<string>(
         `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`
     );
 
-    if (data.length === 0) return null;
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    if (!data?.trim()) return null;
 
     const parsed = data
         .trim()
         .split("\n")
-        .map((line: string) => {
-            const parts = line.split("|");
-            if (parts.length < 2) return null;
+        .map((line) => {
+            const [left, right] = line.split("|");
+            if (!left || !right) return null;
 
-            const [left, right] = parts;
-            const [code, destination] = left.split(" - ");
+            const [code] = left.split(" - ");
             const rightParts = right.split("-");
-
-            if (rightParts.length < 3) return null;
+            if (rightParts.length < 2) return null;
 
             const [origin, timestampStr] = rightParts.slice(-2);
             const timestamp = Number(timestampStr);
-
             if (isNaN(timestamp)) return null;
 
-            const tripDate = new Date(timestamp);
-            tripDate.setHours(0, 0, 0, 0);
-
-            return {
-                code: code.trim(),
-                destination: capitalize(destination.trim()),
-                origin: origin.trim(),
-                timestamp,
-                tripDate,
-            };
+            return {code: code.trim(), origin: origin.trim(), timestamp};
         })
-        .filter(Boolean)
-        .sort((a: any, b: any) => a.tripDate.getTime() - b.tripDate.getTime());
+        .filter((t): t is { code: string; origin: string; timestamp: number } => t !== null);
 
-    const tripDetailsPromises = parsed.map(async (trip: any) => {
-        const { code, origin, timestamp } = trip;
+    if (parsed.length === 0) return null;
 
-        return axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${code}/${timestamp}`)
-            .then(response => response.status !== 204 ? { trip, data: response.data } : null)
-            .catch(() => null);
-    });
+    const midnightTimestamp = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate()
+    ).getTime();
 
-    const tripDetails = (await Promise.all(tripDetailsPromises)).filter(Boolean);
-    const selectedTrip = tripDetails.find(({ data }) => !data.arrivato && !data.nonPartito)?.trip || parsed[0];
-    if (!selectedTrip) return null;
+    const candidates = parsed.filter((t) => t.timestamp === midnightTimestamp);
+    const tripsToCheck = candidates.length > 0 ? candidates : parsed;
 
-    const { code, origin, timestamp } = selectedTrip;
+    const results = await Promise.allSettled(
+        tripsToCheck.map((t) =>
+            axios
+                .get(
+                    `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${t.origin}/${t.code}/${t.timestamp}`
+                )
+                .then((res) => ({
+                    trip: t,
+                    codiceCliente: res.data?.codiceCliente as number | undefined,
+                }))
+        )
+    );
+
+    // Pick the first one where codiceCliente matches
+    for (const r of results) {
+        if (r.status === "fulfilled") {
+            const {trip, codiceCliente} = r.value;
+            if (codiceCliente !== undefined && clients[codiceCliente] === company) {
+                return {
+                    origin: trip.origin,
+                    id: trip.code,
+                    timestamp: trip.timestamp,
+                };
+            }
+        }
+    }
+
+    return null;
+}
+
+export async function guessTrip(id: string, headsign: string, date: Date) {
+    const {data} = await axios.get<string>(
+        `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`
+    );
+
+    if (!data?.trim()) return null;
+
+    const parsed = data
+        .trim()
+        .split("\n")
+        .map((line) => {
+            const [left, right] = line.split("|");
+            if (!left || !right) return null;
+
+            const [code] = left.split(" - ");
+            const rightParts = right.split("-");
+            if (rightParts.length < 2) return null;
+
+            const [origin, timestampStr] = rightParts.slice(-2);
+            const timestamp = Number(timestampStr);
+            if (isNaN(timestamp)) return null;
+
+            return {code: code.trim(), origin: origin.trim(), timestamp};
+        })
+        .filter(
+            (t): t is { code: string; origin: string; timestamp: number } =>
+                t !== null
+        );
+
+    if (parsed.length === 0) return null;
+
+    const midnightTimestamp = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        date.getDate()
+    ).getTime();
+
+    return getTrip(parsed[0].origin, id, midnightTimestamp);
+}
+
+export async function getTrip(origin: string, id: string, timestamp: number): Promise<Trip | null> {
     const formattedDate = new Intl.DateTimeFormat("it-IT", {
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
     })
-        .format(new Date(selectedTrip.timestamp))
+        .format(new Date(timestamp))
         .split("/")
         .reverse()
         .join("-");
 
     const [response, info, canvas] = await Promise.all([
-        axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${code}/${timestamp}`),
-        getTripSmartCaring(code, origin, formattedDate),
-        getTripCanvas(code, origin, timestamp)
+        axios.get(
+            `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${id}/${timestamp}`
+        ),
+        getTripSmartCaring(id, origin, formattedDate),
+        getTripCanvas(id, origin, timestamp),
     ]);
 
     if (response.status !== 200) return null;
@@ -219,6 +275,8 @@ export async function getTrip(id: string): Promise<Trip | null> {
             delay = currentStop?.fermata.ritardoPartenza;
         }
     }
+
+    if (trip.nonPartito) delay = null;
 
     const getMonitorDelay = async (stop: any, trainNumber: string, tripDelay: number) => {
         const stationName = stop?.stazione;
@@ -279,8 +337,8 @@ export async function getTrip(id: string): Promise<Trip | null> {
         const now = Date.now();
 
         const closeToStation =
-            (arrival && !departure && now - arrival < 1 * 60 * 1000) ||
-            (departure && now - departure < 1 * 60 * 1000);
+            (arrival && !departure && now - arrival < 60 * 1000) ||
+            (departure && now - departure < 60 * 1000);
 
         if (closeToStation) {
             lastKnownLocation = capitalize(currentStop.stazione);
@@ -305,8 +363,8 @@ export async function getTrip(id: string): Promise<Trip | null> {
         arrivalTime: timestampToIso(trip.oraArrivoEstera || trip.orarioArrivo)!,
         alertMessage: trip.subTitle,
         clientId: trip.codiceCliente || 0,
+        company: clients[trip.codiceCliente],
         stops: canvas.map((stop: any) => {
-
             return {
                 id: stop.id,
                 name: capitalize(normalizeStationName(stop.stazione)),
@@ -332,5 +390,51 @@ export async function getTrip(id: string): Promise<Trip | null> {
                     self.findIndex(a => a.message === alert.message) === i
                 )
             : []
+    }
+}
+
+export function getClosestStation(userLat: number, userLon: number): { rfiId: string, vtId: string } {
+    let nearest = stationLocations[0];
+    let minDistance = getDistance(userLat, userLon, nearest.lat, nearest.lon);
+
+    for (const station of stationLocations) {
+        const distance = getDistance(userLat, userLon, station.lat, station.lon);
+        if (distance < minDistance) {
+            minDistance = distance;
+            nearest = station;
+        }
+    }
+
+    const nomeLungo = nearest.localita?.nomeLungo;
+    const nomeBreve = nearest.localita?.nomeBreve;
+
+    if (!nomeLungo && !nomeBreve) {
+        return {
+            rfiId: "",
+            vtId: "",
+        }
+    }
+
+    for (const [id, stationName] of Object.entries(stations)) {
+        const normalizedStationName = normalizeStationName(stationName);
+        const normalizedNomeLungo = nomeLungo ? normalizeStationName(nomeLungo) : '';
+        const normalizedNomeBreve = nomeBreve ? normalizeStationName(nomeBreve) : '';
+
+        if (normalizedStationName === normalizedNomeLungo ||
+            normalizedStationName === normalizedNomeBreve ||
+            normalizedStationName.includes(normalizedNomeLungo) ||
+            normalizedStationName.includes(normalizedNomeBreve) ||
+            normalizedNomeLungo.includes(normalizedStationName) ||
+            normalizedNomeBreve.includes(normalizedStationName)) {
+            return {
+                rfiId: id,
+                vtId: nearest.codiceStazione
+            }
+        }
+    }
+
+    return {
+        rfiId: "",
+        vtId: "",
     }
 }

@@ -1,16 +1,18 @@
 "use client";
 
-import { getDirections } from "@/api/otp/directions";
+import {getDirections} from "@/api/motis/directions";
 
-import { type Directions } from "@/api/otp/types";
-import { type Location } from "@/types";
+import {type Directions} from "@/api/motis/types";
+import {type Location} from "@/types";
 
-import { Button, DateInput, TimeInput } from "@heroui/react";
-import { CalendarDate, Time } from "@internationalized/date";
-import { IconArrowDown, IconSearch } from "@tabler/icons-react";
-import { useRef, useState } from "react";
-import { LocationAutocomplete } from "./autocomplete";
+import {Button, Card, DateInput, Link, TimeInput} from "@heroui/react";
+import {CalendarDate, Time} from "@internationalized/date";
+import {IconMap, IconSearch, IconWalk} from "@tabler/icons-react";
+import {useRef, useState} from "react";
+import {LocationAutocomplete} from "./autocomplete";
 import Results from "./results";
+import {formatDuration} from "@/utils";
+import {format} from "date-fns";
 
 interface SelectedLocations {
     from: Location | null;
@@ -24,9 +26,9 @@ export default function Directions() {
     });
     const [date, setDate] = useState<CalendarDate>(new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()));
     const [time, setTime] = useState<Time>(new Time(new Date().getHours(), new Date().getMinutes()));
-    const [isLoading, setIsLoading] = useState(false);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
     const [directions, setDirections] = useState<Directions>();
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const toInputRef = useRef<HTMLInputElement>(null);
 
     const handleLocationSelect = (type: 'from' | 'to', location: Location | null) => {
@@ -36,32 +38,14 @@ export default function Directions() {
         }));
     };
 
+
     const handleSearch = async () => {
-        if (selectedLocations.from && selectedLocations.to && date && time) {
-            setIsLoading(true);
-            try {
-                const combinedDateTime = new Date(
-                    date.year,
-                    date.month - 1,
-                    date.day,
-                    time.hour,
-                    time.minute
-                );
+        if (!selectedLocations.from || !selectedLocations.to || !date || !time) return;
 
-                const localIsoString = combinedDateTime.toISOString();
+        setIsLoading(true);
+        setError(null);
+        setDirections(undefined);
 
-                const directions = await getDirections(selectedLocations.from.coordinates, selectedLocations.to.coordinates, localIsoString);
-                setDirections(directions);
-            } finally {
-                setIsLoading(false);
-            }
-        }
-    };
-
-    const handleLoadMore = async () => {
-        if (!directions?.nextPageCursor) return;
-
-        setIsLoadingMore(true);
         try {
             const combinedDateTime = new Date(
                 date.year,
@@ -73,19 +57,32 @@ export default function Directions() {
 
             const localIsoString = combinedDateTime.toISOString();
 
-            const moreDirections = await getDirections(
-                selectedLocations.from?.coordinates!,
-                selectedLocations.to?.coordinates!,
-                localIsoString,
-                directions.nextPageCursor
+            const result = await getDirections(
+                {
+                    lat: selectedLocations.from.coordinates.lat,
+                    lon: selectedLocations.from.coordinates.lon,
+                    text: selectedLocations.from.label.toString()
+                },
+                {
+                    lat: selectedLocations.to.coordinates.lat,
+                    lon: selectedLocations.to.coordinates.lon,
+                    text: selectedLocations.to.label.toString()
+                },
+                localIsoString
             );
 
-            setDirections(prev => prev ? {
-                ...moreDirections,
-                trips: [...prev.trips, ...moreDirections.trips]
-            } : moreDirections);
+            if (!result) {
+                setError("Errore nel recupero dei dati. Riprova più tardi.");
+            } else if ((!result.trips || result.trips.length === 0) && (!result.direct || result.direct.length === 0)) {
+                setError("Nessun itinerario trovato per la ricerca effettuata.");
+            } else {
+                setDirections(result);
+            }
+        } catch (e) {
+            console.error(e);
+            setError("Errore durante la comunicazione con il servizio. Riprova più tardi.");
         } finally {
-            setIsLoadingMore(false);
+            setIsLoading(false);
         }
     };
 
@@ -112,6 +109,7 @@ export default function Directions() {
                     <DateInput
                         variant="underlined"
                         label="data"
+                        classNames={{label: "text-sm"}}
                         size="lg"
                         isInvalid={new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()) > date}
                         defaultValue={new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate())}
@@ -120,6 +118,7 @@ export default function Directions() {
                     <TimeInput
                         variant="underlined"
                         label="ora"
+                        classNames={{label: "text-sm"}}
                         size="lg"
                         hourCycle={24}
                         defaultValue={new Time(new Date().getHours(), new Date().getMinutes())}
@@ -139,26 +138,45 @@ export default function Directions() {
                 {!isLoading && "cerca!"}
             </Button>
 
-            {directions && <Results directions={directions} />}
-
-            {directions && directions.trips.length === 0 && (
+            {error && (
                 <div className="pointer-events-auto text-center max-w-2xl mx-auto">
-                    <h1 className="text-2xl font-bold">nessun itinerario trovato</h1>
-                    potresti aver cercato un viaggio in un'area non supportata dall'applicazione,
-                    oppure non ci sono viaggi nell'orario selezionato.
+                    <h1 className="text-2xl font-bold">
+                        {error.includes("Nessun") ? "Nessun itinerario trovato" : "Errore"}
+                    </h1>
+                    <p>{error}</p>
                 </div>
             )}
-            {directions && directions.trips.length > 0 && directions.nextPageCursor && (
-                <Button
-                    startContent={!isLoadingMore && <IconArrowDown />}
-                    variant="ghost"
-                    onPress={handleLoadMore}
-                    isLoading={isLoadingMore}
-                    className="self-center max-w-md md:max-w-32 w-full"
-                >
-                    {!isLoadingMore && "carica altri"}
-                </Button>
+
+            {directions && directions.direct.length > 0 && (
+                <Card className="p-4 w-full mx-auto">
+                    <div className="flex flex-row justify-between">
+                        <div className="flex flex-row gap-2 items-center">
+                            <IconWalk size={24} />
+                            <div className="flex flex-col justify-center">
+                                    <span className="sm:text-lg text-md font-bold">
+                                        circa {formatDuration(Math.abs(directions.direct[0].legs[0].duration / 60), true)} a piedi
+                                    </span>
+                                <span className="font-bold text-foreground-500">
+                                        arrivo stimato alle {format(directions.direct[0].legs[0].endTime, "HH:mm")}
+                                    </span>
+                            </div>
+                        </div>
+                        <Button
+                            as={Link}
+                            href={`https://maps.apple.com/?saddr=${directions.direct[0].legs[0].from.lat},${directions.direct[0].legs[0].from.lon}&daddr=${directions.direct[0].legs[0].to.lat},${directions.direct[0].legs[0].to.lon}&dirflg=w`}
+                            variant="bordered"
+                            isIconOnly
+                            isExternal
+                            startContent={<IconMap />}
+                            radius="full"
+                            className="border-gray-500 border-1 self-center"
+                            aria-label="percorso a piedi"
+                        />
+                    </div>
+                </Card>
             )}
+
+            {directions && <Results directions={directions} />}
         </div>
     );
 }

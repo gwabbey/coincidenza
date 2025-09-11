@@ -1,13 +1,13 @@
 "use client";
 
-import { geocodeAddress } from "@/api/apple-maps/geolocation";
-import { searchStation } from "@/api/bahn/api";
-import { Location } from "@/types";
-import { capitalize } from "@/utils";
-import { addToast, Autocomplete, AutocompleteItem, Spinner } from "@heroui/react";
-import { IconMapPin, IconTrain } from "@tabler/icons-react";
-import { Key, useEffect, useState } from "react";
-import { useDebouncedCallback } from 'use-debounce';
+import {geocodeAddress} from "@/api/apple-maps/geolocation";
+import {searchStation} from "@/api/bahn/api";
+import {Location} from "@/types";
+import {capitalize} from "@/utils";
+import {addToast, Autocomplete, AutocompleteItem, Spinner} from "@heroui/react";
+import {IconMapPin, IconTrain} from "@tabler/icons-react";
+import {Key, useEffect, useState} from "react";
+import {useDebouncedCallback} from 'use-debounce';
 
 interface Props {
     name: string;
@@ -21,14 +21,14 @@ interface Props {
 }
 
 export const LocationAutocomplete = ({
-    label = "",
-    selected = "",
-    debounceDelay = 1000,
-    disabled = false,
-    onLocationSelect,
-    nextInputRef,
-    ref
-}: Props) => {
+                                         label = "",
+                                         selected = "",
+                                         debounceDelay = 1000,
+                                         disabled = false,
+                                         onLocationSelect,
+                                         nextInputRef,
+                                         ref
+                                     }: Props) => {
     const [value, setValue] = useState(selected);
     const [data, setData] = useState<Location[]>([]);
     const [loading, setLoading] = useState(false);
@@ -41,9 +41,22 @@ export const LocationAutocomplete = ({
         }
     }, [selected]);
 
+    if (typeof window !== 'undefined' && !navigator.geolocation) {
+        addToast({title: "Geolocalizzazione non supportata!"});
+        return;
+    }
+
     const getCurrentPosition = () => {
         return new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject);
+            navigator.geolocation.getCurrentPosition(
+                resolve,
+                reject,
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 300000
+                }
+            );
         });
     };
 
@@ -59,7 +72,7 @@ export const LocationAutocomplete = ({
                 };
                 setUserLocation(coords);
 
-                const locationLabel = 'La tua posizione';
+                const locationLabel = 'Posizione attuale';
                 setValue(locationLabel);
 
                 const locationData = {
@@ -86,7 +99,7 @@ export const LocationAutocomplete = ({
                             : "Timeout nel recupero della posizione."
                     : "Errore nel recupero della posizione.";
 
-                addToast({ title: errorMessage });
+                addToast({title: errorMessage});
                 console.error('Error getting current position:', error);
                 return;
             }
@@ -110,7 +123,7 @@ export const LocationAutocomplete = ({
         if (!selectedLocation || value !== (selectedLocation.textValue || selectedLocation.label)) {
             setSelectedLocation(null);
             onLocationSelect(null);
-            if (value !== 'La tua posizione') {
+            if (value !== 'Posizione attuale') {
                 fetchData(value);
             }
         }
@@ -172,9 +185,11 @@ export const LocationAutocomplete = ({
 
     const currentLocationItem: Location = {
         value: 'current-location',
-        label: <div className="flex flex-row items-center gap-2 font-bold"><IconMapPin stroke={1.5} />La tua posizione</div>,
-        textValue: 'La tua posizione',
-        coordinates: userLocation ?? { lat: 0, lon: 0 }
+        label: <div className="flex flex-row items-center gap-2 font-bold">
+            <IconMapPin stroke={1.5} />Posizione attuale
+        </div>,
+        textValue: 'Posizione attuale',
+        coordinates: userLocation ?? {lat: 0, lon: 0}
     };
 
     const allItems = [currentLocationItem, ...data];
@@ -201,13 +216,13 @@ export const LocationAutocomplete = ({
             {(item: Location) => (
                 <AutocompleteItem
                     key={item.value}
-                    textValue={item.textValue || (typeof item.label === 'string' ? item.label : 'La tua posizione')}
+                    textValue={item.textValue || (typeof item.label === 'string' ? item.label : 'Posizione attuale')}
                     startContent={item.isBahnStation ? <IconTrain stroke={1.5} /> : undefined}
                 >
                     {typeof item.label === 'string' ? (
                         <div className="flex flex-col">
-                            <span className="text-sm">{item.label}</span>
-                            <span className="text-xs text-default-400">{item.address}</span>
+                            <span>{item.label}</span>
+                            <span className="text-sm text-default-400">{item.address}</span>
                         </div>
                     ) : item.label}
                 </AutocompleteItem>

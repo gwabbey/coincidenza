@@ -1,12 +1,12 @@
 "use client"
 
-import { TimeDisplay } from "@/components/time"
-import { getDelayColor } from "@/utils"
-import { IconAntennaBarsOff } from "@tabler/icons-react"
-import { AnimatePresence, motion } from "motion/react"
+import {TimeDisplay} from "@/components/time"
+import {getDelayColor} from "@/utils"
+import {IconAntennaBarsOff} from "@tabler/icons-react"
+import {AnimatePresence, motion} from "motion/react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import {useRouter} from "next/navigation"
+import {useEffect, useState} from "react"
 
 function getStopsAway(selectedStopId: number, stopTimes: any[], delay: number | null = 0): number | null {
     const now = new Date();
@@ -28,7 +28,7 @@ function getStopsAway(selectedStopId: number, stopTimes: any[], delay: number | 
     return stopsAway <= 0 ? 0 : stopsAway;
 }
 
-export function Monitor({ trips }: { trips: any[] }) {
+export function Monitor({trips}: { trips: any[] }) {
     const router = useRouter()
     const [blinkKey, setBlinkKey] = useState(0)
     const [showRelativeTime, setShowRelativeTime] = useState(false)
@@ -94,10 +94,10 @@ export function Monitor({ trips }: { trips: any[] }) {
                             key={trip.tripId}
                             layoutId={trip.tripId}
                             layout
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -20, transition: { duration: 0.3 } }}
-                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                            initial={{opacity: 0, y: 20}}
+                            animate={{opacity: 1, y: 0}}
+                            exit={{opacity: 0, y: -20, transition: {duration: 0.3}}}
+                            transition={{duration: 0.3, ease: "easeInOut"}}
                         >
                             <div className="flex flex-row justify-between gap-4">
                                 <div className="flex gap-2 w-full">
@@ -109,12 +109,15 @@ export function Monitor({ trips }: { trips: any[] }) {
 
                                     <div className="flex flex-col text-left w-full flex-grow min-w-0">
                                         <div className="flex items-center justify-between w-full min-w-0 gap-2">
-                                            <Link href={`/track/trentino-trasporti/${trip.tripId}`} className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow">
+                                            <Link href={`/track/trentino-trasporti/${trip.tripId}`}
+                                                  className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow">
                                                 <div className="flex items-center gap-x-1 sm:gap-x-2">
-                                                    <div className={`text-base sm:text-lg font-bold text-center rounded-small max-w-fit ${!trip.route?.routeColor && trip.type === "U" ? "bg-success text-white" : "bg-primary text-white"}`} style={{
-                                                        backgroundColor: trip.route && trip.route.routeColor ? `#${trip.route.routeColor}` : "",
-                                                        padding: "0.1rem 0.5rem"
-                                                    }}>
+                                                    <div
+                                                        className={`text-base sm:text-lg font-bold text-center rounded-small max-w-fit ${!trip.route?.routeColor && trip.type === "U" ? "bg-success text-white" : "bg-primary text-white"}`}
+                                                        style={{
+                                                            backgroundColor: trip.route && trip.route.routeColor ? `#${trip.route.routeColor}` : "",
+                                                            padding: "0.1rem 0.5rem"
+                                                        }}>
                                                         {trip.route.routeShortName}
                                                     </div>
                                                     <div className="truncate font-bold text-base sm:text-lg min-w-0">
@@ -123,7 +126,7 @@ export function Monitor({ trips }: { trips: any[] }) {
                                                 </div>
                                             </Link>
                                             {!trip.lastEventRecivedAt && (
-                                                <p className="text-lg font-bold uppercase flex-shrink-0 whitespace-nowrap text-gray-500">
+                                                <p className="text-lg font-bold uppercase flex-shrink-0 whitespace-nowrap text-foreground-500">
                                                     <IconAntennaBarsOff />
                                                 </p>
                                             )}
@@ -136,7 +139,7 @@ export function Monitor({ trips }: { trips: any[] }) {
                                         </div>
 
                                         <Link
-                                            className="text-sm text-gray-500"
+                                            className="text-sm text-foreground-500"
                                             href={`/track/trentino-trasporti/${trip.tripId}`}
                                         >
                                             {stopsAway && hasDeparted ? (
@@ -147,8 +150,8 @@ export function Monitor({ trips }: { trips: any[] }) {
                                                         <div className="flex items-center gap-1 whitespace-pre">
                                                             <motion.div
                                                                 key={blinkKey}
-                                                                initial={{ opacity: 1 }}
-                                                                animate={{ opacity: [1, 0, 1] }}
+                                                                initial={{opacity: 1}}
+                                                                animate={{opacity: [1, 0, 1]}}
                                                                 transition={{
                                                                     duration: 1,
                                                                     times: [0, 0.5, 1],

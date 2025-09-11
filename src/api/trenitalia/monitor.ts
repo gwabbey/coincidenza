@@ -1,11 +1,11 @@
 "use server";
 
-import { trainCategoryShortNames } from "@/train-categories";
-import { capitalize } from "@/utils";
+import {trainCategoryShortNames} from "@/train-categories";
+import {capitalize} from "@/utils";
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
 import * as cheerio from 'cheerio';
-import { StationMonitor, Train } from "../types";
+import {StationMonitor, Train} from "../types";
 
 const vtIdCache = new Map<string, string>();
 
@@ -19,7 +19,7 @@ export async function getVtId(name: string): Promise<string> {
 
     const parsed = lines.map((line: string) => {
         const [label, id] = line.split("|");
-        return { label: label.trim(), id: id.trim() };
+        return {label: label.trim(), id: id.trim()};
     });
 
     const [first, second] = parsed;
@@ -49,8 +49,7 @@ async function getVtDepartures(id: string) {
     );
 
     if (response.status === 200) {
-        const data = response.data;
-        return data;
+        return response.data;
     }
     return null;
 }
@@ -130,7 +129,7 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
                 if (category.startsWith('servizio ferroviario metropolitano')) {
                     return category.replace('servizio ferroviario metropolitano linea', 'SFM');
                 }
-                return trainCategoryShortNames[category as keyof typeof trainCategoryShortNames];
+                return trainCategoryShortNames[category];
             };
 
             const shortCategory = getShortCategory(category);
@@ -146,7 +145,7 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
 
             company = getCompany(company);
 
-            let stops: any[] = [];
+            let stops: any[];
             const stopsText = $(element)
                 .find('td[id="RDettagli"] div[class="FermateSuccessivePopupStyle"] div[class="testoinfoaggiuntive"]')
                 .first()
@@ -189,8 +188,8 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
             }
         });
 
-        return { name, trains, alerts };
+        return {name, trains, alerts};
     } catch (error) {
-        return { name: "", trains: [], alerts: "" };
+        return {name: "", trains: [], alerts: ""};
     }
 }
