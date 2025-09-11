@@ -13,6 +13,7 @@ import {LocationAutocomplete} from "./directions/autocomplete";
 import Results from "./directions/results";
 import {formatDuration} from "@/utils";
 import {format} from "date-fns";
+import {AnimatePresence, motion} from "motion/react";
 import {useRef, useState} from "react";
 
 interface SelectedLocations {
@@ -43,6 +44,12 @@ export default function Home({favorites, userLat, userLon, rfiId, vtId, departur
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const toInputRef = useRef<HTMLInputElement>(null);
+
+    const fadeVariants = {
+        hidden: {opacity: 0, y: 10},
+        visible: {opacity: 1, y: 0},
+        exit: {opacity: 0, y: -10},
+    };
 
     const handleLocationSelect = (type: 'from' | 'to', location: Location | null) => {
         setSelectedLocations(prev => ({
@@ -167,78 +174,96 @@ export default function Home({favorites, userLat, userLon, rfiId, vtId, departur
                 </CardBody>
             </Card>
 
-            {showResults && directions ? (
-                <div className="flex flex-col gap-4 w-full text-left">
-                    {directions.direct.length > 0 && (
-                        <Card className="p-4">
-                            <div className="flex flex-row justify-between">
-                                <div className="flex flex-row gap-2 items-center">
-                                    <IconWalk size={24} />
-                                    <div className="flex flex-col justify-center">
+            {/* Wrap the conditional content with AnimatePresence */}
+            <AnimatePresence mode="wait">
+                {showResults && directions ? (
+                    // Use motion.div for the content you want to animate
+                    <motion.div
+                        key="results"
+                        className="flex flex-col gap-4 w-full text-left"
+                        variants={fadeVariants}
+                        initial={false}
+                        animate="visible"
+                        exit="exit"
+                        transition={{duration: 0.3}}
+                    >
+                        {directions.direct.length > 0 && (
+                            <Card className="p-4">
+                                <div className="flex flex-row justify-between">
+                                    <div className="flex flex-row gap-2 items-center">
+                                        <IconWalk size={24} />
+                                        <div className="flex flex-col justify-center">
                                             <span className="sm:text-lg text-md font-bold">
                                                 circa {formatDuration(Math.abs(directions.direct[0].legs[0].duration / 60), true)} a piedi
                                             </span>
-                                        <span className="font-bold text-foreground-500">
+                                            <span className="font-bold text-foreground-500">
                                                 arrivo stimato alle {format(directions.direct[0].legs[0].endTime, "HH:mm")}
                                             </span>
+                                        </div>
                                     </div>
+                                    <Button
+                                        as={Link}
+                                        href={`https://maps.apple.com/?saddr=${directions.direct[0].legs[0].from.lat},${directions.direct[0].legs[0].from.lon}&daddr=${directions.direct[0].legs[0].to.lat},${directions.direct[0].legs[0].to.lon}&dirflg=w`}
+                                        variant="bordered"
+                                        isIconOnly
+                                        isExternal
+                                        startContent={<IconMap />}
+                                        radius="full"
+                                        className="border-gray-500 border-1 self-center"
+                                        aria-label="percorso a piedi"
+                                    />
                                 </div>
-                                <Button
-                                    as={Link}
-                                    href={`https://maps.apple.com/?saddr=${directions.direct[0].legs[0].from.lat},${directions.direct[0].legs[0].from.lon}&daddr=${directions.direct[0].legs[0].to.lat},${directions.direct[0].legs[0].to.lon}&dirflg=w`}
-                                    variant="bordered"
-                                    isIconOnly
-                                    isExternal
-                                    startContent={<IconMap />}
-                                    radius="full"
-                                    className="border-gray-500 border-1 self-center"
-                                    aria-label="percorso a piedi"
-                                />
-                            </div>
-                        </Card>
-                    )}
+                            </Card>
+                        )}
 
-                    <Results directions={directions} />
-                </div>
-            ) : (
-                <div className="flex flex-col gap-4 w-full">
-                    {alerts.length > 0 &&
-                        <Card
-                            className="flex flex-col p-2 gap-2 w-full mx-auto rounded-large shadow-medium text-left">
-                            <CardHeader className="text-xl font-bold pb-0">⚠️ avvisi sulla rete
-                                ferroviaria</CardHeader>
-                            <CardBody className="gap-2">
-                                {alerts && alerts.map((alert, index) => (
-                                    <div key={index} className="flex flex-col">
-                                        <Link href={alert.link} isExternal>{alert.title}</Link>
-                                    </div>
-                                ))}
-                            </CardBody>
-                        </Card>}
+                        <Results directions={directions} />
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        key="homepage"
+                        className="flex flex-col gap-4 w-full"
+                        variants={fadeVariants}
+                        initial={false}
+                        transition={{duration: 0.3}}
+                    >
+                        {alerts.length > 0 &&
+                            <Card
+                                className="flex flex-col p-2 gap-2 w-full mx-auto rounded-large shadow-medium text-left">
+                                <CardHeader className="text-xl font-bold pb-0">⚠️ avvisi sulla rete
+                                    ferroviaria</CardHeader>
+                                <CardBody className="gap-2">
+                                    {alerts && alerts.map((alert, index) => (
+                                        <div key={index} className="flex flex-col">
+                                            <Link href={alert.link} isExternal>{alert.title}</Link>
+                                        </div>
+                                    ))}
+                                </CardBody>
+                            </Card>}
 
-                    <Favorites favorites={favorites} />
+                        <Favorites favorites={favorites} />
 
-                    {userLat === "" || userLon === "" || rfiId === "" || vtId === "" ? (
-                        <RequestLocation />
-                    ) : (
-                        <DeparturesCard departures={departures} />
-                    )}
+                        {userLat === "" || userLon === "" || rfiId === "" || vtId === "" ? (
+                            <RequestLocation />
+                        ) : (
+                            <DeparturesCard departures={departures} />
+                        )}
 
-                    {notices.length > 0 &&
-                        <Card
-                            className="flex flex-col p-2 gap-2 w-full mx-auto rounded-large shadow-medium text-left">
-                            <CardHeader className="text-xl font-bold pb-0">ℹ️ informazioni utili</CardHeader>
-                            <CardBody className="gap-2">
-                                {notices && notices.map((alert, index) => (
-                                    <div key={index}
-                                         className={`flex flex-col ${alert.title.toLowerCase().includes("sciopero") ? "font-bold" : ""}`}>
-                                        <Link href={alert.link} isExternal>{alert.title}</Link>
-                                    </div>
-                                ))}
-                            </CardBody>
-                        </Card>}
-                </div>
-            )}
+                        {notices.length > 0 &&
+                            <Card
+                                className="flex flex-col p-2 gap-2 w-full mx-auto rounded-large shadow-medium text-left">
+                                <CardHeader className="text-xl font-bold pb-0">ℹ️ informazioni utili</CardHeader>
+                                <CardBody className="gap-2">
+                                    {notices && notices.map((alert, index) => (
+                                        <div key={index}
+                                             className={`flex flex-col ${alert.title.toLowerCase().includes("sciopero") ? "font-bold" : ""}`}>
+                                            <Link href={alert.link} isExternal>{alert.title}</Link>
+                                        </div>
+                                    ))}
+                                </CardBody>
+                            </Card>}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

@@ -33,6 +33,11 @@ export default function DeparturesCard({
                 </div>
 
                 <div className="flex flex-col gap-4">
+                    {groupedAndSorted.length === 0 && (
+                        <div className="text-center text-foreground-500 font-bold">
+                            nessuna corsa in partenza
+                        </div>
+                    )}
                     {groupedAndSorted.map(([dest, trains]) => (
                         <div key={dest} className="flex flex-col gap-2 items-stretch justify-stretch w-full">
                             <div className="font-bold text-lg">{capitalize(dest)}</div>

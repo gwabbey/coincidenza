@@ -47,8 +47,8 @@ export function Favorites({favorites}: { favorites: Favorite[] }) {
             <CardBody>
                 {favorites.length ? favorites.slice()
                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                    .map((favorite: Favorite) => (
-                        <div className="flex justify-between items-center py-2">
+                    .map((favorite: Favorite, index) => (
+                        <div key={index} className="flex justify-between items-center py-2">
                             <Link onPress={() => navigateToFavorite(favorite)}
                                   className="cursor-pointer text-default-foreground gap-2">
                                 {favorite.type === "train" ? <IconTrain /> : <IconBus />}

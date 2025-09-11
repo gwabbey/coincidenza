@@ -63,9 +63,9 @@ export function Monitor({monitor}: { monitor: StationMonitor }) {
 
     if (monitor.trains.length === 0) {
         return (
-            <p className="text-center text-lg text-foreground-500 font-bold p-4">
+            <div className="text-center text-lg text-foreground-500 font-bold p-4">
                 nessuna corsa in partenza
-            </p>
+            </div>
         );
     }
 
