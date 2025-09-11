@@ -5,14 +5,15 @@ import LeafletMap from "@/components/leaflet";
 import {RouteModal} from "@/components/modal";
 import Timeline from "@/components/timeline";
 import {formatDuration, getDelayColor} from "@/utils";
-import {Accordion, AccordionItem, Button, cn, Link, Selection, useDisclosure} from "@heroui/react";
+import {Accordion, AccordionItem, Button, cn, Selection, useDisclosure} from "@heroui/react";
 import {IconAccessPoint, IconArrowRight, IconChevronDown, IconMap} from "@tabler/icons-react";
-import {differenceInMinutes, format} from "date-fns";
+import {format} from "date-fns";
 import {motion} from "motion/react";
 import {useEffect, useState} from "react";
 import {TransportIcon} from "./icons";
 import Steps from "./steps";
 import {trainCategoryLongNames} from "@/train-categories";
+import {Link} from "next-view-transitions";
 
 const getLegDescription = (leg: Leg) => {
     if (leg.mode === "WALK") {
@@ -59,16 +60,15 @@ export default function Results({directions}: { directions: Directions }) {
                                        <span className="font-bold text-2xl flex flex-row items-center gap-x-2">
                                            <span
                                                className={cn(`text-${getDelayColor(trip.legs[trip.legs.length > 1 ? 1 : 0].realTime.delay)}`)}>
-                                {format(new Date(trip.startTime), "HH:mm")}
+                                               {format(new Date(trip.startTime), "HH:mm")}
                                            </span>
                                            <IconArrowRight className="shrink-0" />
                                            <span
-                                               className={cn(
-                                                   `text-${getDelayColor(trip.legs[trip.legs.length - 1].realTime.delay || trip.legs[trip.legs.length - 2].realTime.delay
-                                                       && differenceInMinutes(trip.endTime, new Date(trip.legs[trip.legs.length - 1].scheduledEndTime)))}`)}>
+                                               className={cn(`text-${getDelayColor(trip.legs[trip.legs.length - 1]?.realTime?.delay ??
+                                                   trip.legs[trip.legs.length - 2]?.realTime?.delay ?? null)}`)}>
                                                {format(new Date(trip.endTime), "HH:mm")}
                                            </span>
-                            </span>
+                                        </span>
                                    </div>
                                }
                                subtitle={
@@ -130,7 +130,7 @@ export default function Results({directions}: { directions: Directions }) {
                                                 href={leg.realTime.url}
                                                 variant="bordered"
                                                 isIconOnly
-                                                isExternal
+                                                target="_blank"
                                                 startContent={<IconAccessPoint />}
                                                 radius="full"
                                                 className="border-gray-500 border-1 self-center"
@@ -143,7 +143,7 @@ export default function Results({directions}: { directions: Directions }) {
                                                 href={`https://maps.apple.com/?saddr=${leg.from.lat},${leg.from.lon}&daddr=${leg.to.lat},${leg.to.lon}&dirflg=w`}
                                                 variant="bordered"
                                                 isIconOnly
-                                                isExternal
+                                                target="_blank"
                                                 startContent={<IconMap />}
                                                 radius="full"
                                                 className="border-gray-500 border-1 self-center"

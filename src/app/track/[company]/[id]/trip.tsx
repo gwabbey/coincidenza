@@ -6,7 +6,7 @@ import Timeline from "@/components/timeline";
 import {capitalize, findMatchingStation, formatDate, getDelayColor} from "@/utils";
 import {addToast, Button, Card, Divider, useDisclosure} from "@heroui/react";
 import {IconAlertTriangleFilled, IconInfoTriangleFilled} from "@tabler/icons-react";
-import {default as Link, default as NextLink} from "next/link";
+import {Link} from "next-view-transitions";
 import {useEffect, useState} from 'react';
 
 const getCurrentMinutes = () => {
@@ -365,11 +365,11 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
                                     content: (
                                         <div className="flex items-start justify-between w-full">
                                             <div className="flex-col">
-                                                <NextLink
+                                                <Link
                                                     className={`break-words font-bold ${stop.status === "canceled" ? "line-through" : ""}`}
                                                     href={`/departures/${findMatchingStation(stop.name) ?? ""}`}>
                                                     {stop.name}
-                                                </NextLink>
+                                                </Link>
 
                                                 {stop.status === "not_planned" && (
                                                     <p className="text-sm text-warning font-semibold">fermata

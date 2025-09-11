@@ -4,9 +4,9 @@ import {Trip as TripProps} from "@/api/trentino-trasporti/types";
 import {RouteModal} from "@/components/modal";
 import Timeline from "@/components/timeline";
 import {getDelayColor} from "@/utils";
-import {addToast, Button, Card, Divider, Link, useDisclosure} from "@heroui/react";
+import {addToast, Button, Card, Divider, useDisclosure} from "@heroui/react";
 import {IconAlertTriangleFilled, IconInfoTriangleFilled} from "@tabler/icons-react";
-import NextLink from "next/link";
+import {Link} from "next-view-transitions";
 import {useEffect, useState} from 'react';
 
 const getCurrentMinutes = (): number => {
@@ -352,9 +352,9 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
                 />
             </div>
 
-            <p className="text-sm text-foreground-500 text-center">dati forniti da <NextLink
+            <p className="text-sm text-foreground-500 text-center">dati forniti da <Link
                 href="https://trentinotrasporti.it" target="_blank" rel="noopener noreferrer">Trentino
-                Trasporti</NextLink></p>
+                Trasporti</Link></p>
 
             <RouteModal
                 isOpen={isOpen}
@@ -364,7 +364,7 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
                 {trip.route.news && trip.route.news.length > 0 && trip.route.news.map((alert: any, index: number) => (
                     <div key={index} className="flex flex-col gap-2">
                         {alert.url ? (
-                            <Link isExternal href={alert.url}>
+                            <Link target="_blank" href={alert.url}>
                                 {alert.header}
                             </Link>
                         ) : (

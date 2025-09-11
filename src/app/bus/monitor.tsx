@@ -4,7 +4,7 @@ import {TimeDisplay} from "@/components/time"
 import {getDelayColor} from "@/utils"
 import {IconAntennaBarsOff} from "@tabler/icons-react"
 import {AnimatePresence, motion} from "motion/react"
-import Link from "next/link"
+import {Link} from "next-view-transitions"
 import {useRouter} from "next/navigation"
 import {useEffect, useState} from "react"
 

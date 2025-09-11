@@ -1,13 +1,13 @@
 "use client";
 
 import stations from "@/stations.json";
-import { Favorite } from "@/types";
-import { Autocomplete, AutocompleteItem, Button } from "@heroui/react";
-import { IconStar, IconStarFilled } from "@tabler/icons-react";
-import { motion } from "motion/react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import {Favorite} from "@/types";
+import {Autocomplete, AutocompleteItem, Button} from "@heroui/react";
+import {IconStar, IconStarFilled} from "@tabler/icons-react";
+import {motion} from "motion/react";
+import {Link} from "next-view-transitions";
+import {useRouter} from "next/navigation";
+import {useEffect, useState} from "react";
 
 const getFavorites = (): any[] => {
     if (typeof window === 'undefined') {
@@ -28,7 +28,7 @@ const saveFavorites = (favorites: any[]) => {
     document.cookie = `favorites=${encodeURIComponent(JSON.stringify(favorites))}; path=/; max-age=31536000`;
 };
 
-export default function Search({ selected }: { selected?: string }) {
+export default function Search({selected}: { selected?: string }) {
     const router = useRouter();
     const [favorites, setFavorites] = useState<Favorite[]>([]);
     const [isStarred, setIsStarred] = useState(false);
@@ -58,7 +58,14 @@ export default function Search({ selected }: { selected?: string }) {
             newFavorites.splice(favoriteIndex, 1);
             setIsStarred(false);
         } else {
-            newFavorites.push({ name: stationName, id: selected, type: 'train', createdAt: new Date().toISOString(), lat: 0, lon: 0 });
+            newFavorites.push({
+                name: stationName,
+                id: selected,
+                type: 'train',
+                createdAt: new Date().toISOString(),
+                lat: 0,
+                lon: 0
+            });
             setIsStarred(true);
         }
 
@@ -70,20 +77,20 @@ export default function Search({ selected }: { selected?: string }) {
     return (
         <div className="flex items-center justify-center gap-x-2 max-w-4xl w-full mx-auto">
             <Autocomplete className="flex-grow"
-                label="cerca una stazione"
-                size="lg"
-                isVirtualized
-                variant="underlined"
-                allowsCustomValue={true}
-                listboxProps={{
-                    emptyContent: "nessun risultato."
-                }}
-                classNames={{
-                    selectorButton: "hidden",
-                    endContentWrapper: "mr-1"
-                }}
-                defaultSelectedKey={selected}
-                autoFocus={selected == null}>
+                          label="cerca una stazione"
+                          size="lg"
+                          isVirtualized
+                          variant="underlined"
+                          allowsCustomValue={true}
+                          listboxProps={{
+                              emptyContent: "nessun risultato."
+                          }}
+                          classNames={{
+                              selectorButton: "hidden",
+                              endContentWrapper: "mr-1"
+                          }}
+                          defaultSelectedKey={selected}
+                          autoFocus={selected == null}>
                 {Object.entries(stations).map(([id, name]) => (
                     <AutocompleteItem key={id} as={Link} href={`/departures/${id}`}>
                         {name}
@@ -94,8 +101,8 @@ export default function Search({ selected }: { selected?: string }) {
                 <Button isIconOnly onPress={toggleFavorite} radius="full" variant="bordered" className="border-none">
                     <motion.div
                         initial={false}
-                        animate={isStarred ? { rotate: 360 } : { rotate: 0 }}
-                        whileTap={{ scale: 1.2 }}
+                        animate={isStarred ? {rotate: 360} : {rotate: 0}}
+                        whileTap={{scale: 1.2}}
                         transition={{
                             type: 'spring',
                             stiffness: 300,
