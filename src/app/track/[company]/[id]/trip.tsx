@@ -270,8 +270,7 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
                             <p className="text-lg font-bold text-center">
                                 {trip.alertMessage}
                             </p>
-                        )
-                        }
+                        )}
 
                         <div className="flex flex-row justify-start sm:justify-center">
                             {trip.lastUpdate && (

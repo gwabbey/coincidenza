@@ -1,9 +1,8 @@
 "use client"
 
 import {Favorite} from "@/types";
-import {Button, Card, CardBody, CardHeader, Link} from "@heroui/react";
+import {Button, Card, CardBody, Link} from "@heroui/react";
 import {IconBus, IconTrain, IconTrash} from "@tabler/icons-react";
-import {AnimatePresence, motion} from "motion/react";
 import {useRouter} from "next/navigation";
 
 export function Favorites({favorites}: { favorites: Favorite[] }) {
@@ -41,46 +40,35 @@ export function Favorites({favorites}: { favorites: Favorite[] }) {
         router.refresh();
     }
 
-    return (<Card className="p-2 max-w-2xl w-full">
-            <CardHeader className="pb-0">
-                <div className="text-2xl font-bold text-center mx-auto">⭐️ preferiti</div>
-            </CardHeader>
+    return (<Card className="p-4 max-w-4xl w-full">
+            <div className="text-2xl font-bold text-center mx-auto">
+                ⭐️ luoghi preferiti ⭐
+            </div>
             <CardBody>
-                <AnimatePresence initial={false}>
-                    {favorites.length ? favorites.slice()
-                        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                        .map((favorite: Favorite) => (
-                            <motion.div
-                                key={`${favorite.name}-${favorite.lat},${favorite.lon}`}
-                                transition={{duration: 0.3}}
-                                initial={{opacity: 0}}
-                                animate={{opacity: 1}}
-                                exit={{opacity: 0}}
-                                layout
-                            >
-                                <div className="flex justify-between items-center py-2">
-                                    <Link onPress={() => navigateToFavorite(favorite)}
-                                          className="cursor-pointer text-default-foreground gap-2">
-                                        {favorite.type === "train" ? <IconTrain /> : <IconBus />}
-                                        {favorite.name}
-                                    </Link>
-                                    <Button
-                                        isIconOnly
-                                        onPress={() => removeFavorite(favorite)}
-                                        startContent={<IconTrash />}
-                                        radius="full"
-                                        variant="flat"
-                                        color="danger"
-                                        className="border-none"
-                                    />
-                                </div>
-                            </motion.div>
-                        )) : (
-                        <p className="text-foreground-500">aggiungi una posizione nei preferiti per controllare le
-                            partenze da
-                            qui!</p>
-                    )}
-                </AnimatePresence>
+                {favorites.length ? favorites.slice()
+                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                    .map((favorite: Favorite) => (
+                        <div className="flex justify-between items-center py-2">
+                            <Link onPress={() => navigateToFavorite(favorite)}
+                                  className="cursor-pointer text-default-foreground gap-2">
+                                {favorite.type === "train" ? <IconTrain /> : <IconBus />}
+                                {favorite.name}
+                            </Link>
+                            <Button
+                                isIconOnly
+                                onPress={() => removeFavorite(favorite)}
+                                startContent={<IconTrash />}
+                                radius="full"
+                                variant="flat"
+                                color="danger"
+                                className="border-none"
+                            />
+                        </div>
+                    )) : (
+                    <p className="text-foreground-500">
+                        qui vedrai le tue fermate e stazioni preferite!
+                    </p>
+                )}
             </CardBody>
         </Card>
     )

@@ -38,7 +38,6 @@ export default function Directions() {
         }));
     };
 
-
     const handleSearch = async () => {
         if (!selectedLocations.from || !selectedLocations.to || !date || !time) return;
 

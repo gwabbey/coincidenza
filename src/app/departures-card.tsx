@@ -26,7 +26,7 @@ export default function DeparturesCard({
     ).sort((a, b) => b[1].length - a[1].length);
 
     return (
-        <NextLink href={`/departures/${id}`} className="w-full max-w-2xl cursor-pointer">
+        <NextLink href={`/departures/${id}`} className="w-full max-w-4xl cursor-pointer rounded-large">
             <Card className="flex flex-col gap-4 p-4 w-full">
                 <div className="text-2xl font-bold text-center mx-auto">
                     Prossime partenze da {departures.name}
@@ -52,12 +52,14 @@ export default function DeparturesCard({
                                                     {format(new Date(`1970-01-01T${train.departureTime}:00`).getTime() + Number(train.delay) * 60000, "HH:mm")}
                                                 </span>}
                                             </div>
-                                            <div
-                                                className={train.delay === "CANCELLATO" ? "text-danger font-bold" : ""}>
-                                                {train.delay === "CANCELLATO" ? "cancellato"
-                                                    : train.platform !== "Piazzale Esterno"
-                                                        ? `binario ${train.platform}`
-                                                        : "nel piazzale"}</div>
+                                            {train.platform !== "." && (
+                                                <div
+                                                    className={train.delay === "CANCELLATO" ? "text-danger font-bold" : ""}>
+                                                    {train.delay === "CANCELLATO" ? "cancellato"
+                                                        : train.platform !== "Piazzale Esterno"
+                                                            ? `binario ${train.platform}`
+                                                            : "nel piazzale"}</div>
+                                            )}
                                         </div>
                                     );
                                 })}

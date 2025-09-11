@@ -47,13 +47,11 @@ export default function Results({directions}: { directions: Directions }) {
         setSelectedKeys(new Set([]));
     }, [directions]);
 
-    console.log(directions)
-
     return (
         <Accordion variant="splitted" className="px-0 w-full mx-auto" selectedKeys={selectedKeys}
                    onSelectionChange={setSelectedKeys}>
             {directions.trips.map((trip, index) => (
-                <AccordionItem key={index} value={`item-${index}`} className="z-10"
+                <AccordionItem key={index} value={`item-${index}`} className="z-10 transition-colors"
                                title={
                                    <div className="flex flex-col gap-1">
                                        <Steps trip={trip} />
@@ -107,7 +105,7 @@ export default function Results({directions}: { directions: Directions }) {
                                                                     : leg.mode === "BUS" ? "#016FEE" : "red",
                                                                 padding: "0.1rem 0.5rem",
                                                                 textAlign: leg.routeColor ? "center" : "left",
-                                                                color: leg.routeColor ? "white" : "inherit",
+                                                                color: "white",
                                                             }}> {leg.routeShortName} {leg.tripShortName}
                                                         </span>
                                                         <span className="sm:text-lg text-md font-bold">

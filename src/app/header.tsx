@@ -89,7 +89,7 @@ export function Header() {
                 }
                 onPress={handleClick}
                 isDisabled={isLoading}
-                className="fixed bottom-5 right-5 p-2 border-gray-500 border-1 z-20"
+                className="fixed bottom-5 right-5 p-2 border-gray-500 border-1 z-20 backdrop-blur-lg"
             />
         </div>
     );
