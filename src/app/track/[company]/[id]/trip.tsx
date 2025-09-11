@@ -367,7 +367,7 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
                                             <div className="flex-col">
                                                 <NextLink
                                                     className={`break-words font-bold ${stop.status === "canceled" ? "line-through" : ""}`}
-                                                    href={`/departures-card.tsx/${findMatchingStation(stop.name) ?? ""}`}>
+                                                    href={`/departures/${findMatchingStation(stop.name) ?? ""}`}>
                                                     {stop.name}
                                                 </NextLink>
 

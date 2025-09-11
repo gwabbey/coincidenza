@@ -78,7 +78,6 @@ const processTripData = async (data: {
         data.itineraries.map(async (trip) => {
             const processedLegs = (await Promise.all(
                 trip.legs.map(async (originalLeg) => {
-                    console.log(originalLeg.tripId)
                     return {
                         ...originalLeg,
                         headsign: capitalize(originalLeg.headsign || ""),
