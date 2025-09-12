@@ -41,12 +41,10 @@ services:
 
   motis:
     container_name: motis
-    build:
-      context: ../motis
+    build: ../motis
     volumes:
-      - ./motis:/app
-      - motis-data:/app/data
-      - ~/.ssh/id_rsa:/root/.ssh/id_rsa:ro
+      - ../motis:/app
+      - ../motis/motis-src:/src/motis
     working_dir: /app
     command: >
       sh -c "./motis import && ./motis server"
