@@ -4,7 +4,6 @@ networks:
 
 volumes:
   pgdata: { }
-  motis-data: { }
 
 services:
   trasporti:
@@ -16,7 +15,6 @@ services:
     networks:
       - web
     depends_on:
-      - motis
       - postgres
 
   postgres:
@@ -35,19 +33,6 @@ services:
   redis:
     container_name: trasporti-redis
     image: redis:8
-    restart: always
-    networks:
-      - web
-
-  motis:
-    container_name: motis
-    build: ../motis
-    volumes:
-      - ../motis:/app
-      - ../motis/motis-src:/src/motis
-    working_dir: /app
-    command: >
-      sh -c "./motis import && ./motis server"
     restart: always
     networks:
       - web
