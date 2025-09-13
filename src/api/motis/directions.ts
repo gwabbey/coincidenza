@@ -191,7 +191,7 @@ const processTripData = async (data: {
 async function geocodeLocation({lat, lon, text}: GeocodeRequest): Promise<string> {
     try {
         const {data} = await axios.get<GeocodeResult[]>(
-            `http://${MOTIS}/api/v1/geocode?place=${lat},${lon}&text=${text}&language=it`
+            `${MOTIS}/api/v1/geocode?place=${lat},${lon}&text=${text}&language=it`
         );
 
         if (data.length > 0) {
@@ -230,7 +230,7 @@ export async function getDirections(
         ]);
 
         const {data, status} = await axios.get(
-            `http://${MOTIS}/api/v4/plan?fromPlace=${fromPlace}&toPlace=${toPlace}&time=${dateTime}&maxPreTransitTime=3600&maxPostTransitTime=3600${pageCursor ? `&pageCursor=${pageCursor}` : ""}`
+            `${MOTIS}/api/v4/plan?fromPlace=${fromPlace}&toPlace=${toPlace}&time=${dateTime}&maxPreTransitTime=3600&maxPostTransitTime=3600${pageCursor ? `&pageCursor=${pageCursor}` : ""}`
         );
 
         if (status !== 200) {
