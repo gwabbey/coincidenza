@@ -65,7 +65,7 @@ export function Favorites({favorites}: { favorites: Favorite[] }) {
                             />
                         </div>
                     )) : (
-                    <p className="text-foreground-500">
+                    <p className="text-center text-foreground-500">
                         qui vedrai le tue fermate e stazioni preferite!
                     </p>
                 )}
