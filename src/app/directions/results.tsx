@@ -236,7 +236,7 @@ export default function Results({directions}: { directions: Directions }) {
                                                 }]} active={-1} />
                                             <div
                                                 className="flex flex-row md:flex-col md:justify-start justify-between gap-4 w-full max-w-2xl">
-                                                {leg.realTime?.info?.length > 0 && (
+                                                {leg.realTime && leg.realTime.info && leg.realTime.info.length > 0 && (
                                                     <Accordion isCompact>
                                                         <AccordionItem key={1} title="Avvisi"
                                                                        classNames={{
