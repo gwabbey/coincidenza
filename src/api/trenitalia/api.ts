@@ -5,7 +5,6 @@ import {Trip} from "../types";
 import {getMonitor} from "./monitor";
 import stationLocations from "@/station-locations.json";
 import stations from "@/stations.json";
-import {Info} from "@/api/motis/types";
 
 interface RfiItem {
     title: string;
@@ -308,10 +307,10 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
             };
         }),
         info: info ? info
-            .map((alert: Info) => ({
+            .map((alert: any) => ({
                 message: alert.infoNote, date: timestampToIso(alert.insertTimestamp), source: "Viaggiatreno"
             }))
-            .filter((alert: Info, i: number, self: Info[]) => self.findIndex(a => a.message === alert.message) === i) : []
+            .filter((alert: any, i: number, self: any[]) => self.findIndex(a => a.message === alert.message) === i) : []
     }
 }
 
