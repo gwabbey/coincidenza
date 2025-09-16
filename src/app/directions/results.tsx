@@ -236,12 +236,12 @@ export default function Results({directions}: { directions: Directions }) {
                                                 }]} active={-1} />
                                             <div
                                                 className="flex flex-row md:flex-col md:justify-start justify-between gap-4 w-full max-w-2xl">
-                                                {leg.realTime.info.length > 0 && (
+                                                {leg.realTime?.info?.length > 0 && (
                                                     <Accordion isCompact>
                                                         <AccordionItem key={1} title="Avvisi"
                                                                        classNames={{
                                                                            indicator: "text-foreground",
-                                                                           title: "font-bold sticky"
+                                                                           title: "font-bold"
                                                                        }}
                                                                        startContent={<IconAlertTriangle />}
                                                                        className="bg-warning-500 bg-opacity-50 px-4 rounded-large max-h-64 overflow-scroll">

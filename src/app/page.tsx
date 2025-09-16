@@ -1,4 +1,4 @@
-import {getClosestStation, getRfiAlerts, getRfiNotices} from "@/api/trenitalia/api";
+import {getNearestStation, getRfiAlerts, getRfiNotices} from "@/api/trenitalia/api";
 import {cookies} from "next/headers";
 import {getMonitor} from "@/api/trenitalia/monitor";
 import {Button, Card, CardBody, Link} from "@heroui/react";
@@ -13,7 +13,7 @@ export default async function Page() {
     const favorites = JSON.parse(decodeURIComponent(cookieStore.get('favorites')?.value ?? '[]'));
     const userLat = cookieStore.get('userLat')?.value ?? "";
     const userLon = cookieStore.get('userLon')?.value ?? "";
-    const {rfiId, vtId} = getClosestStation(Number(userLat), Number(userLon));
+    const {rfiId, vtId} = getNearestStation(Number(userLat), Number(userLon));
 
     const departures = await getMonitor(rfiId, vtId);
     const alerts = await getRfiAlerts(["Trentino Alto Adige"]);

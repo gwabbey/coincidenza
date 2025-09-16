@@ -314,7 +314,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
     }
 }
 
-export function getClosestStation(userLat: number, userLon: number): { rfiId: string, vtId: string } {
+export function getNearestStation(userLat: number, userLon: number): { rfiId: string, vtId: string } {
     let nearest = stationLocations[0];
     let minDistance = getDistance(userLat, userLon, nearest.lat, nearest.lon);
 
