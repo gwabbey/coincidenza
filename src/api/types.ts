@@ -1,3 +1,5 @@
+import {Info} from "@/api/motis/types";
+
 export interface Trip {
     currentStopIndex: number,
     lastKnownLocation: string | null,
@@ -31,13 +33,6 @@ export interface Stop {
     scheduledPlatform: string | null;
     actualPlatform: string | null;
     status: "regular" | "not_planned" | "canceled";
-}
-
-export interface Info {
-    id: number;
-    message: string;
-    url: string;
-    date: string;
 }
 
 export interface Train {

@@ -1,8 +1,8 @@
 import "./globals.css";
-import {Header} from "./header";
 import Providers from "./providers";
 import {ViewTransitions} from "next-view-transitions";
 import React from "react";
+import Header from "@/app/header";
 
 export const metadata = {
     title: 'trasporti.g3b.dev',

@@ -13,6 +13,7 @@ import {LocationAutocomplete} from "./autocomplete";
 import Results from "./results";
 import {formatDuration} from "@/utils";
 import {format} from "date-fns";
+import {I18nProvider} from "@react-aria/i18n";
 
 interface SelectedLocations {
     from: Location | null;
@@ -90,8 +91,8 @@ export default function Directions() {
 
     return (
         <div className="flex flex-col gap-4">
-            <h1 className="text-2xl font-bold text-center">Cerca itinerario</h1>
-            <div className="flex flex-col md:flex-row justify-center items-center gap-4">
+            <h1 className="text-2xl font-bold text-center">cerca itinerario</h1>
+            <div className="flex flex-col md:flex-row justify-center items-center gap-x-4">
                 <LocationAutocomplete
                     name="from"
                     label="partenza"
@@ -105,36 +106,38 @@ export default function Directions() {
                     onLocationSelect={(location) => handleLocationSelect('to', location)}
                 />
                 <div className="flex flex-row justify-center items-center gap-4 max-w-md w-full">
-                    <DateInput
-                        variant="underlined"
-                        label="data"
-                        classNames={{label: "text-sm"}}
-                        size="lg"
-                        isInvalid={new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()) > date}
-                        defaultValue={new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate())}
-                        onChange={(date) => setDate(date instanceof CalendarDate ? date : new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()))}
-                    />
-                    <TimeInput
-                        variant="underlined"
-                        label="ora"
-                        classNames={{label: "text-sm"}}
-                        size="lg"
-                        hourCycle={24}
-                        defaultValue={new Time(new Date().getHours(), new Date().getMinutes())}
-                        onChange={(time) => setTime(time instanceof Time ? time : new Time(new Date().getHours(), new Date().getMinutes()))}
-                    />
+                    <I18nProvider locale="it-IT">
+                        <DateInput
+                            variant="underlined"
+                            label="data"
+                            classNames={{label: "text-sm"}}
+                            size="lg"
+                            isInvalid={new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()) > date}
+                            defaultValue={new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate())}
+                            onChange={(date) => setDate(date instanceof CalendarDate ? date : new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()))}
+                        />
+                        <TimeInput
+                            variant="underlined"
+                            label="ora"
+                            classNames={{label: "text-sm"}}
+                            size="lg"
+                            hourCycle={24}
+                            defaultValue={new Time(new Date().getHours(), new Date().getMinutes())}
+                            onChange={(time) => setTime(time instanceof Time ? time : new Time(new Date().getHours(), new Date().getMinutes()))}
+                        />
+                    </I18nProvider>
                 </div>
             </div>
             <Button
                 onPress={handleSearch}
                 variant="ghost"
                 color="primary"
-                className="self-center font-bold max-w-md md:max-w-32 w-full"
-                startContent={!isLoading && <IconSearch stroke={1.5} />}
+                className="self-center font-bold max-w-md md:max-w-32 w-full text-lg"
+                startContent={!isLoading && <IconSearch stroke={2} className="shrink-0" />}
                 isDisabled={!selectedLocations.from || !selectedLocations.to || !date || !time || isLoading || (selectedLocations && isSameLocation) || new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()) > date}
                 isLoading={isLoading}
             >
-                {!isLoading && "cerca!"}
+                {!isLoading && "cerca"}
             </Button>
 
             {error && (

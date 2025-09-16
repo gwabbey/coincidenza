@@ -303,7 +303,7 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
                     )
                 }
 
-                < Divider className="my-2" />
+                <Divider className="my-2" />
             </div>
 
             {

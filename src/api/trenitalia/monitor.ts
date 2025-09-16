@@ -102,7 +102,7 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
             const departureTime = $(element).find('td[id="ROrario"]').text().trim();
 
             let delay = $(element).find('td[id="RRitardo"]').text().trim() || '0';
-            const platform = category === "autocorsa"
+            const platform = category === "autocorsa" || category === "bus"
                 ? "Piazzale Esterno"
                 : $(element).find('td[id="RBinario"] div').text().trim();
             const departing =
@@ -129,7 +129,7 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
                 if (category.startsWith('servizio ferroviario metropolitano')) {
                     return category.replace('servizio ferroviario metropolitano linea', 'SFM');
                 }
-                return trainCategoryShortNames[category];
+                return trainCategoryShortNames[category] || category.toUpperCase();
             };
 
             const shortCategory = getShortCategory(category);
@@ -137,8 +137,9 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
             let company = $(element).find('td[id="RVettore"] img').attr('alt')?.toLowerCase()?.trim() || "";
             const getCompany = (company: string): string => {
                 if (company.startsWith("regionale")) return "Trenitalia"
-                if (company === 'ente volturno autonomo') return 'EAV';
+                if (company === 'tt') return 'Trentino Trasporti';
                 if (company === 'sad - trasporto locale spa') return 'SAD';
+                if (company === 'ente volturno autonomo') return 'EAV';
                 if (company.startsWith('obb')) return 'ÖBB';
                 return capitalize(company);
             };

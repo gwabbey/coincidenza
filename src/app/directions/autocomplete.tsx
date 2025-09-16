@@ -4,7 +4,7 @@ import {geocodeAddress} from "@/api/apple-maps/geolocation";
 import {searchStation} from "@/api/bahn/api";
 import {Location} from "@/types";
 import {capitalize} from "@/utils";
-import {addToast, Autocomplete, AutocompleteItem, Spinner} from "@heroui/react";
+import {addToast, Autocomplete, AutocompleteItem, Button, cn, Spinner} from "@heroui/react";
 import {IconMapPin, IconTrain} from "@tabler/icons-react";
 import {Key, useEffect, useState} from "react";
 import {useDebouncedCallback} from 'use-debounce';
@@ -30,7 +30,7 @@ export const LocationAutocomplete = ({
                                          ref
                                      }: Props) => {
     const [value, setValue] = useState(selected);
-    const [data, setData] = useState<Location[]>([]);
+    const [items, setItems] = useState<Location[]>([]);
     const [loading, setLoading] = useState(false);
     const [userLocation, setUserLocation] = useState<{ lat: number, lon: number } | null>(null);
     const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
@@ -65,15 +65,15 @@ export const LocationAutocomplete = ({
 
         if (key === 'current-location') {
             try {
+                const locationLabel = 'Posizione attuale';
+                setValue(locationLabel);
+
                 const position = await getCurrentPosition();
                 const coords = {
                     lat: position.coords.latitude,
                     lon: position.coords.longitude
                 };
                 setUserLocation(coords);
-
-                const locationLabel = 'Posizione attuale';
-                setValue(locationLabel);
 
                 const locationData = {
                     value: 'current-location',
@@ -84,10 +84,7 @@ export const LocationAutocomplete = ({
 
                 setSelectedLocation(locationData);
                 onLocationSelect(locationData);
-
-                setTimeout(() => {
-                    nextInputRef?.current?.focus();
-                }, 50);
+                nextInputRef?.current?.focus();
 
                 return;
             } catch (error) {
@@ -100,21 +97,18 @@ export const LocationAutocomplete = ({
                     : "Errore nel recupero della posizione.";
 
                 addToast({title: errorMessage});
-                console.error('Error getting current position:', error);
                 return;
             }
         }
 
-        const selected = data.find(item => item.value === key);
+        const selected = items.find(item => item.value === key);
         if (selected) {
             const displayValue = typeof selected.label === 'string' ? selected.label : selected.textValue || '';
 
             setValue(displayValue);
             setSelectedLocation(selected);
             onLocationSelect(selected);
-            setTimeout(() => {
-                nextInputRef?.current?.focus();
-            }, 50);
+            nextInputRef?.current?.focus();
         }
     };
 
@@ -131,7 +125,7 @@ export const LocationAutocomplete = ({
 
     const fetchData = useDebouncedCallback(async (query: string) => {
         if (!query || query.trim().length === 0) {
-            setData([]);
+            setItems([]);
             return;
         }
 
@@ -171,28 +165,33 @@ export const LocationAutocomplete = ({
                 }
             }));
 
-            setData([...bahnStationLocations, ...locations]);
+            const currentLocationOption = {
+                value: 'current-location',
+                label: 'Posizione attuale',
+                textValue: 'Posizione attuale',
+                coordinates: null
+            };
+
+            setItems([currentLocationOption, ...bahnStationLocations, ...locations]);
         } catch (error) {
             if ((error as Error).name === 'AbortError') {
-                console.log("Request aborted");
                 return;
             }
-            console.error("Error fetching location data:", error);
+            addToast({title: "Errore durante la ricerca."});
         } finally {
             setLoading(false);
         }
     }, debounceDelay);
 
-    const currentLocationItem: Location = {
-        value: 'current-location',
-        label: <div className="flex flex-row items-center gap-2 font-bold">
-            <IconMapPin stroke={1.5} />Posizione attuale
-        </div>,
-        textValue: 'Posizione attuale',
-        coordinates: userLocation ?? {lat: 0, lon: 0}
-    };
-
-    const allItems = [currentLocationItem, ...data];
+    useEffect(() => {
+        const currentLocationOption = {
+            value: 'current-location',
+            label: 'Posizione attuale',
+            textValue: 'Posizione attuale',
+            coordinates: {lat: 0, lon: 0}
+        };
+        setItems([currentLocationOption]);
+    }, []);
 
     return (
         <Autocomplete
@@ -200,13 +199,23 @@ export const LocationAutocomplete = ({
             selectedKey={selectedLocation?.value}
             value={value}
             allowsCustomValue
+            selectorIcon={<></>}
             variant="underlined"
             onInputChange={onInputChange}
             onSelectionChange={onSelectionChange}
             isDisabled={disabled}
-            endContent={loading && <Spinner size="sm" color="default" />}
+            endContent={loading ?
+                <Spinner size="sm" color="default" /> : (
+                    <Button isIconOnly startContent={<IconMapPin className="shrink-0" />} radius="full"
+                            variant="light" size="sm"
+                            onPress={() => onSelectionChange("current-location")} />
+                )}
             className="max-w-md"
-            items={allItems}
+            classNames={{
+                selectorButton: "hidden",
+                endContentWrapper: "mr-0"
+            }}
+            items={items}
             ref={ref}
             listboxProps={{
                 emptyContent: "nessun risultato."
@@ -217,12 +226,13 @@ export const LocationAutocomplete = ({
                 <AutocompleteItem
                     key={item.value}
                     textValue={item.textValue || (typeof item.label === 'string' ? item.label : 'Posizione attuale')}
-                    startContent={item.isBahnStation ? <IconTrain stroke={1.5} /> : undefined}
+                    startContent={item.isBahnStation ? <IconTrain stroke={1.5} /> :
+                        item.value === 'current-location' ? <IconMapPin stroke={1.5} /> : undefined}
                 >
                     {typeof item.label === 'string' ? (
                         <div className="flex flex-col">
-                            <span>{item.label}</span>
-                            <span className="text-sm text-default-400">{item.address}</span>
+                            <span className={cn(item.label === "Posizione attuale" && "font-bold")}>{item.label}</span>
+                            {item.address && <span className="text-sm text-default-400">{item.address}</span>}
                         </div>
                     ) : item.label}
                 </AutocompleteItem>

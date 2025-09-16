@@ -1,12 +1,11 @@
 "use client"
-
 import {Favorite} from "@/types";
 import {Button, Card, CardBody, Link} from "@heroui/react";
 import {IconBus, IconTrain, IconTrash} from "@tabler/icons-react";
-import {useRouter} from "next/navigation";
+import {useTransitionRouter} from "next-view-transitions";
 
 export function Favorites({favorites}: { favorites: Favorite[] }) {
-    const router = useRouter();
+    const router = useTransitionRouter();
     if (!favorites) return null;
 
     function navigateToFavorite(favorite: Favorite) {

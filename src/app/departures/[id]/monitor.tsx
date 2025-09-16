@@ -11,7 +11,7 @@ import {useEffect, useState} from 'react';
 function getTrackUrl(company: string, id: string, category?: string): string | null {
     const normalizedCompany = company.toLowerCase().trim();
 
-    if ((category == "railjet" || category == "eurocity") && normalizedCompany == "trenord") {
+    if ((category == "railjet" || category == "eurocity" || category == "ec" || category == "rj") && normalizedCompany == "trenord") {
         return `/track/trenitalia/${id}`;
     }
 
@@ -30,6 +30,8 @@ function getTrackUrl(company: string, id: string, category?: string): string | n
     switch (normalizedCompany) {
         case "trenord":
             return `/track/trenord/${id}`;
+        case "trentino trasporti":
+            return null;
         case "sad":
             return null;
         case "italo":

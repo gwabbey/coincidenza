@@ -1,4 +1,3 @@
-"use client"
 import {type StationMonitor} from "@/api/types";
 import stations from "@/stations.json";
 import {capitalize, getDelayColor} from "@/utils";
@@ -29,7 +28,7 @@ export default function DeparturesCard({
         <NextLink href={`/departures/${id}`} className="w-full max-w-4xl cursor-pointer rounded-large">
             <Card className="flex flex-col gap-4 p-4 w-full">
                 <div className="text-2xl font-bold text-center mx-auto">
-                    Prossime partenze da {departures.name}
+                    prossime partenze da {departures.name}
                 </div>
 
                 <div className="flex flex-col gap-4">

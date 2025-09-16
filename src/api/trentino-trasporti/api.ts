@@ -101,6 +101,7 @@ export async function getRoutes(type: string) {
 export async function getTrip(id: string) {
     const trip = await fetchData(`trips/${id}`);
     if (!trip) return null;
+    
     return {
         id: trip.tripId,
         delay: trip.delay,

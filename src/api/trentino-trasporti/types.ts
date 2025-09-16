@@ -1,8 +1,3 @@
-export interface Coordinates {
-    lat: number;
-    lon: number;
-}
-
 export interface Stop {
     stopId: number;
     stopName: string;

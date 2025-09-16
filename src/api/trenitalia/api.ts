@@ -5,6 +5,7 @@ import {Trip} from "../types";
 import {getMonitor} from "./monitor";
 import stationLocations from "@/station-locations.json";
 import stations from "@/stations.json";
+import {Info} from "@/api/motis/types";
 
 interface RfiItem {
     title: string;
@@ -18,8 +19,7 @@ const timestampToIso = (timestamp: number | null) => timestamp ? new Date(timest
 async function getRfiData(url: string, regions?: string[], dateFilter?: (date: Date) => boolean): Promise<RfiItem[]> {
     const {data} = await axios.get(url, {responseType: "text"});
     const parsed = await parseStringPromise(data, {
-        explicitArray: false,
-        mergeAttrs: true,
+        explicitArray: false, mergeAttrs: true,
     });
 
     if (!parsed) return [];
@@ -33,33 +33,18 @@ async function getRfiData(url: string, regions?: string[], dateFilter?: (date: D
             pubDate: timestampToIso(item.pubDate),
             regions: item["rfi:region"]?.split(",").map((r: string) => r.trim()),
         }))
-        .filter((item: any) =>
-            (!regions?.length || item.regions?.some((r: string) => regions.includes(r))) &&
-            (!dateFilter || dateFilter(item.pubDate))
-        );
+        .filter((item: any) => (!regions?.length || item.regions?.some((r: string) => regions.includes(r))) && (!dateFilter || dateFilter(item.pubDate)));
 }
 
 export async function getRfiAlerts(regions?: string[]): Promise<RfiItem[]> {
-    return getRfiData(
-        "https://www.rfi.it/content/rfi/it/news-e-media/infomobilita.rss.updates.xml",
-        regions,
-        date => {
-            const pub = new Date(date);
-            return pub.toDateString() === new Date().toDateString();
-        }
-    );
+    return getRfiData("https://www.rfi.it/content/rfi/it/news-e-media/infomobilita.rss.updates.xml", regions, date => {
+        const pub = new Date(date);
+        return pub.toDateString() === new Date().toDateString();
+    });
 }
 
 export async function getRfiNotices(regions?: string[]): Promise<RfiItem[]> {
-    return getRfiData(
-        "https://www.rfi.it/content/rfi/it/news-e-media/infomobilita.rss.notices.xml",
-        regions
-    );
-}
-
-export async function searchStation(query: string) {
-    const {data} = await axios.get(`https://app.lefrecce.it/Channels.Website.BFF.WEB/app/locations?name=${query}&limit=5&multi=false`);
-    return data;
+    return getRfiData("https://www.rfi.it/content/rfi/it/news-e-media/infomobilita.rss.notices.xml", regions);
 }
 
 export async function getTripSmartCaring(code: string, origin: string, date: string) {
@@ -116,14 +101,8 @@ export async function getMonitorTrip(rfiId: string, tripId: string) {
 }
 
 
-export async function getActualTrip(
-    id: string,
-    company: string,
-    date: Date = new Date()
-) {
-    const {data} = await axios.get<string>(
-        `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`
-    );
+export async function getActualTrip(id: string, company: string, date: Date = new Date()) {
+    const {data} = await axios.get<string>(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`);
 
     if (!data?.trim()) return null;
 
@@ -148,37 +127,23 @@ export async function getActualTrip(
 
     if (parsed.length === 0) return null;
 
-    const midnightTimestamp = new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate()
-    ).getTime();
+    const midnightTimestamp = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 
     const candidates = parsed.filter((t) => t.timestamp === midnightTimestamp);
     const tripsToCheck = candidates.length > 0 ? candidates : parsed;
 
-    const results = await Promise.allSettled(
-        tripsToCheck.map((t) =>
-            axios
-                .get(
-                    `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${t.origin}/${t.code}/${t.timestamp}`
-                )
-                .then((res) => ({
-                    trip: t,
-                    codiceCliente: res.data?.codiceCliente as number | undefined,
-                }))
-        )
-    );
+    const results = await Promise.allSettled(tripsToCheck.map((t) => axios
+        .get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${t.origin}/${t.code}/${t.timestamp}`)
+        .then((res) => ({
+            trip: t, codiceCliente: res.data?.codiceCliente as number | undefined,
+        }))));
 
-    // Pick the first one where codiceCliente matches
     for (const r of results) {
         if (r.status === "fulfilled") {
             const {trip, codiceCliente} = r.value;
             if (codiceCliente !== undefined && clients[codiceCliente] === company) {
                 return {
-                    origin: trip.origin,
-                    id: trip.code,
-                    timestamp: trip.timestamp,
+                    origin: trip.origin, id: trip.code, timestamp: trip.timestamp,
                 };
             }
         }
@@ -188,9 +153,7 @@ export async function getActualTrip(
 }
 
 export async function guessTrip(id: string, headsign: string, date: Date) {
-    const {data} = await axios.get<string>(
-        `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`
-    );
+    const {data} = await axios.get<string>(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`);
 
     if (!data?.trim()) return null;
 
@@ -211,40 +174,25 @@ export async function guessTrip(id: string, headsign: string, date: Date) {
 
             return {code: code.trim(), origin: origin.trim(), timestamp};
         })
-        .filter(
-            (t): t is { code: string; origin: string; timestamp: number } =>
-                t !== null
-        );
+        .filter((t): t is { code: string; origin: string; timestamp: number } => t !== null);
 
     if (parsed.length === 0) return null;
 
-    const midnightTimestamp = new Date(
-        date.getFullYear(),
-        date.getMonth(),
-        date.getDate()
-    ).getTime();
+    const midnightTimestamp = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 
     return getTrip(parsed[0].origin, id, midnightTimestamp);
 }
 
 export async function getTrip(origin: string, id: string, timestamp: number): Promise<Trip | null> {
     const formattedDate = new Intl.DateTimeFormat("it-IT", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
+        year: "numeric", month: "2-digit", day: "2-digit",
     })
         .format(new Date(timestamp))
         .split("/")
         .reverse()
         .join("-");
 
-    const [response, info, canvas] = await Promise.all([
-        axios.get(
-            `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${id}/${timestamp}`
-        ),
-        getTripSmartCaring(id, origin, formattedDate),
-        getTripCanvas(id, origin, timestamp),
-    ]);
+    const [response, info, canvas] = await Promise.all([axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${id}/${timestamp}`), getTripSmartCaring(id, origin, formattedDate), getTripCanvas(id, origin, timestamp),]);
 
     if (response.status !== 200) return null;
 
@@ -258,8 +206,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
     let lastKnownLocation = capitalize(trip.stazioneUltimoRilevamento || "--");
 
     if (currentStop?.fermata) {
-        const isStationed = (currentStop?.fermata.arrivoReale && !currentStop?.fermata.partenzaReale) ||
-            (currentStop?.fermata.progressivo === 1 && trip.nonPartito);
+        const isStationed = (currentStop?.fermata.arrivoReale && !currentStop?.fermata.partenzaReale) || (currentStop?.fermata.progressivo === 1 && trip.nonPartito);
 
         if (isStationed) {
             delay = currentStop?.fermata.ritardoArrivo;
@@ -267,9 +214,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
 
         const scheduled = new Date(currentStop.fermata.partenzaReale);
         const delta = scheduled.getTime() - now;
-        const isDepartingNow = currentStop.fermata.partenzaReale &&
-            currentStop.fermata.arrivoReale &&
-            Math.abs(delta) <= 60000;
+        const isDepartingNow = currentStop.fermata.partenzaReale && currentStop.fermata.arrivoReale && Math.abs(delta) <= 60000;
 
         if (isDepartingNow && delay !== currentStop?.fermata.ritardoPartenza) {
             delay = currentStop?.fermata.ritardoPartenza;
@@ -292,11 +237,9 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
         return null;
     };
 
-    const isLateForDeparture = currentStop?.fermata && !currentStop?.fermata.partenzaReale &&
-        (currentStop?.fermata.partenza_teorica + trip.ritardo * 60000 < now);
+    const isLateForDeparture = currentStop?.fermata && !currentStop?.fermata.partenzaReale && (currentStop?.fermata.partenza_teorica + trip.ritardo * 60000 < now);
 
-    const isLateForArrival = !isLateForDeparture && nextStop?.fermata && !nextStop?.fermata.arrivoReale &&
-        (nextStop?.fermata.arrivo_teorico + trip.ritardo * 60000 < now);
+    const isLateForArrival = !isLateForDeparture && nextStop?.fermata && !nextStop?.fermata.arrivoReale && (nextStop?.fermata.arrivo_teorico + trip.ritardo * 60000 < now);
 
     let rfiDelay = null;
 
@@ -308,12 +251,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
 
     if (rfiDelay !== null) {
         delay = rfiDelay;
-    } else if (
-        currentStop?.fermata &&
-        !currentStop?.fermata.partenzaReale &&
-        currentStop?.fermata.partenza_teorica &&
-        currentStop?.fermata.arrivoReale
-    ) {
+    } else if (currentStop?.fermata && !currentStop?.fermata.partenzaReale && currentStop?.fermata.partenza_teorica && currentStop?.fermata.arrivoReale) {
         const scheduledDeparture = currentStop.fermata.partenza_teorica;
         const diff = now - scheduledDeparture;
 
@@ -326,19 +264,13 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
     }
 
     if (currentStop?.fermata) {
-        const arrival = currentStop.fermata.arrivoReale
-            ? new Date(currentStop.fermata.arrivoReale).getTime()
-            : null;
+        const arrival = currentStop.fermata.arrivoReale ? new Date(currentStop.fermata.arrivoReale).getTime() : null;
 
-        const departure = currentStop.fermata.partenzaReale
-            ? new Date(currentStop.fermata.partenzaReale).getTime()
-            : null;
+        const departure = currentStop.fermata.partenzaReale ? new Date(currentStop.fermata.partenzaReale).getTime() : null;
 
         const now = Date.now();
 
-        const closeToStation =
-            (arrival && !departure && now - arrival < 60 * 1000) ||
-            (departure && now - departure < 60 * 1000);
+        const closeToStation = (arrival && !departure && now - arrival < 60 * 1000) || (departure && now - departure < 60 * 1000);
 
         if (closeToStation) {
             lastKnownLocation = capitalize(currentStop.stazione);
@@ -349,11 +281,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
         currentStopIndex,
         delay,
         lastKnownLocation,
-        lastUpdate: currentStop?.fermata?.partenzaReale > trip.oraUltimoRilevamento
-            ? timestampToIso(currentStop.fermata.partenzaReale)
-            : currentStop?.fermata?.arrivoReale > trip.oraUltimoRilevamento
-                ? timestampToIso(currentStop.fermata.arrivoReale)
-                : trip.oraUltimoRilevamento ? timestampToIso(trip.oraUltimoRilevamento) : null,
+        lastUpdate: currentStop?.fermata?.partenzaReale > trip.oraUltimoRilevamento ? timestampToIso(currentStop.fermata.partenzaReale) : currentStop?.fermata?.arrivoReale > trip.oraUltimoRilevamento ? timestampToIso(currentStop.fermata.arrivoReale) : trip.oraUltimoRilevamento ? timestampToIso(trip.oraUltimoRilevamento) : null,
         status: getTripStatus(trip, canvas),
         category: getCategory(trip),
         number: trip.numeroTreno,
@@ -379,17 +307,11 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
                 status: getStopStatus(stop),
             };
         }),
-        info: info
-            ? info
-                .map((alert: any) => ({
-                    id: alert.id,
-                    message: alert.infoNote,
-                    date: timestampToIso(alert.insertTimestamp)
-                }))
-                .filter((alert: any, i: number, self: any[]) =>
-                    self.findIndex(a => a.message === alert.message) === i
-                )
-            : []
+        info: info ? info
+            .map((alert: Info) => ({
+                message: alert.infoNote, date: timestampToIso(alert.insertTimestamp), source: "Viaggiatreno"
+            }))
+            .filter((alert: Info, i: number, self: Info[]) => self.findIndex(a => a.message === alert.message) === i) : []
     }
 }
 
@@ -410,8 +332,7 @@ export function getClosestStation(userLat: number, userLon: number): { rfiId: st
 
     if (!nomeLungo && !nomeBreve) {
         return {
-            rfiId: "",
-            vtId: "",
+            rfiId: "", vtId: "",
         }
     }
 
@@ -420,21 +341,14 @@ export function getClosestStation(userLat: number, userLon: number): { rfiId: st
         const normalizedNomeLungo = nomeLungo ? normalizeStationName(nomeLungo) : '';
         const normalizedNomeBreve = nomeBreve ? normalizeStationName(nomeBreve) : '';
 
-        if (normalizedStationName === normalizedNomeLungo ||
-            normalizedStationName === normalizedNomeBreve ||
-            normalizedStationName.includes(normalizedNomeLungo) ||
-            normalizedStationName.includes(normalizedNomeBreve) ||
-            normalizedNomeLungo.includes(normalizedStationName) ||
-            normalizedNomeBreve.includes(normalizedStationName)) {
+        if (normalizedStationName === normalizedNomeLungo || normalizedStationName === normalizedNomeBreve || normalizedStationName.includes(normalizedNomeLungo) || normalizedStationName.includes(normalizedNomeBreve) || normalizedNomeLungo.includes(normalizedStationName) || normalizedNomeBreve.includes(normalizedStationName)) {
             return {
-                rfiId: id,
-                vtId: nearest.codiceStazione
+                rfiId: id, vtId: nearest.codiceStazione
             }
         }
     }
 
     return {
-        rfiId: "",
-        vtId: "",
+        rfiId: "", vtId: "",
     }
 }

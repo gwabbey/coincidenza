@@ -7,7 +7,7 @@ import {Directions, GeocodeRequest, GeocodeResult, Location, Trip} from './types
 import {trainCategoryShortNames} from "@/train-categories";
 import {differenceInMinutes} from "date-fns";
 
-const MOTIS = process.env.MOTIS || "localhost:8080";
+const MOTIS = process.env.MOTIS || "http://localhost:8080";
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371000;
@@ -80,6 +80,10 @@ const processTripData = async (data: {
                 trip.legs.map(async (originalLeg) => {
                     return {
                         ...originalLeg,
+                        intermediateStops: originalLeg.intermediateStops?.map((stop: any) => ({
+                            ...stop,
+                            name: capitalize(stop.name),
+                        })),
                         headsign: capitalize(originalLeg.headsign || ""),
                         routeShortName: originalLeg.routeShortName && (originalLeg.agencyId === "IT:ITH3:Operator:05403151003:Trenitalia:0"
                             ? trainCategoryShortNames[originalLeg.routeLongName!.toLowerCase()] :
@@ -151,22 +155,22 @@ const processTripData = async (data: {
                 );
 
                 const firstLeg = updatedLegs[0];
-                const lastLeg = updatedLegs[updatedLegs.length - 1];
+                const secondLeg = updatedLegs[1];
                 const prevLeg = updatedLegs[updatedLegs.length - 2];
+                const lastLeg = updatedLegs[updatedLegs.length - 1];
 
                 const firstStart =
-                    firstLeg.mode !== "WALK" && firstLeg.realTime?.delay
-                        ? new Date(firstLeg.scheduledStartTime).getTime() +
-                        firstLeg.realTime.delay * 60000
-                        : new Date(trip.startTime).getTime();
+                    firstLeg?.mode !== "WALK" && firstLeg?.realTime?.delay
+                        ? new Date(firstLeg.scheduledStartTime).getTime() + firstLeg.realTime.delay * 60000
+                        : secondLeg?.mode !== "WALK" && secondLeg?.realTime?.delay
+                            ? new Date(firstLeg.scheduledStartTime).getTime() + secondLeg.realTime.delay * 60000
+                            : new Date(trip.startTime).getTime();
 
                 const lastEnd =
-                    lastLeg.mode !== "WALK" && lastLeg.realTime?.delay
-                        ? new Date(lastLeg.scheduledEndTime).getTime() +
-                        lastLeg.realTime.delay * 60000
-                        : prevLeg?.realTime?.delay
-                            ? new Date(lastLeg.scheduledEndTime).getTime() +
-                            prevLeg.realTime.delay * 60000
+                    lastLeg?.mode !== "WALK" && lastLeg?.realTime?.delay
+                        ? new Date(lastLeg.scheduledEndTime).getTime() + lastLeg.realTime.delay * 60000
+                        : prevLeg?.mode !== "WALK" && prevLeg?.realTime?.delay
+                            ? new Date(lastLeg.scheduledEndTime).getTime() + prevLeg.realTime.delay * 60000
                             : new Date(trip.endTime).getTime();
 
                 const duration = differenceInMinutes(new Date(lastEnd), new Date(firstStart));
@@ -218,7 +222,7 @@ export async function getDirections(
 ): Promise<Directions> {
     try {
         const resolvePlace = async (loc: Location): Promise<string> => {
-            if (loc.text.toLowerCase().trim() === "la tua posizione") {
+            if (loc.text.toLowerCase().trim() === "posizione attuale") {
                 return `${loc.lat},${loc.lon}`;
             }
             return geocodeLocation(loc);
@@ -230,7 +234,7 @@ export async function getDirections(
         ]);
 
         const {data, status} = await axios.get(
-            `${MOTIS}/api/v4/plan?fromPlace=${fromPlace}&toPlace=${toPlace}&time=${dateTime}&maxPreTransitTime=3600&maxPostTransitTime=3600${pageCursor ? `&pageCursor=${pageCursor}` : ""}`
+            `${MOTIS}/api/v4/plan?fromPlace=${fromPlace}&toPlace=${toPlace}&time=${dateTime}&maxPreTransitTime=1800&maxPostTransitTime=1800${pageCursor ? `&pageCursor=${pageCursor}` : ""}`
         );
 
         if (status !== 200) {

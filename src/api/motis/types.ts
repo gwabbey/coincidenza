@@ -135,9 +135,16 @@ export interface IntermediateStop {
     cancelled: boolean
 }
 
+export interface Info {
+    message: string;
+    url: string | null;
+    date: string;
+    source: string;
+}
+
 export interface RealTime {
     delay: number | null
-    // info: Info[] | null
+    info: Info[] | null
     tracked: boolean
     url: string | null
 }

@@ -1,5 +1,5 @@
 import {getTrip as getTrenitaliaTrip} from "@/api/trenitalia/api";
-// import { getTrip as getTrenitaliaTrip } from "@/api/trenord/api";
+// import { getTrip as getTrenordTrip } from "@/api/trenord/api";
 import {createSSEHandler} from "@/app/sse";
 import {NextRequest} from "next/server";
 
@@ -13,13 +13,11 @@ export async function GET(
     const timestampStr = searchParams.get('timestamp');
     const timestamp = timestampStr ? parseInt(timestampStr, 10) : undefined;
 
-    // Determine if this is a train or bus company
     const isTrainCompany = company === "trenitalia" || company === "trenord";
 
-    // Validate required parameters based on company type
     if (isTrainCompany && (!origin || !timestamp)) {
         return new Response(
-            JSON.stringify({error: "Train companies require origin and timestamp parameters"}),
+            JSON.stringify({error: "Origin station and timestamp parameters are required"}),
             {status: 400, headers: {'Content-Type': 'application/json'}}
         );
     }
@@ -29,19 +27,15 @@ export async function GET(
             switch (company) {
                 case "trenitalia":
                 case "trenord":
-                    // These require all three parameters
                     if (!origin || timestamp === undefined) {
-                        throw new Error("Missing required parameters for train API");
+                        throw new Error("Missing required parameters");
                     }
                     return getTrenitaliaTrip(origin, id, timestamp);
                 case "trentino-trasporti":
-                    // Bus API - only needs trip ID
-                    // return getTrentinoTrip(id)
-                    throw new Error("Trentino Trasporti API not implemented yet");
+                    throw new Error("coming soon, just give me a minute");
                 default:
-                    // Default to train API
                     if (!origin || timestamp === undefined) {
-                        throw new Error("Missing required parameters for default train API");
+                        throw new Error("Missing required parameters");
                     }
                     return getTrenitaliaTrip(origin, id, timestamp);
             }

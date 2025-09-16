@@ -1,5 +1,5 @@
 import {guessTrip} from "../trenitalia/api";
-import {getTrip as getTrentinoTrip} from "../trentino-trasporti/api";
+import {getTripDetails as getTrentinoTrip} from "../trentino-trasporti/api";
 import {Leg, RealTime} from "./types";
 
 function getTrackUrl(leg: Leg) {
@@ -24,10 +24,13 @@ export async function getRealTimeData(leg: Leg): Promise<RealTime> {
 
         return {
             delay: trip?.delay ?? null,
-            // info: trip?.route?.news?.map((alert: any) => ({
-            //     message: alert.header,
-            //     url: alert.url
-            // })) || null,
+            info: trip?.route?.news
+                ?.filter((alert: any) => new Date(alert.endDate) > new Date())
+                .map((alert: any) => ({
+                    message: alert.details,
+                    url: alert.url,
+                    source: `Avviso ${trip?.route?.news?.serviceType ?? "da Trentino Trasporti"}`
+                })) || null,
             tracked: trip ? trip.delay !== null : false,
             url: getTrackUrl(leg)
         }
@@ -38,13 +41,14 @@ export async function getRealTimeData(leg: Leg): Promise<RealTime> {
 
         return {
             delay: trip?.delay ?? null,
-            // info: trip?.info || null,
+            info: trip?.info || null,
             tracked: trip ? trip.delay !== null : false,
             url: getTrackUrl(leg)
         }
     }
     return {
         delay: null,
+        info: null,
         tracked: false,
         url: null
     }

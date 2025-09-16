@@ -1,15 +1,12 @@
 "use client";
 
 import {Directions, IntermediateStop, Leg} from "@/api/motis/types";
-import LeafletMap from "@/components/leaflet";
-import {RouteModal} from "@/components/modal";
 import Timeline from "@/components/timeline";
 import {formatDuration, getDelayColor} from "@/utils";
 import {Accordion, AccordionItem, Button, cn, Selection, useDisclosure} from "@heroui/react";
-import {IconAccessPoint, IconArrowRight, IconChevronDown, IconMap} from "@tabler/icons-react";
+import {IconAccessPoint, IconAlertTriangle, IconArrowRight, IconExternalLink, IconMap} from "@tabler/icons-react";
 import {format} from "date-fns";
-import {motion} from "motion/react";
-import {useEffect, useState} from "react";
+import {useState} from "react";
 import {TransportIcon} from "./icons";
 import Steps from "./steps";
 import {trainCategoryLongNames} from "@/train-categories";
@@ -43,9 +40,7 @@ export default function Results({directions}: { directions: Directions }) {
         }
     };
 
-    useEffect(() => {
-        setSelectedKeys(new Set([]));
-    }, [directions]);
+    console.log(directions)
 
     return (
         <Accordion variant="splitted" className="px-0 w-full mx-auto" selectedKeys={selectedKeys}
@@ -57,7 +52,7 @@ export default function Results({directions}: { directions: Directions }) {
                                        <Steps trip={trip} />
                                        <span className="font-bold text-2xl flex flex-row items-center gap-x-2">
                                            <span
-                                               className={cn(`text-${getDelayColor(trip.legs[trip.legs.length > 1 ? 1 : 0].realTime.delay)}`)}>
+                                               className={cn(`text-${getDelayColor(trip.legs[0]?.realTime?.delay ?? trip.legs[1]?.realTime?.delay ?? null)}`)}>
                                                {format(new Date(trip.startTime), "HH:mm")}
                                            </span>
                                            <IconArrowRight className="shrink-0" />
@@ -72,10 +67,9 @@ export default function Results({directions}: { directions: Directions }) {
                                subtitle={
                                    <div className="flex flex-col gap-1">
                                        {(() => {
-                                           let effectiveDuration = trip.duration;
                                            const firstLeg = trip.legs[0];
                                            const transfers = trip.legs.filter(leg => leg.mode !== "WALK").length - 1;
-                                           const duration = formatDuration(effectiveDuration);
+                                           const duration = formatDuration(trip.duration);
 
                                            if (trip.legs.length === 1 && firstLeg.mode === "WALK")
                                                return `circa ${duration} a piedi`;
@@ -122,7 +116,7 @@ export default function Results({directions}: { directions: Directions }) {
                                                 </span>
                                             </div>
                                         </div>
-                                        {leg.mode !== "WALK" && leg.realTime.url /*  && leg.realtime?.status === "tracked"  */ && (
+                                        {leg.mode !== "WALK" && leg.realTime.url && (
                                             <Button
                                                 as={Link}
                                                 href={leg.realTime.url}
@@ -150,7 +144,7 @@ export default function Results({directions}: { directions: Directions }) {
                                         )}
                                     </div>
                                     {leg.mode !== "WALK" && (
-                                        <div className="pl-10 flex flex-col gap-4">
+                                        <div className="pl-8 md:px-8 flex flex-col md:flex-row justify-between gap-4">
                                             {/* {leg.realTime && leg.realTime?.info.length > 0 && (
                                                 <Button
                                                     variant="flat"
@@ -163,38 +157,7 @@ export default function Results({directions}: { directions: Directions }) {
                                                 </Button>
                                             )} */}
 
-                                            {/* <LeafletMap leg={leg} className="hidden sm:flex rounded-small" /> */}
-
-                                            {/* <Button
-                                                variant="flat"
-                                                color="primary"
-                                                className="flex items-center font-bold sm:hidden"
-                                                startContent={<IconMap />}
-                                                onPress={() => openModal(leg, 'map')}
-                                            >
-                                                vedi sulla mappa
-                                            </Button> */}
-
-                                            {/*{leg.realTime.tracked && (
-                                                <span className="flex flex-row items-center gap-x-1">
-                                                    <div className="relative inline-flex">
-                                                        <div
-                                                            className="rounded-full bg-green-400 h-[8px] w-[8px] inline-block mr-1"></div>
-                                                        <div
-                                                            className="absolute animate-ping rounded-full bg-green-400 h-[8px] w-[8px] mr-1"></div>
-                                                    </div>
-                                                    <span
-                                                        className={`font-bold text-sm text-${getDelayColor(leg.realTime.delay)}`}>
-                                                        {typeof leg.realTime?.delay === "number" && leg.realTime.delay !== 0 && (
-                                                            <>
-                                                                {formatDuration(Math.abs(leg.realTime.delay), true)} in{" "}
-                                                                {leg.realTime.delay > 0 ? "ritardo" : "anticipo"}
-                                                            </>
-                                                        )}
-                                                        {leg.realTime?.delay === 0 && "in orario"}
-                                                    </span>
-                                                </span>
-                                            )}*/}
+                                            {/*<LeafletMap leg={leg} className="hidden sm:flex rounded-small" />*/}
 
                                             <Timeline steps={[{
                                                 content: (
@@ -221,50 +184,26 @@ export default function Results({directions}: { directions: Directions }) {
                                                             )}
                                                         </div>
 
-                                                        <div
-                                                            className={`flex items-center justify-start pt-4 -mb-2 ${leg.intermediateStops && leg.intermediateStops.length > 0 ? "cursor-pointer" : ""}`}
-                                                            onClick={() => {
-                                                                const newSelectedKeys = new Set(selectedKeys);
-                                                                const currentKey = `item-${index}-leg-stops`;
-                                                                if (Array.from(selectedKeys).includes(currentKey)) {
-                                                                    newSelectedKeys.delete(currentKey);
-                                                                } else {
-                                                                    newSelectedKeys.add(currentKey);
-                                                                }
-                                                                leg.intermediateStops && leg.intermediateStops.length > 0 && setSelectedKeys(newSelectedKeys);
-                                                            }}
-                                                        >
-                                                            <span
-                                                                className="text-foreground-500 text-sm leading-none z-10">
-                                                                {leg.intermediateStops && leg.intermediateStops.length === 0 ? "nessuna" : leg.intermediateStops && leg.intermediateStops.length} fermat{leg.intermediateStops && leg.intermediateStops.length <= 1 ? "a" : "e"}, {formatDuration(Math.round(leg.duration / 60))}
-                                                            </span>
-                                                            {leg.intermediateStops && leg.intermediateStops.length > 0 && (
-                                                                <motion.div
-                                                                    animate={{rotate: Array.from(selectedKeys).includes(`item-${index}-leg-stops`) ? 180 : 0}}
-                                                                    transition={{duration: 0.3}}
-                                                                    className="ml-1"
-                                                                >
-                                                                    <IconChevronDown size={16}
-                                                                                     className="text-foreground-500" />
-                                                                </motion.div>
-                                                            )}
-                                                        </div>
-                                                        <motion.div
-                                                            initial={{height: 0, opacity: 0}}
-                                                            animate={{
-                                                                height: Array.from(selectedKeys).includes(`item-${index}-leg-stops`) ? "auto" : 0,
-                                                                opacity: Array.from(selectedKeys).includes(`item-${index}-leg-stops`) ? 1 : 0
-                                                            }}
-                                                            transition={{duration: 0.3, ease: "easeInOut"}}
-                                                        >
-                                                            <div className="text-sm text-foreground-500 pt-6">
-                                                                {leg.intermediateStops && leg.intermediateStops.map((stop: IntermediateStop) => (
-                                                                    <ul key={stop.stopId} className="list-disc ml-4">
-                                                                        <li>{stop.name} ({format(new Date(stop.departure).getTime() + ((leg.realTime?.delay || 0) * 60 * 1000), "HH:mm")})</li>
-                                                                    </ul>
-                                                                ))}
-                                                            </div>
-                                                        </motion.div>
+                                                        <Accordion>
+                                                            <AccordionItem key={1} aria-label="fermate"
+                                                                           className={cn("text-sm text-foreground-500", leg.intermediateStops?.length === 0 && "pointer-events-none")}
+                                                                           classNames={{
+                                                                               title: "text-sm text-foreground-500",
+                                                                               trigger: "-mb-8 pt-4 -ml-2 w-auto",
+                                                                               content: "mt-4 -mb-4 pl-2"
+                                                                           }}
+                                                                           title={leg.intermediateStops && `${leg.intermediateStops.length === 0 ? "nessuna" : leg.intermediateStops.length} 
+                                                                           fermat${leg.intermediateStops.length <= 1 ? "a" : "e"}, ${formatDuration(Math.round(leg.duration / 60))}`}
+                                                                           indicator={leg.intermediateStops?.length === 0 && <></>}>
+                                                                <div>
+                                                                    {leg.intermediateStops && leg.intermediateStops.map((stop: IntermediateStop) => (
+                                                                        <ul key={stop.stopId} className="list-disc">
+                                                                            <li>{stop.name} ({format(new Date(stop.departure).getTime() + ((leg.realTime?.delay || 0) * 60 * 1000), "HH:mm")})</li>
+                                                                        </ul>
+                                                                    ))}
+                                                                </div>
+                                                            </AccordionItem>
+                                                        </Accordion>
                                                     </div>
                                                 )
                                             },
@@ -295,43 +234,54 @@ export default function Results({directions}: { directions: Directions }) {
                                                         </div>
                                                     )
                                                 }]} active={-1} />
+                                            <div
+                                                className="flex flex-row md:flex-col md:justify-start justify-between gap-4 w-full max-w-2xl">
+                                                {leg.realTime.info.length > 0 && (
+                                                    <Accordion isCompact>
+                                                        <AccordionItem key={1} title="Avvisi"
+                                                                       classNames={{
+                                                                           indicator: "text-foreground",
+                                                                           title: "font-bold sticky"
+                                                                       }}
+                                                                       startContent={<IconAlertTriangle />}
+                                                                       className="bg-warning-500 bg-opacity-50 px-4 rounded-large max-h-64 overflow-scroll">
+                                                            <div className="pb-2 text-small">
+                                                                {leg && leg.realTime?.info && leg.realTime?.info.map((alert, index) => (
+                                                                    <div key={index} className="flex flex-col gap-2">
+                                                                        {alert.url ? (
+                                                                            <Link href={alert.url} target="_blank">
+                                                                                {alert.message}
+                                                                                <IconExternalLink
+                                                                                    className="shrink-0 ml-1 mb-1 inline text-center"
+                                                                                    size={16} />
+                                                                            </Link>
+                                                                        ) : (
+                                                                            <span>{alert.message}</span>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </AccordionItem>
+                                                    </Accordion>
+                                                )}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
                             ))}
                     </div>
 
-                    <RouteModal
+                    {/* <RouteModal
                         isOpen={mapModal.isOpen}
                         onOpenChange={mapModal.onOpenChange}
                         title="mappa percorso"
                     >
-                        {selectedLeg && <LeafletMap leg={selectedLeg} className="rounded-small" />}
-                    </RouteModal>
-
-                    <RouteModal
-                        isOpen={infoModal.isOpen}
-                        onOpenChange={infoModal.onOpenChange}
-                        title="avvisi sulla linea"
-                    >
-                        a
-                        {/* {selectedLeg && selectedLeg.realtime?.info && selectedLeg.realtime?.info.map((alert: any, index: number) => (
-                            <div key={index} className="flex flex-col gap-2">
-                                {alert.url ? (
-                                    <Link isExternal showAnchorIcon href={alert.url} anchorIcon={<IconExternalLink className="flex-shrink-0 ml-2" size={16} />}>
-                                        {alert.message}
-                                    </Link>
-                                ) : (
-                                    <span>
-                                        {alert.message}
-                                    </span>
-                                )}
-                            </div>
-                        ))} */}
-                    </RouteModal>
+                        {selectedLeg && (
+                            <LeafletMap leg={selectedLeg} className="rounded-small" />
+                        )}
+                    </RouteModal>*/}
                 </AccordionItem>
-            ))
-            }
+            ))}
         </Accordion>
     );
 }
