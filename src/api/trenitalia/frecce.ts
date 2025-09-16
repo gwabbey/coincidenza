@@ -1,7 +1,6 @@
 import axios from "axios";
-import {Trip} from "@/api/types";
 
-export async function getTrips(origin: string, destination: string, date: string): Promise<Trip[]> {
+export async function getTrips(origin: string, destination: string, date: string) {
     const {data} = await axios.post("https://www.lefrecce.it/Channels.Website.BFF.WEB/website/ticket/solutions", {
         body: JSON.stringify({
             departureLocationId: origin,
