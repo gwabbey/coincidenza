@@ -1,8 +1,9 @@
 import axios from "axios";
 
-async function getNearestStation(lat: number, lon: number): string {
+/*
+async function getNearestStation(lat: number, lon: number) {
     const {data} = await axios.get(`https://int.bahn.de/web/api/reiseloesung/orte/nearby?lat=${lat}&long=${lon}&radius=9999&maxNo=3`);
-}
+}*/
 
 export async function getTrips(origin: string, destination: string, date: string) {
     const {data} = await axios.post("https://www.lefrecce.it/Channels.Website.BFF.WEB/website/ticket/solutions", {
