@@ -11,11 +11,22 @@ import {IconBus, IconGps, IconTrain} from "@tabler/icons-react";
 export default async function Page() {
     const cookieStore = await cookies();
     const favorites = JSON.parse(decodeURIComponent(cookieStore.get('favorites')?.value ?? '[]'));
-    const userLat = cookieStore.get('userLat')?.value ?? "";
-    const userLon = cookieStore.get('userLon')?.value ?? "";
-    const {rfiId, vtId} = getNearestStation(Number(userLat), Number(userLon));
+    const userLat = cookieStore.get("userLat")?.value ?? "";
+    const userLon = cookieStore.get("userLon")?.value ?? "";
 
-    const departures = await getMonitor(rfiId, vtId);
+    let departures = null;
+    let rfiId = "";
+    let vtId = "";
+
+    if (userLat && userLon) {
+        const station = getNearestStation(Number(userLat), Number(userLon));
+        if (station?.rfiId && station?.vtId) {
+            rfiId = station.rfiId;
+            vtId = station.vtId;
+            departures = await getMonitor(rfiId, vtId);
+        }
+    }
+
     const alerts = await getRfiAlerts(["Trentino Alto Adige"]);
     const notices = await getRfiNotices(["Trentino Alto Adige"]);
 
@@ -59,10 +70,10 @@ export default async function Page() {
 
                 <Favorites favorites={favorites} />
 
-                {userLat === "" || userLon === "" || rfiId === "" || vtId === "" ? (
+                {!userLat || !userLon || !rfiId || !vtId ? (
                     <RequestLocation />
                 ) : (
-                    <DeparturesCard departures={departures} />
+                    <DeparturesCard departures={departures!} />
                 )}
 
                 {notices.length > 0 &&
