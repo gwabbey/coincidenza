@@ -37,18 +37,18 @@ export default async function Page() {
 
             <Button as={NextLink} href="/directions" fullWidth size='lg'
                     startContent={<IconGps className="shrink-0" size={32} />}
-                    className="font-bold text-2xl p-8 text-white bg-gradient-to-r from-blue-500 to-purple-600 transition-background">
+                    className="font-bold text-2xl p-8 text-white bg-gradient-to-r from-blue-500 to-purple-600">
                 calcola percorso
             </Button>
             <div className="flex flex-row items-center justify-center gap-x-4 w-full">
                 <Button as={NextLink} href="/bus" fullWidth size='lg'
                         startContent={<IconBus className="shrink-0" />}
-                        className="font-bold text-lg sm:text-2xl p-8 text-wrap text-white bg-gradient-to-r from-green-500 to-lime-600 transition-background">
+                        className="font-bold text-lg sm:text-2xl p-8 text-wrap text-white bg-gradient-to-r from-green-500 to-lime-600">
                     partenze bus
                 </Button>
                 <Button as={NextLink} href="/departures" fullWidth size='lg'
                         startContent={<IconTrain className="shrink-0" />}
-                        className="font-bold text-lg sm:text-2xl p-8 text-wrap text-white bg-gradient-to-r from-red-500 to-red-700 transition-background">
+                        className="font-bold text-lg sm:text-2xl p-8 text-wrap text-white bg-gradient-to-r from-red-500 to-red-700">
                     partenze treni
                 </Button>
             </div>

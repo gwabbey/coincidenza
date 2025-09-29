@@ -5,7 +5,7 @@ import {Favorite} from "@/types";
 import {Autocomplete, AutocompleteItem, Button} from "@heroui/react";
 import {IconStar, IconStarFilled} from "@tabler/icons-react";
 import {motion} from "motion/react";
-import {Link} from "next-view-transitions";
+import Link from "next/link";
 import {useRouter} from "next/navigation";
 import {useEffect, useState} from "react";
 
@@ -81,7 +81,7 @@ export default function Search({selected}: { selected?: string }) {
                           size="lg"
                           isVirtualized
                           variant="underlined"
-                          allowsCustomValue={true}
+                          allowsCustomValue
                           listboxProps={{
                               emptyContent: "nessun risultato."
                           }}

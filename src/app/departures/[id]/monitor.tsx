@@ -95,7 +95,7 @@ export function Monitor({monitor}: { monitor: StationMonitor }) {
 
                                     <div className="flex flex-col text-left w-full flex-grow min-w-0">
                                         <div className="flex items-center justify-between w-full min-w-0 gap-2">
-                                            {getTrackUrl(train.company, train.number, train.category) && train.category !== "autocorsa" ? (
+                                            {getTrackUrl(train.company, train.number, train.category) && train.category !== "bus" ? (
                                                 <Link
                                                     className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow"
                                                     href={getTrackUrl(train.company, train.number, train.category)!}

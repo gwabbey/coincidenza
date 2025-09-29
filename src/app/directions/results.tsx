@@ -84,7 +84,7 @@ export default function Results({directions}: { directions: Directions }) {
                                    </div>
                                }
                 >
-                    <div className="flex flex-col space-y-6">
+                    <div className="flex flex-col space-y-6 pb-2">
                         {trip.legs
                             .map((leg, index) => (
                                 <div key={index} className="flex flex-col gap-4">
