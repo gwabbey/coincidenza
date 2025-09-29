@@ -41,14 +41,14 @@ export async function getRealTimeData(leg: Leg): Promise<RealTime> {
 
         return {
             delay: trip?.delay ?? null,
-            info: trip?.info || null,
+            info: trip?.info || [],
             tracked: trip ? trip.delay !== null : false,
             url: getTrackUrl(leg)
         }
     }
     return {
         delay: null,
-        info: null,
+        info: [],
         tracked: false,
         url: null
     }
