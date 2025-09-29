@@ -3,7 +3,7 @@ import stations from "@/stations.json";
 import {capitalize, getDelayColor} from "@/utils";
 import {Card, cn, Divider} from "@heroui/react";
 import {format} from "date-fns";
-import {Link as NextLink} from "next-view-transitions";
+import Link from "next/link";
 
 export default function DeparturesCard({
                                            departures,
@@ -25,7 +25,7 @@ export default function DeparturesCard({
     ).sort((a, b) => b[1].length - a[1].length);
 
     return (
-        <NextLink href={`/departures/${id}`} className="w-full max-w-4xl cursor-pointer rounded-large">
+        <Link href={`/departures/${id}`} className="w-full max-w-4xl cursor-pointer rounded-large">
             <Card className="flex flex-col gap-4 p-4 w-full">
                 <div className="text-2xl font-bold text-center mx-auto">
                     prossime partenze da {departures.name}
@@ -73,6 +73,6 @@ export default function DeparturesCard({
                     ))}
                 </div>
             </Card>
-        </NextLink>
+        </Link>
     );
 }

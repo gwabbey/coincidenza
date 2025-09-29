@@ -1,6 +1,5 @@
 import "./globals.css";
 import Providers from "./providers";
-import {ViewTransitions} from "next-view-transitions";
 import React from "react";
 import Header from "@/app/header";
 
@@ -15,17 +14,15 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <ViewTransitions>
-            <html lang="en" suppressHydrationWarning>
-            <body>
-            <Providers>
-                <Header />
-                <main className="p-4">
-                    {children}
-                </main>
-            </Providers>
-            </body>
-            </html>
-        </ViewTransitions>
+        <html lang="en" suppressHydrationWarning>
+        <body>
+        <Providers>
+            <Header />
+            <main className="p-4">
+                {children}
+            </main>
+        </Providers>
+        </body>
+        </html>
     );
 }

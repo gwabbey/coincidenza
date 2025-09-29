@@ -3,7 +3,7 @@ import {Button} from "@heroui/react";
 import {IconMoon, IconSun} from "@tabler/icons-react";
 import {motion} from "motion/react";
 import {useTheme} from "next-themes";
-import {Link} from "next-view-transitions";
+import Link from "next/link";
 import {useEffect, useState} from "react";
 
 export default function Header() {

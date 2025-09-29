@@ -4,7 +4,7 @@ import {capitalize, getDelayColor} from '@/utils';
 import {Alert, cn} from '@heroui/react';
 import {IconInfoCircleFilled} from '@tabler/icons-react';
 import {AnimatePresence, motion} from 'motion/react';
-import {Link} from 'next-view-transitions';
+import Link from 'next/link';
 import {useRouter} from 'next/navigation';
 import {useEffect, useState} from 'react';
 

@@ -10,7 +10,7 @@ import {useState} from "react";
 import {TransportIcon} from "./icons";
 import Steps from "./steps";
 import {trainCategoryLongNames} from "@/train-categories";
-import {Link} from "next-view-transitions";
+import Link from "next/link";
 
 const getLegDescription = (leg: Leg) => {
     if (leg.mode === "WALK") {

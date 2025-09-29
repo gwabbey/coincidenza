@@ -6,7 +6,7 @@ import Timeline from "@/components/timeline";
 import {capitalize, findMatchingStation, formatDate, getDelayColor} from "@/utils";
 import {Button, Card, Divider, useDisclosure} from "@heroui/react";
 import {IconAlertTriangleFilled, IconInfoTriangleFilled, IconRefresh} from "@tabler/icons-react";
-import {Link} from "next-view-transitions";
+import Link from "next/link";
 import {startTransition, useActionState, useEffect, useState} from 'react';
 import {useRouter} from "next/navigation";
 import {motion} from "motion/react";

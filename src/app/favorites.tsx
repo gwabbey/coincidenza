@@ -2,10 +2,10 @@
 import {Favorite} from "@/types";
 import {Button, Card, CardBody, Link} from "@heroui/react";
 import {IconBus, IconTrain, IconTrash} from "@tabler/icons-react";
-import {useTransitionRouter} from "next-view-transitions";
+import {useRouter} from "next/navigation";
 
 export function Favorites({favorites}: { favorites: Favorite[] }) {
-    const router = useTransitionRouter();
+    const router = useRouter();
     if (!favorites) return null;
 
     function navigateToFavorite(favorite: Favorite) {

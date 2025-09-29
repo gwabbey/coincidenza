@@ -2,7 +2,7 @@ import {getNearestStation, getRfiAlerts, getRfiNotices} from "@/api/trenitalia/a
 import {cookies} from "next/headers";
 import {getMonitor} from "@/api/trenitalia/monitor";
 import {Button, Card, CardBody, Link} from "@heroui/react";
-import {Link as NextLink} from "next-view-transitions";
+import NextLink from "next/link";
 import {Favorites} from "@/app/favorites";
 import RequestLocation from "@/app/location";
 import DeparturesCard from "@/app/departures-card";
