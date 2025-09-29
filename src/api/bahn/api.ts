@@ -7,6 +7,7 @@ export async function searchStation(query: string) {
     return data.filter(
         (item: any) =>
             item.type === "ST" &&
+            item.extId &&
             item.lat !== undefined &&
             item.lon !== undefined &&
             item.products.length > 0 &&

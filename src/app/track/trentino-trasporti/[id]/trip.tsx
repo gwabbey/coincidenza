@@ -5,10 +5,8 @@ import {RouteModal} from "@/components/modal";
 import Timeline from "@/components/timeline";
 import {getDelayColor} from "@/utils";
 import {addToast, Button, Card, Divider, Link, useDisclosure} from "@heroui/react";
-import {IconAlertTriangleFilled, IconInfoTriangleFilled, IconRefresh} from "@tabler/icons-react";
-import {startTransition, useActionState, useEffect, useState} from 'react';
-import {motion} from "motion/react";
-import {useRouter} from "next/navigation";
+import {IconAlertTriangleFilled, IconInfoTriangleFilled} from "@tabler/icons-react";
+import {useEffect, useState} from 'react';
 
 const getCurrentMinutes = (): number => {
     const now = new Date();
@@ -55,11 +53,6 @@ const calculatePreciseActiveIndex = (stopTimes: any[], delay: number, stopLast: 
 };
 
 export default function Trip({trip: initialTrip}: { trip: TripProps }) {
-    const router = useRouter();
-    const [_, dispatch, pending] = useActionState(async () => {
-        router.refresh();
-    }, undefined);
-
     const [trip, setTrip] = useState(initialTrip);
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
@@ -377,31 +370,6 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
                     </div>
                 ))}
             </RouteModal>
-
-            <Button
-                variant="bordered"
-                isIconOnly
-                radius="full"
-                startContent={
-                    <motion.div
-                        animate={pending ? {
-                            rotate: [0, 360],
-                            transition: {repeat: pending ? Infinity : 0, duration: 1, ease: "linear"}
-                        } : {rotate: 360}}
-                        transition={{
-                            type: "spring",
-                            stiffness: 300,
-                            damping: 15,
-                            repeat: pending ? Infinity : 0,
-                        }}
-                    >
-                        <IconRefresh />
-                    </motion.div>
-                }
-                onPress={() => startTransition(dispatch)}
-                isDisabled={pending}
-                className="fixed bottom-5 right-5 p-2 border-gray-500 border-1 z-20 backdrop-blur-lg"
-            />
         </div>
     );
 }

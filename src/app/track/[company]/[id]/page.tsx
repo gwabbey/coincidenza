@@ -2,8 +2,6 @@ import {getActualTrip, getTrip} from "@/api/trenitalia/api";
 import {notFound} from "next/navigation";
 import Trip from "./trip";
 
-export const revalidate = 0
-
 const clients: Record<number, string> = {
     0: "trenitalia",
     1: "trenitalia",

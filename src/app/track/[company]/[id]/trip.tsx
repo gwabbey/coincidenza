@@ -5,11 +5,9 @@ import {RouteModal} from "@/components/modal";
 import Timeline from "@/components/timeline";
 import {capitalize, findMatchingStation, formatDate, getDelayColor} from "@/utils";
 import {Button, Card, Divider, useDisclosure} from "@heroui/react";
-import {IconAlertTriangleFilled, IconInfoTriangleFilled, IconRefresh} from "@tabler/icons-react";
+import {IconAlertTriangleFilled, IconInfoTriangleFilled} from "@tabler/icons-react";
 import Link from "next/link";
-import {startTransition, useActionState, useEffect, useState} from 'react';
-import {useRouter} from "next/navigation";
-import {motion} from "motion/react";
+import {useEffect, useState} from 'react';
 
 const getCurrentMinutes = () => {
     const now = new Date();
@@ -89,11 +87,6 @@ const calculatePreciseActiveIndex = (trip: TripProps) => {
 };
 
 export default function Trip({trip: initialTrip}: { trip: TripProps }) {
-    const router = useRouter();
-    const [_, dispatch, pending] = useActionState(async () => {
-        router.refresh();
-    }, undefined);
-
     const [trip, setTrip] = useState<TripProps>(initialTrip);
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
@@ -103,12 +96,10 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
             const newIndex = calculatePreciseActiveIndex(trip);
             setPreciseActiveIndex(newIndex);
         };
-
         updateIndex();
         const intervalId = setInterval(updateIndex, 1000);
-
         return () => clearInterval(intervalId);
-    }, [trip.stops, trip.delay]);
+    }, [trip]);
 
     useEffect(() => {
         if (trip.status === "completed" || trip.status === "canceled") return;
@@ -119,44 +110,57 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
             eventSource?.close();
 
             const searchParams = new URLSearchParams();
-            if (trip.originId) searchParams.append('origin', trip.originId);
-            if (trip.timestamp) searchParams.append('timestamp', trip.timestamp.toString());
+            if (trip.originId) searchParams.append("origin", trip.originId);
+            if (trip.timestamp) searchParams.append("timestamp", trip.timestamp.toString());
             const queryString = searchParams.toString();
 
-            eventSource = new EventSource(`/track/${trip.company}/${trip.number}/stream${queryString ? `?${queryString}` : ''}`);
+            eventSource = new EventSource(
+                `/track/${trip.company}/${trip.number}/stream${queryString ? `?${queryString}` : ""}`
+            );
 
             eventSource.onmessage = (event) => {
                 try {
-                    const message = JSON.parse(event.data);
-                    if (message.type === 'data_update' || message.type === 'completed') {
-                        const {type, timestamp, ...data} = message;
-                        setTrip(prev => ({
+                    const data = JSON.parse(event.data);
+
+                    if (data.error) {
+                        console.error("SSE error:", data.error);
+                        return;
+                    }
+
+                    setTrip((prev) => {
+                        const same = JSON.stringify(prev) === JSON.stringify(data);
+                        if (same) return prev;
+
+                        return {
                             ...prev,
                             ...data,
                             lastUpdate: data.lastUpdate ? new Date(data.lastUpdate) : prev.lastUpdate,
-                            stops: data.stops
-                        }));
-                        if (message.type === 'completed') eventSource?.close();
+                            stops: data.stops ?? prev.stops,
+                        };
+                    });
+
+                    if (data.status === "completed" || data.status === "canceled") {
+                        eventSource?.close();
                     }
                 } catch (e) {
-                    console.error('Error parsing SSE:', e);
+                    console.error("Error parsing SSE:", e);
                 }
             };
 
             eventSource.onerror = () => {
                 eventSource?.close();
-                setupSSE();
+                setTimeout(setupSSE, 2000);
             };
         };
 
         setupSSE();
-        window.addEventListener('focus', router.refresh);
+        window.addEventListener("focus", setupSSE);
 
         return () => {
-            window.removeEventListener('focus', setupSSE);
+            window.removeEventListener("focus", setupSSE);
             eventSource?.close();
         };
-    }, [trip.number, trip.status]);
+    }, [trip.company, trip.number, trip.originId, trip.timestamp, trip.status]);
 
     function formatDuration(start: Date, end: Date): string {
         const startHours = start.getHours();
@@ -182,7 +186,6 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
             return `${minutes}min`;
         }
     }
-
 
     return (
         <div className="flex flex-col gap-4">
@@ -439,31 +442,6 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
                     </div>
                 ))}
             </RouteModal>
-
-            <Button
-                variant="bordered"
-                isIconOnly
-                radius="full"
-                startContent={
-                    <motion.div
-                        animate={pending ? {
-                            rotate: [0, 360],
-                            transition: {repeat: pending ? Infinity : 0, duration: 1, ease: "linear"}
-                        } : {rotate: 360}}
-                        transition={{
-                            type: "spring",
-                            stiffness: 300,
-                            damping: 15,
-                            repeat: pending ? Infinity : 0,
-                        }}
-                    >
-                        <IconRefresh />
-                    </motion.div>
-                }
-                onPress={() => startTransition(dispatch)}
-                isDisabled={pending}
-                className="fixed bottom-5 right-5 p-2 border-gray-500 border-1 z-20 backdrop-blur-lg"
-            />
         </div>
     );
 }

@@ -1,6 +1,8 @@
 import {getTrip as getTrenitaliaTrip} from "@/api/trenitalia/api";
-// import { getTrip as getTrenordTrip } from "@/api/trenord/api";
-import {createSSEHandler} from "@/app/sse";
+import {getTrip as getTrentinoTrip, getTripDetails} from "@/api/trentino-trasporti/api";
+import {NormalizedTrip, trenitaliaAdapter, trentinoAdapter} from "@/adapters";
+import {createResponse} from "better-sse";
+import crypto from 'crypto';
 import {NextRequest} from "next/server";
 
 export async function GET(
@@ -8,60 +10,89 @@ export async function GET(
     {params}: { params: Promise<{ company: string, id: string }> }
 ) {
     const {company, id} = await params;
-    const searchParams = request.nextUrl.searchParams;
-    const origin = searchParams.get('origin');
-    const timestampStr = searchParams.get('timestamp');
+    const origin = request.nextUrl.searchParams.get('origin');
+    const timestampStr = request.nextUrl.searchParams.get('timestamp');
     const timestamp = timestampStr ? parseInt(timestampStr, 10) : undefined;
 
     const isTrainCompany = company === "trenitalia" || company === "trenord";
-
     if (isTrainCompany && (!origin || !timestamp)) {
         return new Response(
-            JSON.stringify({error: "Origin station and timestamp parameters are required"}),
+            JSON.stringify({error: "Viaggiatreno requires origin station and timestamp"}),
             {status: 400, headers: {'Content-Type': 'application/json'}}
         );
     }
 
-    return createSSEHandler(request, origin, id, timestamp, {
-        fetchData: async (origin: string | null, id: string, timestamp: number | undefined) => {
-            if (!origin || timestamp === undefined) {
-                throw new Error("Missing required parameters");
-            }
+    return createResponse(request, async (session) => {
+        let lastHash = "";
+        let stopTimes: any[] = [];
 
-            switch (company) {
-                case "trenitalia":
-                case "trenord":
-                    return getTrenitaliaTrip(origin, id, timestamp);
-                case "trentino-trasporti":
-                    throw new Error("coming soon, just give me a minute");
-                default:
-                    return getTrenitaliaTrip(origin, id, timestamp);
-            }
-        },
-
-        formatForClient: (trip) => ({
-            status: trip.status,
-            delay: trip.delay,
-            lastKnownLocation: trip.lastKnownLocation,
-            lastUpdate: trip.lastUpdate,
-            currentStopIndex: trip.currentStopIndex,
-            stops: trip.stops.map((stop: any) => ({
-                id: stop.id,
-                name: stop.name,
-                scheduledPlatform: stop.scheduledPlatform,
-                actualPlatform: stop.actualPlatform,
-                scheduledArrival: stop.scheduledArrival,
-                actualArrival: stop.actualArrival,
-                scheduledDeparture: stop.scheduledDeparture,
-                actualDeparture: stop.actualDeparture,
-                departureDelay: stop.departureDelay,
-                arrivalDelay: stop.arrivalDelay,
-                status: stop.status
-            }))
-        }),
-
-        shouldStopUpdates: (trip) => {
-            return trip.status === "completed" || trip.status === "canceled";
+        if (company === "trentino-trasporti") {
+            const details = await getTripDetails(id);
+            stopTimes = details.stopTimes;
         }
+
+        const sendUpdate = async () => {
+            let normalizedTrip: NormalizedTrip;
+
+            try {
+                switch (company) {
+                    case "trenitalia":
+                    case "trenord":
+                        if (!origin || timestamp === undefined) {
+                            session.push({error: "Viaggiatreno requires origin station and timestamp"});
+                            return true;
+                        }
+                        const trenitaliaTrip = await getTrenitaliaTrip(origin, id, timestamp);
+                        normalizedTrip = trenitaliaAdapter(trenitaliaTrip);
+                        break;
+
+                    case "trentino-trasporti":
+                        const trentinoTrip = await getTrentinoTrip(id);
+                        if (!trentinoTrip) {
+                            session.push({error: "Trip not found"});
+                            return true;
+                        }
+                        normalizedTrip = trentinoAdapter(trentinoTrip, stopTimes);
+                        break;
+
+                    default:
+                        session.push({error: "Unknown company"});
+                        return true;
+                }
+
+                if (normalizedTrip.status === "completed" || normalizedTrip.status === "canceled") {
+                    session.push(normalizedTrip);
+                    return true;
+                }
+
+                const currentHash = crypto.createHash('md5')
+                    .update(JSON.stringify(normalizedTrip))
+                    .digest('hex');
+
+                if (currentHash !== lastHash && session.isConnected) {
+                    lastHash = currentHash;
+                    session.push(normalizedTrip);
+                }
+
+                return false;
+            } catch (error) {
+                if (session.isConnected) {
+                    session.push({error: "Failed to fetch trip data"});
+                }
+                return true;
+            }
+        };
+
+        if (await sendUpdate()) return;
+
+        const intervalId = setInterval(async () => {
+            if (await sendUpdate()) {
+                clearInterval(intervalId);
+            }
+        }, 10000);
+
+        request.signal.addEventListener('abort', () => {
+            clearInterval(intervalId);
+        });
     });
 }

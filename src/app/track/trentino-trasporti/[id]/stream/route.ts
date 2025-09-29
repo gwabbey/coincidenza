@@ -8,62 +8,53 @@ export async function GET(
     {params}: { params: Promise<{ id: string }> }
 ) {
     const id = (await params).id;
-    const stopTimes = await getTripDetails(id).then(trip => trip.stopTimes);
-    return createResponse(
-        request,
-        {
-            retry: 3
-        },
-        async (session) => {
-            let lastTripHash = "";
-            const hashObject = (obj: any) =>
-                crypto.createHash('md5').update(JSON.stringify(obj)).digest('hex');
+    const {stopTimes} = await getTripDetails(id);
 
-            const sendUpdate = async () => {
-                const trip = await getTrip(id);
+    return createResponse(request, async (session) => {
+        let lastTripHash = "";
 
-                if (!trip) {
-                    session.push({error: "Trip not found"});
-                    return true;
-                }
+        const hashObject = (obj: any) =>
+            crypto.createHash('md5').update(JSON.stringify(obj)).digest('hex');
 
-                if (trip.lastSequenceDetection === stopTimes.length) {
-                    return true;
-                }
+        const sendUpdate = async () => {
+            const trip = await getTrip(id);
 
-                const currentTripData = {
-                    delay: trip.delay,
-                    stopLast: trip.stopLast,
-                    lastEventRecivedAt: trip.lastEventRecivedAt,
-                    lastSequenceDetection: trip.lastSequenceDetection,
-                };
-
-                const currentHash = hashObject(currentTripData);
-                const hasChanged = !lastTripHash || lastTripHash !== currentHash;
-
-                if (hasChanged && session.isConnected) {
-                    lastTripHash = currentHash;
-
-                    session.push({
-                        ...currentTripData,
-                    });
-                }
-
-                return false;
-            };
-
-            if (await sendUpdate()) {
-                return;
+            if (!trip) {
+                session.push({error: "Trip not found"});
+                return true;
             }
 
-            const intervalId = setInterval(async () => {
-                if (await sendUpdate()) {
-                    clearInterval(intervalId);
-                }
-            }, 10000);
+            if (trip.lastSequenceDetection === stopTimes.length) {
+                return true;
+            }
 
-            request.signal.addEventListener('abort', () => {
+            const currentTripData = {
+                delay: trip.delay,
+                stopLast: trip.stopLast,
+                lastEventRecivedAt: trip.lastEventRecivedAt,
+                lastSequenceDetection: trip.lastSequenceDetection,
+            };
+
+            const currentHash = hashObject(currentTripData);
+
+            if (currentHash !== lastTripHash && session.isConnected) {
+                lastTripHash = currentHash;
+                session.push(currentTripData);
+            }
+
+            return false;
+        };
+
+        if (await sendUpdate()) return;
+
+        const intervalId = setInterval(async () => {
+            if (await sendUpdate()) {
                 clearInterval(intervalId);
-            });
+            }
+        }, 10000);
+
+        request.signal.addEventListener('abort', () => {
+            clearInterval(intervalId);
         });
+    });
 }

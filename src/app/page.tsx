@@ -1,11 +1,9 @@
-import {getNearestStation, getRfiAlerts, getRfiNotices} from "@/api/trenitalia/api";
+import {getRfiAlerts, getRfiNotices} from "@/api/trenitalia/api";
 import {cookies} from "next/headers";
-import {getMonitor} from "@/api/trenitalia/monitor";
 import {Button, Card, CardBody, Link} from "@heroui/react";
 import NextLink from "next/link";
 import {Favorites} from "@/app/favorites";
 import RequestLocation from "@/app/location";
-import DeparturesCard from "@/app/departures-card";
 import {IconBus, IconGps, IconTrain} from "@tabler/icons-react";
 
 export default async function Page() {
@@ -14,18 +12,8 @@ export default async function Page() {
     const userLat = cookieStore.get("userLat")?.value ?? "";
     const userLon = cookieStore.get("userLon")?.value ?? "";
 
-    let departures = null;
     let rfiId = "";
     let vtId = "";
-
-    if (userLat && userLon) {
-        const station = getNearestStation(Number(userLat), Number(userLon));
-        if (station?.rfiId && station?.vtId) {
-            rfiId = station.rfiId;
-            vtId = station.vtId;
-            departures = await getMonitor(rfiId, vtId);
-        }
-    }
 
     const alerts = await getRfiAlerts(["Trentino Alto Adige"]);
     const notices = await getRfiNotices(["Trentino Alto Adige"]);
@@ -70,10 +58,8 @@ export default async function Page() {
 
                 <Favorites favorites={favorites} />
 
-                {!userLat || !userLon || !rfiId || !vtId ? (
+                {!userLat || !userLon || !rfiId || !vtId && (
                     <RequestLocation />
-                ) : (
-                    <DeparturesCard departures={departures!} />
                 )}
 
                 {notices.length > 0 &&

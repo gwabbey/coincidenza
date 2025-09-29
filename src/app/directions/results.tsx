@@ -226,14 +226,15 @@ export default function Results({directions}: { directions: Directions }) {
                                             <div
                                                 className="flex flex-row md:flex-col md:justify-start justify-between gap-4 w-full max-w-2xl">
                                                 {leg.realTime && leg.realTime.info && leg.realTime.info.length > 0 && (
-                                                    <Accordion isCompact>
+                                                    <Accordion isCompact itemClasses={{trigger: "px-0"}}>
                                                         <AccordionItem key={1} title="Avvisi"
                                                                        classNames={{
                                                                            indicator: "text-foreground",
-                                                                           title: "font-bold"
+                                                                           title: "font-bold",
+                                                                           trigger: "py-3"
                                                                        }}
                                                                        startContent={<IconAlertTriangle />}
-                                                                       className="bg-warning-500 bg-opacity-50 px-4 scrollbar-hide rounded-large max-h-64 overflow-scroll mb-4">
+                                                                       className="bg-warning-500/50 px-4 scrollbar-hide rounded-large max-h-64 overflow-scroll mb-4">
                                                             <div className="pb-2 text-small">
                                                                 {leg && leg.realTime.info && leg.realTime.info.map((alert, index) => (
                                                                     <div key={index} className="flex flex-col gap-2">
@@ -245,14 +246,10 @@ export default function Results({directions}: { directions: Directions }) {
                                                                                         className="shrink-0 ml-1 mb-1 inline text-center"
                                                                                         size={16} />
                                                                                 </Link>
-                                                                                <span
-                                                                                    className="text-sm text-foreground-500">{alert.source}</span>
                                                                             </div>
                                                                         ) : (
                                                                             <div className="flex flex-col">
                                                                                 <span>{alert.message}</span>
-                                                                                <span
-                                                                                    className="text-sm text-foreground-500">{alert.source}</span>
                                                                             </div>
                                                                         )}
                                                                         {index !== leg.realTime.info!.length - 1 &&

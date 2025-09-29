@@ -233,6 +233,7 @@ export const LocationAutocomplete = ({
                         <div className="flex flex-col">
                             <span className={cn(item.label === "Posizione attuale" && "font-bold")}>{item.label}</span>
                             {item.address && <span className="text-sm text-default-400">{item.address}</span>}
+                            {item.isBahnStation && <span className="text-sm text-default-400">Stazione</span>}
                         </div>
                     ) : item.label}
                 </AutocompleteItem>

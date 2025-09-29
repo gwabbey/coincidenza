@@ -47,9 +47,25 @@ export async function getRfiNotices(regions?: string[]): Promise<RfiItem[]> {
 }
 
 export async function getTripSmartCaring(code: string, origin: string, date: string) {
-    const {data} = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/news/smartcaring?commercialTrainNumber=${code}&originCode=${origin}&searchDate=${date}`);
-    if (data.length === 0) return null;
-    return data;
+    const {data} = await axios.get(
+        `http://www.viaggiatreno.it/infomobilita/resteasy/news/smartcaring?commercialTrainNumber=${code}&originCode=${origin}&searchDate=${date}`
+    );
+
+    if (!Array.isArray(data) || data.length === 0) return [];
+
+    const filtered = data.filter(
+        (item: any) => {
+            const info = item.infoNote?.toLowerCase() ?? "";
+            const validUntil = new Date(item.endValidity).getTime();
+
+            return (
+                !["good morning", "good afternoon", "good evening", "guten morgen"].some((phrase) => info.includes(phrase)) &&
+                !isNaN(validUntil) && validUntil > Date.now()
+            );
+        }
+    );
+
+    return filtered.length > 0 ? filtered : [];
 }
 
 export async function getTripCanvas(code: string, origin: string, timestamp: number) {
@@ -101,7 +117,7 @@ export async function getMonitorTrip(rfiId: string, tripId: string) {
 
 async function getTripsById(id: string) {
     if (!id) return null;
-    
+
     const {data, status} = await axios.get<string>(
         `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`
     );
@@ -306,11 +322,19 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
                 status: getStopStatus(stop),
             };
         }),
-        info: info ? info
-            .map((alert: any) => ({
-                message: alert.infoNote, date: timestampToIso(alert.insertTimestamp), source: "Viaggiatreno"
-            }))
-            .filter((alert: any, i: number, self: any[]) => self.findIndex(a => a.message === alert.message) === i) : []
+        info: info
+            ? info
+                .map((alert) => ({
+                    message: alert.infoNote ?? "",
+                    date: timestampToIso(alert.insertTimestamp) ?? "",
+                    source: "Viaggiatreno",
+                    url: null
+                }))
+                .filter(
+                    (alert, i: number, self) =>
+                        self.findIndex((a) => a.message === alert.message) === i
+                )
+            : []
     }
 }
 
