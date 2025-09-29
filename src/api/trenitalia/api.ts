@@ -99,11 +99,14 @@ export async function getMonitorTrip(rfiId: string, tripId: string) {
     return train;
 }
 
+async function getTripsById(id: string) {
+    if (!id) return null;
+    
+    const {data, status} = await axios.get<string>(
+        `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`
+    );
 
-export async function getActualTrip(id: string, company: string, date: Date = new Date()) {
-    const {data} = await axios.get<string>(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`);
-
-    if (!data?.trim()) return null;
+    if (!data?.trim() || status !== 200) return null;
 
     const parsed = data
         .trim()
@@ -122,60 +125,55 @@ export async function getActualTrip(id: string, company: string, date: Date = ne
 
             return {code: code.trim(), origin: origin.trim(), timestamp};
         })
-        .filter((t): t is { code: string; origin: string; timestamp: number } => t !== null);
+        .filter(
+            (t): t is { code: string; origin: string; timestamp: number } =>
+                t !== null
+        );
 
-    if (parsed.length === 0) return null;
-
-    const midnightTimestamp = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
-
-    const candidates = parsed.filter((t) => t.timestamp === midnightTimestamp);
-    const tripsToCheck = candidates.length > 0 ? candidates : parsed;
-
-    const results = await Promise.allSettled(tripsToCheck.map((t) => axios
-        .get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${t.origin}/${t.code}/${t.timestamp}`)
-        .then((res) => ({
-            trip: t, codiceCliente: res.data?.codiceCliente as number | undefined,
-        }))));
-
-    for (const r of results) {
-        if (r.status === "fulfilled") {
-            const {trip, codiceCliente} = r.value;
-            if (codiceCliente !== undefined && clients[codiceCliente] === company) {
-                return {
-                    origin: trip.origin, id: trip.code, timestamp: trip.timestamp,
-                };
-            }
-        }
-    }
-
-    return null;
+    return parsed.length === 0 ? null : parsed;
 }
 
-export async function guessTrip(id: string, headsign: string, date: Date) {
-    const {data} = await axios.get<string>(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`);
+export async function getActualTrip(id: string, company: string) {
+    const parsed = await getTripsById(id);
+    if (!parsed) return null;
 
-    if (!data?.trim()) return null;
+    const results = await Promise.allSettled(
+        parsed.map((t) =>
+            axios
+                .get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${t.origin}/${t.code}/${t.timestamp}`)
+                .then((res) => ({
+                    trip: t,
+                    andamento: res.data,
+                }))
+        )
+    );
 
-    const parsed = data
-        .trim()
-        .split("\n")
-        .map((line) => {
-            const [left, right] = line.split("|");
-            if (!left || !right) return null;
+    const valid = results
+        .filter((r): r is PromiseFulfilledResult<{ trip: any; andamento: any }> => r.status === "fulfilled")
+        .map((r) => r.value)
+        .filter((r) => {
+            const codiceCliente = r.andamento?.codiceCliente as number | undefined;
+            return codiceCliente !== undefined && clients[codiceCliente] === company;
+        });
 
-            const [code] = left.split(" - ");
-            const rightParts = right.split("-");
-            if (rightParts.length < 2) return null;
+    if (valid.length === 0) return null;
 
-            const [origin, timestampStr] = rightParts.slice(-2);
-            const timestamp = Number(timestampStr);
-            if (isNaN(timestamp)) return null;
+    const running = valid.find(
+        (r) => !r.andamento.arrivato
+    );
 
-            return {code: code.trim(), origin: origin.trim(), timestamp};
-        })
-        .filter((t): t is { code: string; origin: string; timestamp: number } => t !== null);
+    const chosen = running ?? valid[0];
 
-    if (parsed.length === 0) return null;
+    return {
+        origin: chosen.trip.origin,
+        id: chosen.trip.code,
+        timestamp: chosen.trip.timestamp,
+    };
+}
+
+export async function guessTrip(id: string, date: Date) {
+    const parsed = await getTripsById(id);
+    if (!parsed) return null;
 
     const midnightTimestamp = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
 
@@ -184,14 +182,20 @@ export async function guessTrip(id: string, headsign: string, date: Date) {
 
 export async function getTrip(origin: string, id: string, timestamp: number): Promise<Trip | null> {
     const formattedDate = new Intl.DateTimeFormat("it-IT", {
-        year: "numeric", month: "2-digit", day: "2-digit",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
     })
         .format(new Date(timestamp))
         .split("/")
         .reverse()
         .join("-");
 
-    const [response, info, canvas] = await Promise.all([axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${id}/${timestamp}`), getTripSmartCaring(id, origin, formattedDate), getTripCanvas(id, origin, timestamp),]);
+    const [response, info, canvas] = await Promise.all([
+        axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${id}/${timestamp}`),
+        getTripSmartCaring(id, origin, formattedDate),
+        getTripCanvas(id, origin, timestamp),
+    ]);
 
     if (response.status !== 200) return null;
 
@@ -264,13 +268,9 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
 
     if (currentStop?.fermata) {
         const arrival = currentStop.fermata.arrivoReale ? new Date(currentStop.fermata.arrivoReale).getTime() : null;
-
         const departure = currentStop.fermata.partenzaReale ? new Date(currentStop.fermata.partenzaReale).getTime() : null;
-
         const now = Date.now();
-
         const closeToStation = (arrival && !departure && now - arrival < 60 * 1000) || (departure && now - departure < 60 * 1000);
-
         if (closeToStation) {
             lastKnownLocation = capitalize(currentStop.stazione);
         }

@@ -4,10 +4,12 @@ import {Trip as TripProps} from "@/api/types";
 import {RouteModal} from "@/components/modal";
 import Timeline from "@/components/timeline";
 import {capitalize, findMatchingStation, formatDate, getDelayColor} from "@/utils";
-import {addToast, Button, Card, Divider, useDisclosure} from "@heroui/react";
-import {IconAlertTriangleFilled, IconInfoTriangleFilled} from "@tabler/icons-react";
+import {Button, Card, Divider, useDisclosure} from "@heroui/react";
+import {IconAlertTriangleFilled, IconInfoTriangleFilled, IconRefresh} from "@tabler/icons-react";
 import {Link} from "next-view-transitions";
-import {useEffect, useState} from 'react';
+import {startTransition, useActionState, useEffect, useState} from 'react';
+import {useRouter} from "next/navigation";
+import {motion} from "motion/react";
 
 const getCurrentMinutes = () => {
     const now = new Date();
@@ -87,6 +89,11 @@ const calculatePreciseActiveIndex = (trip: TripProps) => {
 };
 
 export default function Trip({trip: initialTrip}: { trip: TripProps }) {
+    const router = useRouter();
+    const [_, dispatch, pending] = useActionState(async () => {
+        router.refresh();
+    }, undefined);
+
     const [trip, setTrip] = useState<TripProps>(initialTrip);
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
@@ -107,85 +114,47 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
         if (trip.status === "completed" || trip.status === "canceled") return;
 
         let eventSource: EventSource | undefined;
-        let reconnectTimeout: NodeJS.Timeout | undefined;
-        let reconnectAttempts = 0;
-        const maxReconnectAttempts = 5;
-
-        const cleanup = () => {
-            eventSource?.close();
-            eventSource = undefined;
-            if (reconnectTimeout) {
-                clearTimeout(reconnectTimeout);
-                reconnectTimeout = undefined;
-            }
-        };
-
-        const showConnectionError = () => {
-            addToast({title: "Errore durante la connessione", color: "danger"});
-        };
 
         const setupSSE = () => {
-            cleanup();
+            eventSource?.close();
+
             const searchParams = new URLSearchParams();
             if (trip.originId) searchParams.append('origin', trip.originId);
             if (trip.timestamp) searchParams.append('timestamp', trip.timestamp.toString());
             const queryString = searchParams.toString();
-            eventSource = new EventSource(`/track/${trip.company}/${trip.number}/stream${queryString ? `?${queryString}` : ''}`);
 
-            eventSource.onopen = () => {
-                reconnectAttempts = 0;
-            };
+            eventSource = new EventSource(`/track/${trip.company}/${trip.number}/stream${queryString ? `?${queryString}` : ''}`);
 
             eventSource.onmessage = (event) => {
                 try {
                     const message = JSON.parse(event.data);
                     if (message.type === 'data_update' || message.type === 'completed') {
                         const {type, timestamp, ...data} = message;
-
                         setTrip(prev => ({
                             ...prev,
                             ...data,
                             lastUpdate: data.lastUpdate ? new Date(data.lastUpdate) : prev.lastUpdate,
                             stops: data.stops
                         }));
-                        if (message.type === 'completed') cleanup();
-                    } else if (message.type === 'error') {
-                        showConnectionError();
+                        if (message.type === 'completed') eventSource?.close();
                     }
                 } catch (e) {
-                    showConnectionError();
                     console.error('Error parsing SSE:', e);
                 }
             };
 
-            eventSource.onerror = (error) => {
-                console.error('SSE error:', error);
-                cleanup();
-
-                if (reconnectAttempts < maxReconnectAttempts) {
-                    const delay = Math.min(1000 * 2 ** reconnectAttempts, 30000);
-                    reconnectAttempts++;
-                    reconnectTimeout = setTimeout(setupSSE, delay);
-                } else {
-                    showConnectionError();
-                    console.error('Max reconnection attempts reached');
-                }
+            eventSource.onerror = () => {
+                eventSource?.close();
+                setupSSE();
             };
         };
 
-        const reconnect = () => {
-            if (!eventSource || eventSource.readyState === EventSource.CLOSED) {
-                reconnectAttempts = 0;
-                setupSSE();
-            }
-        };
-
-        window.addEventListener('focus', reconnect);
         setupSSE();
+        window.addEventListener('focus', router.refresh);
 
         return () => {
-            window.removeEventListener('focus', reconnect);
-            cleanup();
+            window.removeEventListener('focus', setupSSE);
+            eventSource?.close();
         };
     }, [trip.number, trip.status]);
 
@@ -454,16 +423,6 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
                 )
             }
 
-            {
-                trip.status !== "canceled" && (
-                    <p className="text-sm text-foreground-500 text-center">dati forniti da <Link
-                        href="https://www.trenitalia.com"
-                        target="_blank"
-                        rel="noopener noreferrer">Trenitalia</Link>/<Link
-                        href="https://www.rfi.it" target="_blank" rel="noopener noreferrer">RFI</Link></p>
-                )
-            }
-
             <RouteModal
                 isOpen={isOpen}
                 onOpenChange={onOpenChange}
@@ -480,6 +439,31 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
                     </div>
                 ))}
             </RouteModal>
+
+            <Button
+                variant="bordered"
+                isIconOnly
+                radius="full"
+                startContent={
+                    <motion.div
+                        animate={pending ? {
+                            rotate: [0, 360],
+                            transition: {repeat: pending ? Infinity : 0, duration: 1, ease: "linear"}
+                        } : {rotate: 360}}
+                        transition={{
+                            type: "spring",
+                            stiffness: 300,
+                            damping: 15,
+                            repeat: pending ? Infinity : 0,
+                        }}
+                    >
+                        <IconRefresh />
+                    </motion.div>
+                }
+                onPress={() => startTransition(dispatch)}
+                isDisabled={pending}
+                className="fixed bottom-5 right-5 p-2 border-gray-500 border-1 z-20 backdrop-blur-lg"
+            />
         </div>
     );
 }

@@ -81,15 +81,6 @@ function sortTripsByDepartureTime(trips: Trip[]): Trip[] {
     })
 }
 
-function Loading() {
-    return (
-        <div className="flex flex-col items-center justify-center py-8">
-            <Spinner color="default" size="lg" />
-            <p className="text-center text-foreground-500 text-lg">caricamento in corso...</p>
-        </div>
-    )
-}
-
 async function Departures({userLat, userLon}: { userLat: number, userLon: number }) {
     try {
         const allStops = await getClosestBusStops(userLat, userLon)
@@ -157,10 +148,10 @@ export default async function Page() {
         return (
             <div className="flex flex-col items-center justify-center py-8 text-center">
                 {!rejected ? (
-                    <>
+                    <div className="flex-col py-4">
                         <Spinner color="default" size="lg" />
-                        <p className="text-foreground-500">rilevando la tua posizione...</p>
-                    </>
+                        <p className="text-center text-foreground-500 text-lg">caricamento in corso...</p>
+                    </div>
                 ) : (
                     <>
                         <p className="text-lg font-semibold">posizione non rilevata!</p>
@@ -177,8 +168,13 @@ export default async function Page() {
     const userLon = parseFloat(lon)
 
     return (
-        <div className="mx-auto max-w-4xl w-full">
-            <Suspense key={`${userLat}-${userLon}`} fallback={<Loading />}>
+        <div className="flex flex-col gap-4 text-center">
+            <Suspense fallback={
+                <div className="flex-col py-4">
+                    <Spinner color="default" size="lg" />
+                    <p className="text-center text-foreground-500 text-lg">caricamento in corso...</p>
+                </div>
+            }>
                 <Departures userLat={userLat} userLon={userLon} />
             </Suspense>
         </div>

@@ -23,7 +23,7 @@ export default async function Page({params}: {
         notFound();
     }
 
-    const data = await getActualTrip(id, company, new Date());
+    const data = await getActualTrip(id, company);
 
     if (!data) {
         notFound();

@@ -288,7 +288,7 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
                         startContent={<IconInfoTriangleFilled />}
                         onPress={onOpen}
                     >
-                        avvisi
+                        Avvisi
                     </Button>
                 )}
                 <Timeline
@@ -361,7 +361,7 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
             <RouteModal
                 isOpen={isOpen}
                 onOpenChange={onOpenChange}
-                title="avvisi sulla linea"
+                title="Avvisi sulla linea"
             >
                 {trip.route.news && trip.route.news.length > 0 && trip.route.news.map((alert: any, index: number) => (
                     <div key={index} className="flex flex-col gap-2">

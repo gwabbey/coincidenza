@@ -15,5 +15,8 @@ const iconMap: Record<string, ElementType> = {
 
 export function TransportIcon({type, size = 16}: TransportIconProps) {
     const IconComponent = iconMap[type];
-    return <IconComponent size={size} className="shrink-0" />;
+    if (!IconComponent) {
+        return <IconTrain size={size} className="shrink-0" />
+    }
+    return <IconComponent size={size} className="shrink-0" />
 }

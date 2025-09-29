@@ -1,7 +1,7 @@
 'use client';
 import {StationMonitor} from '@/api/types';
 import {capitalize, getDelayColor} from '@/utils';
-import {Alert} from '@heroui/react';
+import {Alert, cn} from '@heroui/react';
 import {IconInfoCircleFilled} from '@tabler/icons-react';
 import {AnimatePresence, motion} from 'motion/react';
 import {Link} from 'next-view-transitions';
@@ -81,7 +81,7 @@ export function Monitor({monitor}: { monitor: StationMonitor }) {
                         <motion.div
                             key={`${train.shortCategory || train.company || ""} ${train.number.toString()} ${train.destination}`}
                             layout
-                            initial={{opacity: 0, y: 20}}
+                            initial={{opacity: 0}}
                             animate={{opacity: 1, y: 0}}
                             exit={{opacity: 0, y: -20, transition: {duration: 0.3}}}
                             transition={{duration: 0.3, ease: "easeInOut"}}
@@ -109,13 +109,14 @@ export function Monitor({monitor}: { monitor: StationMonitor }) {
                                                 </span>
                                             )}
                                             {train.delay !== "0" && (
-                                                <p className={`text-lg font-bold uppercase flex-shrink-0 whitespace-nowrap text-${getDelayColor(train.delay)}`}>
+                                                <p className={cn("text-lg font-bold uppercase flex-shrink-0 whitespace-nowrap",
+                                                    train.delay > 0 ? `text-${getDelayColor(train.delay)}` : "text-danger")}>
                                                     {parseInt(train.delay) > 0 ? `+${train.delay}'` : train.delay}
                                                 </p>
                                             )}
                                         </div>
 
-                                        {getTrackUrl(train.company, train.number, train.category) && train.category !== "autocorsa" ? (
+                                        {getTrackUrl(train.company, train.number, train.category) && train.category !== "bus" ? (
                                             <Link
                                                 className="text-sm text-foreground-500 capitalize"
                                                 href={getTrackUrl(train.company, train.number, train.category)!}
@@ -171,8 +172,6 @@ export function Monitor({monitor}: { monitor: StationMonitor }) {
                             </div>
                         </motion.div>
                     ))}
-                    <p key="credits" className="text-sm text-foreground-500 text-center">dati forniti da <Link
-                        href="https://www.rfi.it" target="_blank" rel="noopener noreferrer">RFI</Link></p>
                 </AnimatePresence>
             )}
         </div>

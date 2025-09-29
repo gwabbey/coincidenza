@@ -6,6 +6,8 @@ import {getRealTimeData} from './realtime';
 import {Directions, GeocodeRequest, GeocodeResult, Location, Trip} from './types';
 import {trainCategoryShortNames} from "@/train-categories";
 import {differenceInMinutes} from "date-fns";
+import {getNearbyStation} from "@/api/bahn/api";
+import {getStationId} from "@/api/trenitalia/frecce";
 
 const MOTIS = process.env.MOTIS || "http://localhost:8080";
 
@@ -214,6 +216,22 @@ async function geocodeLocation({lat, lon, text}: GeocodeRequest): Promise<string
     }
 }
 
+async function processLocation(location: Location): Promise<string | null> {
+    let stationName = null;
+
+    if (location.isBahnStation) {
+        stationName = location.text;
+    } else {
+        stationName = await getNearbyStation(location.lat, location.lon);
+    }
+
+    if (!stationName) {
+        return null;
+    }
+
+    return await getStationId(stationName);
+}
+
 export async function getDirections(
     from: Location,
     to: Location,
@@ -242,7 +260,7 @@ export async function getDirections(
             return {trips: [], pageCursor: "", direct: []};
         }
 
-        return processTripData(data);
+        return await processTripData(data);
     } catch (error) {
         console.error("Error fetching directions:", error);
         return {trips: [], pageCursor: "", direct: []};

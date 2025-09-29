@@ -2,6 +2,7 @@ export interface Location {
     lat: number
     lon: number
     text: string
+    isBahnStation: boolean
 }
 
 export interface Directions {
@@ -58,7 +59,7 @@ export interface Leg {
     routeColor?: string
     tripShortName?: string
     displayName?: string
-    cancelled?: boolean
+    cancelled: boolean
     source?: string
     intermediateStops?: IntermediateStop[]
 }
@@ -143,8 +144,8 @@ export interface Info {
 }
 
 export interface RealTime {
-    delay: number | null
-    info: Info[] | null
     tracked: boolean
+    delay: number | null
     url: string | null
+    info: Info[] | null
 }

@@ -29,7 +29,7 @@ export async function getRealTimeData(leg: Leg): Promise<RealTime> {
                 .map((alert: any) => ({
                     message: alert.details,
                     url: alert.url,
-                    source: `Avviso ${trip?.route?.news?.serviceType ?? "da Trentino Trasporti"}`
+                    source: alert.serviceType ?? "Trentino Trasporti",
                 })) || null,
             tracked: trip ? trip.delay !== null : false,
             url: getTrackUrl(leg)
@@ -37,7 +37,7 @@ export async function getRealTimeData(leg: Leg): Promise<RealTime> {
     } else if (["TI", "Trenitalia", "südtirolmobil - altoadigemobilità"].some(s => leg.agencyId?.includes(s)) || leg.agencyId === "1" || leg.agencyId === "TN") {
         const date = new Date(leg.scheduledStartTime);
         date.setHours(0, 0, 0, 0);
-        const trip = await guessTrip(leg.tripShortName ?? "", leg.headsign?.toLowerCase() ?? "", date);
+        const trip = await guessTrip(leg.tripShortName ?? "", date);
 
         return {
             delay: trip?.delay ?? null,

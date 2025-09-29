@@ -3,7 +3,7 @@
 import {Directions, IntermediateStop, Leg} from "@/api/motis/types";
 import Timeline from "@/components/timeline";
 import {formatDuration, getDelayColor} from "@/utils";
-import {Accordion, AccordionItem, Button, cn, Selection, useDisclosure} from "@heroui/react";
+import {Accordion, AccordionItem, Button, cn, Divider, Selection, useDisclosure} from "@heroui/react";
 import {IconAccessPoint, IconAlertTriangle, IconArrowRight, IconExternalLink, IconMap} from "@tabler/icons-react";
 import {format} from "date-fns";
 import {useState} from "react";
@@ -18,7 +18,7 @@ const getLegDescription = (leg: Leg) => {
 
         const roundedMeters = Math.round(leg.distance / 100) * 100;
         const distanceInKm = leg.distance / 1000;
-        const distanceStr = distanceInKm > 1 ? `circa ${distanceInKm.toFixed(1)} km` : `circa ${roundedMeters} metri`;
+        const distanceStr = distanceInKm > 1 ? `circa ${Number(distanceInKm.toFixed(1))} km` : `circa ${roundedMeters} metri`;
         return `${formatDuration(Math.round(leg.duration / 60))} · ${distanceStr}`;
     }
     if (leg.mode === "WALK") return "";
@@ -57,8 +57,10 @@ export default function Results({directions}: { directions: Directions }) {
                                            </span>
                                            <IconArrowRight className="shrink-0" />
                                            <span
-                                               className={cn(`text-${getDelayColor(trip.legs[trip.legs.length - 1]?.realTime?.delay ??
-                                                   trip.legs[trip.legs.length - 2]?.realTime?.delay ?? null)}`)}>
+                                               className={cn(`text-${getDelayColor(trip.legs[trip.legs.length - 1]?.mode !== "WALK"
+                                                   ? trip.legs[trip.legs.length - 1]?.realTime?.delay
+                                                   : trip.legs[trip.legs.length - 1].tripId !== trip.legs[trip.legs.length - 2].tripId
+                                                       ? trip.legs[trip.legs.length - 2]?.realTime?.delay : null)}`)}>
                                                {format(new Date(trip.endTime), "HH:mm")}
                                            </span>
                                         </span>
@@ -82,7 +84,7 @@ export default function Results({directions}: { directions: Directions }) {
                                    </div>
                                }
                 >
-                    <div className="flex flex-col space-y-8 pb-4">
+                    <div className="flex flex-col space-y-6">
                         {trip.legs
                             .map((leg, index) => (
                                 <div key={index} className="flex flex-col gap-4">
@@ -145,20 +147,6 @@ export default function Results({directions}: { directions: Directions }) {
                                     </div>
                                     {leg.mode !== "WALK" && (
                                         <div className="pl-8 md:px-8 flex flex-col md:flex-row justify-between gap-4">
-                                            {/* {leg.realTime && leg.realTime?.info.length > 0 && (
-                                                <Button
-                                                    variant="flat"
-                                                    color="warning"
-                                                    className="flex items-center font-bold sm:w-fit"
-                                                    startContent={<IconInfoTriangleFilled />}
-                                                    onPress={() => openModal(leg, 'info')}
-                                                >
-                                                    avvisi
-                                                </Button>
-                                            )} */}
-
-                                            {/*<LeafletMap leg={leg} className="hidden sm:flex rounded-small" />*/}
-
                                             <Timeline steps={[{
                                                 content: (
                                                     <div className="flex flex-col">
@@ -196,8 +184,8 @@ export default function Results({directions}: { directions: Directions }) {
                                                                            fermat${leg.intermediateStops.length <= 1 ? "a" : "e"}, ${formatDuration(Math.round(leg.duration / 60))}`}
                                                                            indicator={leg.intermediateStops?.length === 0 && <></>}>
                                                                 <div>
-                                                                    {leg.intermediateStops && leg.intermediateStops.map((stop: IntermediateStop) => (
-                                                                        <ul key={stop.stopId} className="list-disc">
+                                                                    {leg.intermediateStops && leg.intermediateStops.map((stop: IntermediateStop, index) => (
+                                                                        <ul key={index} className="list-disc">
                                                                             <li>{stop.name} ({format(new Date(stop.departure).getTime() + ((leg.realTime?.delay || 0) * 60 * 1000), "HH:mm")})</li>
                                                                         </ul>
                                                                     ))}
@@ -234,6 +222,7 @@ export default function Results({directions}: { directions: Directions }) {
                                                         </div>
                                                     )
                                                 }]} active={-1} />
+
                                             <div
                                                 className="flex flex-row md:flex-col md:justify-start justify-between gap-4 w-full max-w-2xl">
                                                 {leg.realTime && leg.realTime.info && leg.realTime.info.length > 0 && (
@@ -244,20 +233,30 @@ export default function Results({directions}: { directions: Directions }) {
                                                                            title: "font-bold"
                                                                        }}
                                                                        startContent={<IconAlertTriangle />}
-                                                                       className="bg-warning-500 bg-opacity-50 px-4 rounded-large max-h-64 overflow-scroll">
+                                                                       className="bg-warning-500 bg-opacity-50 px-4 scrollbar-hide rounded-large max-h-64 overflow-scroll mb-4">
                                                             <div className="pb-2 text-small">
-                                                                {leg && leg.realTime?.info && leg.realTime?.info.map((alert, index) => (
+                                                                {leg && leg.realTime.info && leg.realTime.info.map((alert, index) => (
                                                                     <div key={index} className="flex flex-col gap-2">
                                                                         {alert.url ? (
-                                                                            <Link href={alert.url} target="_blank">
-                                                                                {alert.message}
-                                                                                <IconExternalLink
-                                                                                    className="shrink-0 ml-1 mb-1 inline text-center"
-                                                                                    size={16} />
-                                                                            </Link>
+                                                                            <div className="flex flex-col">
+                                                                                <Link href={alert.url} target="_blank">
+                                                                                    {alert.message}
+                                                                                    <IconExternalLink
+                                                                                        className="shrink-0 ml-1 mb-1 inline text-center"
+                                                                                        size={16} />
+                                                                                </Link>
+                                                                                <span
+                                                                                    className="text-sm text-foreground-500">{alert.source}</span>
+                                                                            </div>
                                                                         ) : (
-                                                                            <span>{alert.message}</span>
+                                                                            <div className="flex flex-col">
+                                                                                <span>{alert.message}</span>
+                                                                                <span
+                                                                                    className="text-sm text-foreground-500">{alert.source}</span>
+                                                                            </div>
                                                                         )}
+                                                                        {index !== leg.realTime.info!.length - 1 &&
+                                                                            <Divider className="mb-2" />}
                                                                     </div>
                                                                 ))}
                                                             </div>

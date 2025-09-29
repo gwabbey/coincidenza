@@ -24,19 +24,17 @@ export async function GET(
 
     return createSSEHandler(request, origin, id, timestamp, {
         fetchData: async (origin: string | null, id: string, timestamp: number | undefined) => {
+            if (!origin || timestamp === undefined) {
+                throw new Error("Missing required parameters");
+            }
+
             switch (company) {
                 case "trenitalia":
                 case "trenord":
-                    if (!origin || timestamp === undefined) {
-                        throw new Error("Missing required parameters");
-                    }
                     return getTrenitaliaTrip(origin, id, timestamp);
                 case "trentino-trasporti":
                     throw new Error("coming soon, just give me a minute");
                 default:
-                    if (!origin || timestamp === undefined) {
-                        throw new Error("Missing required parameters");
-                    }
                     return getTrenitaliaTrip(origin, id, timestamp);
             }
         },

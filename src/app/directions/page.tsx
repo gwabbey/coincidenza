@@ -61,12 +61,14 @@ export default function Directions() {
                 {
                     lat: selectedLocations.from.coordinates.lat,
                     lon: selectedLocations.from.coordinates.lon,
-                    text: selectedLocations.from.label.toString()
+                    text: selectedLocations.from.label.toString(),
+                    isBahnStation: selectedLocations.from.isBahnStation ?? false,
                 },
                 {
                     lat: selectedLocations.to.coordinates.lat,
                     lon: selectedLocations.to.coordinates.lon,
-                    text: selectedLocations.to.label.toString()
+                    text: selectedLocations.to.label.toString(),
+                    isBahnStation: selectedLocations.to.isBahnStation ?? false,
                 },
                 localIsoString
             );
