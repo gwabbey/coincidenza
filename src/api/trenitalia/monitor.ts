@@ -54,13 +54,14 @@ async function getVtDepartures(id: string) {
     return null;
 }
 
-export async function getMonitor(rfiId: string, vtId: string = ""): Promise<StationMonitor> {
+export async function getMonitor(rfiId: string, vtId: string = ""): Promise<StationMonitor | null> {
     try {
-        const client = axios.create();
+        const client = axios.create({
+            timeout: 10000,
+        });
 
         axiosRetry(client, {
-            retries: 5,
-            retryDelay: axiosRetry.exponentialDelay,
+            retries: 3,
             onRetry: (retryCount, error) => {
                 console.log(
                     `retry attempt ${retryCount} for error ${error.response?.statusText}`
@@ -192,6 +193,6 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
 
         return {name, trains, alerts};
     } catch (error) {
-        return {name: "", trains: [], alerts: ""};
+        return null;
     }
 }

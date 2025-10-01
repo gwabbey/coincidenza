@@ -84,14 +84,17 @@ const processTripData = async (data: {
                         ...originalLeg,
                         intermediateStops: originalLeg.intermediateStops?.map((stop: any) => ({
                             ...stop,
-                            name: capitalize(stop.name),
+                            name: getStop(stop.name),
                         })),
                         headsign: capitalize(originalLeg.headsign || ""),
+                        routeLongName: capitalize(originalLeg.routeLongName || ""),
                         routeShortName: originalLeg.routeShortName && (originalLeg.agencyId === "IT:ITH3:Operator:05403151003:Trenitalia:0"
-                            ? trainCategoryShortNames[originalLeg.routeLongName!.toLowerCase()] :
-                            originalLeg.routeShortName === "REG" ? "R" :
-                                originalLeg.agencyId === "1" ? originalLeg.routeShortName.replace(/\d+/g, '')
-                                    : originalLeg.routeShortName),
+                                ? trainCategoryShortNames[originalLeg.routeLongName!.toLowerCase()] :
+                                originalLeg.routeShortName === "REG" ? "R" :
+                                    originalLeg.agencyId === "1" ? originalLeg.routeShortName.replace(/\d+/g, '') :
+                                        originalLeg.agencyId?.includes("ATV") ? originalLeg.routeShortName.replace("_ATV", '') :
+                                            originalLeg.routeShortName
+                        ),
                         from: {
                             ...originalLeg.from,
                             name: getStop(originalLeg.from.name),
@@ -103,7 +106,10 @@ const processTripData = async (data: {
                         tripShortName: originalLeg.tripId && (originalLeg.agencyId === "IT:ITH3:Operator:05403151003:Trenitalia:0"
                             ? originalLeg.tripId.match(/-(\d+)-/)?.[1]
                             : originalLeg.agencyId === "1" ? originalLeg.tripShortName?.split(" - ")[1]
-                                : originalLeg.tripShortName)
+                                : originalLeg.tripShortName),
+                        routeColor: ["R", "REG", "RV"].includes(originalLeg.routeShortName || "") ? "036633" :
+                            originalLeg.source?.includes("tt_urbano") && !originalLeg.routeColor ? "1CC864" :
+                                originalLeg.routeColor
                     };
                 })
             )).filter((leg) => {

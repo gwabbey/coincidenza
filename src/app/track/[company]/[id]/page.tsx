@@ -13,6 +13,8 @@ const clients: Record<number, string> = {
     64: "bahn"
 }
 
+export const revalidate = 0
+
 export default async function Page({params}: {
     params: Promise<{ company: string, id: string }>
 }) {

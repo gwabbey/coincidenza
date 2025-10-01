@@ -1,4 +1,4 @@
-import {IconBus, IconTrain, IconWalk} from "@tabler/icons-react";
+import {IconBus, IconFerry, IconTrain, IconWalk} from "@tabler/icons-react";
 import {ElementType} from "react";
 
 interface TransportIconProps {
@@ -11,6 +11,7 @@ const iconMap: Record<string, ElementType> = {
     REGIONAL_FAST_RAIL: IconTrain,
     WALK: IconWalk,
     METRO: IconTrain,
+    FERRY: IconFerry,
 };
 
 export function TransportIcon({type, size = 16}: TransportIconProps) {

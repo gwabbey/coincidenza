@@ -146,7 +146,7 @@ export default function Results({directions}: { directions: Directions }) {
                                         )}
                                     </div>
                                     {leg.mode !== "WALK" && (
-                                        <div className="pl-8 md:px-8 flex flex-col md:flex-row justify-between gap-4">
+                                        <div className="pl-8 md:px-8 flex flex-col md:flex-row justify-between">
                                             <Timeline steps={[{
                                                 content: (
                                                     <div className="flex flex-col">
@@ -226,15 +226,16 @@ export default function Results({directions}: { directions: Directions }) {
                                             <div
                                                 className="flex flex-row md:flex-col md:justify-start justify-between gap-4 w-full max-w-2xl">
                                                 {leg.realTime && leg.realTime.info && leg.realTime.info.length > 0 && (
-                                                    <Accordion isCompact itemClasses={{trigger: "px-0"}}>
+                                                    <Accordion isCompact>
                                                         <AccordionItem key={1} title="Avvisi"
                                                                        classNames={{
                                                                            indicator: "text-foreground",
                                                                            title: "font-bold",
-                                                                           trigger: "py-3"
+                                                                           trigger: "py-3",
+                                                                           base: "mt-4"
                                                                        }}
                                                                        startContent={<IconAlertTriangle />}
-                                                                       className="bg-warning-500/50 px-4 scrollbar-hide rounded-large max-h-64 overflow-scroll mb-4">
+                                                                       className="bg-warning-500/50 px-4 scrollbar-hide rounded-large max-h-64 overflow-scroll">
                                                             <div className="pb-2 text-small">
                                                                 {leg && leg.realTime.info && leg.realTime.info.map((alert, index) => (
                                                                     <div key={index} className="flex flex-col gap-2">

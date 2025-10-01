@@ -16,8 +16,6 @@ interface Props {
     debounceDelay?: number;
     disabled?: boolean;
     onLocationSelect: (location: Location | null) => void;
-    nextInputRef?: React.RefObject<HTMLInputElement>;
-    ref?: React.RefObject<HTMLInputElement>;
 }
 
 export const LocationAutocomplete = ({
@@ -26,8 +24,6 @@ export const LocationAutocomplete = ({
                                          debounceDelay = 1000,
                                          disabled = false,
                                          onLocationSelect,
-                                         nextInputRef,
-                                         ref
                                      }: Props) => {
     const [value, setValue] = useState(selected);
     const [items, setItems] = useState<Location[]>([]);
@@ -84,7 +80,6 @@ export const LocationAutocomplete = ({
 
                 setSelectedLocation(locationData);
                 onLocationSelect(locationData);
-                nextInputRef?.current?.focus();
 
                 return;
             } catch (error) {
@@ -108,7 +103,6 @@ export const LocationAutocomplete = ({
             setValue(displayValue);
             setSelectedLocation(selected);
             onLocationSelect(selected);
-            nextInputRef?.current?.focus();
         }
     };
 
@@ -216,7 +210,6 @@ export const LocationAutocomplete = ({
                 endContentWrapper: "mr-0"
             }}
             items={items}
-            ref={ref}
             listboxProps={{
                 emptyContent: "nessun risultato."
             }}

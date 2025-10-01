@@ -8,6 +8,13 @@ import {Monitor} from "./monitor";
 
 async function MonitorSuspense({rfiId, vtId}: { rfiId: string, vtId: string }) {
     const monitor = await getMonitor(rfiId, vtId);
+    if (!monitor) {
+        return (
+            <div className="text-center text-lg text-foreground-500 font-bold p-4">
+                i dati da questa stazione non sono disponibili al momento. riprova più tardi.
+            </div>
+        )
+    }
     return <Monitor monitor={monitor} />;
 }
 

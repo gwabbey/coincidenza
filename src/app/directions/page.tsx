@@ -8,7 +8,7 @@ import {type Location} from "@/types";
 import {Button, Card, DateInput, Link, TimeInput} from "@heroui/react";
 import {CalendarDate, Time} from "@internationalized/date";
 import {IconMap, IconSearch, IconWalk} from "@tabler/icons-react";
-import {useRef, useState} from "react";
+import {useState} from "react";
 import {LocationAutocomplete} from "./autocomplete";
 import Results from "./results";
 import {formatDuration} from "@/utils";
@@ -30,7 +30,6 @@ export default function Directions() {
     const [directions, setDirections] = useState<Directions>();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const toInputRef = useRef<HTMLInputElement>(null);
 
     const handleLocationSelect = (type: 'from' | 'to', location: Location | null) => {
         setSelectedLocations(prev => ({
@@ -98,13 +97,11 @@ export default function Directions() {
                 <LocationAutocomplete
                     name="from"
                     label="partenza"
-                    nextInputRef={toInputRef}
                     onLocationSelect={(location) => handleLocationSelect('from', location)}
                 />
                 <LocationAutocomplete
                     name="to"
                     label="arrivo"
-                    ref={toInputRef}
                     onLocationSelect={(location) => handleLocationSelect('to', location)}
                 />
                 <div className="flex flex-row justify-center items-center gap-4 max-w-md w-full">

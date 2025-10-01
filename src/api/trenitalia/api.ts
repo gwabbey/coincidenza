@@ -110,6 +110,7 @@ function getCategory(trip: any) {
 
 export async function getMonitorTrip(rfiId: string, tripId: string) {
     const monitor = await getMonitor(rfiId);
+    if (!monitor) return null;
     const train = monitor.trains.find(train => String(train.number) === String(tripId));
     if (!train) return null;
     return train;
@@ -270,14 +271,30 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
 
     if (rfiDelay !== null) {
         delay = rfiDelay;
-    } else if (currentStop?.fermata && !currentStop?.fermata.partenzaReale && currentStop?.fermata.partenza_teorica && currentStop?.fermata.arrivoReale) {
-        const scheduledDeparture = currentStop.fermata.partenza_teorica;
-        const diff = now - scheduledDeparture;
+    } else if (currentStop?.fermata) {
+        const {arrivoReale, arrivo_teorico} = currentStop.fermata;
 
-        if (diff > 3 * 60 * 1000) {
-            const fallbackDelay = Math.round(diff / 60000);
-            if (fallbackDelay > delay) {
-                delay = fallbackDelay;
+        if (!arrivoReale && arrivo_teorico) {
+            const diff = now - arrivo_teorico;
+
+            if (diff > 3 * 60 * 1000) {
+                const fallbackDelay = Math.round(diff / 60000);
+                if (fallbackDelay > delay) {
+                    delay = fallbackDelay;
+                }
+            }
+        }
+
+        const nextStop = canvas[currentStopIndex + 1];
+        if (nextStop?.fermata && nextStop.fermata.partenza_teorica && !nextStop.fermata.partenzaReale) {
+            const scheduledDeparture = nextStop.fermata.partenza_teorica;
+            const diff = now - scheduledDeparture;
+
+            if (diff > 3 * 60 * 1000) {
+                const fallbackDelay = Math.round(diff / 60000);
+                if (fallbackDelay > delay) {
+                    delay = fallbackDelay;
+                }
             }
         }
     }
