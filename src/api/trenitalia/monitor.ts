@@ -57,7 +57,7 @@ async function getVtDepartures(id: string) {
 export async function getMonitor(rfiId: string, vtId: string = ""): Promise<StationMonitor | null> {
     try {
         const client = axios.create({
-            timeout: 10000,
+            timeout: 15000,
         });
 
         axiosRetry(client, {

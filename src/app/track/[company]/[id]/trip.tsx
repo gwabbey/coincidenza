@@ -228,11 +228,11 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
                     <div className="flex flex-col flex-grow min-w-0">
                         {trip.status !== "canceled" ? (
                             <div className="flex-col">
-                                <p className={`${trip.status === "scheduled" ? "text-center" : ""} text-lg font-bold text-left sm:text-center truncate flex-grow min-w-0`}>
+                                <p className={`${trip.status === "scheduled" ? "text-center" : "sm:text-center text-left"} text-lg font-bold truncate flex-grow min-w-0`}>
                                     {trip.status === "scheduled" ? "Non ancora partito" : capitalize(trip.lastKnownLocation || "--")}
                                 </p>
                                 {(!trip.lastUpdate && trip.delay) ? (
-                                    <p className={"text-center font-bold sm:text-center flex-grow min-w-0"}>
+                                    <p className={"text-center font-bold flex-grow min-w-0"}>
                                         Partenza prevista con un ritardo di <span
                                         className={`text-${getDelayColor(trip.delay)}`}>{trip.delay}</span> min
                                     </p>
@@ -356,7 +356,7 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
                                                             {stop.scheduledArrival && (
                                                                 <span className={`${isArrivalDelayed
                                                                     ? 'line-through text-foreground-500'
-                                                                    : `font-bold ${(!isFutureStop && stop.actualArrival) || (isFutureStop && trip.delay <= 0 && trip.status !== "scheduled") ? 'text-success' : ''}`
+                                                                    : `font-bold ${(!isFutureStop && stop.actualArrival) || (isFutureStop && trip.status !== "scheduled") ? 'text-success' : ''}`
                                                                 }`}>
                                                                     {formatDate(stop.scheduledArrival)}
                                                                 </span>
@@ -377,7 +377,7 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
                                                             {stop.scheduledDeparture && (
                                                                 <span className={`${isDepartureDelayed
                                                                     ? 'line-through text-foreground-500'
-                                                                    : `font-bold ${(!isFutureStop && stop.actualDeparture) || (isFutureStop && trip.delay <= 0 && trip.status !== "scheduled") ? 'text-success' : ''}`
+                                                                    : `font-bold ${(!isFutureStop && stop.actualDeparture) || (isFutureStop && trip.status !== "scheduled") ? 'text-success' : ''}`
                                                                 }`}>
                                                                     {formatDate(stop.scheduledDeparture)}
                                                                 </span>

@@ -4,7 +4,7 @@ import {capitalize} from '@/utils';
 import axios from 'axios';
 import {getRealTimeData} from './realtime';
 import {Directions, GeocodeRequest, GeocodeResult, Location, Trip} from './types';
-import {trainCategoryShortNames} from "@/train-categories";
+import {trainCategoryLongNames, trainCategoryShortNames} from "@/train-categories";
 import {differenceInMinutes} from "date-fns";
 import {getNearbyStation} from "@/api/bahn/api";
 import {getStationId} from "@/api/trenitalia/frecce";
@@ -87,7 +87,7 @@ const processTripData = async (data: {
                             name: getStop(stop.name),
                         })),
                         headsign: capitalize(originalLeg.headsign || ""),
-                        routeLongName: capitalize(originalLeg.routeLongName || ""),
+                        routeLongName: trainCategoryLongNames[originalLeg.routeShortName!.toUpperCase()] || capitalize(originalLeg.routeLongName || ""),
                         routeShortName: originalLeg.routeShortName && (originalLeg.agencyId === "IT:ITH3:Operator:05403151003:Trenitalia:0"
                                 ? trainCategoryShortNames[originalLeg.routeLongName!.toLowerCase()] :
                                 originalLeg.routeShortName === "REG" ? "R" :

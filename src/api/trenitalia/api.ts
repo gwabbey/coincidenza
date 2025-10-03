@@ -217,20 +217,23 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
     if (response.status !== 200) return null;
 
     const now = new Date().getTime();
-    const currentStopIndex = canvas.findIndex((item: any) => item.stazioneCorrente) ?? -1;
-    const currentStop = canvas[currentStopIndex];
-    const nextStop = canvas[currentStopIndex + 1];
+    let currentStopIndex = canvas.findIndex((item: any) => item.stazioneCorrente);
+
+    if (currentStopIndex === -1 || canvas[currentStopIndex]?.fermata?.actualFermataType === 3) {
+        currentStopIndex = canvas.findIndex((item: any) => item.fermata?.actualFermataType !== 3);
+    }
+
+    const currentStop = currentStopIndex >= 0 ? canvas[currentStopIndex] : null;
+    const nextStop = currentStopIndex >= 0 ? canvas[currentStopIndex + 1] : null;
     const trip = response.data;
 
     let delay = trip.ritardo;
     let lastKnownLocation = capitalize(trip.stazioneUltimoRilevamento || "--");
 
     if (currentStop?.fermata) {
-        const isStationed = (currentStop?.fermata.arrivoReale && !currentStop?.fermata.partenzaReale) || (currentStop?.fermata.progressivo === 1 && trip.nonPartito);
+        const isStationed = currentStop?.fermata.arrivoReale && !currentStop?.fermata.partenzaReale;
 
-        if (isStationed) {
-            delay = currentStop?.fermata.ritardoArrivo;
-        }
+        if (isStationed) delay = currentStop?.fermata.ritardoArrivo
 
         const scheduled = new Date(currentStop.fermata.partenzaReale);
         const delta = scheduled.getTime() - now;
@@ -258,7 +261,6 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
     };
 
     const isLateForDeparture = currentStop?.fermata && !currentStop?.fermata.partenzaReale && (currentStop?.fermata.partenza_teorica + trip.ritardo * 60000 < now);
-
     const isLateForArrival = !isLateForDeparture && nextStop?.fermata && !nextStop?.fermata.arrivoReale && (nextStop?.fermata.arrivo_teorico + trip.ritardo * 60000 < now);
 
     let rfiDelay = null;
@@ -271,31 +273,28 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
 
     if (rfiDelay !== null) {
         delay = rfiDelay;
-    } else if (currentStop?.fermata) {
-        const {arrivoReale, arrivo_teorico} = currentStop.fermata;
+    }
 
-        if (!arrivoReale && arrivo_teorico) {
-            const diff = now - arrivo_teorico;
+    const gracePeriod = 3 * 60 * 1000;
+    if (!trip.nonPartito && currentStop?.fermata?.arrivoReale && !currentStop?.fermata?.partenzaReale) {
+        const preferredDelay = rfiDelay !== null ? rfiDelay : (currentStop.fermata.ritardoArrivo || 0);
+        const expectedDeparture = currentStop.fermata.partenza_teorica + preferredDelay * 60000;
+        const timeSinceExpectedDeparture = now - expectedDeparture;
 
-            if (diff > 3 * 60 * 1000) {
-                const fallbackDelay = Math.round(diff / 60000);
-                if (fallbackDelay > delay) {
-                    delay = fallbackDelay;
-                }
-            }
+        if (timeSinceExpectedDeparture > gracePeriod) {
+            const additionalDelay = Math.floor((timeSinceExpectedDeparture - gracePeriod) / 60000);
+            delay = preferredDelay + additionalDelay;
         }
+    }
 
-        const nextStop = canvas[currentStopIndex + 1];
-        if (nextStop?.fermata && nextStop.fermata.partenza_teorica && !nextStop.fermata.partenzaReale) {
-            const scheduledDeparture = nextStop.fermata.partenza_teorica;
-            const diff = now - scheduledDeparture;
+    if (!trip.nonPartito && nextStop?.fermata && !nextStop.fermata.arrivoReale && !nextStop.fermata.partenzaReale) {
+        const preferredDelay = rfiDelay !== null ? rfiDelay : trip.ritardo;
+        const expectedArrival = nextStop.fermata.arrivo_teorico + preferredDelay * 60000;
+        const timeSinceExpectedArrival = now - expectedArrival;
 
-            if (diff > 3 * 60 * 1000) {
-                const fallbackDelay = Math.round(diff / 60000);
-                if (fallbackDelay > delay) {
-                    delay = fallbackDelay;
-                }
-            }
+        if (timeSinceExpectedArrival > gracePeriod) {
+            const additionalDelay = Math.floor((timeSinceExpectedArrival - gracePeriod) / 60000);
+            delay = preferredDelay + additionalDelay;
         }
     }
 
