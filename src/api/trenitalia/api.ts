@@ -227,7 +227,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
     const nextStop = currentStopIndex >= 0 ? canvas[currentStopIndex + 1] : null;
     const trip = response.data;
 
-    let delay = trip.ritardo;
+    let delay = trip.ritardo || currentStop.fermata?.ritardoPartenza;
     let lastKnownLocation = capitalize(trip.stazioneUltimoRilevamento || "--");
 
     if (currentStop?.fermata) {
@@ -277,7 +277,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
 
     const gracePeriod = 3 * 60 * 1000;
     if (!trip.nonPartito && currentStop?.fermata?.arrivoReale && !currentStop?.fermata?.partenzaReale) {
-        const preferredDelay = rfiDelay !== null ? rfiDelay : (currentStop.fermata.ritardoArrivo || 0);
+        const preferredDelay = rfiDelay ?? (currentStop.fermata.ritardoArrivo || 0);
         const expectedDeparture = currentStop.fermata.partenza_teorica + preferredDelay * 60000;
         const timeSinceExpectedDeparture = now - expectedDeparture;
 
@@ -288,7 +288,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
     }
 
     if (!trip.nonPartito && nextStop?.fermata && !nextStop.fermata.arrivoReale && !nextStop.fermata.partenzaReale) {
-        const preferredDelay = rfiDelay !== null ? rfiDelay : trip.ritardo;
+        const preferredDelay = rfiDelay || trip.ritardo;
         const expectedArrival = nextStop.fermata.arrivo_teorico + preferredDelay * 60000;
         const timeSinceExpectedArrival = now - expectedArrival;
 

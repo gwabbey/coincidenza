@@ -125,8 +125,8 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
             const getShortCategory = (category: string | null): string | null => {
                 if (!category) return null;
                 if (category === "railjet") return "EC";
-                if (category === "es*") return "AV";
                 if (category.includes('regionale veloce')) return "RV";
+                if (category.startsWith('es')) return "AV";
                 if (category.startsWith('suburbano')) return category.split(' ')[1];
                 if (category.startsWith('servizio ferroviario metropolitano')) {
                     return category.replace('servizio ferroviario metropolitano linea', 'SFM');
@@ -139,10 +139,10 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
             let company = $(element).find('td[id="RVettore"] img').attr('alt')?.toLowerCase()?.trim() || "";
             const getCompany = (company: string): string => {
                 if (company.startsWith("regionale")) return "Trenitalia"
-                if (company === 'tt') return 'Trentino Trasporti';
                 if (company.startsWith('sad')) return 'SAD';
-                if (company === 'ente volturno autonomo') return 'EAV';
                 if (company.startsWith('obb')) return 'ÖBB';
+                if (company === 'tt') return 'Trentino Trasporti';
+                if (company === 'ntv') return 'Italo';
                 return capitalize(company);
             };
 

@@ -6,8 +6,6 @@ import {getRealTimeData} from './realtime';
 import {Directions, GeocodeRequest, GeocodeResult, Location, Trip} from './types';
 import {trainCategoryLongNames, trainCategoryShortNames} from "@/train-categories";
 import {differenceInMinutes} from "date-fns";
-import {getNearbyStation} from "@/api/bahn/api";
-import {getStationId} from "@/api/trenitalia/frecce";
 
 const MOTIS = process.env.MOTIS || "http://localhost:8080";
 
@@ -220,22 +218,6 @@ async function geocodeLocation({lat, lon, text}: GeocodeRequest): Promise<string
         console.error("Geocode error:", err);
         return `${lat},${lon}`;
     }
-}
-
-async function processLocation(location: Location): Promise<string | null> {
-    let stationName = null;
-
-    if (location.isBahnStation) {
-        stationName = location.text;
-    } else {
-        stationName = await getNearbyStation(location.lat, location.lon);
-    }
-
-    if (!stationName) {
-        return null;
-    }
-
-    return await getStationId(stationName);
 }
 
 export async function getDirections(
