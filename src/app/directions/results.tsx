@@ -40,7 +40,7 @@ export default function Results({directions}: { directions: Directions }) {
         }
     };
 
-    console.log(directions)
+    // console.log(directions)
 
     return (
         <Accordion variant="splitted" className="px-0 w-full mx-auto" selectedKeys={selectedKeys}

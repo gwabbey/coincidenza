@@ -275,29 +275,6 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
         delay = rfiDelay;
     }
 
-    const gracePeriod = 3 * 60 * 1000;
-    if (!trip.nonPartito && currentStop?.fermata?.arrivoReale && !currentStop?.fermata?.partenzaReale) {
-        const preferredDelay = rfiDelay ?? (currentStop.fermata.ritardoArrivo || 0);
-        const expectedDeparture = currentStop.fermata.partenza_teorica + preferredDelay * 60000;
-        const timeSinceExpectedDeparture = now - expectedDeparture;
-
-        if (timeSinceExpectedDeparture > gracePeriod) {
-            const additionalDelay = Math.floor((timeSinceExpectedDeparture - gracePeriod) / 60000);
-            delay = preferredDelay + additionalDelay;
-        }
-    }
-
-    if (!trip.nonPartito && nextStop?.fermata && !nextStop.fermata.arrivoReale && !nextStop.fermata.partenzaReale) {
-        const preferredDelay = rfiDelay || trip.ritardo;
-        const expectedArrival = nextStop.fermata.arrivo_teorico + preferredDelay * 60000;
-        const timeSinceExpectedArrival = now - expectedArrival;
-
-        if (timeSinceExpectedArrival > gracePeriod) {
-            const additionalDelay = Math.floor((timeSinceExpectedArrival - gracePeriod) / 60000);
-            delay = preferredDelay + additionalDelay;
-        }
-    }
-
     if (currentStop?.fermata) {
         const arrival = currentStop.fermata.arrivoReale ? new Date(currentStop.fermata.arrivoReale).getTime() : null;
         const departure = currentStop.fermata.partenzaReale ? new Date(currentStop.fermata.partenzaReale).getTime() : null;
