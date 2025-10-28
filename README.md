@@ -1,5 +1,3 @@
-# trasporti.g3b.dev :^)
+# coincidenza.it :^)
 
-un'app next.js per trovare il percorso migliore usando i mezzi pubblici. si connette a un'istanza locale di opentripplanner e a diverse api esterne (trenitalia, rfi, sta, oebb, trenord e molte altre in futuro!!) per fornire indicazioni precise e ottimizzate, combinando treni, bus, tram, funivie e tratti a piedi efficienti.
-
-l’obiettivo è offrire soluzioni di viaggio comode, rapide e precise, basate su dati dei mezzi aggiornati in tempo reale.
+una web app per trovare il percorso migliore da un luogo a un altro utilizzando i mezzi pubblici. l’obiettivo è offrire soluzioni di viaggio comode, rapide e precise, basate su dati aggiornati in tempo reale.
