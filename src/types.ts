@@ -9,7 +9,7 @@ export interface Location {
     textValue?: string;
     address?: string;
     coordinates: Coordinates;
-    isBahnStation?: boolean;
+    isTrainStation?: boolean;
 }
 
 export interface Favorite {

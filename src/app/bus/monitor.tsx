@@ -1,7 +1,6 @@
 "use client"
 
-import {TimeDisplay} from "@/components/time"
-import {getDelayColor} from "@/utils"
+import {formatDate, getDelayColor} from "@/utils"
 import {IconAntennaBarsOff} from "@tabler/icons-react"
 import {AnimatePresence, motion} from "motion/react"
 import Link from "next/link"
@@ -22,8 +21,6 @@ function getStopsAway(selectedStopId: number, stopTimes: any[], delay: number | 
     };
 
     const passedIndex = stopTimes.findLastIndex(stop => getAdjustedTime(stop) <= now);
-    if (passedIndex === -1) return selectedIndex + 1;
-
     const stopsAway = selectedIndex - passedIndex;
     return stopsAway <= 0 ? 0 : stopsAway;
 }
@@ -31,7 +28,6 @@ function getStopsAway(selectedStopId: number, stopTimes: any[], delay: number | 
 export function Monitor({trips}: { trips: any[] }) {
     const router = useRouter()
     const [blinkKey, setBlinkKey] = useState(0)
-    const [showRelativeTime, setShowRelativeTime] = useState(false)
 
     useEffect(() => {
         const intervalId = setInterval(() => {
@@ -47,140 +43,99 @@ export function Monitor({trips}: { trips: any[] }) {
         return () => clearInterval(blinkInterval)
     }, [])
 
-    useEffect(() => {
-        const timeouts: NodeJS.Timeout[] = []
+    return (<div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
+        <AnimatePresence mode="popLayout">
+            {trips.map((trip) => {
+                const now = Date.now();
+                const isDelayed = trip.delay !== null
+                const scheduledTime = new Date(trip.oraArrivoProgrammataAFermataSelezionata).toString()
+                const arrivalTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata).getTime();
 
-        timeouts.push(setTimeout(() => {
-            setShowRelativeTime(true)
-        }, 1000))
+                const stopsAway = getStopsAway(trip.stopId, trip.stopTimes, trip.delay)
+                const startsFromSelectedStop = trip.stopTimes[0]?.stopId === trip.stopId;
 
-        timeouts.push(setTimeout(() => {
-            setShowRelativeTime(false)
+                const isArriving = trip.oraArrivoEffettivaAFermataSelezionata && arrivalTime - now <= 2 * 60 * 1000 && stopsAway === 0 && !startsFromSelectedStop;
 
-            const interval = setInterval(() => {
-                setShowRelativeTime(prev => !prev)
-            }, 5000)
-            timeouts.push(interval)
-        }, 3000))
+                const hasDeparted = trip.lastEventRecivedAt !== null && stopsAway !== null && stopsAway > 0;
 
-        return () => timeouts.forEach(clearTimeout)
-    }, [])
-
-    return (
-        <div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
-            <AnimatePresence mode="popLayout">
-                {trips.map((trip) => {
-                    const now = Date.now();
-                    const isDelayed = trip.delay !== null
-                    const scheduledTime = new Date(trip.oraArrivoProgrammataAFermataSelezionata)
-                    const effectiveTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata)
-                    const arrivalTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata).getTime();
-
-                    const stopsAway = getStopsAway(trip.stopId, trip.stopTimes, trip.delay)
-                    const startsFromSelectedStop = trip.stopTimes[0]?.stopId === trip.stopId;
-
-                    const isArriving =
-                        trip.oraArrivoEffettivaAFermataSelezionata &&
-                        arrivalTime - now <= 2 * 60 * 1000 &&
-                        stopsAway === 0 && !startsFromSelectedStop;
-
-                    const hasDeparted =
-                        trip.lastEventRecivedAt !== null &&
-                        stopsAway !== null &&
-                        stopsAway > 0;
-
-                    return (
-                        <motion.div
-                            key={trip.tripId}
-                            layoutId={trip.tripId}
-                            layout
-                            initial={{opacity: 0}}
-                            animate={{opacity: 1, y: 0}}
-                            exit={{opacity: 0, y: -20, transition: {duration: 0.3}}}
-                            transition={{duration: 0.3, ease: "easeInOut"}}
-                        >
-                            <div className="flex flex-row justify-between gap-4">
-                                <div className="flex gap-2 w-full">
-                                    <TimeDisplay
-                                        scheduledTime={scheduledTime}
-                                        effectiveTime={effectiveTime}
-                                        showRelativeTime={showRelativeTime}
-                                    />
-
-                                    <div className="flex flex-col text-left w-full flex-grow min-w-0">
-                                        <div className="flex items-center justify-between w-full min-w-0 gap-2">
-                                            <Link href={`/track/trentino-trasporti/${trip.tripId}`}
-                                                  className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow">
-                                                <div className="flex items-center gap-x-1 sm:gap-x-2">
-                                                    <div
-                                                        className={`text-base sm:text-lg font-bold text-center rounded-small max-w-fit ${!trip.route?.routeColor && trip.type === "U" ? "bg-success text-white" : "bg-primary text-white"}`}
-                                                        style={{
-                                                            backgroundColor: trip.route && trip.route.routeColor ? `#${trip.route.routeColor}` : "",
-                                                            padding: "0.1rem 0.5rem"
-                                                        }}>
-                                                        {trip.route.routeShortName}
-                                                    </div>
-                                                    <div className="truncate font-bold text-base sm:text-lg min-w-0">
-                                                        {trip.tripHeadsign}
-                                                    </div>
-                                                </div>
-                                            </Link>
-                                            {!trip.lastEventRecivedAt && (
-                                                <p className="text-lg font-bold uppercase flex-shrink-0 whitespace-nowrap text-foreground-500">
-                                                    <IconAntennaBarsOff />
-                                                </p>
-                                            )}
-                                            {isDelayed && (
-                                                <p className={`text-lg font-bold uppercase flex-shrink-0 whitespace-nowrap text-${getDelayColor(trip.delay)}`}>
-                                                    {trip.delay < 0 ? '' : trip.delay > 0 ? '+' : ""}
-                                                    {trip.delay !== 0 && `${trip.delay}'`}
-                                                </p>
-                                            )}
-                                        </div>
-
-                                        <Link
-                                            className="text-sm text-foreground-500"
-                                            href={`/track/trentino-trasporti/${trip.tripId}`}
-                                        >
-                                            {stopsAway && hasDeparted ? (
-                                                <>a <strong>{stopsAway}</strong> fermat{stopsAway > 1 ? 'e' : 'a'} da {trip.stopName}</>
-                                            ) : (
-                                                <div className="flex items-center gap-1 whitespace-pre">
-                                                    {isArriving ? (
-                                                        <div className="flex items-center gap-1 whitespace-pre">
-                                                            <motion.div
-                                                                key={blinkKey}
-                                                                initial={{opacity: 1}}
-                                                                animate={{opacity: [1, 0, 1]}}
-                                                                transition={{
-                                                                    duration: 1,
-                                                                    times: [0, 0.5, 1],
-                                                                    ease: "easeInOut",
-                                                                }}
-                                                            >
-                                                                <p className="text-sm text-green-500 font-bold">
-                                                                    {startsFromSelectedStop ? "in partenza" : "in arrivo"}
-                                                                </p>
-                                                            </motion.div>
-                                                            <p className="text-sm">
-                                                                {trip.stopTimes[0].stopId === trip.stopId ? "da" : "a"} {trip.stopName}
-                                                            </p>
-                                                        </div>
-                                                    ) : (
-                                                        <p className="text-sm">
-                                                            {startsFromSelectedStop ? "parte da" : "ferma a"} {trip.stopName}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                            )}
-                                        </Link>
-                                    </div>
-                                </div>
+                return (<motion.div
+                    key={trip.tripId}
+                    layoutId={trip.tripId}
+                    layout
+                    initial={{opacity: 0}}
+                    animate={{opacity: 1, y: 0}}
+                    exit={{opacity: 0, y: -20, transition: {duration: 0.3}}}
+                    transition={{duration: 0.3, ease: "easeInOut"}}
+                >
+                    <div className="flex flex-row justify-between gap-4">
+                        <div className="flex gap-2 w-full">
+                            <div
+                                className="flex items-center justify-center w-full max-w-16 p-2 text-lg font-bold text-center rounded-small bg-gray-500 text-white self-center min-h-[2.5rem]">
+                                {formatDate(scheduledTime)}
                             </div>
-                        </motion.div>
-                    )
-                })}
-            </AnimatePresence>
-        </div>
-    )
+
+                            <div className="flex flex-col text-left w-full flex-grow min-w-0">
+                                <div className="flex items-center justify-between w-full min-w-0 gap-2">
+                                    <Link href={`/track/trentino-trasporti/${trip.tripId}`}
+                                          className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow">
+                                        <div className="flex items-center gap-x-1 sm:gap-x-2">
+                                            <div
+                                                className={`text-base sm:text-lg font-bold text-center rounded-small max-w-fit ${!trip.route?.routeColor && trip.type === "U" ? "bg-success text-white" : "bg-primary text-white"}`}
+                                                style={{
+                                                    backgroundColor: trip.route && trip.route.routeColor ? `#${trip.route.routeColor}` : "",
+                                                    padding: "0.1rem 0.5rem"
+                                                }}>
+                                                {trip.route.routeShortName}
+                                            </div>
+                                            <div className="truncate font-bold text-base sm:text-lg min-w-0">
+                                                {trip.tripHeadsign}
+                                            </div>
+                                        </div>
+                                    </Link>
+                                    {!trip.lastEventRecivedAt && (
+                                        <p className="text-lg font-bold uppercase flex-shrink-0 whitespace-nowrap text-foreground-500">
+                                            <IconAntennaBarsOff />
+                                        </p>)}
+                                    {isDelayed && (
+                                        <p className={`text-lg font-bold uppercase flex-shrink-0 whitespace-nowrap text-${getDelayColor(trip.delay)}`}>
+                                            {trip.delay < 0 ? '' : trip.delay > 0 ? '+' : ""}
+                                            {trip.delay !== 0 && `${trip.delay}'`}
+                                        </p>)}
+                                </div>
+
+                                <Link
+                                    className="text-sm text-foreground-500"
+                                    href={`/track/trentino-trasporti/${trip.tripId}`}
+                                >
+                                    {stopsAway && hasDeparted ? (<>a <strong>{stopsAway}</strong> fermat{stopsAway > 1 ? 'e' : 'a'} da {trip.stopName}</>) : (
+                                        <div className="flex items-center gap-1 whitespace-pre">
+                                            {isArriving ? (
+                                                <div className="flex items-center gap-1 whitespace-pre">
+                                                    <motion.div
+                                                        key={blinkKey}
+                                                        initial={{opacity: 1}}
+                                                        animate={{opacity: [1, 0, 1]}}
+                                                        transition={{
+                                                            duration: 1, times: [0, 0.5, 1], ease: "easeInOut",
+                                                        }}
+                                                    >
+                                                        <p className="text-sm text-green-500 font-bold">
+                                                            {startsFromSelectedStop ? "in partenza" : "in arrivo"}
+                                                        </p>
+                                                    </motion.div>
+                                                    <p className="text-sm">
+                                                        {trip.stopTimes[0].stopId === trip.stopId ? "da" : "a"} {trip.stopName}
+                                                    </p>
+                                                </div>) : (<p className="text-sm">
+                                                {startsFromSelectedStop ? "parte da" : "ferma a"} {trip.stopName}
+                                            </p>)}
+                                        </div>)}
+                                </Link>
+                            </div>
+                        </div>
+                    </div>
+                </motion.div>)
+            })}
+        </AnimatePresence>
+    </div>)
 }

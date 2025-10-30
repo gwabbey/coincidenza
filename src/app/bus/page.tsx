@@ -84,15 +84,13 @@ function sortTripsByDepartureTime(trips: Trip[]): Trip[] {
 async function Departures({userLat, userLon}: { userLat: number, userLon: number }) {
     try {
         const allStops = await getClosestBusStops(userLat, userLon)
-        const walkableStops = getNearbyStops(allStops, 0.3)
+        const walkableStops = getNearbyStops(allStops, 0.1)
 
         if (walkableStops.length === 0) {
-            return (
-                <div className="text-center py-8">
-                    <h2 className="text-xl font-bold mb-2">nessuna fermata vicina</h2>
-                    <p className="text-foreground-500">non è stata trovata alcuna fermata vicino a te</p>
-                </div>
-            )
+            return (<div className="flex-col text-center py-4">
+                <h2 className="text-xl font-bold mb-2">nessuna fermata trovata</h2>
+                <p className="text-foreground-500">non è stata trovata alcuna fermata vicino alla posizione fornita</p>
+            </div>)
         }
 
         const departurePromises = walkableStops.map(async (stop) => {
@@ -102,10 +100,7 @@ async function Departures({userLat, userLon}: { userLat: number, userLon: number
                 if (!departures) return []
 
                 return departures.map((trip: any) => ({
-                    ...trip,
-                    stopId: stop.stopId,
-                    stopName: stop.stopName,
-                    distance: stop.distance
+                    ...trip, stopId: stop.stopId, stopName: stop.stopName, distance: stop.distance
                 }))
             } catch (error) {
                 console.error(`Error fetching departures for stop ${stop.stopId}:`, error)
@@ -119,23 +114,23 @@ async function Departures({userLat, userLon}: { userLat: number, userLon: number
         const uniqueTrips = filterTrips(allDepartures)
         const sortedTrips = sortTripsByDepartureTime(uniqueTrips)
 
-        return sortedTrips.length === 0 ? (
-            <div className="text-center py-8">
-                <p className="text-foreground-500">nessuna corsa in partenza al momento</p>
-            </div>
-        ) : (
-            <Monitor trips={sortedTrips} />
-        )
+        return sortedTrips.length === 0 ? (<div className="text-center py-8">
+            <p className="text-foreground-500">nessuna corsa in partenza al momento</p>
+        </div>) : (<Monitor trips={sortedTrips} />)
 
     } catch (error) {
-        console.error('Error fetching bus data:', error)
-        return (
-            <div className="p-4 text-center py-8">
-                <h2 className="text-xl font-bold mb-2">errore</h2>
-                <p className="text-foreground-500">c'è stato un problema :( torna più tardi!</p>
-            </div>
-        )
+        return (<div className="flex-col text-center py-4">
+            <h2 className="text-xl font-bold mb-2">errore</h2>
+            <p className="text-foreground-500">c'è stato un problema :( torna più tardi!</p>
+        </div>)
     }
+}
+
+function Loading() {
+    return (<div className="flex-col py-4">
+        <Spinner color="default" size="lg" />
+        <p className="text-center text-foreground-500 text-lg">caricamento in corso...</p>
+    </div>)
 }
 
 export default async function Page() {
@@ -145,38 +140,22 @@ export default async function Page() {
     const rejected = cookieStore.get('locationRejected')?.value === 'true'
 
     if (!lat || !lon) {
-        return (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-                {!rejected ? (
-                    <div className="flex-col py-4">
-                        <Spinner color="default" size="lg" />
-                        <p className="text-center text-foreground-500 text-lg">caricamento in corso...</p>
-                    </div>
-                ) : (
-                    <>
-                        <p className="text-lg font-semibold">posizione non rilevata!</p>
-                        <p className="text-foreground-500">puoi cercare un luogo manualmente o dare i permessi per la
-                            posizione</p>
-                    </>
-                )}
-                <RequestLocation />
-            </div>
-        )
+        return (<div className="flex flex-col items-center justify-center py-8 text-center">
+            {!rejected ? (<Loading />) : (<div className="flex-col py-4">
+                <p className="text-lg font-semibold">posizione non rilevata!</p>
+                <p className="text-foreground-500">puoi cercare un luogo manualmente o dare i permessi per la
+                    posizione</p>
+            </div>)}
+            <RequestLocation />
+        </div>)
     }
 
     const userLat = parseFloat(lat)
     const userLon = parseFloat(lon)
 
-    return (
-        <div className="flex flex-col gap-4 text-center">
-            <Suspense fallback={
-                <div className="flex-col py-4">
-                    <Spinner color="default" size="lg" />
-                    <p className="text-center text-foreground-500 text-lg">caricamento in corso...</p>
-                </div>
-            }>
-                <Departures userLat={userLat} userLon={userLon} />
-            </Suspense>
-        </div>
-    )
+    return (<div className="flex flex-col items-center justify-center text-center">
+        <Suspense fallback={<Loading />}>
+            <Departures userLat={userLat} userLon={userLon} />
+        </Suspense>
+    </div>)
 }

@@ -49,9 +49,9 @@ function getTripSignature(trip: Trip): string {
         return `WALK_${trip.startTime}_${trip.endTime}`;
     }
 
-    const allHaveShortName = nonWalkLegs.every((l) => l.tripShortName);
+    const allHaveShortName = nonWalkLegs.every((l) => l.tripShortName || l.tripId);
     if (allHaveShortName) {
-        return nonWalkLegs.map((l) => `${l.tripShortName}_${l.scheduledStartTime}`).join("|");
+        return nonWalkLegs.map((l) => `${l.tripShortName || l.tripId}_${l.scheduledStartTime}`).join("|");
     }
 
     return nonWalkLegs
@@ -74,7 +74,7 @@ const processTripData = async (data: {
                     ...stop, name: getStop(stop.name),
                 })),
                 headsign: capitalize(originalLeg.headsign || ""),
-                routeLongName: originalLeg.routeShortName ? trainCategoryLongNames[originalLeg.routeShortName.toUpperCase()] : capitalize(originalLeg.routeLongName || ""),
+                routeLongName: originalLeg.mode.includes("RAIL") && originalLeg.routeShortName ? trainCategoryLongNames[originalLeg.routeShortName.trim().toUpperCase()] : capitalize(originalLeg.routeLongName || ""),
                 routeShortName: originalLeg.routeShortName && (originalLeg.agencyId === "IT:ITH3:Operator:05403151003:Trenitalia:0" ? trainCategoryShortNames[originalLeg.routeLongName!.toLowerCase()] : originalLeg.routeShortName === "REG" ? "R" : originalLeg.agencyId === "1" ? originalLeg.routeShortName.replace(/\d+/g, '') : originalLeg.agencyId?.includes("ATV") ? originalLeg.routeShortName.replace("_ATV", '') : originalLeg.routeShortName),
                 from: {
                     ...originalLeg.from, name: getStop(originalLeg.from.name),
@@ -105,7 +105,6 @@ const processTripData = async (data: {
             seen.set(signature, trip);
         } else {
             const existing = seen.get(signature)!;
-
             const rtScore = (t: Trip) => (t.legs.some((l) => l.realTime) ? 1 : 0);
 
             if (rtScore(trip) > rtScore(existing)) {
@@ -135,10 +134,8 @@ const processTripData = async (data: {
             const prevLeg = updatedLegs[updatedLegs.length - 2];
             const lastLeg = updatedLegs[updatedLegs.length - 1];
 
-            const firstStart = firstLeg?.mode !== "WALK" && firstLeg?.realTime?.delay ? new Date(firstLeg.scheduledStartTime).getTime() + firstLeg.realTime.delay * 60000 : secondLeg?.mode !== "WALK" && secondLeg?.realTime?.delay ? new Date(firstLeg.scheduledStartTime).getTime() + secondLeg.realTime.delay * 60000 : new Date(trip.startTime).getTime();
-
-            const lastEnd = lastLeg?.mode !== "WALK" && lastLeg?.realTime?.delay ? new Date(lastLeg.scheduledEndTime).getTime() + lastLeg.realTime.delay * 60000 : prevLeg?.mode !== "WALK" && prevLeg?.realTime?.delay ? new Date(lastLeg.scheduledEndTime).getTime() + prevLeg.realTime.delay * 60000 : new Date(trip.endTime).getTime();
-
+            const firstStart = firstLeg?.mode !== "WALK" ? new Date(firstLeg.scheduledStartTime).getTime() + (firstLeg.realTime.delay ?? 0) * 60000 : secondLeg?.realTime?.delay ? new Date(firstLeg.scheduledStartTime).getTime() + secondLeg.realTime.delay * 60000 : new Date(firstLeg.startTime).getTime();
+            const lastEnd = lastLeg?.mode !== "WALK" ? new Date(lastLeg.scheduledEndTime).getTime() + (lastLeg.realTime.delay ?? 0) * 60000 : prevLeg?.mode !== "WALK" && prevLeg?.realTime?.delay ? new Date(lastLeg.scheduledEndTime).getTime() + prevLeg.realTime.delay * 60000 : new Date(lastLeg.endTime).getTime();
             const duration = differenceInMinutes(new Date(lastEnd), new Date(firstStart));
 
             return {

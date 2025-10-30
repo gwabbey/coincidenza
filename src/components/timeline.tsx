@@ -71,7 +71,7 @@ const Timeline = ({steps, active = steps.length - 1}: TimelineProps) => {
 
                 <div
                     ref={lineRef}
-                    className="absolute left-2 top-0 h-[calc(100%-2rem)] w-1 bg-gray-500 -translate-x-1/2"
+                    className="absolute left-2 top-0 h-[calc(100%-2rem)] w-1 dark:bg-gray-500 bg-gray-400 transition-background -translate-x-1/2"
                 >
                     <div
                         className="absolute w-full bg-blue-500 transition-all duration-1000"

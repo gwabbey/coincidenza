@@ -1,92 +1,84 @@
 'use client';
-import {Leg} from '@/api/motis/types';
-import polyline from '@mapbox/polyline';
-import 'leaflet/dist/leaflet.css';
-import {useTheme} from "next-themes";
+import {useTheme} from 'next-themes';
 import {useEffect, useRef, useState} from 'react';
+import 'leaflet/dist/leaflet.css';
 
-export default function LeafletMap({
-                                       leg,
-                                       className,
-                                   }: {
-    leg: Leg,
-    className?: string,
-}) {
+interface Coordinate {
+    lat: number;
+    lon: number;
+    name?: string;
+}
+
+interface Leg {
+    legGeometry: { points: string };
+    mode?: string;
+    routeColor?: string;
+}
+
+interface MapProps {
+    from?: Coordinate;
+    to?: Coordinate;
+    intermediateStops?: Coordinate[];
+    legs?: Leg[];
+    className?: string;
+    animationDuration?: number;
+}
+
+async function decodePolyline(encoded: string): Promise<Array<[number, number]>> {
+    const polyline = await import('@mapbox/polyline');
+    return polyline.decode(encoded, 6) as Array<[number, number]>;
+}
+
+export default function AnimatedLeafletMap({
+                                               from,
+                                               to,
+                                               intermediateStops = [],
+                                               legs = [],
+                                               className,
+                                               animationDuration = 2000,
+                                           }: MapProps) {
     const {theme} = useTheme();
     const mapRef = useRef<HTMLDivElement>(null);
     const mapInstanceRef = useRef<L.Map | null>(null);
     const tileLayerRef = useRef<L.TileLayer | null>(null);
+    const markersRef = useRef<{
+        start?: L.Marker; end?: L.Marker; intermediates: L.CircleMarker[];
+    }>({
+        intermediates: [],
+    });
+    const polylinesRef = useRef<L.Polyline[]>([]);
+    const animationFrameRef = useRef<number | null>(null);
     const [mapInitialized, setMapInitialized] = useState(false);
 
     useEffect(() => {
         import('leaflet').then((L) => {
             if (!mapRef.current || mapInstanceRef.current) return;
 
-            if (typeof window !== 'undefined') {
-                L.Icon.Default.mergeOptions({
-                    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-icon-2x.png',
-                    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-icon.png',
-                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.3/images/marker-shadow.png',
-                });
-            }
-
-            const decodedPath: L.LatLngTuple[] = polyline.decode(leg.legGeometry.points).map(([lat, lon]) => [lat, lon] as L.LatLngTuple);
-            const startPoint = decodedPath[0];
-            const endPoint = decodedPath[decodedPath.length - 1];
-
-            mapInstanceRef.current = L.map(mapRef.current, {scrollWheelZoom: false}).fitBounds(decodedPath);
-
-            tileLayerRef.current = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${theme}_all/{z}/{x}/{y}{r}.png`, {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            }).addTo(mapInstanceRef.current);
-
-            L.polyline(decodedPath, {color: 'blue'}).addTo(mapInstanceRef.current);
-
-            const startMarker = L.marker(startPoint).addTo(mapInstanceRef.current);
-            startMarker.bindPopup(leg.from.name, {
-                className: 'quay-label',
-            });
-
-            const endMarker = L.marker(endPoint).addTo(mapInstanceRef.current);
-            endMarker.bindPopup(leg.to.name, {
-                className: 'quay-label',
-            });
-
-            leg.intermediateStops && leg.intermediateStops.forEach((stop) => {
-                const circleMarker = L.circleMarker([stop.lat, stop.lon], {
-                    radius: 6,
-                    fillColor: 'white',
-                    color: 'blue',
-                    weight: 1,
-                    opacity: 1,
-                    fillOpacity: 1,
-                }).addTo(mapInstanceRef.current!);
-
-                circleMarker.bindPopup(stop.name, {
-                    className: 'quay-label',
-                });
+            mapInstanceRef.current = L.map(mapRef.current, {
+                scrollWheelZoom: true, center: [46.072438, 11.119065], zoom: 12, zoomControl: false
             });
 
             setMapInitialized(true);
-
-            return () => {
-                if (mapInstanceRef.current) {
-                    mapInstanceRef.current.remove();
-                    mapInstanceRef.current = null;
-                    tileLayerRef.current = null;
-                }
-            };
         });
-    }, [leg]);
+
+        return () => {
+            if (mapInstanceRef.current) {
+                mapInstanceRef.current.remove();
+                mapInstanceRef.current = null;
+            }
+        };
+    }, []);
 
     useEffect(() => {
-        if (!mapInitialized || !mapInstanceRef.current || !tileLayerRef.current) return;
+        if (!mapInitialized || !mapInstanceRef.current) return;
 
         import('leaflet').then((L) => {
             const currentCenter = mapInstanceRef.current!.getCenter();
             const currentZoom = mapInstanceRef.current!.getZoom();
 
-            mapInstanceRef.current!.removeLayer(tileLayerRef.current!);
+            if (tileLayerRef.current) {
+                mapInstanceRef.current!.removeLayer(tileLayerRef.current);
+            }
 
             tileLayerRef.current = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${theme}_all/{z}/{x}/{y}{r}.png`, {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
@@ -96,5 +88,172 @@ export default function LeafletMap({
         });
     }, [theme, mapInitialized]);
 
-    return <div ref={mapRef} style={{height: '400px', width: '100%'}} className={className} />;
+    useEffect(() => {
+        if (!mapInitialized || !mapInstanceRef.current) return;
+
+        import('leaflet').then((L) => {
+            if (markersRef.current.start) {
+                mapInstanceRef.current!.removeLayer(markersRef.current.start);
+            }
+
+            if (from) {
+                markersRef.current.start = L.marker([from.lat, from.lon])
+                    .addTo(mapInstanceRef.current!)
+                    .bindTooltip(from.name || 'Partenza', {
+                        permanent: true, className: 'leaflet-tooltip',
+                    });
+            }
+
+            updateMapBounds();
+        });
+    }, [from, mapInitialized]);
+
+    useEffect(() => {
+        if (!mapInitialized || !mapInstanceRef.current) return;
+
+        import('leaflet').then((L) => {
+            if (markersRef.current.end) {
+                mapInstanceRef.current!.removeLayer(markersRef.current.end);
+            }
+
+            if (to) {
+                markersRef.current.end = L.marker([to.lat, to.lon])
+                    .addTo(mapInstanceRef.current!)
+                    .bindTooltip(to.name || 'Destinazione', {
+                        permanent: true, className: 'leaflet-tooltip',
+                    });
+            }
+
+            updateMapBounds();
+        });
+    }, [to, mapInitialized]);
+
+    useEffect(() => {
+        if (!mapInitialized || !mapInstanceRef.current) return;
+
+        import('leaflet').then((L) => {
+            markersRef.current.intermediates.forEach((marker) => {
+                mapInstanceRef.current!.removeLayer(marker);
+            });
+            markersRef.current.intermediates = [];
+
+            if (intermediateStops && intermediateStops.length > 0) {
+                intermediateStops.forEach((stop) => {
+                    const circleMarker = L.circleMarker([stop.lat, stop.lon], {
+                        radius: 4, fillColor: 'white', color: 'blue', weight: 1, opacity: 1, fillOpacity: 1,
+                    })
+                        .addTo(mapInstanceRef.current!);
+
+                    markersRef.current.intermediates.push(circleMarker);
+                });
+            }
+
+            updateMapBounds();
+        });
+    }, [intermediateStops, mapInitialized]);
+
+    useEffect(() => {
+        if (!mapInitialized || !mapInstanceRef.current) return;
+
+        if (animationFrameRef.current) {
+            cancelAnimationFrame(animationFrameRef.current);
+            animationFrameRef.current = null;
+        }
+
+        polylinesRef.current.forEach((polyline) => {
+            mapInstanceRef.current!.removeLayer(polyline);
+        });
+        polylinesRef.current = [];
+
+        if (legs.length === 0) return;
+
+        const startAnimation = async () => {
+            import("leaflet").then(async (L) => {
+                try {
+                    const decodedLegs = await Promise.all(legs.map((leg) => decodePolyline(leg.legGeometry.points)));
+                    const combinedPath = decodedLegs.flat();
+
+                    if (combinedPath.length < 2) return;
+
+                    const routeColor = legs.find((l) => l.routeColor) ? `#${legs.find((l) => l.routeColor)?.routeColor}` : "blue";
+                    const polyline = L.polyline([], {
+                        color: routeColor, weight: 4, opacity: 0.9,
+                    }).addTo(mapInstanceRef.current!);
+
+                    polylinesRef.current = [polyline];
+
+                    const startTime = performance.now();
+                    const animate = (time: number) => {
+                        const elapsed = time - startTime;
+                        const progress = Math.min(elapsed / animationDuration, 1);
+                        const pointCount = Math.floor(progress * combinedPath.length);
+
+                        const currentPoints = combinedPath
+                            .slice(0, pointCount)
+                            .map((p) => L.latLng(p[0], p[1]));
+
+                        polyline.setLatLngs(currentPoints);
+
+                        if (progress < 1) {
+                            animationFrameRef.current = requestAnimationFrame(animate);
+                        } else {
+                            polyline.setLatLngs(combinedPath.map((p) => L.latLng(p[0], p[1])));
+                            animationFrameRef.current = null;
+                        }
+                    };
+
+                    animationFrameRef.current = requestAnimationFrame(animate);
+                    updateMapBounds();
+                } catch (error) {
+                    console.error('Error animating polyline:', error);
+                }
+            });
+        };
+
+        startAnimation();
+
+        return () => {
+            if (animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+                animationFrameRef.current = null;
+            }
+        };
+    }, [legs, mapInitialized, animationDuration]);
+
+    const updateMapBounds = async () => {
+        if (!mapInstanceRef.current) return;
+
+        import('leaflet').then(async (L) => {
+            const allPoints: L.LatLngTuple[] = [];
+
+            if (from) allPoints.push([from.lat, from.lon]);
+            if (to) allPoints.push([to.lat, to.lon]);
+
+            if (legs.length > 0) {
+                const decodedLegs = await Promise.all(legs.map(leg => decodePolyline(leg.legGeometry.points)));
+                decodedLegs.forEach(legPoints => {
+                    allPoints.push(...(legPoints as L.LatLngTuple[]));
+                });
+            }
+
+            if (intermediateStops) {
+                intermediateStops.forEach((stop) => {
+                    allPoints.push([stop.lat, stop.lon]);
+                });
+            }
+
+            if (allPoints.length > 0) {
+                const bounds = L.latLngBounds(allPoints);
+                mapInstanceRef.current!.fitBounds(bounds, {
+                    padding: [50, 50], animate: true, duration: 1,
+                });
+            }
+        });
+    };
+
+    return (<div
+        ref={mapRef}
+        style={{height: '400px', width: '100%'}}
+        className={className}
+    />);
 }

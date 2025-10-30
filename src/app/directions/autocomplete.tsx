@@ -1,7 +1,7 @@
 "use client";
 
 import {geocodeAddress} from "@/api/apple-maps/geolocation";
-import {searchStation} from "@/api/bahn/api";
+import {searchStation} from "@/api/nominatim/geolocation";
 import {Location} from "@/types";
 import {capitalize} from "@/utils";
 import {addToast, Autocomplete, AutocompleteItem, Button, cn, Spinner} from "@heroui/react";
@@ -44,15 +44,9 @@ export const LocationAutocomplete = ({
 
     const getCurrentPosition = () => {
         return new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(
-                resolve,
-                reject,
-                {
-                    enableHighAccuracy: true,
-                    timeout: 10000,
-                    maximumAge: 300000
-                }
-            );
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                enableHighAccuracy: true, timeout: 10000, maximumAge: 300000
+            });
         });
     };
 
@@ -66,16 +60,12 @@ export const LocationAutocomplete = ({
 
                 const position = await getCurrentPosition();
                 const coords = {
-                    lat: position.coords.latitude,
-                    lon: position.coords.longitude
+                    lat: position.coords.latitude, lon: position.coords.longitude
                 };
                 setUserLocation(coords);
 
                 const locationData = {
-                    value: 'current-location',
-                    label: locationLabel,
-                    textValue: locationLabel,
-                    coordinates: coords
+                    value: 'current-location', label: locationLabel, textValue: locationLabel, coordinates: coords
                 };
 
                 setSelectedLocation(locationData);
@@ -83,13 +73,7 @@ export const LocationAutocomplete = ({
 
                 return;
             } catch (error) {
-                const errorMessage = error instanceof GeolocationPositionError
-                    ? error.code === 1
-                        ? "Accesso alla posizione negato. Controlla i permessi del browser."
-                        : error.code === 2
-                            ? "Posizione non disponibile. Verifica che il GPS sia attivo."
-                            : "Timeout nel recupero della posizione."
-                    : "Errore nel recupero della posizione.";
+                const errorMessage = error instanceof GeolocationPositionError ? error.code === 1 ? "Accesso alla posizione negato. Controlla i permessi del browser." : error.code === 2 ? "Posizione non disponibile. Verifica che il GPS sia attivo." : "Timeout nel recupero della posizione." : "Errore nel recupero della posizione.";
 
                 addToast({title: errorMessage});
                 return;
@@ -126,16 +110,15 @@ export const LocationAutocomplete = ({
         setLoading(true);
 
         try {
-            const bahnStations = await searchStation(query);
-            const bahnStationLocations = bahnStations.map((station: any) => ({
-                value: `bahn-${station.id}`,
-                label: capitalize(station.name),
-                textValue: capitalize(station.name),
+            const stations = await searchStation(query);
+            const stationLocations = stations.features.map((feature: any) => ({
+                value: feature.properties.osm_id.toString(),
+                label: capitalize(feature.properties.name),
+                textValue: capitalize(feature.properties.name),
                 coordinates: {
-                    lat: station.lat,
-                    lon: station.lon
+                    lat: feature.geometry.coordinates[1], lon: feature.geometry.coordinates[0],
                 },
-                isBahnStation: true
+                isTrainStation: true,
             }));
 
             const search = await geocodeAddress(query, {
@@ -149,28 +132,18 @@ export const LocationAutocomplete = ({
                 value: JSON.stringify(location),
                 label: location.displayLines[0],
                 textValue: location.displayLines[0],
-                address: [
-                    location.structuredAddress?.locality ?? location.displayLines[1],
-                    location.structuredAddress?.fullThoroughfare ?? location.structuredAddress?.subLocality
-                ].filter(Boolean).join(', '),
+                address: [location.structuredAddress?.locality ?? location.displayLines[1], location.structuredAddress?.fullThoroughfare ?? location.structuredAddress?.subLocality].filter(Boolean).join(', '),
                 coordinates: {
-                    lat: location.location.latitude,
-                    lon: location.location.longitude
+                    lat: location.location.latitude, lon: location.location.longitude
                 }
             }));
 
             const currentLocationOption = {
-                value: 'current-location',
-                label: 'Posizione attuale',
-                textValue: 'Posizione attuale',
-                coordinates: null
+                value: 'current-location', label: 'Posizione attuale', textValue: 'Posizione attuale', coordinates: null
             };
 
-            setItems([currentLocationOption, ...bahnStationLocations, ...locations]);
+            setItems([currentLocationOption, ...stationLocations, ...locations]);
         } catch (error) {
-            if ((error as Error).name === 'AbortError') {
-                return;
-            }
             addToast({title: "Errore durante la ricerca."});
         } finally {
             setLoading(false);
@@ -187,50 +160,41 @@ export const LocationAutocomplete = ({
         setItems([currentLocationOption]);
     }, []);
 
-    return (
-        <Autocomplete
-            label={label}
-            selectedKey={selectedLocation?.value}
-            value={value}
-            allowsCustomValue
-            selectorIcon={<></>}
-            variant="underlined"
-            onInputChange={onInputChange}
-            onSelectionChange={onSelectionChange}
-            isDisabled={disabled}
-            endContent={loading ?
-                <Spinner size="sm" color="default" /> : (
-                    <Button isIconOnly startContent={<IconMapPin className="shrink-0" />} radius="full"
-                            variant="light" size="sm"
-                            onPress={() => onSelectionChange("current-location")} />
-                )}
-            className="max-w-md"
-            classNames={{
-                selectorButton: "hidden",
-                endContentWrapper: "mr-0"
-            }}
-            items={items}
-            listboxProps={{
-                emptyContent: "nessun risultato."
-            }}
-            size="lg"
+    return (<Autocomplete
+        label={label}
+        selectedKey={selectedLocation?.value}
+        value={value}
+        allowsCustomValue
+        selectorIcon={<></>}
+        variant="underlined"
+        onInputChange={onInputChange}
+        onSelectionChange={onSelectionChange}
+        isDisabled={disabled}
+        endContent={loading ? <Spinner size="sm" color="default" /> : (
+            <Button isIconOnly startContent={<IconMapPin className="shrink-0" />} radius="full"
+                    variant="light" size="sm"
+                    onPress={() => onSelectionChange("current-location")} />)}
+        className="max-w-md"
+        classNames={{
+            selectorButton: "hidden", endContentWrapper: "mr-0"
+        }}
+        items={items}
+        listboxProps={{
+            emptyContent: "nessun risultato."
+        }}
+        size="lg"
+    >
+        {(item: Location) => (<AutocompleteItem
+            key={item.value}
+            textValue={item.textValue || (typeof item.label === 'string' ? item.label : 'Posizione attuale')}
+            startContent={item.isTrainStation ? <IconTrain stroke={1.5} /> : item.value === 'current-location' ?
+                <IconMapPin stroke={1.5} /> : undefined}
         >
-            {(item: Location) => (
-                <AutocompleteItem
-                    key={item.value}
-                    textValue={item.textValue || (typeof item.label === 'string' ? item.label : 'Posizione attuale')}
-                    startContent={item.isBahnStation ? <IconTrain stroke={1.5} /> :
-                        item.value === 'current-location' ? <IconMapPin stroke={1.5} /> : undefined}
-                >
-                    {typeof item.label === 'string' ? (
-                        <div className="flex flex-col">
-                            <span className={cn(item.label === "Posizione attuale" && "font-bold")}>{item.label}</span>
-                            {item.address && <span className="text-sm text-default-400">{item.address}</span>}
-                            {item.isBahnStation && <span className="text-sm text-default-400">Stazione</span>}
-                        </div>
-                    ) : item.label}
-                </AutocompleteItem>
-            )}
-        </Autocomplete>
-    );
+            {typeof item.label === 'string' ? (<div className="flex flex-col">
+                <span className={cn(item.label === "Posizione attuale" && "font-bold")}>{item.label}</span>
+                {item.address && <span className="text-sm text-default-400">{item.address}</span>}
+                {item.isTrainStation && <span className="text-sm text-default-400">Stazione</span>}
+            </div>) : item.label}
+        </AutocompleteItem>)}
+    </Autocomplete>);
 };

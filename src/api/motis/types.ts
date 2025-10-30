@@ -2,7 +2,7 @@ export interface Location {
     lat: number
     lon: number
     text: string
-    isBahnStation: boolean
+    isTrainStation: boolean
 }
 
 export interface Directions {

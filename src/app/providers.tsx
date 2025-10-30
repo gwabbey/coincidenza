@@ -3,10 +3,11 @@
 import {useEffect, useRef} from "react";
 import {HeroUIProvider, ToastProvider} from "@heroui/react";
 import {ThemeProvider} from "next-themes";
-import {useRouter} from "next/navigation";
+import {usePathname, useRouter} from "next/navigation";
 
 export default function Providers({children}: { children: React.ReactNode }) {
     const router = useRouter();
+    const pathname = usePathname();
     const lastActiveRef = useRef(Date.now());
     const MAX_INACTIVE_TIME = 5 * 60 * 1000;
 
@@ -16,6 +17,10 @@ export default function Providers({children}: { children: React.ReactNode }) {
             const inactiveTime = now - lastActiveRef.current;
 
             if (inactiveTime > MAX_INACTIVE_TIME) {
+                if (pathname === "/directions") {
+                    router.refresh();
+                    return;
+                }
                 window.location.reload();
             } else {
                 lastActiveRef.current = now;

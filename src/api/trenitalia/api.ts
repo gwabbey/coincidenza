@@ -48,7 +48,7 @@ export async function getRfiNotices(regions?: string[]): Promise<RfiItem[]> {
 
 export async function getTripSmartCaring(code: string, origin: string, date: string) {
     const {data} = await axios.get(
-        `http://www.viaggiatreno.it/infomobilita/resteasy/news/smartcaring?commercialTrainNumber=${code}&originCode=${origin}&searchDate=${date}`
+        `https://www.viaggiatreno.it/infomobilita/resteasy/news/smartcaring?commercialTrainNumber=${code}&originCode=${origin}&searchDate=${date}`
     );
 
     if (!Array.isArray(data) || data.length === 0) return [];
@@ -56,7 +56,9 @@ export async function getTripSmartCaring(code: string, origin: string, date: str
     const filtered = data.filter(
         (item: any) => {
             const info = item.infoNote?.toLowerCase() ?? "";
-            const validUntil = new Date(item.endValidity).getTime();
+            const date = new Date(item.endValidity)
+            date.setHours(23, 59, 59)
+            const validUntil = date.getTime();
 
             return (
                 !["good morning", "good afternoon", "good evening", "guten morgen"].some((phrase) => info.includes(phrase)) &&
@@ -227,7 +229,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
     const nextStop = currentStopIndex >= 0 ? canvas[currentStopIndex + 1] : null;
     const trip = response.data;
 
-    let delay = trip.ritardo || currentStop.fermata?.ritardoPartenza;
+    let delay = trip.ritardo || currentStop.fermata?.ritardoPartenza || currentStop.fermata?.ritardoArrivo;
     let lastKnownLocation = capitalize(trip.stazioneUltimoRilevamento || "--");
 
     if (currentStop?.fermata) {
@@ -244,7 +246,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
         }
     }
 
-    if (trip.nonPartito) delay = null;
+    if (trip.nonPartito && !currentStop.fermata.partenzaReale) delay = null;
 
     const getMonitorDelay = async (stop: any, trainNumber: string, tripDelay: number) => {
         const stationName = stop?.stazione;
