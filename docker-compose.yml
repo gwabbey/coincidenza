@@ -6,8 +6,8 @@ volumes:
   pgdata: { }
 
 services:
-  trasporti:
-    container_name: trasporti
+  coincidenza:
+    container_name: coincidenza
     build: .
     env_file:
       - .env
@@ -18,7 +18,7 @@ services:
       - postgres
 
   postgres:
-    container_name: trasporti-db
+    container_name: coincidenza-db
     image: postgres:17
     restart: always
     volumes:
@@ -31,7 +31,7 @@ services:
       - web
 
   redis:
-    container_name: trasporti-redis
+    container_name: coincidenza-redis
     image: redis:8
     restart: always
     networks:

@@ -1,10 +1,10 @@
-import type { MetadataRoute } from 'next'
+import type {MetadataRoute} from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
     return {
-        name: 'trasporti.g3b.dev',
-        short_name: 'Trasporti',
-        description: 'Il modo più semplice per viaggiare con i mezzi pubblici',
+        name: 'coincidenza.it',
+        short_name: 'Coincidenza',
+        description: 'il modo più comodo per viaggiare con i mezzi pubblici.',
         start_url: '/',
         display: 'standalone',
         background_color: '#ffffff',

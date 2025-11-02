@@ -4,8 +4,8 @@ import React from "react";
 import Header from "@/app/header";
 
 export const metadata = {
-    title: 'trasporti.g3b.dev',
-    description: 'viaggia senza problemi.',
+    title: 'coincidenza.it',
+    description: 'il modo più comodo per viaggiare con i mezzi pubblici.',
 };
 
 export default function RootLayout({

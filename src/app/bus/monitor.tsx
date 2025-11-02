@@ -44,7 +44,7 @@ export function Monitor({trips}: { trips: any[] }) {
     }, [])
 
     return (<div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence mode="popLayout" initial={false}>
             {trips.map((trip) => {
                 const now = Date.now();
                 const isDelayed = trip.delay !== null
@@ -109,24 +109,23 @@ export function Monitor({trips}: { trips: any[] }) {
                                 >
                                     {stopsAway && hasDeparted ? (<>a <strong>{stopsAway}</strong> fermat{stopsAway > 1 ? 'e' : 'a'} da {trip.stopName}</>) : (
                                         <div className="flex items-center gap-1 whitespace-pre">
-                                            {isArriving ? (
-                                                <div className="flex items-center gap-1 whitespace-pre">
-                                                    <motion.div
-                                                        key={blinkKey}
-                                                        initial={{opacity: 1}}
-                                                        animate={{opacity: [1, 0, 1]}}
-                                                        transition={{
-                                                            duration: 1, times: [0, 0.5, 1], ease: "easeInOut",
-                                                        }}
-                                                    >
-                                                        <p className="text-sm text-green-500 font-bold">
-                                                            {startsFromSelectedStop ? "in partenza" : "in arrivo"}
-                                                        </p>
-                                                    </motion.div>
-                                                    <p className="text-sm">
-                                                        {trip.stopTimes[0].stopId === trip.stopId ? "da" : "a"} {trip.stopName}
+                                            {isArriving ? (<div className="flex items-center gap-1 whitespace-pre">
+                                                <motion.div
+                                                    key={blinkKey}
+                                                    initial={{opacity: 1}}
+                                                    animate={{opacity: [1, 0, 1]}}
+                                                    transition={{
+                                                        duration: 1, times: [0, 0.5, 1], ease: "easeInOut",
+                                                    }}
+                                                >
+                                                    <p className="text-sm text-green-500 font-bold">
+                                                        {startsFromSelectedStop ? "in partenza" : "in arrivo"}
                                                     </p>
-                                                </div>) : (<p className="text-sm">
+                                                </motion.div>
+                                                <p className="text-sm">
+                                                    {trip.stopTimes[0].stopId === trip.stopId ? "da" : "a"} {trip.stopName}
+                                                </p>
+                                            </div>) : (<p className="text-sm">
                                                 {startsFromSelectedStop ? "parte da" : "ferma a"} {trip.stopName}
                                             </p>)}
                                         </div>)}

@@ -47,25 +47,18 @@ export async function getRfiNotices(regions?: string[]): Promise<RfiItem[]> {
 }
 
 export async function getTripSmartCaring(code: string, origin: string, date: string) {
-    const {data} = await axios.get(
-        `https://www.viaggiatreno.it/infomobilita/resteasy/news/smartcaring?commercialTrainNumber=${code}&originCode=${origin}&searchDate=${date}`
-    );
+    const {data} = await axios.get(`https://www.viaggiatreno.it/infomobilita/resteasy/news/smartcaring?commercialTrainNumber=${code}&originCode=${origin}&searchDate=${date}`);
 
     if (!Array.isArray(data) || data.length === 0) return [];
 
-    const filtered = data.filter(
-        (item: any) => {
-            const info = item.infoNote?.toLowerCase() ?? "";
-            const date = new Date(item.endValidity)
-            date.setHours(23, 59, 59)
-            const validUntil = date.getTime();
+    const filtered = data.filter((item: any) => {
+        const info = item.infoNote?.toLowerCase() ?? "";
+        const date = new Date(item.endValidity)
+        date.setHours(23, 59, 59)
+        const validUntil = date.getTime();
 
-            return (
-                !["good morning", "good afternoon", "good evening", "guten morgen"].some((phrase) => info.includes(phrase)) &&
-                !isNaN(validUntil) && validUntil > Date.now()
-            );
-        }
-    );
+        return (!["good morning", "good afternoon", "good evening", "guten morgen"].some((phrase) => info.includes(phrase)) && !isNaN(validUntil) && validUntil > Date.now());
+    });
 
     return filtered.length > 0 ? filtered : [];
 }
@@ -121,9 +114,10 @@ export async function getMonitorTrip(rfiId: string, tripId: string) {
 async function getTripsById(id: string) {
     if (!id) return null;
 
-    const {data, status} = await axios.get<string>(
-        `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`
-    );
+    const {
+        data,
+        status
+    } = await axios.get<string>(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`);
 
     if (!data?.trim() || status !== 200) return null;
 
@@ -144,10 +138,7 @@ async function getTripsById(id: string) {
 
             return {code: code.trim(), origin: origin.trim(), timestamp};
         })
-        .filter(
-            (t): t is { code: string; origin: string; timestamp: number } =>
-                t !== null
-        );
+        .filter((t): t is { code: string; origin: string; timestamp: number } => t !== null);
 
     return parsed.length === 0 ? null : parsed;
 }
@@ -156,16 +147,11 @@ export async function getActualTrip(id: string, company: string) {
     const parsed = await getTripsById(id);
     if (!parsed) return null;
 
-    const results = await Promise.allSettled(
-        parsed.map((t) =>
-            axios
-                .get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${t.origin}/${t.code}/${t.timestamp}`)
-                .then((res) => ({
-                    trip: t,
-                    andamento: res.data,
-                }))
-        )
-    );
+    const results = await Promise.allSettled(parsed.map((t) => axios
+        .get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${t.origin}/${t.code}/${t.timestamp}`)
+        .then((res) => ({
+            trip: t, andamento: res.data,
+        }))));
 
     const valid = results
         .filter((r): r is PromiseFulfilledResult<{ trip: any; andamento: any }> => r.status === "fulfilled")
@@ -177,16 +163,12 @@ export async function getActualTrip(id: string, company: string) {
 
     if (valid.length === 0) return null;
 
-    const running = valid.find(
-        (r) => !r.andamento.arrivato
-    );
+    const running = valid.find((r) => !r.andamento.arrivato);
 
     const chosen = running ?? valid[0];
 
     return {
-        origin: chosen.trip.origin,
-        id: chosen.trip.code,
-        timestamp: chosen.trip.timestamp,
+        origin: chosen.trip.origin, id: chosen.trip.code, timestamp: chosen.trip.timestamp,
     };
 }
 
@@ -201,20 +183,14 @@ export async function guessTrip(id: string, date: Date) {
 
 export async function getTrip(origin: string, id: string, timestamp: number): Promise<Trip | null> {
     const formattedDate = new Intl.DateTimeFormat("it-IT", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
+        year: "numeric", month: "2-digit", day: "2-digit",
     })
         .format(new Date(timestamp))
         .split("/")
         .reverse()
         .join("-");
 
-    const [response, info, canvas] = await Promise.all([
-        axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${id}/${timestamp}`),
-        getTripSmartCaring(id, origin, formattedDate),
-        getTripCanvas(id, origin, timestamp),
-    ]);
+    const [response, info, canvas] = await Promise.all([axios.get(`https://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${origin}/${id}/${timestamp}`), getTripSmartCaring(id, origin, formattedDate), getTripCanvas(id, origin, timestamp),]);
 
     if (response.status !== 200) return null;
 
@@ -229,7 +205,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
     const nextStop = currentStopIndex >= 0 ? canvas[currentStopIndex + 1] : null;
     const trip = response.data;
 
-    let delay = trip.ritardo || currentStop.fermata?.ritardoPartenza || currentStop.fermata?.ritardoArrivo;
+    let delay = trip.ritardo ?? currentStop.fermata?.ritardoPartenza ?? currentStop.fermata?.ritardoArrivo;
     let lastKnownLocation = capitalize(trip.stazioneUltimoRilevamento || "--");
 
     if (currentStop?.fermata) {
@@ -317,19 +293,14 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
                 status: getStopStatus(stop),
             };
         }),
-        info: info
-            ? info
-                .map((alert) => ({
-                    message: alert.infoNote ?? "",
-                    date: timestampToIso(alert.insertTimestamp) ?? "",
-                    source: "Viaggiatreno",
-                    url: null
-                }))
-                .filter(
-                    (alert, i: number, self) =>
-                        self.findIndex((a) => a.message === alert.message) === i
-                )
-            : []
+        info: info ? info
+            .map((alert) => ({
+                message: alert.infoNote ?? "",
+                date: timestampToIso(alert.insertTimestamp) ?? "",
+                source: "Viaggiatreno",
+                url: null
+            }))
+            .filter((alert, i: number, self) => self.findIndex((a) => a.message === alert.message) === i) : []
     }
 }
 
