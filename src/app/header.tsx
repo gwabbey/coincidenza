@@ -16,7 +16,8 @@ export default function Header() {
 
     const isDark = theme === 'dark' || (theme === 'system' && typeof window !== 'undefined' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-    return (<div className="flex justify-between items-center p-4 sticky top-0 z-50 backdrop-blur-2xl">
+    return (<div
+        className="flex justify-between items-center p-4 sticky top-0 z-50 backdrop-blur-3xl bg-foreground-50/50 transition-all">
         <Link href="/" className="font-thin text-2xl italic transition">coincidenza.it</Link>
         <div className="flex gap-2">
             <Button

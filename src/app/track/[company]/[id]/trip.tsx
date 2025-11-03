@@ -220,7 +220,7 @@ export default function Trip({trip: initialTrip}: { trip: TripProps }) {
                 </Card>
             </div>
 
-            <div className="sticky top-0 bg-white dark:bg-black z-20">
+            <div className="sticky top-[72px] bg-white dark:bg-black z-20">
                 <Divider className="my-2" />
 
                 <div
