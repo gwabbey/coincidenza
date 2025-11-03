@@ -37,6 +37,10 @@ export default function Directions() {
     };
 
     const handleSearch = async () => {
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+
         if (!selectedLocations.from || !selectedLocations.to || !date || !time) return;
 
         setIsLoading(true);

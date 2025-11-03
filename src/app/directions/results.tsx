@@ -110,7 +110,6 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                         href={leg.realTime.url}
                                         variant="bordered"
                                         isIconOnly
-                                        target="_blank"
                                         startContent={<IconAccessPoint />}
                                         radius="full"
                                         className="border-gray-500 border-1 self-center"
@@ -121,7 +120,6 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                         href={`https://maps.apple.com/?saddr=${leg.from.lat},${leg.from.lon}&daddr=${leg.to.lat},${leg.to.lon}&dirflg=w`}
                                         variant="bordered"
                                         isIconOnly
-                                        target="_blank"
                                         startContent={<IconMap />}
                                         radius="full"
                                         className="border-gray-500 border-1 self-center"
@@ -206,8 +204,7 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                                                 <div key={index}
                                                                      className="flex flex-col gap-2">
                                                                     {alert.url ? (<div className="flex flex-col">
-                                                                        <Link href={alert.url}
-                                                                              target="_blank">
+                                                                        <Link href={alert.url} target="_blank">
                                                                             {alert.message}
                                                                             <IconExternalLink
                                                                                 className="shrink-0 ml-1 mb-1 inline text-center"

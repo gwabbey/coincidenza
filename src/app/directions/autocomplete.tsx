@@ -53,6 +53,10 @@ export const LocationAutocomplete = ({
     const onSelectionChange = async (key: Key | null) => {
         if (!key) return;
 
+        if (document.activeElement instanceof HTMLElement) {
+            document.activeElement.blur();
+        }
+
         if (key === 'current-location') {
             try {
                 const locationLabel = 'Posizione attuale';
