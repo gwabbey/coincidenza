@@ -94,18 +94,16 @@ export default function Directions() {
         legs: selectedTripIndex !== null && directions?.trips[selectedTripIndex] ? directions.trips[selectedTripIndex].legs : [],
     } : undefined;
 
-    return (<div className="grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
-        <div className="lg:col-span-1 lg:sticky lg:top-4 lg:h-fit rounded-large overflow-hidden">
-            <LeafletMap
-                from={mapData?.from}
-                to={mapData?.to}
-                intermediateStops={mapData?.intermediateStops}
-                legs={mapData?.legs}
-                className="rounded-large"
-            />
-        </div>
+    return (<div className="flex flex-col">
+        <LeafletMap
+            from={mapData?.from}
+            to={mapData?.to}
+            intermediateStops={mapData?.intermediateStops}
+            legs={mapData?.legs}
+            className="w-screen rounded-t-large sticky top-[72px] z-10"
+        />
 
-        <div className="lg:col-span-2 flex flex-col gap-4">
+        <Card className="flex flex-col gap-4 p-4 -mt-8 z-20" fullWidth>
             <h1 className="text-2xl font-bold text-center">Pianifica il tuo viaggio</h1>
 
             <div className="flex flex-col md:flex-row justify-center items-center gap-x-4">
@@ -194,6 +192,6 @@ export default function Directions() {
 
             {directions && <Results directions={directions} selectedTripIndex={selectedTripIndex}
                                     onTripSelect={setSelectedTripIndex} />}
-        </div>
+        </Card>
     </div>);
 }

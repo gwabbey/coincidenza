@@ -32,6 +32,7 @@ export default async function About() {
                     <li>DB</li>
                 </ul>
             </div>
+            <div>mappe: &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors</div>
             <div className="italic">per più informazioni, domande, consigli, ecc. <Link as={NextLink}
                                                                                         href="mailto:mail@g3b.dev">contattami!!</Link>
             </div>
