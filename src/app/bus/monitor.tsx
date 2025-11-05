@@ -22,7 +22,7 @@ function getStopsAway(selectedStopId: number, stopTimes: any[], delay: number | 
 
     const passedIndex = stopTimes.findLastIndex(stop => getAdjustedTime(stop) <= now);
     const stopsAway = selectedIndex - passedIndex;
-    return stopsAway <= 0 ? 0 : stopsAway;
+    return stopsAway <= 0 ? 0 : stopsAway + 1;
 }
 
 export function Monitor({trips}: { trips: any[] }) {
@@ -52,11 +52,10 @@ export function Monitor({trips}: { trips: any[] }) {
                 const arrivalTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata).getTime();
 
                 const stopsAway = getStopsAway(trip.stopId, trip.stopTimes, trip.delay)
-                const startsFromSelectedStop = trip.stopTimes[0]?.stopId === trip.stopId;
-
+                const startsFromSelectedStop = trip.stopTimes[0].stopId === trip.stopId;
                 const isArriving = trip.oraArrivoEffettivaAFermataSelezionata && arrivalTime - now <= 2 * 60 * 1000 && stopsAway === 0 && !startsFromSelectedStop;
 
-                const hasDeparted = trip.lastEventRecivedAt !== null && stopsAway !== null && stopsAway > 0;
+                const hasDeparted = !startsFromSelectedStop && trip.lastEventRecivedAt !== null && stopsAway !== null && stopsAway > 0;
 
                 return (<motion.div
                     key={trip.tripId}
