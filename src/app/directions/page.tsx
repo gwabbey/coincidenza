@@ -5,7 +5,7 @@ import {type Directions} from "@/api/motis/types";
 import {type Location} from "@/types";
 import {Button, Card, DateInput, Link, TimeInput} from "@heroui/react";
 import {CalendarDate, Time} from "@internationalized/date";
-import {IconMap, IconSearch, IconWalk} from "@tabler/icons-react";
+import {IconArrowsLeftRight, IconArrowsUpDown, IconMap, IconSearch, IconWalk} from "@tabler/icons-react";
 import {useState} from "react";
 import {LocationAutocomplete} from "./autocomplete";
 import Results from "./results";
@@ -53,13 +53,13 @@ export default function Directions() {
             const localIsoString = combinedDateTime.toISOString();
 
             const result = await getDirections({
-                lat: selectedLocations.from.coordinates.lat,
-                lon: selectedLocations.from.coordinates.lon,
+                lat: selectedLocations.from.coordinates!.lat,
+                lon: selectedLocations.from.coordinates!.lon,
                 text: selectedLocations.from.label.toString(),
                 isTrainStation: selectedLocations.from.isTrainStation ?? false,
             }, {
-                lat: selectedLocations.to.coordinates.lat,
-                lon: selectedLocations.to.coordinates.lon,
+                lat: selectedLocations.to.coordinates!.lat,
+                lon: selectedLocations.to.coordinates!.lon,
                 text: selectedLocations.to.label.toString(),
                 isTrainStation: selectedLocations.to.isTrainStation ?? false,
             }, localIsoString);
@@ -79,17 +79,17 @@ export default function Directions() {
         }
     };
 
-    const isSameLocation = selectedLocations.from?.coordinates.lat === selectedLocations.to?.coordinates.lat && selectedLocations.from?.coordinates.lon === selectedLocations.to?.coordinates.lon;
+    const isSameLocation = selectedLocations.from?.coordinates!.lat === selectedLocations.to?.coordinates!.lat && selectedLocations.from?.coordinates!.lon === selectedLocations.to?.coordinates!.lon;
 
     const mapData = selectedLocations.from ? {
         from: {
-            lat: selectedLocations.from.coordinates.lat,
-            lon: selectedLocations.from.coordinates.lon,
+            lat: selectedLocations.from.coordinates!.lat,
+            lon: selectedLocations.from.coordinates!.lon,
             name: selectedLocations.from.label.toString(),
         },
         to: selectedLocations.to ? {
-            lat: selectedLocations.to.coordinates.lat,
-            lon: selectedLocations.to.coordinates.lon,
+            lat: selectedLocations.to.coordinates!.lat,
+            lon: selectedLocations.to.coordinates!.lon,
             name: selectedLocations.to.label.toString(),
         } : undefined,
         intermediateStops: selectedTripIndex !== null && directions?.trips[selectedTripIndex] ? directions.trips[selectedTripIndex].legs.flatMap((leg) => leg.intermediateStops?.map((stop) => ({
@@ -104,10 +104,10 @@ export default function Directions() {
             to={mapData?.to}
             intermediateStops={mapData?.intermediateStops}
             legs={mapData?.legs}
-            className="w-screen rounded-t-large sticky top-[72px] z-10"
+            className="w-screen rounded-t-large sticky top-[72px] z-10 -mt-4"
         />
 
-        <Card className="flex flex-col gap-4 p-4 -mt-8 z-20" fullWidth>
+        <Card className="flex flex-col gap-4 p-4 -mt-8 z-20 max-h-3/4" fullWidth shadow="sm">
             <h1 className="text-2xl font-bold text-center">Pianifica il tuo viaggio</h1>
 
             <div className="flex flex-col md:flex-row justify-center items-center gap-x-4">
@@ -115,6 +115,24 @@ export default function Directions() {
                     name="from"
                     label="partenza"
                     onLocationSelect={(location) => handleLocationSelect("from", location)}
+                />
+                <div className="w-full max-w-md flex items-center justify-end md:hidden">
+                    <Button
+                        isIconOnly
+                        variant="ghost"
+                        startContent={<IconArrowsUpDown size={20} className="shrink-0" />}
+                        radius="full"
+                        className="border-gray-500 border-1 -my-4 bg-content1"
+                        aria-label="inverti selezione"
+                    />
+                </div>
+                <Button
+                    isIconOnly
+                    variant="ghost"
+                    startContent={<IconArrowsLeftRight size={20} className="shrink-0" />}
+                    radius="full"
+                    className="border-gray-500 border-1 self-center md:flex hidden"
+                    aria-label="inverti selezione"
                 />
                 <LocationAutocomplete
                     name="to"

@@ -93,7 +93,7 @@ function getStopStatus(stop: any) {
     return "regular";
 }
 
-function getCategory(trip: any) {
+function getCategory(trip: any): string {
     if (trip.categoria === "REG") return "R";
     if (!trip.categoria) {
         const fullTrainId = trip.compNumeroTreno.trim().split(" ")
@@ -222,7 +222,10 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
         }
     }
 
-    if (trip.nonPartito && !currentStop.fermata.partenzaReale) delay = null;
+    if (trip.nonPartito && !currentStop.fermata.partenzaReale) {
+        delay = null
+        currentStopIndex = -1
+    }
 
     const getMonitorDelay = async (stop: any, trainNumber: string, tripDelay: number) => {
         const stationName = stop?.stazione;
@@ -278,6 +281,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
         alertMessage: trip.subTitle,
         clientId: trip.codiceCliente || 0,
         company: clients[trip.codiceCliente],
+        color: getCategory(trip) === "R" ? "036633" : "CA2A31",
         stops: canvas.map((stop: any) => {
             return {
                 id: stop.id,

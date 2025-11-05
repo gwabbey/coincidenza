@@ -1,6 +1,5 @@
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
-import {Stop, StopTime} from './types';
 import {getDistance} from "@/utils";
 
 export async function fetchData(endpoint: string, options: { params?: Record<string, string> } = {}) {
@@ -101,35 +100,66 @@ export async function getRoutes(type: string) {
 export async function getTrip(id: string) {
     const trip = await fetchData(`trips/${id}`);
     if (!trip) return null;
-    
+
     return {
         id: trip.tripId,
+        status: trip.lastSequenceDetection - 1 === trip.stopTimes[trip.stopTimes.length - 1].stopSequence ? "completed" : !trip.lastEventRecivedAt ? "scheduled" : "active",
         delay: trip.delay,
-        stopLast: trip.stopLast,
-        lastEventRecivedAt: trip.lastEventRecivedAt,
-        lastSequenceDetection: trip.lastSequenceDetection,
-        matricolaBus: trip.matricolaBus,
+        lastUpdate: trip.lastEventRecivedAt,
+        currentStopIndex: !trip.lastEventRecivedAt ? -1 : trip.lastSequenceDetection - 1,
     };
+}
+
+function stringToIso(time: string) {
+    const [h, m, s] = time.split(":").map(Number);
+    const now = new Date();
+    const date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, s || 0);
+    return date.toISOString();
 }
 
 export async function getTripDetails(id: string) {
     const trip = await fetchData(`trips/${id}`);
-    if (!trip) return null;
     const stops = await getStops(trip.type);
     const routes = await getRoutes(trip.type);
 
     if (!trip || !stops || !routes) return null;
 
-    const stopMap = new Map(
-        stops.map((stop: Stop) => [stop.stopId, stop.stopName])
+    const stopMap = new Map<string, string>(
+        stops.map((stop: any) => [stop.stopId, stop.stopName])
     );
 
+    const getStopName = (stopId: string) => stopMap.get(stopId) ?? "--";
+    const getRoute = (routeId: string) => routes.find((r: any) => r.routeId === routeId);
+
     return {
-        ...trip,
-        stopTimes: trip.stopTimes.map((stopTime: StopTime) => ({
-            ...stopTime,
-            stopName: stopMap.get(stopTime.stopId) || 'Fermata sconosciuta'
+        id: trip.tripId,
+        currentStopIndex: !trip.lastEventRecivedAt ? -1 : trip.lastSequenceDetection - 1,
+        lastKnownLocation: !trip.lastEventRecivedAt ? getStopName(trip.stopTimes[trip.lastSequenceDetection - 1]) : null,
+        lastUpdate: trip.lastEventRecivedAt,
+        status: trip.lastSequenceDetection - 1 === trip.stopTimes[trip.stopTimes.length - 1].stopSequence ? "completed" : !trip.lastEventRecivedAt ? "scheduled" : "active",
+        category: trip.type === "U" ? "Urbano" : "Extraurbano",
+        vehicleId: trip.matricolaBus,
+        color: getRoute(trip.routeId).routeColor,
+        route: getRoute(trip.routeId).routeShortName,
+        origin: getStopName(trip.stopTimes[0].stopId),
+        destination: trip.tripHeadsign,
+        departureTime: stringToIso(trip.stopTimes[0].departureTime),
+        arrivalTime: stringToIso(trip.stopTimes[trip.stopTimes.length - 1].arrivalTime),
+        delay: trip.delay,
+        stops: trip.stopTimes.map((stop: any) => ({
+            id: stop.stopId,
+            name: getStopName(stop.stopId),
+            scheduledArrival: stringToIso(stop.arrivalTime),
+            scheduledDeparture: stringToIso(stop.departureTime),
+            status: "regular",
         })),
-        route: routes.find((route: any) => route.routeId === trip.routeId)
-    };
+        info: routes
+            .find((route: any) => route.routeId === trip.routeId)
+            .news.map((alert: any) => ({
+                message: alert.details ?? "",
+                date: stringToIso(alert.startDate) ?? "",
+                source: "Trentino Trasporti",
+                url: alert.url,
+            })),
+    }
 }

@@ -19,6 +19,7 @@ export interface Trip {
     company: string,
     originId?: string;
     timestamp?: number;
+    color: string,
 }
 
 export interface Stop {

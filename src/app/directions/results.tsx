@@ -76,10 +76,10 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                    })()}
                                </div>}
                 >
-                    <div className="flex flex-col space-y-6 pb-2">
+                    <div className="flex flex-col space-y-8 pb-2">
                         {trip.legs
                             .map((leg, index) => (<div key={index} className="flex flex-col gap-4">
-                                <div className="flex flex-row justify-between">
+                                <div className="flex flex-col gap-2">
                                     <div className="flex flex-row gap-2 items-center">
                                         <TransportIcon type={leg.mode} size={24} />
                                         <div className="flex flex-col justify-center">
@@ -109,22 +109,26 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                         as={Link}
                                         href={leg.realTime.url}
                                         variant="bordered"
-                                        isIconOnly
                                         startContent={<IconAccessPoint />}
                                         radius="full"
-                                        className="border-gray-500 border-1 self-center"
+                                        fullWidth
+                                        className="border-gray-500 border-1 self-center text-medium"
                                         aria-label={`${leg.routeLongName || ""} ${leg.tripShortName || ""} in tempo reale`}
-                                    />)}
+                                    >
+                                        traccia in tempo reale
+                                    </Button>)}
                                     {leg.mode === "WALK" && (<Button
                                         as={Link}
                                         href={`https://maps.apple.com/?saddr=${leg.from.lat},${leg.from.lon}&daddr=${leg.to.lat},${leg.to.lon}&dirflg=w`}
                                         variant="bordered"
-                                        isIconOnly
                                         startContent={<IconMap />}
                                         radius="full"
-                                        className="border-gray-500 border-1 self-center"
+                                        fullWidth
+                                        className="border-gray-500 border-1 self-center text-medium"
                                         aria-label={`${leg.mode || ""} ${leg.routeShortName || ""} in tempo reale`}
-                                    />)}
+                                    >
+                                        indicazioni
+                                    </Button>)}
                                 </div>
                                 {leg.mode !== "WALK" && (
                                     <div className="pl-8 md:px-8 flex flex-col md:flex-row justify-between">

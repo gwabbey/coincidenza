@@ -1,112 +1,28 @@
-export interface Stop {
-    stopId: number;
-    stopName: string;
-    stopCode: string;
-    type: string;
-    town?: string | null;
-    distance: number | null;
-    intermediateQuays: Array<{ id: number, name: string }>;
-    stopLat?: number | null;
-    stopLon?: number | null;
-    routes: RouteDetails[];
-}
-
-export interface RouteDetails {
-    type: string;
-    routeId: number;
-    routeShortName: string;
-    routeLongName: string;
-    news?: RouteNews[] | null;
-    cableway?: Cableway | null;
-    routeColor?: string | null;
-}
-
-export interface RouteNews {
-    header: string;
-    details: string;
-    url?: string;
-}
-
-export interface RouteStop {
-    matricolaBus: string | null;
-    tripHeadsign: string;
-    delay: number | null;
-    lastEventRecivedAt: string | null;
-    stopTimes: StopTime[];
-    oraArrivoEffettivaAFermataSelezionata: string;
-    oraArrivoProgrammataAFermataSelezionata: string;
-    tripId: string;
-    type: string;
-}
-
-export interface StopTime {
-    stopId: number;
-    arrivalTime: string;
-    departureTime: string;
-    stopSequence: number;
-    tripId: string;
-    type: string;
-}
-
-export interface Route {
-    id: string;
-    details: RouteDetails;
-    stops: RouteStop[];
-}
-
-export interface PopularStop {
-    id: number;
-    name: string;
-    type: string;
-}
-
-export interface Cableway {
-    routeId: number;
-    descrizione: string;
-    type: string;
-    descrColor: string;
-}
+import {Info} from "@/api/motis/types";
 
 export interface Trip {
-    cableway: Cableway | null;
-    corsaPiuVicinaADataRiferimento: boolean;
-    delay: number;
-    directionId: number;
-    indiceCorsaInLista: number;
-    lastEventRecivedAt: string;
-    lastSequenceDetection: number;
-    matricolaBus: number;
-    oraArrivoEffettivaAFermataSelezionata: string | null;
-    oraArrivoProgrammataAFermataSelezionata: string | null;
-    routeId: number;
-    stopLast: number;
-    stopNext: number;
-    stopTimes: Array<{
-        arrivalTime: string;
-        departureTime: string;
-        stopId: number;
-        stopSequence: number;
-        tripId: string;
-        type: string;
-        stopName: string;
-    }>;
-    totaleCorseInLista: number;
-    tripHeadsign: string;
-    tripId: string;
-    route: RouteDetails;
-    type: string;
-    wheelchairAccessible: number;
+    id: string,
+    currentStopIndex: number,
+    lastKnownLocation: string | null,
+    lastUpdate: string | null,
+    status: string,
+    category: string | null,
+    route: string,
+    vehicleId: string | null,
+    origin: string,
+    destination: string,
+    departureTime: string,
+    arrivalTime: string,
+    delay: number,
+    color: string,
+    stops: Stop[],
+    info: Info[],
 }
 
-export interface StopNews {
-    idFeed: any
-    agencyId: string
-    serviceType: string
-    startDate: string
-    endDate: string
-    header: string
-    details: string
-    stopId: string
-    url: string
-    routeIds: number[]
+export interface Stop {
+    id: string;
+    name: string;
+    scheduledArrival: string;
+    scheduledDeparture: string;
+    status: "regular" | "not_planned" | "canceled";
 }

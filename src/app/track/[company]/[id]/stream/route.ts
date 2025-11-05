@@ -1,6 +1,5 @@
 import {getTrip as getTrenitaliaTrip} from "@/api/trenitalia/api";
-import {getTrip as getTrentinoTrip, getTripDetails} from "@/api/trentino-trasporti/api";
-import {NormalizedTrip, trenitaliaAdapter, trentinoAdapter} from "@/adapters";
+import {getTrip as getTrentinoTrip} from "@/api/trentino-trasporti/api";
 import {createResponse} from "better-sse";
 import crypto from 'crypto';
 import {NextRequest} from "next/server";
@@ -24,15 +23,9 @@ export async function GET(
 
     return createResponse(request, async (session) => {
         let lastHash = "";
-        let stopTimes: any[] = [];
-
-        if (company === "trentino-trasporti") {
-            const details = await getTripDetails(id);
-            stopTimes = details.stopTimes;
-        }
 
         const sendUpdate = async () => {
-            let normalizedTrip: NormalizedTrip;
+            let normalizedTrip;
 
             try {
                 switch (company) {
@@ -43,7 +36,32 @@ export async function GET(
                             return true;
                         }
                         const trenitaliaTrip = await getTrenitaliaTrip(origin, id, timestamp);
-                        normalizedTrip = trenitaliaAdapter(trenitaliaTrip);
+
+                        if (!trenitaliaTrip) {
+                            session.push({error: "Trip not found"});
+                            return true;
+                        }
+
+                        normalizedTrip = {
+                            status: trenitaliaTrip.status,
+                            delay: trenitaliaTrip.delay,
+                            lastKnownLocation: trenitaliaTrip.lastKnownLocation,
+                            lastUpdate: trenitaliaTrip.lastUpdate,
+                            currentStopIndex: trenitaliaTrip.currentStopIndex,
+                            stops: trenitaliaTrip.stops.map((stop: any) => ({
+                                id: stop.id,
+                                name: stop.name,
+                                scheduledPlatform: stop.scheduledPlatform,
+                                actualPlatform: stop.actualPlatform,
+                                scheduledArrival: stop.scheduledArrival,
+                                actualArrival: stop.actualArrival,
+                                scheduledDeparture: stop.scheduledDeparture,
+                                actualDeparture: stop.actualDeparture,
+                                departureDelay: stop.departureDelay,
+                                arrivalDelay: stop.arrivalDelay,
+                                status: stop.status
+                            }))
+                        }
                         break;
 
                     case "trentino-trasporti":
@@ -52,7 +70,13 @@ export async function GET(
                             session.push({error: "Trip not found"});
                             return true;
                         }
-                        normalizedTrip = trentinoAdapter(trentinoTrip, stopTimes);
+
+                        normalizedTrip = {
+                            status: trentinoTrip.status,
+                            delay: trentinoTrip.delay,
+                            lastUpdate: trentinoTrip.lastUpdate,
+                            currentStopIndex: trentinoTrip.currentStopIndex,
+                        };
                         break;
 
                     default:
