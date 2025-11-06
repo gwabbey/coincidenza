@@ -53,7 +53,9 @@ export default function Directions() {
         try {
             const combinedDateTime = new Date(date.year, date.month - 1, date.day, time.hour, time.minute);
 
-            const localIsoString = combinedDateTime.toISOString();
+            const localIsoString = combinedDateTime
+                .toLocaleString("sv-SE", {timeZone: "Europe/Rome"})
+                .replace(" ", "T");
 
             const result = await getDirections({
                 lat: selectedLocations.from.coordinates!.lat,
