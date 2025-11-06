@@ -23,8 +23,16 @@ export default function Directions() {
     const [selectedLocations, setSelectedLocations] = useState<SelectedLocations>({
         from: null, to: null,
     });
-    const [date, setDate] = useState<CalendarDate>(new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()));
-    const [time, setTime] = useState<Time>(new Time(new Date().getHours(), new Date().getMinutes()));
+    const [date, setDate] = useState<CalendarDate>(new CalendarDate(parseInt(new Date().toLocaleString("en-US", {
+        timeZone: "Europe/Rome", year: "numeric"
+    })), parseInt(new Date().toLocaleString("en-US", {
+        timeZone: "Europe/Rome", month: "numeric"
+    })), parseInt(new Date().toLocaleString("en-US", {timeZone: "Europe/Rome", day: "numeric"}))));
+    const [time, setTime] = useState<Time>(new Time(parseInt(new Date().toLocaleString("en-US", {
+        timeZone: "Europe/Rome",
+        hour: "2-digit",
+        hour12: false
+    })), parseInt(new Date().toLocaleString("en-US", {timeZone: "Europe/Rome", minute: "2-digit"}))));
     const [directions, setDirections] = useState<Directions>();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -146,96 +154,18 @@ export default function Directions() {
                             label="data"
                             classNames={{label: "text-sm"}}
                             size="lg"
-                            isInvalid={
-                                new CalendarDate(
-                                    parseInt(new Date().toLocaleString("en-US", {
-                                        timeZone: "Europe/Rome",
-                                        year: "numeric"
-                                    })),
-                                    parseInt(new Date().toLocaleString("en-US", {
-                                        timeZone: "Europe/Rome",
-                                        month: "numeric"
-                                    })),
-                                    parseInt(new Date().toLocaleString("en-US", {
-                                        timeZone: "Europe/Rome",
-                                        day: "numeric"
-                                    }))
-                                ) > date
-                            }
-                            defaultValue={
-                                new CalendarDate(
-                                    parseInt(new Date().toLocaleString("en-US", {
-                                        timeZone: "Europe/Rome",
-                                        year: "numeric"
-                                    })),
-                                    parseInt(new Date().toLocaleString("en-US", {
-                                        timeZone: "Europe/Rome",
-                                        month: "numeric"
-                                    })),
-                                    parseInt(new Date().toLocaleString("en-US", {
-                                        timeZone: "Europe/Rome",
-                                        day: "numeric"
-                                    }))
-                                )
-                            }
-                            onChange={(date) =>
-                                setDate(
-                                    date instanceof CalendarDate
-                                        ? date
-                                        : new CalendarDate(
-                                            parseInt(new Date().toLocaleString("en-US", {
-                                                timeZone: "Europe/Rome",
-                                                year: "numeric"
-                                            })),
-                                            parseInt(new Date().toLocaleString("en-US", {
-                                                timeZone: "Europe/Rome",
-                                                month: "numeric"
-                                            })),
-                                            parseInt(new Date().toLocaleString("en-US", {
-                                                timeZone: "Europe/Rome",
-                                                day: "numeric"
-                                            }))
-                                        )
-                                )
-                            }
+                            isInvalid={new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()) > date}
+                            defaultValue={new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate())}
+                            onChange={(date) => setDate(date instanceof CalendarDate ? date : new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()))}
                         />
-
                         <TimeInput
                             variant="underlined"
                             label="ora"
                             classNames={{label: "text-sm"}}
                             size="lg"
                             hourCycle={24}
-                            defaultValue={
-                                new Time(
-                                    parseInt(new Date().toLocaleString("en-US", {
-                                        timeZone: "Europe/Rome",
-                                        hour: "2-digit",
-                                        hour12: false
-                                    })),
-                                    parseInt(new Date().toLocaleString("en-US", {
-                                        timeZone: "Europe/Rome",
-                                        minute: "2-digit"
-                                    }))
-                                )
-                            }
-                            onChange={(time) =>
-                                setTime(
-                                    time instanceof Time
-                                        ? time
-                                        : new Time(
-                                            parseInt(new Date().toLocaleString("en-US", {
-                                                timeZone: "Europe/Rome",
-                                                hour: "2-digit",
-                                                hour12: false
-                                            })),
-                                            parseInt(new Date().toLocaleString("en-US", {
-                                                timeZone: "Europe/Rome",
-                                                minute: "2-digit"
-                                            }))
-                                        )
-                                )
-                            }
+                            defaultValue={new Time(new Date().getHours(), new Date().getMinutes())}
+                            onChange={(time) => setTime(time instanceof Time ? time : new Time(new Date().getHours(), new Date().getMinutes()))}
                         />
                     </I18nProvider>
                 </div>
