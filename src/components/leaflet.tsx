@@ -49,11 +49,6 @@ export default function AnimatedLeafletMap({
     const polylinesRef = useRef<L.Polyline[]>([]);
     const animationFrameRef = useRef<number | null>(null);
     const [mapInitialized, setMapInitialized] = useState(false);
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
 
     useEffect(() => {
         import('leaflet').then((L) => {
@@ -187,7 +182,7 @@ export default function AnimatedLeafletMap({
 
                     if (combinedPath.length === 2) {
                         const [start, end] = combinedPath;
-                        const numInterpolations = 50; // Create 50 intermediate points
+                        const numInterpolations = 50;
                         const interpolated: Array<[number, number]> = [];
                         for (let i = 0; i <= numInterpolations; i++) {
                             const t = i / numInterpolations;
@@ -274,6 +269,9 @@ export default function AnimatedLeafletMap({
         });
     };
 
-    if (!mounted) return <div style={{height: '400px', width: '100%'}} className={className} />;
-    return <div ref={mapRef} style={{height: '400px', width: '100%'}} className={className} />;
+    return (<div
+        ref={mapRef}
+        style={{height: '400px', width: '100%'}}
+        className={className}
+    />);
 }
