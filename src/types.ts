@@ -8,7 +8,7 @@ export interface Location {
     label: string | JSX.Element;
     textValue?: string;
     address?: string;
-    coordinates: Coordinates;
+    coordinates: Coordinates | null;
     isTrainStation?: boolean;
 }
 
