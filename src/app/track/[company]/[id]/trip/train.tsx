@@ -11,13 +11,13 @@ import {useEffect, useState} from 'react';
 
 const getCurrentMinutes = () => {
     const now = new Date();
-    const time = new Date(now.toLocaleString('en-US', {timeZone: 'Europe/Rome'}));
+    const time = new Date(now.toLocaleString('it-IT', {timeZone: 'Europe/Rome'}));
     return (time.getDate() * 24 * 60) + (time.getHours() * 60) + time.getMinutes() + (time.getSeconds() / 60);
 };
 
 const timeToMinutes = (timeString: string, originalDate: Date) => {
     const [hours, minutes] = timeString.split(':').map(Number);
-    const date = new Date(originalDate.toLocaleString('en-US', {timeZone: 'Europe/Rome'}));
+    const date = new Date(originalDate.toLocaleString('it-IT', {timeZone: 'Europe/Rome'}));
     return (date.getDate() * 24 * 60) + (hours * 60) + minutes;
 };
 

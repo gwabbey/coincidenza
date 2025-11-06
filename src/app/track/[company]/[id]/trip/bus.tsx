@@ -10,12 +10,12 @@ import {useEffect, useState} from 'react';
 import {Info} from "@/api/motis/types";
 
 export const getCurrentMinutes = (): number => {
-    const now = new Date(new Date().toLocaleString('en-US', {timeZone: 'Europe/Rome'}));
+    const now = new Date(new Date().toLocaleString('it-IT', {timeZone: 'Europe/Rome'}));
     return now.getHours() * 60 + now.getMinutes() + (now.getSeconds() / 60);
 };
 
 const timeToMinutes = (date: string): number => {
-    const d = new Date(new Date(date).toLocaleString('en-US', {timeZone: 'Europe/Rome'}));
+    const d = new Date(new Date(date).toLocaleString('it-IT', {timeZone: 'Europe/Rome'}));
     return d.getHours() * 60 + d.getMinutes();
 };
 
