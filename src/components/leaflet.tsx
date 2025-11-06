@@ -55,7 +55,7 @@ export default function AnimatedLeafletMap({
             if (!mapRef.current || mapInstanceRef.current) return;
 
             mapInstanceRef.current = L.map(mapRef.current, {
-                scrollWheelZoom: true, center: [46.072438, 11.119065], zoom: 12, zoomControl: false
+                scrollWheelZoom: true, center: [46.072438, 11.119065], zoom: 12,
             });
 
             setMapInitialized(true);
@@ -80,7 +80,12 @@ export default function AnimatedLeafletMap({
                 mapInstanceRef.current!.removeLayer(tileLayerRef.current);
             }
 
-            tileLayerRef.current = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${theme}_all/{z}/{x}/{y}{r}.png`, {
+            let resolvedTheme = theme;
+            if (theme === 'system') {
+                resolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+
+            tileLayerRef.current = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${resolvedTheme}_all/{z}/{x}/{y}{r}.png`, {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
             }).addTo(mapInstanceRef.current!);
 
@@ -171,11 +176,23 @@ export default function AnimatedLeafletMap({
             import("leaflet").then(async (L) => {
                 try {
                     const decodedLegs = await Promise.all(legs.map((leg) => decodePolyline(leg.legGeometry.points)));
-                    const combinedPath = decodedLegs.flat();
+                    let combinedPath = decodedLegs.flat();
 
                     if (combinedPath.length < 2) return;
 
-                    const routeColor = legs.find((l) => l.routeColor) ? `#${legs.find((l) => l.routeColor)?.routeColor}` : "blue";
+                    if (combinedPath.length === 2) {
+                        const [start, end] = combinedPath;
+                        const numInterpolations = 50; // Create 50 intermediate points
+                        const interpolated: Array<[number, number]> = [];
+                        for (let i = 0; i <= numInterpolations; i++) {
+                            const t = i / numInterpolations;
+                            interpolated.push([start[0] + (end[0] - start[0]) * t, start[1] + (end[1] - start[1]) * t,]);
+                        }
+                        combinedPath = interpolated;
+                    }
+
+                    const routeColor = legs.find((l) => l.routeColor)?.routeColor || "blue";
+
                     const polyline = L.polyline([], {
                         color: routeColor, weight: 4, opacity: 0.9,
                     }).addTo(mapInstanceRef.current!);
@@ -183,6 +200,7 @@ export default function AnimatedLeafletMap({
                     polylinesRef.current = [polyline];
 
                     const startTime = performance.now();
+
                     const animate = (time: number) => {
                         const elapsed = time - startTime;
                         const progress = Math.min(elapsed / animationDuration, 1);
