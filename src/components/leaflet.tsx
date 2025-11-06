@@ -49,6 +49,11 @@ export default function AnimatedLeafletMap({
     const polylinesRef = useRef<L.Polyline[]>([]);
     const animationFrameRef = useRef<number | null>(null);
     const [mapInitialized, setMapInitialized] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         import('leaflet').then((L) => {
@@ -82,7 +87,7 @@ export default function AnimatedLeafletMap({
 
             let resolvedTheme = theme;
             if (theme === 'system') {
-                resolvedTheme = typeof window !== "undefined" && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                resolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             }
 
             tileLayerRef.current = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${resolvedTheme}_all/{z}/{x}/{y}{r}.png`, {
@@ -269,9 +274,6 @@ export default function AnimatedLeafletMap({
         });
     };
 
-    return (<div
-        ref={mapRef}
-        style={{height: '400px', width: '100%'}}
-        className={className}
-    />);
+    if (!mounted) return <div style={{height: '400px', width: '100%'}} className={className} />;
+    return <div ref={mapRef} style={{height: '400px', width: '100%'}} className={className} />;
 }
