@@ -19,39 +19,14 @@ interface SelectedLocations {
     to: Location | null;
 }
 
-const getItalyDateTime = () => {
-    const parts = new Intl.DateTimeFormat("en-US", {
-        timeZone: "Europe/Rome",
-        year: 'numeric',
-        month: 'numeric',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: false,
-    }).formatToParts(new Date());
-
-    const partsMap = new Map(parts.map(p => [p.type, p.value]));
-
-    const hour = parseInt(partsMap.get('hour') || '0');
-
-    return {
-        year: parseInt(partsMap.get('year') || '0'),
-        month: parseInt(partsMap.get('month') || '0'),
-        day: parseInt(partsMap.get('day') || '0'),
-        hour: hour === 24 ? 0 : hour,
-        minute: parseInt(partsMap.get('minute') || '0'),
-    };
-};
-
 export default function Directions() {
-    const {year, month, day, hour, minute} = getItalyDateTime();
     const [selectedLocations, setSelectedLocations] = useState<SelectedLocations>({
         from: null, to: null,
     });
-    const today = new CalendarDate(year, month, day);
-    const nextWeek = new CalendarDate(year, month, day + 7);
-    const [date, setDate] = useState<DateValue | null>(new CalendarDate(year, month, day));
-    const [time, setTime] = useState<TimeInputValue | null>(new Time(hour, minute));
+    const today = new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate());
+    const nextWeek = new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate() + 7);
+    const [date, setDate] = useState<DateValue | null>(today);
+    const [time, setTime] = useState<TimeInputValue | null>(new Time(new Date().getHours(), new Date().getMinutes(), 0));
     const [directions, setDirections] = useState<Directions>();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -78,6 +53,8 @@ export default function Directions() {
             const localIsoString = new Date(date.year, date.month - 1, date.day, time.hour, time.minute)
                 .toLocaleString("sv-SE", {timeZone: "Europe/Rome"})
                 .replace(" ", "T");
+
+            console.log(localIsoString);
 
             const result = await getDirections({
                 lat: selectedLocations.from.coordinates!.lat,
