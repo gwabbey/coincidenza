@@ -1,10 +1,10 @@
-import { Favorite } from "@/types";
-import { cookies } from "next/headers";
-import { Search } from "./search";
+import {Favorite} from "@/types";
+import {cookies} from "next/headers";
+import {Search} from "./search";
 
 export default async function Layout({
-    children,
-}: {
+                                         children,
+                                     }: {
     children: React.ReactNode;
 }) {
     const cookieStore = await cookies();
@@ -15,7 +15,8 @@ export default async function Layout({
     let favorites: Favorite[] = [];
     try {
         favorites = JSON.parse(decodeURIComponent(favoritesRaw));
-    } catch { }
+    } catch {
+    }
 
     let currentLocationName = '';
     if (userLat && userLon) {
@@ -31,7 +32,7 @@ export default async function Layout({
     if (cookieStore)
         return (
             <div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
-                <h1 className="text-2xl font-bold text-center">partenze da fermate vicine</h1>
+                <h1 className="text-2xl font-bold text-center">Partenze da fermate vicine</h1>
                 <Search
                     favorites={favorites}
                     initialLocationName={currentLocationName}
