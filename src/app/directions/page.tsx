@@ -51,9 +51,7 @@ export default function Directions() {
         setDirections(undefined);
 
         try {
-            const combinedDateTime = new Date(date.year, date.month - 1, date.day, time.hour, time.minute);
-
-            const localIsoString = combinedDateTime
+            const localIsoString = new Date(date.year, date.month - 1, date.day, time.hour, time.minute)
                 .toLocaleString("sv-SE", {timeZone: "Europe/Rome"})
                 .replace(" ", "T");
 
@@ -174,7 +172,7 @@ export default function Directions() {
                 color="primary"
                 className="self-center font-bold max-w-md md:max-w-32 w-full text-lg"
                 startContent={!isLoading && <IconSearch stroke={2} className="shrink-0" />}
-                isDisabled={!selectedLocations.from || !selectedLocations.to || !date || !time || isLoading || (selectedLocations && isSameLocation) || new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()) > date}
+                isDisabled={!selectedLocations.from || !selectedLocations.to || !date || !time || isLoading || (selectedLocations && isSameLocation) || today > date || date > nextWeek}
                 isLoading={isLoading}
             >
                 {!isLoading && "cerca"}
