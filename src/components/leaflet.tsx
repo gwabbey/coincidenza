@@ -82,7 +82,7 @@ export default function AnimatedLeafletMap({
 
             let resolvedTheme = theme;
             if (theme === 'system') {
-                resolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                resolvedTheme = typeof window !== "undefined" && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
             }
 
             tileLayerRef.current = L.tileLayer(`https://{s}.basemaps.cartocdn.com/${resolvedTheme}_all/{z}/{x}/{y}{r}.png`, {
