@@ -3,7 +3,7 @@
 import {getDirections} from "@/api/motis/directions";
 import {type Directions} from "@/api/motis/types";
 import {type Location} from "@/types";
-import {Button, Card, DateInput, Link, TimeInput} from "@heroui/react";
+import {Button, Card, DateInput, DateValue, Link, TimeInput, TimeInputValue} from "@heroui/react";
 import {CalendarDate, Time} from "@internationalized/date";
 import {IconArrowsLeftRight, IconArrowsUpDown, IconMap, IconSearch, IconWalk} from "@tabler/icons-react";
 import {useState} from "react";
@@ -26,8 +26,8 @@ export default function Directions() {
     });
     const today = new CalendarDate(year, month, day);
     const nextWeek = new CalendarDate(year, month, day + 7);
-    const [date, setDate] = useState<CalendarDate>(new CalendarDate(year, month, day));
-    const [time, setTime] = useState<Time>(new Time(hour, minute));
+    const [date, setDate] = useState<DateValue | null>(new CalendarDate(year, month, day));
+    const [time, setTime] = useState<TimeInputValue | null>(new Time(hour, minute));
     const [directions, setDirections] = useState<Directions>();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -149,9 +149,9 @@ export default function Directions() {
                             label="data"
                             classNames={{label: "text-sm"}}
                             size="lg"
-                            isInvalid={today > date || date > nextWeek}
+                            isInvalid={date ? (today > date || date > nextWeek) : false}
                             value={date}
-                            onChange={(date) => setDate(date instanceof CalendarDate ? date : new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()))}
+                            onChange={setDate}
                         />
                         <TimeInput
                             variant="underlined"
@@ -160,7 +160,7 @@ export default function Directions() {
                             size="lg"
                             hourCycle={24}
                             value={time}
-                            onChange={(time) => setTime(time instanceof Time ? time : new Time(new Date().getHours(), new Date().getMinutes()))}
+                            onChange={setTime}
                         />
                     </I18nProvider>
                 </div>
