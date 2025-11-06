@@ -223,11 +223,10 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
                         <p className={`${trip.status === "scheduled" ? "text-center" : "sm:text-center text-left"} text-lg font-bold truncate flex-grow min-w-0`}>
                             {trip.status === "scheduled" ? "Non ancora partito" : capitalize(trip.lastKnownLocation || "--")}
                         </p>
-                        {(!trip.lastUpdate && trip.delay) ? (
-                            <p className={"text-center font-bold flex-grow min-w-0"}>
-                                Partenza prevista con un ritardo di <span
-                                className={`text-${getDelayColor(trip.delay)}`}>{trip.delay}</span> min
-                            </p>) : null}
+                        {(!trip.lastUpdate && trip.delay) ? (<p className={"text-center font-bold flex-grow min-w-0"}>
+                            Partenza prevista con un ritardo di <span
+                            className={`text-${getDelayColor(trip.delay)}`}>{trip.delay}</span> min
+                        </p>) : null}
                     </div>) : (<p className="text-lg font-bold text-center">
                         {trip.alertMessage}
                     </p>)}
@@ -268,7 +267,7 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
                 startContent={<IconInfoTriangleFilled />}
                 onPress={onOpen}
             >
-                avvisi
+                Avvisi
             </Button>)}
             <Timeline
                 steps={trip.stops.filter(stop => stop.status !== "canceled").map((stop, index) => {
@@ -372,10 +371,15 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
             />
         </div>) : (<div className="flex flex-col gap-2 max-w-md mx-auto">
             {trip.info && trip.info.filter(Boolean).map((alert, index) => (
-                <span key={index} className="flex flex-row gap-2">
-                                <IconAlertTriangleFilled className="text-warning flex-shrink-0 mt-1" size={16} />
-                    {alert.message}
-                            </span>))}
+                <div key={index} className="flex flex-row gap-2 items-start">
+                    <IconAlertTriangleFilled className="text-warning flex-shrink-0 mt-1" size={16} />
+                    <div className="flex flex-col">
+                        <span>{alert.message}</span>
+                        <span className="text-sm text-foreground-500">
+                            {formatDate(alert.date)}
+                        </span>
+                    </div>
+                </div>))}
         </div>)}
 
         <RouteModal

@@ -205,7 +205,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
     const nextStop = currentStopIndex >= 0 ? canvas[currentStopIndex + 1] : null;
     const trip = response.data;
 
-    let delay = trip.ritardo ?? currentStop.fermata?.ritardoPartenza ?? currentStop.fermata?.ritardoArrivo;
+    let delay = trip.nonPartito ? currentStop.fermata?.ritardoPartenza : trip.ritardo;
     let lastKnownLocation = capitalize(trip.stazioneUltimoRilevamento || "--");
 
     if (currentStop?.fermata) {

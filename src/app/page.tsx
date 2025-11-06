@@ -20,7 +20,7 @@ export default async function Page() {
 
     return (
         <div className="flex flex-col items-center justify-center gap-4 text-center max-w-4xl w-full mx-auto">
-            <h1 className="text-4xl font-bold">hey</h1>
+            <h1 className="text-4xl font-extrabold font-stretch-extra-expanded">coincidenza.it</h1>
             <h1 className="text-2xl max-w-4xl">pianifica i tuoi spostamenti senza problemi ✨</h1>
 
             <Button as={NextLink} href="/directions" fullWidth size='lg'
