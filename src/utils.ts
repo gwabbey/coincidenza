@@ -8,23 +8,41 @@ export const clients: Record<number, string> = {
     4: "trenitalia",
     18: "trenitalia",
     63: "trenord",
-    64: "trenitalia",
-    // 64: "bahn"
+    64: "trenitalia", // 64: "bahn"
 };
 
 export function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371;
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
-    const a =
-        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(lat1 * (Math.PI / 180)) *
-        Math.cos(lat2 * (Math.PI / 180)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
 }
+
+export const getItalyDateTime = () => {
+    const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Europe/Rome",
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: false,
+    }).formatToParts(new Date());
+
+    const partsMap = new Map(parts.map(p => [p.type, p.value]));
+
+    const hour = parseInt(partsMap.get('hour') || '0');
+
+    return {
+        year: parseInt(partsMap.get('year') || '0'),
+        month: parseInt(partsMap.get('month') || '0'),
+        day: parseInt(partsMap.get('day') || '0'),
+        hour: hour === 24 ? 0 : hour,
+        minute: parseInt(partsMap.get('minute') || '0'),
+    };
+};
 
 export const getDelayColor = (delay: number | null) => {
     if (delay === null) return 'gray';
@@ -115,8 +133,6 @@ export function encodeKey(buffer: ArrayBuffer | null): string {
 
 export const formatDate = (date: string) => {
     return new Date(date).toLocaleTimeString('it-IT', {
-        hour: '2-digit',
-        minute: '2-digit',
-        timeZone: 'Europe/Rome'
+        hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Rome'
     });
 };

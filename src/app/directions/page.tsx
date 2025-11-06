@@ -9,7 +9,7 @@ import {IconArrowsLeftRight, IconArrowsUpDown, IconMap, IconSearch, IconWalk} fr
 import {useState} from "react";
 import {LocationAutocomplete} from "./autocomplete";
 import Results from "./results";
-import {formatDuration} from "@/utils";
+import {formatDuration, getItalyDateTime} from "@/utils";
 import {format} from "date-fns";
 import {I18nProvider} from "@react-aria/i18n";
 import LeafletMap from "@/components/leaflet";
@@ -20,19 +20,14 @@ interface SelectedLocations {
 }
 
 export default function Directions() {
+    const {year, month, day, hour, minute} = getItalyDateTime();
     const [selectedLocations, setSelectedLocations] = useState<SelectedLocations>({
         from: null, to: null,
     });
-    const [date, setDate] = useState<CalendarDate>(new CalendarDate(parseInt(new Date().toLocaleString("en-US", {
-        timeZone: "Europe/Rome", year: "numeric"
-    })), parseInt(new Date().toLocaleString("en-US", {
-        timeZone: "Europe/Rome", month: "numeric"
-    })), parseInt(new Date().toLocaleString("en-US", {timeZone: "Europe/Rome", day: "numeric"}))));
-    const [time, setTime] = useState<Time>(new Time(parseInt(new Date().toLocaleString("en-US", {
-        timeZone: "Europe/Rome",
-        hour: "2-digit",
-        hour12: false
-    })), parseInt(new Date().toLocaleString("en-US", {timeZone: "Europe/Rome", minute: "2-digit"}))));
+    const today = new CalendarDate(year, month, day);
+    const nextWeek = new CalendarDate(year, month, day + 7);
+    const [date, setDate] = useState<CalendarDate>(new CalendarDate(year, month, day));
+    const [time, setTime] = useState<Time>(new Time(hour, minute));
     const [directions, setDirections] = useState<Directions>();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -154,8 +149,8 @@ export default function Directions() {
                             label="data"
                             classNames={{label: "text-sm"}}
                             size="lg"
-                            isInvalid={new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()) > date}
-                            defaultValue={new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate())}
+                            isInvalid={today > date || date > nextWeek}
+                            value={date}
                             onChange={(date) => setDate(date instanceof CalendarDate ? date : new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate()))}
                         />
                         <TimeInput
@@ -164,7 +159,7 @@ export default function Directions() {
                             classNames={{label: "text-sm"}}
                             size="lg"
                             hourCycle={24}
-                            defaultValue={new Time(new Date().getHours(), new Date().getMinutes())}
+                            value={time}
                             onChange={(time) => setTime(time instanceof Time ? time : new Time(new Date().getHours(), new Date().getMinutes()))}
                         />
                     </I18nProvider>
