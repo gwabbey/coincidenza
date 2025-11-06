@@ -11,6 +11,8 @@ services:
     build: .
     env_file:
       - .env
+    environment:
+      - TZ=Europe/Rome
     restart: always
     networks:
       - web
