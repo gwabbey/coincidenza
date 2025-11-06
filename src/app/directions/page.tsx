@@ -24,9 +24,7 @@ export default function Directions() {
         from: null, to: null,
     });
 
-    const dateTime = new Date(new Intl.DateTimeFormat("it-IT", {
-        year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit"
-    }).format(new Date()))
+    const dateTime = new Date();
     const today = new CalendarDate(dateTime.getFullYear(), dateTime.getMonth() + 1, dateTime.getDate());
     const nextWeek = new CalendarDate(dateTime.getFullYear(), dateTime.getMonth() + 1, dateTime.getDate() + 7);
 
