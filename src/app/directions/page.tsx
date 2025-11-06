@@ -24,7 +24,7 @@ export default function Directions() {
         from: null, to: null,
     });
 
-    const dateTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Europe/Rome"}))
+    const dateTime = typeof window !== "undefined" ? new Date(new Date().toLocaleString("en-US", {timeZone: "Europe/Rome"})) : new Date();
     const today = new CalendarDate(dateTime.getFullYear(), dateTime.getMonth() + 1, dateTime.getDate());
     const nextWeek = new CalendarDate(dateTime.getFullYear(), dateTime.getMonth() + 1, dateTime.getDate() + 7);
 
