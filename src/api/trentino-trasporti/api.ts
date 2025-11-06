@@ -139,7 +139,7 @@ export async function getTripDetails(id: string) {
         status: trip.lastSequenceDetection - 1 === trip.stopTimes[trip.stopTimes.length - 1].stopSequence ? "completed" : !trip.lastEventRecivedAt ? "scheduled" : "active",
         category: trip.type === "U" ? "Urbano" : "Extraurbano",
         vehicleId: trip.matricolaBus,
-        color: getRoute(trip.routeId).routeColor,
+        color: getRoute(trip.routeId).routeColor ? getRoute(trip.routeId).routeColor : trip.type === "U" ? "1AC964" : "2C7FFF",
         route: getRoute(trip.routeId).routeShortName,
         origin: getStopName(trip.stopTimes[0].stopId),
         destination: trip.tripHeadsign,
@@ -157,7 +157,7 @@ export async function getTripDetails(id: string) {
             .find((route: any) => route.routeId === trip.routeId)
             .news.map((alert: any) => ({
                 message: alert.details ?? "",
-                date: stringToIso(alert.startDate) ?? "",
+                date: new Date(alert.startDate).toISOString() ?? "",
                 source: "Trentino Trasporti",
                 url: alert.url,
             })),
