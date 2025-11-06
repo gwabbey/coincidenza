@@ -172,7 +172,8 @@ async function geocodeLocation({lat, lon, text}: GeocodeRequest): Promise<string
     }
 }
 
-export async function getDirections(from: Location, to: Location, dateTime: string, pageCursor?: string,): Promise<Directions> {
+export async function getDirections(from: Location, to: Location, dateTime: string, pageCursor?: string): Promise<Directions> {
+    console.log(dateTime)
     try {
         const resolvePlace = async (loc: Location): Promise<string> => {
             if (loc.text.toLowerCase().trim() === "posizione attuale") {

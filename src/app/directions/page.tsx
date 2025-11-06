@@ -23,13 +23,16 @@ export default function Directions() {
     const [selectedLocations, setSelectedLocations] = useState<SelectedLocations>({
         from: null, to: null,
     });
-    
+
     const dateTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Europe/Rome"}))
     const today = new CalendarDate(dateTime.getFullYear(), dateTime.getMonth() + 1, dateTime.getDate());
     const nextWeek = new CalendarDate(dateTime.getFullYear(), dateTime.getMonth() + 1, dateTime.getDate() + 7);
 
     const [date, setDate] = useState<DateValue | null>(today);
     const [time, setTime] = useState<TimeInputValue | null>(new Time(dateTime.getHours(), dateTime.getMinutes()));
+
+    console.log(date, time)
+
     const [directions, setDirections] = useState<Directions>();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -53,11 +56,8 @@ export default function Directions() {
         setDirections(undefined);
 
         try {
-            const localIsoString = new Date(date.year, date.month - 1, date.day, time.hour, time.minute)
-                .toLocaleString("sv-SE", {timeZone: "Europe/Rome"})
-                .replace(" ", "T");
-
-            console.log(localIsoString);
+            const combinedDateTime = new Date(date.year, date.month - 1, date.day, time.hour, time.minute);
+            const localIsoString = combinedDateTime.toISOString();
 
             const result = await getDirections({
                 lat: selectedLocations.from.coordinates!.lat,
