@@ -23,10 +23,13 @@ export default function Directions() {
     const [selectedLocations, setSelectedLocations] = useState<SelectedLocations>({
         from: null, to: null,
     });
-    const today = new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate());
-    const nextWeek = new CalendarDate(new Date().getFullYear(), new Date().getMonth() + 1, new Date().getDate() + 7);
+    
+    const dateTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Europe/Rome"}))
+    const today = new CalendarDate(dateTime.getFullYear(), dateTime.getMonth() + 1, dateTime.getDate());
+    const nextWeek = new CalendarDate(dateTime.getFullYear(), dateTime.getMonth() + 1, dateTime.getDate() + 7);
+
     const [date, setDate] = useState<DateValue | null>(today);
-    const [time, setTime] = useState<TimeInputValue | null>(new Time(new Date().getHours(), new Date().getMinutes(), 0));
+    const [time, setTime] = useState<TimeInputValue | null>(new Time(dateTime.getHours(), dateTime.getMinutes()));
     const [directions, setDirections] = useState<Directions>();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
