@@ -20,30 +20,6 @@ export function getDistance(lat1: number, lon1: number, lat2: number, lon2: numb
     return R * c;
 }
 
-export const getItalyDateTime = () => {
-    const parts = new Intl.DateTimeFormat("en-US", {
-        timeZone: "Europe/Rome",
-        year: 'numeric',
-        month: 'numeric',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: false,
-    }).formatToParts(new Date());
-
-    const partsMap = new Map(parts.map(p => [p.type, p.value]));
-
-    const hour = parseInt(partsMap.get('hour') || '0');
-
-    return {
-        year: parseInt(partsMap.get('year') || '0'),
-        month: parseInt(partsMap.get('month') || '0'),
-        day: parseInt(partsMap.get('day') || '0'),
-        hour: hour === 24 ? 0 : hour,
-        minute: parseInt(partsMap.get('minute') || '0'),
-    };
-};
-
 export const getDelayColor = (delay: number | null) => {
     if (delay === null) return 'gray';
     if (delay >= 10) return 'danger';

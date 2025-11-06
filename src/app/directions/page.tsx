@@ -9,7 +9,7 @@ import {IconArrowsLeftRight, IconArrowsUpDown, IconMap, IconSearch, IconWalk} fr
 import {useState} from "react";
 import {LocationAutocomplete} from "./autocomplete";
 import Results from "./results";
-import {formatDuration, getItalyDateTime} from "@/utils";
+import {formatDuration} from "@/utils";
 import {format} from "date-fns";
 import {I18nProvider} from "@react-aria/i18n";
 import LeafletMap from "@/components/leaflet";
@@ -18,6 +18,30 @@ interface SelectedLocations {
     from: Location | null;
     to: Location | null;
 }
+
+const getItalyDateTime = () => {
+    const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: "Europe/Rome",
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: false,
+    }).formatToParts(new Date());
+
+    const partsMap = new Map(parts.map(p => [p.type, p.value]));
+
+    const hour = parseInt(partsMap.get('hour') || '0');
+
+    return {
+        year: parseInt(partsMap.get('year') || '0'),
+        month: parseInt(partsMap.get('month') || '0'),
+        day: parseInt(partsMap.get('day') || '0'),
+        hour: hour === 24 ? 0 : hour,
+        minute: parseInt(partsMap.get('minute') || '0'),
+    };
+};
 
 export default function Directions() {
     const {year, month, day, hour, minute} = getItalyDateTime();
