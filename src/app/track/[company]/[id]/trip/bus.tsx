@@ -55,6 +55,7 @@ const calculatePreciseActiveIndex = (trip: TripProps): number => {
 
 export default function Bus({trip: initialTrip}: { trip: TripProps }) {
     const [trip, setTrip] = useState(initialTrip);
+    console.log(trip)
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
 
@@ -227,14 +228,14 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
 
                 {trip.delay !== null && (<div className="shrink-0">
                     <Button
-                        className={`p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors text-white bg-${trip.currentStopIndex === trip.stops.length ? "default-400" : getDelayColor(trip.delay)}`}
+                        className={`p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors text-white bg-${trip.status === "completed" ? "default-400" : getDelayColor(trip.delay)}`}
                         radius="sm"
                         variant="solid"
                         disabled
                         disableRipple
                         disableAnimation
                     >
-                        {trip.delay < 0 ? '' : trip.delay > 0 ? '+' : trip.currentStopIndex === trip.stops.length ? "arrivato" : "in orario"}
+                        {trip.delay < 0 ? '' : trip.delay > 0 ? '+' : trip.status === "completed" ? "arrivato" : "in orario"}
                         {trip.delay !== 0 && `${trip.delay} min`}
                     </Button>
                 </div>)}
@@ -273,8 +274,7 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
                                         <span className="line-through">
                                                         {formatDate(stop.scheduledArrival)}
                                                     </span>)}
-                                    {isFutureStop && (
-                                        <span className={`font-bold text-${getDelayColor(trip.delay)}`}>
+                                    {isFutureStop && (<span className={`font-bold text-${getDelayColor(trip.delay)}`}>
                                                         {formatDate(new Date(new Date(stop.scheduledArrival).getTime() + trip.delay * 60_000).toISOString())}
                                                     </span>)}
                                 </div>) : (<div>--</div>)}

@@ -385,7 +385,7 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
         <RouteModal
             isOpen={isOpen}
             onOpenChange={onOpenChange}
-            title="avvisi sulla linea"
+            title="Avvisi sulla linea"
         >
             {trip.info && trip.info.length > 0 && trip.info.map((alert, index) => (
                 <div key={index} className="flex flex-col">

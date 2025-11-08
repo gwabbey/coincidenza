@@ -103,7 +103,7 @@ export async function getTrip(id: string) {
 
     return {
         id: trip.tripId,
-        status: trip.lastSequenceDetection - 1 === trip.stopTimes[trip.stopTimes.length - 1].stopSequence ? "completed" : !trip.lastEventRecivedAt ? "scheduled" : "active",
+        status: trip.lastSequenceDetection === trip.stopTimes[trip.stopTimes.length - 1].stopSequence ? "completed" : !trip.lastEventRecivedAt ? "scheduled" : "active",
         delay: trip.delay,
         lastUpdate: trip.lastEventRecivedAt,
         currentStopIndex: !trip.lastEventRecivedAt ? -1 : trip.lastSequenceDetection - 1,
@@ -136,7 +136,7 @@ export async function getTripDetails(id: string) {
         currentStopIndex: !trip.lastEventRecivedAt ? -1 : trip.lastSequenceDetection - 1,
         lastKnownLocation: !trip.lastEventRecivedAt ? getStopName(trip.stopTimes[trip.lastSequenceDetection - 1]) : null,
         lastUpdate: trip.lastEventRecivedAt,
-        status: trip.lastSequenceDetection - 1 === trip.stopTimes[trip.stopTimes.length - 1].stopSequence ? "completed" : !trip.lastEventRecivedAt ? "scheduled" : "active",
+        status: trip.lastSequenceDetection === trip.stopTimes[trip.stopTimes.length - 1].stopSequence ? "completed" : !trip.lastEventRecivedAt ? "scheduled" : "active",
         category: trip.type === "U" ? "Urbano" : "Extraurbano",
         vehicleId: trip.matricolaBus,
         color: getRoute(trip.routeId).routeColor ? getRoute(trip.routeId).routeColor : trip.type === "U" ? "1AC964" : "2C7FFF",
