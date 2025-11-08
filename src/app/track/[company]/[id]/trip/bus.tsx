@@ -55,12 +55,11 @@ const calculatePreciseActiveIndex = (trip: TripProps): number => {
 
 export default function Bus({trip: initialTrip}: { trip: TripProps }) {
     const [trip, setTrip] = useState(initialTrip);
-    console.log(trip)
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
 
     useEffect(() => {
-        if (trip.currentStopIndex === trip.stops.length) return;
+        if (trip.status === "completed") return;
 
         let eventSource: EventSource | undefined;
         let reconnectTimeout: NodeJS.Timeout | undefined;
