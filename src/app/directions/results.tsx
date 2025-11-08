@@ -82,7 +82,7 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                 <div className="flex flex-col gap-2">
                                     <div className="flex flex-row gap-2 items-center">
                                         <TransportIcon type={leg.mode} size={24} />
-                                        <div className="flex flex-col justify-center">
+                                        <div className="flex flex-col justify-center w-full md:max-w-md">
                                             {leg.mode !== "WALK" ? (
                                                 <div className="flex flex-row items-center gap-x-1 flex-wrap">
                                                         <span
@@ -103,32 +103,32 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                             <span className="text-foreground-500 text-sm">
                                                     {getLegDescription(leg)}
                                                 </span>
+                                            {leg.mode !== "WALK" && leg.realTime.url && (<Button
+                                                as={Link}
+                                                href={leg.realTime.url}
+                                                variant="bordered"
+                                                startContent={<IconAccessPoint />}
+                                                radius="full"
+                                                fullWidth
+                                                className="border-gray-500 border-1 self-center text-medium mt-4"
+                                                aria-label={`${leg.routeLongName || ""} ${leg.tripShortName || ""} in tempo reale`}
+                                            >
+                                                traccia in tempo reale
+                                            </Button>)}
+                                            {leg.mode === "WALK" && (<Button
+                                                as={Link}
+                                                href={`https://maps.apple.com/?saddr=${leg.from.lat},${leg.from.lon}&daddr=${leg.to.lat},${leg.to.lon}&dirflg=w`}
+                                                variant="bordered"
+                                                startContent={<IconMap />}
+                                                radius="full"
+                                                fullWidth
+                                                className="border-gray-500 border-1 self-center text-medium mt-4"
+                                                aria-label="indicazioni percorso a piedi"
+                                            >
+                                                indicazioni
+                                            </Button>)}
                                         </div>
                                     </div>
-                                    {leg.mode !== "WALK" && leg.realTime.url && (<Button
-                                        as={Link}
-                                        href={leg.realTime.url}
-                                        variant="bordered"
-                                        startContent={<IconAccessPoint />}
-                                        radius="full"
-                                        fullWidth
-                                        className="border-gray-500 border-1 self-center text-medium"
-                                        aria-label={`${leg.routeLongName || ""} ${leg.tripShortName || ""} in tempo reale`}
-                                    >
-                                        traccia in tempo reale
-                                    </Button>)}
-                                    {leg.mode === "WALK" && (<Button
-                                        as={Link}
-                                        href={`https://maps.apple.com/?saddr=${leg.from.lat},${leg.from.lon}&daddr=${leg.to.lat},${leg.to.lon}&dirflg=w`}
-                                        variant="bordered"
-                                        startContent={<IconMap />}
-                                        radius="full"
-                                        fullWidth
-                                        className="border-gray-500 border-1 self-center text-medium"
-                                        aria-label={`${leg.mode || ""} ${leg.routeShortName || ""} in tempo reale`}
-                                    >
-                                        indicazioni
-                                    </Button>)}
                                 </div>
                                 {leg.mode !== "WALK" && (
                                     <div className="pl-8 md:px-8 flex flex-col md:flex-row justify-between">

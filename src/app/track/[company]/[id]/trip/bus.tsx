@@ -259,7 +259,7 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
                     const isPastStop = index <= Math.floor(preciseActiveIndex);
                     const isFutureStop = index > Math.floor(preciseActiveIndex);
                     const isLongerStop = new Date(stop.scheduledDeparture) > new Date(stop.scheduledArrival);
-                    const stopBreak = Math.round((new Date(stop.scheduledDeparture).getTime() - new Date(stop.scheduledArrival).getTime()));
+                    const stopBreak = Math.round((new Date(stop.scheduledDeparture).getMinutes() - new Date(stop.scheduledArrival).getMinutes()));
 
                     return {
                         content: (<div className="flex flex-col">

@@ -186,7 +186,7 @@ export async function getDirections(from: Location, to: Location, dateTime: stri
         const {
             data,
             status
-        } = await axios.get(`${MOTIS}/api/v5/plan?fromPlace=${fromPlace}&toPlace=${toPlace}&time=${dateTime}&maxPreTransitTime=1800&maxPostTransitTime=1800&withFares=false&fastestDirectFactor=1.5&joinInterlinedLegs=false&maxMatchingDistance=250${pageCursor ? `&pageCursor=${pageCursor}` : ""}`);
+        } = await axios.get(`${MOTIS}/api/v5/plan?fromPlace=${fromPlace}&toPlace=${toPlace}&time=${dateTime}&maxPreTransitTime=1800&maxPostTransitTime=1800&withFares=false&joinInterlinedLegs=false&maxMatchingDistance=250&useRoutedTransfers=true${pageCursor ? `&pageCursor=${pageCursor}` : ""}`);
 
         if (status !== 200) {
             console.error("Invalid MOTIS response:", data);

@@ -6,7 +6,7 @@ import {Location} from "@/types";
 import {capitalize} from "@/utils";
 import {addToast, Autocomplete, AutocompleteItem, cn, Spinner} from "@heroui/react";
 import {IconMapPin, IconTrain} from "@tabler/icons-react";
-import {Key, useState} from "react";
+import {Key, useEffect, useState} from "react";
 import {useDebouncedCallback} from 'use-debounce';
 
 interface Props {
@@ -37,8 +37,13 @@ export const LocationAutocomplete = ({
                                          onLocationSelect,
                                      }: Props) => {
     const [value, setValue] = useState(selected);
+    const [selectedKey, setSelectedKey] = useState<string | null>(null);
     const [items, setItems] = useState<Location[]>([CURRENT_LOCATION]);
     const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        setValue(selected);
+    }, [selected]);
 
     const getCurrentPosition = (): Promise<GeolocationPosition> => {
         if (typeof window === 'undefined' || !navigator.geolocation) {
@@ -77,12 +82,15 @@ export const LocationAutocomplete = ({
     const onSelectionChange = async (key: Key | null) => {
         if (!key) return;
 
+        setSelectedKey(key as string);
+
         if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
         }
 
         if (key === CURRENT_LOCATION_KEY) {
             await handleCurrentLocation();
+            setSelectedKey(null);
             return;
         }
 
@@ -162,7 +170,7 @@ export const LocationAutocomplete = ({
 
     return (<Autocomplete
         label={label}
-        selectedKey={null}
+        selectedKey={selectedKey}
         inputValue={value}
         allowsCustomValue
         selectorIcon={<></>}

@@ -55,7 +55,7 @@ export default function AnimatedLeafletMap({
             if (!mapRef.current || mapInstanceRef.current) return;
 
             mapInstanceRef.current = L.map(mapRef.current, {
-                scrollWheelZoom: true, center: [46.072438, 11.119065], zoom: 12,
+                scrollWheelZoom: true, center: [46.072438, 11.119065], zoom: 12, zoomControl: false
             });
 
             setMapInitialized(true);
@@ -191,7 +191,7 @@ export default function AnimatedLeafletMap({
                         combinedPath = interpolated;
                     }
 
-                    const routeColor = legs.find((l) => l.routeColor)?.routeColor || "blue";
+                    const routeColor = `#${legs.find((l) => l.routeColor)?.routeColor || "016FED"}`;
 
                     const polyline = L.polyline([], {
                         color: routeColor, weight: 4, opacity: 0.9,
