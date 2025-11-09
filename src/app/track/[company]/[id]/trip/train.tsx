@@ -5,7 +5,7 @@ import {RouteModal} from "@/components/modal";
 import Timeline from "@/components/timeline";
 import {capitalize, findMatchingStation, formatDate, getDelayColor} from "@/utils";
 import {Button, Card, Divider, useDisclosure} from "@heroui/react";
-import {IconAlertTriangleFilled, IconBell, IconInfoTriangleFilled, IconMap} from "@tabler/icons-react";
+import {IconAlertTriangleFilled, IconInfoTriangleFilled} from "@tabler/icons-react";
 import Link from "next/link";
 import {useEffect, useState} from 'react';
 
@@ -196,7 +196,7 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
                         {capitalize(trip.destination)}
                     </div>
                 </div>
-                <div className="flex gap-x-2 w-full items-center justify-center max-w-xl">
+                {/*<div className="flex gap-x-2 w-full items-center justify-center max-w-xl">
                     <Button
                         isDisabled
                         variant="bordered"
@@ -219,7 +219,7 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
                     >
                         notifiche
                     </Button>
-                </div>
+                </div>*/}
             </div>
         </div>
 
