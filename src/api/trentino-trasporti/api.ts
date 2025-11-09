@@ -18,16 +18,12 @@ export async function fetchData(endpoint: string, options: { params?: Record<str
             "Accept": "application/json",
             "Content-Type": "application/json",
             "X-Requested-With": "it.tndigit.mit",
-            Authorization: `Basic ${Buffer.from(
-                `${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`
-            ).toString("base64")}`
-        },
-        signal: controller.signal,
+            Authorization: `Basic ${Buffer.from(`${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`).toString("base64")}`
+        }, signal: controller.signal,
     });
 
     axiosRetry(client, {
-        retries: 5,
-        retryDelay: axiosRetry.exponentialDelay,
+        retries: 5, retryDelay: axiosRetry.exponentialDelay,
     });
 
     try {
@@ -60,30 +56,22 @@ export async function getClosestBusStops(userLat: number, userLon: number) {
     const stops = await getAllStops();
 
     const stopsWithDistance = stops.map((stop: any) => ({
-        ...stop,
-        distance: getDistance(userLat, userLon, stop.stopLat, stop.stopLon),
+        ...stop, distance: getDistance(userLat, userLon, stop.stopLat, stop.stopLon),
     }));
 
     return stopsWithDistance.sort((a: any, b: any) => a.distance - b.distance);
 }
 
 export async function getStopDepartures(stopId: number, type: string) {
-    const [departures, routes] = await Promise.all([
-        fetchData('trips_new', {
-            params: {
-                type,
-                stopId: stopId.toString(),
-                limit: "3",
-                refDateTime: new Date().toISOString()
-            }
-        }),
-        getRoutes(type)
-    ]);
+    const [departures, routes] = await Promise.all([fetchData('trips_new', {
+        params: {
+            type, stopId: stopId.toString(), limit: "3", refDateTime: new Date().toISOString()
+        }
+    }), getRoutes(type)]);
 
     if (!departures) return null;
     return departures.map((trip: any) => ({
-        ...trip,
-        route: routes.find((r: any) => r.routeId === trip.routeId) || null
+        ...trip, route: routes.find((r: any) => r.routeId === trip.routeId) || null
     }));
 }
 
@@ -124,9 +112,7 @@ export async function getTripDetails(id: string) {
 
     if (!trip || !stops || !routes) return null;
 
-    const stopMap = new Map<string, string>(
-        stops.map((stop: any) => [stop.stopId, stop.stopName])
-    );
+    const stopMap = new Map<string, string>(stops.map((stop: any) => [stop.stopId, stop.stopName]));
 
     const getStopName = (stopId: string) => stopMap.get(stopId) ?? "--";
     const getRoute = (routeId: string) => routes.find((r: any) => r.routeId === routeId);
@@ -134,7 +120,7 @@ export async function getTripDetails(id: string) {
     return {
         id: trip.tripId,
         currentStopIndex: !trip.lastEventRecivedAt ? -1 : trip.lastSequenceDetection - 1,
-        lastKnownLocation: !trip.lastEventRecivedAt ? getStopName(trip.stopTimes[trip.lastSequenceDetection - 1]) : null,
+        lastKnownLocation: trip.lastEventRecivedAt ? getStopName(trip.stopTimes[trip.lastSequenceDetection - 1]) : null,
         lastUpdate: trip.lastEventRecivedAt,
         status: trip.lastSequenceDetection === trip.stopTimes[trip.stopTimes.length - 1].stopSequence ? "completed" : !trip.lastEventRecivedAt ? "scheduled" : "active",
         category: trip.type === "U" ? "Urbano" : "Extraurbano",

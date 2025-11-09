@@ -176,13 +176,13 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
                     {trip.route}
                 </span>
             <div className="text-lg font-bold min-w-0 truncate">
-                {trip.stops[trip.stops.length - 1].name}
+                {trip.destination}
             </div>
         </div>
 
         <div className="md:flex hidden justify-center items-center my-4 flex-row gap-4">
             <Card radius="lg" className="p-4 w-64 text-center">
-                <div className="font-bold truncate">{trip.stops[0].name}</div>
+                <div className="font-bold truncate">{trip.origin}</div>
                 <div>{formatDate(trip.stops[0].scheduledArrival)}</div>
             </Card>
 
@@ -193,7 +193,7 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
             </div>
 
             <Card radius="lg" className="p-4 w-64 text-center">
-                <div className="font-bold truncate">{trip.stops[trip.stops.length - 1].name}</div>
+                <div className="font-bold truncate">{trip.destination}</div>
                 <div>{formatDate(trip.stops[trip.stops.length - 1].scheduledArrival)}</div>
             </Card>
         </div>
@@ -289,8 +289,8 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
         </div>
 
         <RouteModal
-            isOpen={isOpen}
-            onOpenChange={onOpenChange}
+            open={isOpen}
+            action={onOpenChange}
             title="Avvisi sulla linea"
         >
             {trip.info && trip.info.length > 0 && trip.info.map((alert: Info, index: number) => (
