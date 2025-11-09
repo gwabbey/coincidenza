@@ -85,7 +85,8 @@ const calculatePreciseActiveIndex = (trip: TripProps) => {
 export default function Train({trip: initialTrip}: { trip: TripProps }) {
     const [trip, setTrip] = useState<TripProps>(initialTrip);
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
-    const {isOpen, onOpen, onOpenChange} = useDisclosure();
+    const infoModal = useDisclosure();
+    const notifsModal = useDisclosure();
 
     useEffect(() => {
         const updateIndex = () => {
@@ -182,6 +183,8 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
 
     return (<div className="flex flex-col gap-4">
         <div className="flex justify-center items-center text-center flex-wrap gap-x-2 gap-y-1 max-w-full">
+            <div className="flex flex-col items-center gap-y-4 w-full">
+                <div className="flex gap-x-2 items-center justify-center text-center">
                 <span
                     className="text-md font-bold rounded-small flex items-center gap-x-1 text-white whitespace-nowrap"
                     style={{
@@ -189,8 +192,34 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
                     }}>
                     {trip.category} {trip.number}
                 </span>
-            <div className="text-lg font-bold min-w-0 truncate">
-                {capitalize(trip.destination)}
+                    <div className="text-lg font-bold min-w-0 truncate">
+                        {capitalize(trip.destination)}
+                    </div>
+                </div>
+                {/*<div className="flex gap-x-2 w-full items-center justify-center max-w-xl">
+                    <Button
+                        isDisabled
+                        variant="bordered"
+                        startContent={<IconMap />}
+                        radius="full"
+                        fullWidth
+                        className="border-gray-500 border-1 self-center text-medium"
+                        aria-label="percorso sulla mappa"
+                    >
+                        percorso
+                    </Button>
+                    <Button
+                        onPress={notifsModal.onOpen}
+                        variant="bordered"
+                        startContent={<IconBell />}
+                        radius="full"
+                        fullWidth
+                        className="border-gray-500 border-1 self-center text-medium"
+                        aria-label="impostazioni notifiche"
+                    >
+                        notifiche
+                    </Button>
+                </div>*/}
             </div>
         </div>
 
@@ -265,7 +294,7 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
                 fullWidth
                 className="flex items-center font-bold sm:w-fit mx-auto mb-6"
                 startContent={<IconInfoTriangleFilled />}
-                onPress={onOpen}
+                onPress={infoModal.onOpen}
             >
                 Avvisi
             </Button>)}
@@ -383,8 +412,8 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
         </div>)}
 
         <RouteModal
-            isOpen={isOpen}
-            onOpenChange={onOpenChange}
+            open={infoModal.isOpen}
+            action={infoModal.onOpenChange}
             title="Avvisi sulla linea"
         >
             {trip.info && trip.info.length > 0 && trip.info.map((alert, index) => (
@@ -396,6 +425,29 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
                             {formatDate(alert.date)}
                         </span>
                 </div>))}
+        </RouteModal>
+
+        <RouteModal
+            open={notifsModal.isOpen}
+            action={notifsModal.onOpenChange}
+            title="Notifiche"
+        >
+            <div className="flex flex-col">
+                <div>attiva notifiche intelligenti per un pezzo di tragitto e per determinati giorni della settimana
+                </div>
+
+                <div> // select input with station (ONLY PLANNED) + scheduled time in gray</div>
+                <div>salita: []</div>
+                <div>discesa: []</div>
+
+                <div> // controlled buttons filled/not filled</div>
+                <div>giorni: LUN MAR MER GIO VEN SAB DOM</div>
+
+                <div>riceverai notifiche prima della partenza dalla fermata selezionata ed eventuali notifiche
+                    importanti durante il tragitto
+                </div>
+
+            </div>
         </RouteModal>
     </div>);
 }

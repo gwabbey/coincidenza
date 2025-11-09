@@ -4,10 +4,7 @@ import {createResponse} from "better-sse";
 import crypto from 'crypto';
 import {NextRequest} from "next/server";
 
-export async function GET(
-    request: NextRequest,
-    {params}: { params: Promise<{ company: string, id: string }> }
-) {
+export async function GET(request: NextRequest, {params}: { params: Promise<{ company: string, id: string }> }) {
     const {company, id} = await params;
     const origin = request.nextUrl.searchParams.get('origin');
     const timestampStr = request.nextUrl.searchParams.get('timestamp');
@@ -15,10 +12,10 @@ export async function GET(
 
     const isTrainCompany = company === "trenitalia" || company === "trenord";
     if (isTrainCompany && (!origin || !timestamp)) {
-        return new Response(
-            JSON.stringify({error: "Viaggiatreno requires origin station and timestamp"}),
-            {status: 400, headers: {'Content-Type': 'application/json'}}
-        );
+        return new Response(JSON.stringify({error: "Viaggiatreno requires origin station and timestamp"}), {
+            status: 400,
+            headers: {'Content-Type': 'application/json'}
+        });
     }
 
     return createResponse(request, async (session) => {

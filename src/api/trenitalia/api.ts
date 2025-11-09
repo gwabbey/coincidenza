@@ -208,6 +208,10 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
     let delay = trip.nonPartito ? currentStop.fermata?.ritardoPartenza : trip.ritardo;
     let lastKnownLocation = capitalize(trip.stazioneUltimoRilevamento || "--");
 
+    if (trip.stazioneUltimoRilevamento === currentStop.stazione && currentStop.fermata.ritardoPartenza === 0) {
+        delay = 0
+    }
+
     if (currentStop?.fermata) {
         const isStationed = currentStop?.fermata.arrivoReale && !currentStop?.fermata.partenzaReale;
 
@@ -281,7 +285,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
         alertMessage: trip.subTitle,
         clientId: trip.codiceCliente || 0,
         company: clients[trip.codiceCliente],
-        color: getCategory(trip) === "R" ? "036633" : "CA2A31",
+        color: getCategory(trip) === "R" ? "036633" : getCategory(trip).startsWith("IC") ? "0A6DE5" : "CA2A31",
         stops: canvas.map((stop: any) => {
             return {
                 id: stop.id,
