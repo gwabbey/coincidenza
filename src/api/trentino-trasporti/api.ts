@@ -120,7 +120,7 @@ export async function getTripDetails(id: string) {
     return {
         id: trip.tripId,
         currentStopIndex: !trip.lastEventRecivedAt ? -1 : trip.lastSequenceDetection - 1,
-        lastKnownLocation: trip.lastEventRecivedAt ? getStopName(trip.stopTimes[trip.lastSequenceDetection - 1]) : null,
+        lastKnownLocation: trip.lastEventRecivedAt && new Date(trip.lastEventRecivedAt) > new Date(stringToIso(trip.stopTimes[0].departureTime)) ? getStopName(trip.stopTimes[trip.lastSequenceDetection - 1]) : null,
         lastUpdate: trip.lastEventRecivedAt,
         status: trip.lastSequenceDetection === trip.stopTimes[trip.stopTimes.length - 1].stopSequence ? "completed" : !trip.lastEventRecivedAt ? "scheduled" : "active",
         category: trip.type === "U" ? "Urbano" : "Extraurbano",
