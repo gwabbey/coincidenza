@@ -113,9 +113,24 @@ export async function getTripDetails(id: string) {
     if (!trip || !stops || !routes) return null;
 
     const stopMap = new Map<string, string>(stops.map((stop: any) => [stop.stopId, stop.stopName]));
-
     const getStopName = (stopId: string) => stopMap.get(stopId) ?? "--";
     const getRoute = (routeId: string) => routes.find((r: any) => r.routeId === routeId);
+
+    let lastValidTime: Date | null = null;
+
+    const getValidTime = (timeStr: string) => {
+        if (timeStr) {
+            const iso = stringToIso(timeStr);
+            lastValidTime = new Date(iso);
+            return iso;
+        } else if (lastValidTime) {
+            const next = new Date(lastValidTime.getTime() + 60_000); // +1 minute
+            lastValidTime = next;
+            return next.toISOString();
+        } else {
+            return stringToIso("00:00:00");
+        }
+    };
 
     return {
         id: trip.tripId,
@@ -129,14 +144,14 @@ export async function getTripDetails(id: string) {
         route: getRoute(trip.routeId).routeShortName,
         origin: getStopName(trip.stopTimes[0].stopId),
         destination: trip.tripHeadsign,
-        departureTime: stringToIso(trip.stopTimes[0].departureTime),
-        arrivalTime: stringToIso(trip.stopTimes[trip.stopTimes.length - 1].arrivalTime),
+        departureTime: getValidTime(trip.stopTimes[0].departureTime),
+        arrivalTime: getValidTime(trip.stopTimes[trip.stopTimes.length - 1].arrivalTime),
         delay: trip.delay,
         stops: trip.stopTimes.map((stop: any) => ({
             id: stop.stopId,
             name: getStopName(stop.stopId),
-            scheduledArrival: stringToIso(stop.arrivalTime),
-            scheduledDeparture: stringToIso(stop.departureTime),
+            scheduledArrival: getValidTime(stop.arrivalTime),
+            scheduledDeparture: getValidTime(stop.departureTime),
             status: "regular",
         })),
         info: routes
