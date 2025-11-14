@@ -10,15 +10,12 @@ import Link from "next/link";
 import {useEffect, useState} from 'react';
 
 const getCurrentMinutes = () => {
-    const now = new Date();
-    const time = new Date(now.toLocaleString('it-IT', {timeZone: 'Europe/Rome'}));
-    return (time.getDate() * 24 * 60) + (time.getHours() * 60) + time.getMinutes() + (time.getSeconds() / 60);
+    return (new Date().getDate() * 24 * 60) + (new Date().getHours() * 60) + new Date().getMinutes() + (new Date().getSeconds() / 60);
 };
 
 const timeToMinutes = (timeString: string, originalDate: Date) => {
     const [hours, minutes] = timeString.split(':').map(Number);
-    const date = new Date(originalDate.toLocaleString('it-IT', {timeZone: 'Europe/Rome'}));
-    return (date.getDate() * 24 * 60) + (hours * 60) + minutes;
+    return (originalDate.getDate() * 24 * 60) + (hours * 60) + minutes;
 };
 
 const calculatePreciseActiveIndex = (trip: TripProps) => {

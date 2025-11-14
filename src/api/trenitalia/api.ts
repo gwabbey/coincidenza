@@ -205,10 +205,10 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
     const nextStop = currentStopIndex >= 0 ? canvas[currentStopIndex + 1] : null;
     const trip = response.data;
 
-    let delay = trip.nonPartito ? currentStop.fermata?.ritardoPartenza : trip.ritardo;
+    let delay = trip.ritardo;
     let lastKnownLocation = capitalize(trip.stazioneUltimoRilevamento || "--");
 
-    if (trip.stazioneUltimoRilevamento === currentStop.stazione && currentStop.fermata.ritardoPartenza === 0) {
+    if (trip.stazioneUltimoRilevamento.toLowerCase().trim() === currentStop.stazione.toLowerCase().trim() && currentStop.fermata.ritardoPartenza === 0) {
         delay = 0
     }
 
@@ -225,8 +225,9 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
             delay = currentStop?.fermata.ritardoPartenza;
         }
     }
+    1
 
-    if (trip.nonPartito && !currentStop.fermata.partenzaReale) {
+    if (trip.nonPartito && !currentStop.fermata.partenzaReale && !trip.ritardo) {
         delay = null
         currentStopIndex = -1
     }

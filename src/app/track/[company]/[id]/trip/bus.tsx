@@ -10,13 +10,11 @@ import {useEffect, useState} from 'react';
 import {Info} from "@/api/motis/types";
 
 export const getCurrentMinutes = (): number => {
-    const now = new Date(new Date().toLocaleString('it-IT', {timeZone: 'Europe/Rome'}));
-    return now.getHours() * 60 + now.getMinutes() + (now.getSeconds() / 60);
+    return new Date().getHours() * 60 + new Date().getMinutes() + (new Date().getSeconds() / 60);
 };
 
 const timeToMinutes = (date: string): number => {
-    const d = new Date(new Date(date).toLocaleString('it-IT', {timeZone: 'Europe/Rome'}));
-    return d.getHours() * 60 + d.getMinutes();
+    return new Date(date).getHours() * 60 + new Date(date).getMinutes();
 };
 
 const calculatePreciseActiveIndex = (trip: TripProps): number => {
@@ -24,8 +22,8 @@ const calculatePreciseActiveIndex = (trip: TripProps): number => {
     const lastKnownStopIndex = trip.currentStopIndex;
 
     for (let i = 0; i < trip.stops.length - 1; i++) {
-        const currentStopTime = timeToMinutes(trip.stops[i].scheduledArrival) + trip.delay;
-        const nextStopTime = timeToMinutes(trip.stops[i + 1].scheduledArrival) + trip.delay;
+        const currentStopTime = timeToMinutes(trip.stops[i].scheduledDeparture) + trip.delay;
+        const nextStopTime = timeToMinutes(trip.stops[i + 1].scheduledDeparture) + trip.delay;
 
         if (currentMinutes >= currentStopTime && currentMinutes <= nextStopTime) {
             if (i >= lastKnownStopIndex) {
@@ -42,11 +40,11 @@ const calculatePreciseActiveIndex = (trip: TripProps): number => {
         }
     }
 
-    if (currentMinutes < timeToMinutes(trip.stops[0].scheduledArrival) + trip.delay) {
+    if (currentMinutes < timeToMinutes(trip.stops[0].scheduledDeparture) + trip.delay) {
         return -1;
     }
 
-    if (currentMinutes > timeToMinutes(trip.stops[trip.stops.length - 1].scheduledArrival) + trip.delay) {
+    if (currentMinutes > timeToMinutes(trip.stops[trip.stops.length - 1].scheduledDeparture) + trip.delay) {
         return lastKnownStopIndex === -1 ? trip.stops.length - 1 : lastKnownStopIndex + 0.99;
     }
 
@@ -183,7 +181,7 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
         <div className="md:flex hidden justify-center items-center my-4 flex-row gap-4">
             <Card radius="lg" className="p-4 w-64 text-center">
                 <div className="font-bold truncate">{trip.origin}</div>
-                <div>{formatDate(trip.stops[0].scheduledArrival)}</div>
+                <div>{formatDate(trip.stops[0].scheduledDeparture)}</div>
             </Card>
 
             <div className="flex flex-row items-center justify-between gap-2">
@@ -259,26 +257,26 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
                     const isPastStop = index <= Math.floor(preciseActiveIndex);
                     const isFutureStop = index > Math.floor(preciseActiveIndex);
                     const isLongerStop = new Date(stop.scheduledDeparture) > new Date(stop.scheduledArrival);
-                    const stopBreak = Math.round((new Date(stop.scheduledDeparture).getMinutes() - new Date(stop.scheduledArrival).getMinutes()));
+                    const stopBreak = new Date((new Date(stop.scheduledDeparture).getTime() - new Date(stop.scheduledArrival).getTime())).getMinutes();
 
                     return {
                         content: (<div className="flex flex-col">
                             <span className="font-bold">{stop.name}</span>
                             <div className="text-foreground-500 text-sm">
-                                {stop.scheduledArrival ? (<div className="flex gap-1">
+                                {stop.scheduledDeparture ? (<div className="flex gap-1">
                                     {isPastStop && (<span>
-                                                        {formatDate(stop.scheduledArrival)}
+                                                        {formatDate(stop.scheduledDeparture)}
                                                     </span>)}
                                     {isFutureStop && trip.lastUpdate && trip.delay !== 0 && (
                                         <span className="line-through">
-                                                        {formatDate(stop.scheduledArrival)}
+                                                        {formatDate(stop.scheduledDeparture)}
                                                     </span>)}
                                     {isFutureStop && (<span className={`font-bold text-${getDelayColor(trip.delay)}`}>
-                                                        {formatDate(new Date(new Date(stop.scheduledArrival).getTime() + trip.delay * 60_000).toISOString())}
+                                                        {formatDate(new Date(new Date(stop.scheduledDeparture).getTime() + trip.delay * 60_000).toISOString())}
                                                     </span>)}
                                 </div>) : (<div>--</div>)}
                                 {isLongerStop && stopBreak > 1 && (<span className="text-foreground-500">
-                                                sosta di {stopBreak} minuti
+                                                sosta di {stopBreak} minuti, riparte alle {formatDate(stop.scheduledDeparture)}
                                             </span>)}
                             </div>
                         </div>),
