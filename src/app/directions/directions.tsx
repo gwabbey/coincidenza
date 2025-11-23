@@ -10,6 +10,8 @@ import {
     IconArrowRight,
     IconArrowsLeftRight,
     IconArrowsUpDown,
+    IconCircleLetterA,
+    IconCircleLetterBFilled,
     IconMap,
     IconPencil,
     IconSearch,
@@ -149,7 +151,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
             className="w-screen rounded-t-large sticky top-[72px] z-10 -mt-4"
         />
 
-        <Card className="flex flex-col gap-4 p-4 -mt-8 z-20 max-h-3/4" fullWidth shadow="sm">
+        <Card className="flex flex-col gap-2 p-4 -mt-8 z-20 max-h-3/4" fullWidth shadow="sm">
             <h1 className="text-2xl font-bold text-center">Pianifica il tuo viaggio</h1>
 
             {!directions ? (<div className="flex flex-col items-center gap-y-4">
@@ -229,18 +231,24 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                     <p>{error}</p>
                 </div>)}
             </div>) : (<Card
-                className="flex flex-row sm:flex-col justify-between sm:justify-center items-center p-4 shadow-primary">
-                <div className="sm:text-center">
+                className="flex flex-row sm:flex-col justify-between sm:justify-center items-center p-4">
+                <div className="sm:text-center sm:text-nowrap">
                     <div
                         className="flex flex-col sm:flex-row gap-1 font-bold sm:justify-center justify-start">
-                        {selectedLocations.from?.label}
+                        <div className="flex">
+                            <IconCircleLetterA size={18} className="self-center shrink-0 mr-1 sm:hidden" />
+                            {selectedLocations.from?.label}
+                        </div>
                         <IconArrowDown size={16} stroke={2.5} className="shrink-0 sm:hidden" />
                         <IconArrowRight size={16} stroke={2.5} className="shrink-0 self-center hidden sm:flex" />
-                        {selectedLocations.to?.label}
+                        <div className="flex">
+                            <IconCircleLetterBFilled size={18}
+                                                     className="self-center shrink-0 mr-1 sm:hidden" />{selectedLocations.to?.label}
+                        </div>
                     </div>
                     {date && time && (<div>{new Date(date.toString()).toLocaleDateString("it-IT", {
                         day: "numeric", month: "long"
-                    })} alle {format(new Date(date.year, date.month, date.day, time.hour, time.minute), "HH:mm")}</div>)}
+                    })}, {format(new Date(date.year, date.month, date.day, time.hour, time.minute), "HH:mm")}</div>)}
                     <Button startContent={<IconPencil className="shrink-0" />}
                             onPress={() => setDirections(undefined)} variant="bordered" radius="full"
                             className="hidden sm:flex mx-auto mt-2 border-gray-500 border-1 text-medium">
