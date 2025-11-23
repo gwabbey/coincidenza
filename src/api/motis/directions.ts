@@ -4,7 +4,7 @@ import {capitalize} from '@/utils';
 import axios from 'axios';
 import {getRealTimeData} from './realtime';
 import {Directions, GeocodeRequest, GeocodeResult, Location, Trip} from './types';
-import {trainCategoryLongNames, trainCategoryShortNames} from "@/train-categories";
+import {trainCategoryLongNames} from "@/train-categories";
 import {differenceInMinutes} from "date-fns";
 
 const MOTIS = process.env.MOTIS || "http://localhost:8080";
@@ -67,6 +67,7 @@ const processTripData = async (data: {
     }
 
     const processedItineraries = await Promise.all(data.itineraries.map(async (trip) => {
+        console.log(trip)
         const processedLegs = (await Promise.all(trip.legs.map(async (originalLeg) => {
             return {
                 ...originalLeg,
@@ -75,15 +76,15 @@ const processTripData = async (data: {
                 })),
                 headsign: capitalize(originalLeg.headsign || ""),
                 routeLongName: originalLeg.mode.includes("RAIL") && originalLeg.routeShortName ? trainCategoryLongNames[originalLeg.routeShortName.trim().toUpperCase()] : capitalize(originalLeg.routeLongName || ""),
-                routeShortName: originalLeg.routeShortName && (originalLeg.agencyId === "IT:ITH3:Operator:05403151003:Trenitalia:0" ? trainCategoryShortNames[originalLeg.routeLongName!.toLowerCase()] : originalLeg.routeShortName === "REG" ? "R" : originalLeg.agencyId === "1" ? originalLeg.routeShortName.replace(/\d+/g, '') : originalLeg.agencyId?.includes("ATV") ? originalLeg.routeShortName.replace("_ATV", '') : originalLeg.routeShortName),
+                routeShortName: originalLeg.routeShortName && (originalLeg.routeShortName === "REG" ? "R" : originalLeg.routeShortName.split("_")[0]),
                 from: {
                     ...originalLeg.from, name: getStop(originalLeg.from.name),
                 },
                 to: {
                     ...originalLeg.to, name: getStop(originalLeg.to.name),
                 },
-                tripShortName: originalLeg.tripId && (originalLeg.agencyId === "IT:ITH3:Operator:05403151003:Trenitalia:0" ? originalLeg.tripId.match(/-(\d+)-/)?.[1] : originalLeg.agencyId === "1" ? originalLeg.tripShortName?.split(" - ")[1] : originalLeg.tripShortName),
-                routeColor: ["R", "REG", "RV"].includes(originalLeg.routeShortName || "") ? "036633" : originalLeg.source?.includes("tt_urbano") && !originalLeg.routeColor ? "1CC864" : originalLeg.routeColor
+                tripShortName: originalLeg.tripShortName,
+                routeColor: ["R", "REG", "RV"].includes(originalLeg.routeShortName || "") ? "036633" : originalLeg.source?.includes("ttu") && !originalLeg.routeColor ? "1CC864" : originalLeg.routeColor
             };
         }))).filter((leg) => {
             if (!leg.from || !leg.to) return true;

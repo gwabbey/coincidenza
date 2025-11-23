@@ -19,36 +19,79 @@ const timeToMinutes = (date: string): number => {
 
 const calculatePreciseActiveIndex = (trip: TripProps): number => {
     const currentMinutes = getCurrentMinutes();
+    const delay = trip.delay;
     const lastKnownStopIndex = trip.currentStopIndex;
 
-    for (let i = 0; i < trip.stops.length - 1; i++) {
-        const currentStopTime = timeToMinutes(trip.stops[i].scheduledDeparture) + trip.delay;
-        const nextStopTime = timeToMinutes(trip.stops[i + 1].scheduledDeparture) + trip.delay;
-
-        if (currentMinutes >= currentStopTime && currentMinutes <= nextStopTime) {
-            if (i >= lastKnownStopIndex) {
-                const progress = (currentMinutes - currentStopTime) / (nextStopTime - currentStopTime);
-                return lastKnownStopIndex + progress;
-            }
-
-            const progress = (currentMinutes - currentStopTime) / (nextStopTime - currentStopTime);
-            return i + progress;
-        }
-
-        if (currentMinutes > nextStopTime && i === lastKnownStopIndex) {
-            return Math.min(lastKnownStopIndex + 0.99, trip.stops.length - 1);
-        }
-    }
-
-    if (currentMinutes < timeToMinutes(trip.stops[0].scheduledDeparture) + trip.delay) {
+    if (!trip.stops || trip.stops.length === 0) {
         return -1;
     }
 
-    if (currentMinutes > timeToMinutes(trip.stops[trip.stops.length - 1].scheduledDeparture) + trip.delay) {
-        return lastKnownStopIndex === -1 ? trip.stops.length - 1 : lastKnownStopIndex + 0.99;
+    const firstStop = trip.stops[0];
+    const firstArrivalTime = timeToMinutes(firstStop.scheduledArrival) + delay;
+    const firstDepartureTime = timeToMinutes(firstStop.scheduledDeparture) + delay;
+
+    if (currentMinutes < firstArrivalTime) {
+        return -1;
     }
 
-    return -1;
+    if (lastKnownStopIndex === -1 && currentMinutes < firstDepartureTime) {
+        return 0;
+    }
+
+    const lastStop = trip.stops[trip.stops.length - 1];
+    const lastArrivalTime = timeToMinutes(lastStop.scheduledArrival) + delay;
+
+    if (currentMinutes >= lastArrivalTime || lastKnownStopIndex >= trip.stops.length - 1) {
+        return trip.stops.length - 1;
+    }
+
+    let currentIndex = lastKnownStopIndex;
+
+    if (lastKnownStopIndex === -1) {
+        for (let i = 0; i < trip.stops.length - 1; i++) {
+            const stop = trip.stops[i];
+            const next = trip.stops[i + 1];
+            const stopArrival = timeToMinutes(stop.scheduledArrival) + delay;
+            const stopDeparture = timeToMinutes(stop.scheduledDeparture) + delay;
+            const nextArrival = timeToMinutes(next.scheduledArrival) + delay;
+
+            if (currentMinutes >= stopArrival && currentMinutes < stopDeparture) {
+                return i;
+            }
+            if (currentMinutes >= stopDeparture && currentMinutes < nextArrival) {
+                const duration = nextArrival - stopDeparture;
+                if (duration <= 0) return i;
+                const progress = (currentMinutes - stopDeparture) / duration;
+                return i + progress;
+            }
+        }
+        return 0;
+    }
+
+    const currentStop = trip.stops[currentIndex];
+    const nextStop = trip.stops[currentIndex + 1];
+
+    const currentStopDeparture = timeToMinutes(currentStop.scheduledDeparture) + delay;
+    const nextStopArrival = timeToMinutes(nextStop.scheduledArrival) + delay;
+
+    if (currentMinutes < currentStopDeparture) {
+        return currentIndex;
+    }
+
+    if (currentMinutes < nextStopArrival) {
+        const segmentDuration = nextStopArrival - currentStopDeparture;
+        if (segmentDuration <= 0) {
+            return currentIndex;
+        }
+        const progress = (currentMinutes - currentStopDeparture) / segmentDuration;
+        return currentIndex + Math.min(progress, 0.9999);
+    }
+
+    if (currentMinutes >= nextStopArrival) {
+        return currentIndex + 0.9999;
+    }
+
+    return currentIndex;
 };
 
 export default function Bus({trip: initialTrip}: { trip: TripProps }) {
@@ -130,19 +173,18 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
             window.removeEventListener('focus', reconnect);
             cleanup();
         };
-    }, []);
+    }, [initialTrip.id, initialTrip.status, initialTrip.stops.length]);
 
     useEffect(() => {
         const updateIndex = () => {
-            const newIndex = calculatePreciseActiveIndex(trip);
-            setPreciseActiveIndex(newIndex);
+            setPreciseActiveIndex(calculatePreciseActiveIndex(trip));
         };
 
         updateIndex();
         const intervalId = setInterval(updateIndex, 1000);
 
         return () => clearInterval(intervalId);
-    }, [trip.stops, trip.delay, trip.currentStopIndex]);
+    }, [trip]);
 
     const activeIndex = trip.currentStopIndex;
     const isDeparting = trip.lastUpdate && activeIndex === -1;
@@ -256,28 +298,27 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
                 steps={trip.stops.map((stop: Stop, index: number) => {
                     const isPastStop = index <= Math.floor(preciseActiveIndex);
                     const isFutureStop = index > Math.floor(preciseActiveIndex);
-                    const isLongerStop = new Date(stop.scheduledDeparture) > new Date(stop.scheduledArrival);
-                    const stopBreak = new Date((new Date(stop.scheduledDeparture).getTime() - new Date(stop.scheduledArrival).getTime())).getMinutes();
+                    const stopBreak = Math.round((new Date(stop.scheduledDeparture).getTime() - new Date(stop.scheduledArrival).getTime()) / 60000);
 
                     return {
-                        content: (<div className="flex flex-col">
+                        content: (<div className="flex flex-col w-full min-w-0">
                             <span className="font-bold">{stop.name}</span>
                             <div className="text-foreground-500 text-sm">
                                 {stop.scheduledDeparture ? (<div className="flex gap-1">
                                     {isPastStop && (<span>
-                                                        {formatDate(stop.scheduledDeparture)}
-                                                    </span>)}
+                                        {formatDate(stopBreak > 1 ? stop.scheduledArrival : stop.scheduledDeparture)}
+                                    </span>)}
                                     {isFutureStop && trip.lastUpdate && trip.delay !== 0 && (
                                         <span className="line-through">
-                                                        {formatDate(stop.scheduledDeparture)}
-                                                    </span>)}
+                                            {formatDate(stopBreak > 1 ? stop.scheduledArrival : stop.scheduledDeparture)}
+                                        </span>)}
                                     {isFutureStop && (<span className={`font-bold text-${getDelayColor(trip.delay)}`}>
-                                                        {formatDate(new Date(new Date(stop.scheduledDeparture).getTime() + trip.delay * 60_000).toISOString())}
-                                                    </span>)}
+                                        {formatDate(new Date(new Date(stopBreak > 1 ? stop.scheduledArrival : stop.scheduledDeparture).getTime() + trip.delay * 60_000).toISOString())}
+                                    </span>)}
                                 </div>) : (<div>--</div>)}
-                                {isLongerStop && stopBreak > 1 && (<span className="text-foreground-500">
-                                                sosta di {stopBreak} minuti, riparte alle {formatDate(stop.scheduledDeparture)}
-                                            </span>)}
+                                {stopBreak > 1 && (<span className="text-foreground-500">
+                                    sosta di {stopBreak} minuti
+                                </span>)}
                             </div>
                         </div>),
                     };

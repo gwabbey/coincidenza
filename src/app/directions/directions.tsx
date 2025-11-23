@@ -5,7 +5,16 @@ import {type Directions} from "@/api/motis/types";
 import {type Location} from "@/types";
 import {Button, Card, DateInput, DateValue, Link, TimeInput, TimeInputValue} from "@heroui/react";
 import {CalendarDate, Time} from "@internationalized/date";
-import {IconArrowsLeftRight, IconArrowsUpDown, IconMap, IconSearch, IconWalk} from "@tabler/icons-react";
+import {
+    IconArrowDown,
+    IconArrowRight,
+    IconArrowsLeftRight,
+    IconArrowsUpDown,
+    IconMap,
+    IconPencil,
+    IconSearch,
+    IconWalk
+} from "@tabler/icons-react";
 import {useState} from "react";
 import {LocationAutocomplete} from "./autocomplete";
 import Results from "./results";
@@ -69,16 +78,14 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                     address: selectedLocations.from.address,
                     coordinates: selectedLocations.from.coordinates,
                     isTrainStation: selectedLocations.from.isTrainStation
-                },
-                to: {
+                }, to: {
                     value: selectedLocations.to.value,
                     label: selectedLocations.to.label,
                     textValue: selectedLocations.to.textValue,
                     address: selectedLocations.to.address,
                     coordinates: selectedLocations.to.coordinates,
                     isTrainStation: selectedLocations.to.isTrainStation
-                },
-                dateTime: localIsoString
+                }, dateTime: localIsoString
             })
 
             const result = await getDirections({
@@ -129,8 +136,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
 
     const swapLocations = () => {
         setSelectedLocations(prev => ({
-            from: prev.to,
-            to: prev.from,
+            from: prev.to, to: prev.from,
         }));
     };
 
@@ -146,81 +152,106 @@ export default function Directions({search}: { search: { from: Location, to: Loc
         <Card className="flex flex-col gap-4 p-4 -mt-8 z-20 max-h-3/4" fullWidth shadow="sm">
             <h1 className="text-2xl font-bold text-center">Pianifica il tuo viaggio</h1>
 
-            <div className="flex flex-col md:flex-row justify-center items-center gap-x-4">
-                <LocationAutocomplete
-                    name="from"
-                    selected={selectedLocations.from?.textValue}
-                    label="partenza"
-                    onLocationSelect={(location) => handleLocationSelect("from", location)}
-                />
-                <div className="w-full max-w-md flex items-center justify-end md:hidden">
+            {!directions ? (<div className="flex flex-col items-center gap-y-4">
+                <div className="flex flex-col md:flex-row justify-center items-center gap-x-4 w-full">
+                    <LocationAutocomplete
+                        name="from"
+                        selected={selectedLocations.from?.textValue}
+                        label="partenza"
+                        onLocationSelect={(location) => handleLocationSelect("from", location)}
+                    />
+                    <div className="w-full max-w-md flex items-center justify-end md:hidden">
+                        <Button
+                            isIconOnly
+                            variant="ghost"
+                            onPress={swapLocations}
+                            startContent={<IconArrowsUpDown size={20} className="shrink-0" />}
+                            radius="full"
+                            className="border-gray-500 border-1 -my-4 bg-content1 z-10"
+                            aria-label="inverti selezione"
+                        />
+                    </div>
                     <Button
                         isIconOnly
                         variant="ghost"
                         onPress={swapLocations}
-                        startContent={<IconArrowsUpDown size={20} className="shrink-0" />}
+                        startContent={<IconArrowsLeftRight size={20} className="shrink-0" />}
                         radius="full"
-                        className="border-gray-500 border-1 -my-4 bg-content1 z-10"
+                        className="border-gray-500 border-1 self-center md:flex hidden"
                         aria-label="inverti selezione"
                     />
+                    <LocationAutocomplete
+                        name="to"
+                        selected={selectedLocations.to?.textValue}
+                        label="arrivo"
+                        onLocationSelect={(location) => handleLocationSelect("to", location)}
+                    />
+                    <div className="flex flex-row justify-center items-center gap-4 max-w-md w-full">
+                        <I18nProvider locale="it-IT">
+                            <DateInput
+                                variant="underlined"
+                                label="data"
+                                classNames={{label: "text-sm"}}
+                                size="lg"
+                                isInvalid={date ? (today > date || date > nextWeek) : false}
+                                value={date}
+                                onChange={setDate}
+                            />
+                            <TimeInput
+                                variant="underlined"
+                                label="ora"
+                                classNames={{label: "text-sm"}}
+                                size="lg"
+                                hourCycle={24}
+                                value={time}
+                                onChange={setTime}
+                            />
+                        </I18nProvider>
+                    </div>
                 </div>
+
                 <Button
-                    isIconOnly
+                    onPress={handleSearch}
                     variant="ghost"
-                    onPress={swapLocations}
-                    startContent={<IconArrowsLeftRight size={20} className="shrink-0" />}
-                    radius="full"
-                    className="border-gray-500 border-1 self-center md:flex hidden"
-                    aria-label="inverti selezione"
-                />
-                <LocationAutocomplete
-                    name="to"
-                    selected={selectedLocations.to?.textValue}
-                    label="arrivo"
-                    onLocationSelect={(location) => handleLocationSelect("to", location)}
-                />
-                <div className="flex flex-row justify-center items-center gap-4 max-w-md w-full">
-                    <I18nProvider locale="it-IT">
-                        <DateInput
-                            variant="underlined"
-                            label="data"
-                            classNames={{label: "text-sm"}}
-                            size="lg"
-                            isInvalid={date ? (today > date || date > nextWeek) : false}
-                            value={date}
-                            onChange={setDate}
-                        />
-                        <TimeInput
-                            variant="underlined"
-                            label="ora"
-                            classNames={{label: "text-sm"}}
-                            size="lg"
-                            hourCycle={24}
-                            value={time}
-                            onChange={setTime}
-                        />
-                    </I18nProvider>
+                    color="primary"
+                    className="self-center font-bold max-w-md md:max-w-32 w-full text-lg"
+                    startContent={!isLoading && <IconSearch stroke={2} className="shrink-0" />}
+                    isDisabled={!selectedLocations.from || !selectedLocations.to || !date || !time || isLoading || (selectedLocations && isSameLocation) || today > date || date > nextWeek}
+                    isLoading={isLoading}
+                >
+                    {!isLoading && "cerca"}
+                </Button>
+
+                {error && (<div className="pointer-events-auto text-center max-w-2xl mx-auto">
+                    <h1 className="text-2xl font-bold">
+                        {error.includes("Nessun") ? "Nessun itinerario trovato" : "Errore"}
+                    </h1>
+                    <p>{error}</p>
+                </div>)}
+            </div>) : (<Card
+                className="flex flex-row sm:flex-col justify-between sm:justify-center items-center p-4 shadow-primary">
+                <div className="sm:text-center">
+                    <div
+                        className="flex flex-col sm:flex-row gap-1 font-bold sm:justify-center justify-start">
+                        {selectedLocations.from?.label}
+                        <IconArrowDown size={16} stroke={2.5} className="shrink-0 sm:hidden" />
+                        <IconArrowRight size={16} stroke={2.5} className="shrink-0 self-center hidden sm:flex" />
+                        {selectedLocations.to?.label}
+                    </div>
+                    {date && time && (<div>{new Date(date.toString()).toLocaleDateString("it-IT", {
+                        day: "numeric", month: "long"
+                    })} alle {format(new Date(date.year, date.month, date.day, time.hour, time.minute), "HH:mm")}</div>)}
+                    <Button startContent={<IconPencil className="shrink-0" />}
+                            onPress={() => setDirections(undefined)} variant="bordered" radius="full"
+                            className="hidden sm:flex mx-auto mt-2 border-gray-500 border-1 text-medium">
+                        modifica
+                    </Button>
                 </div>
-            </div>
-
-            <Button
-                onPress={handleSearch}
-                variant="ghost"
-                color="primary"
-                className="self-center font-bold max-w-md md:max-w-32 w-full text-lg"
-                startContent={!isLoading && <IconSearch stroke={2} className="shrink-0" />}
-                isDisabled={!selectedLocations.from || !selectedLocations.to || !date || !time || isLoading || (selectedLocations && isSameLocation) || today > date || date > nextWeek}
-                isLoading={isLoading}
-            >
-                {!isLoading && "cerca"}
-            </Button>
-
-            {error && (<div className="pointer-events-auto text-center max-w-2xl mx-auto">
-                <h1 className="text-2xl font-bold">
-                    {error.includes("Nessun") ? "Nessun itinerario trovato" : "Errore"}
-                </h1>
-                <p>{error}</p>
-            </div>)}
+                <Button isIconOnly startContent={<IconPencil className="shrink-0" />}
+                        variant="bordered"
+                        radius="full"
+                        onPress={() => setDirections(undefined)} className="sm:hidden border-gray-500 border-1" />
+            </Card>)}
 
             {directions && directions.direct.length > 0 && (<Card className="p-4 w-full mx-auto">
                 <div className="flex flex-row justify-between">

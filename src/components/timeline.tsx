@@ -1,5 +1,6 @@
 "use client";
 import {useEffect, useRef, useState} from "react";
+import {cn} from "@heroui/react";
 
 interface TimelineItemProps {
     content: React.ReactNode
@@ -8,9 +9,10 @@ interface TimelineItemProps {
 interface TimelineProps {
     steps: TimelineItemProps[]
     active?: number
+    className?: string
 }
 
-const Timeline = ({steps, active = steps.length - 1}: TimelineProps) => {
+const Timeline = ({steps, active = steps.length - 1, className}: TimelineProps) => {
     const wholeNumber = Math.floor(active)
     const stepRefs = useRef<(HTMLDivElement | null)[]>([]);
     const lineRef = useRef<HTMLDivElement | null>(null);
@@ -44,7 +46,7 @@ const Timeline = ({steps, active = steps.length - 1}: TimelineProps) => {
 
     return (
         <div className="relative flex flex-col">
-            <div className="relative flex flex-col gap-8">
+            <div className={cn("relative flex flex-col gap-8", className)}>
                 {steps.map((step, index) => {
                     const isActive = index <= wholeNumber
 

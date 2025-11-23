@@ -175,47 +175,44 @@ export default function AnimatedLeafletMap({
         const startAnimation = async () => {
             import("leaflet").then(async (L) => {
                 try {
-                    const decodedLegs = await Promise.all(legs.map((leg) => decodePolyline(leg.legGeometry.points)));
-                    let combinedPath = decodedLegs.flat();
+                    const decodedLegs = await Promise.all(legs.map(leg => decodePolyline(leg.legGeometry.points)));
 
-                    if (combinedPath.length < 2) return;
+                    const legIndices = legs.map(() => 0);
 
-                    if (combinedPath.length === 2) {
-                        const [start, end] = combinedPath;
-                        const numInterpolations = 50;
-                        const interpolated: Array<[number, number]> = [];
-                        for (let i = 0; i <= numInterpolations; i++) {
-                            const t = i / numInterpolations;
-                            interpolated.push([start[0] + (end[0] - start[0]) * t, start[1] + (end[1] - start[1]) * t,]);
-                        }
-                        combinedPath = interpolated;
-                    }
+                    decodedLegs.forEach((_, idx) => {
+                        const legColor = legs[idx].mode === "WALK" ? "#999999" : `#${legs[idx].routeColor || "016FED"}`;
 
-                    const routeColor = `#${legs.find((l) => l.routeColor)?.routeColor || "016FED"}`;
+                        const polyline = L.polyline([], {color: legColor, weight: 6, opacity: 0.9})
+                            .addTo(mapInstanceRef.current!);
 
-                    const polyline = L.polyline([], {
-                        color: routeColor, weight: 4, opacity: 0.9,
-                    }).addTo(mapInstanceRef.current!);
-
-                    polylinesRef.current = [polyline];
+                        polylinesRef.current.push(polyline);
+                    });
 
                     const startTime = performance.now();
 
                     const animate = (time: number) => {
                         const elapsed = time - startTime;
                         const progress = Math.min(elapsed / animationDuration, 1);
-                        const pointCount = Math.floor(progress * combinedPath.length);
 
-                        const currentPoints = combinedPath
-                            .slice(0, pointCount)
-                            .map((p) => L.latLng(p[0], p[1]));
+                        decodedLegs.forEach((legPoints, idx) => {
+                            const targetIndex = Math.floor(progress * legPoints.length);
+                            if (targetIndex > legIndices[idx]) {
+                                const newPoints = legPoints.slice(legIndices[idx], targetIndex)
+                                    .map(p => L.latLng(p[0], p[1]));
 
-                        polyline.setLatLngs(currentPoints);
+                                const currentPoints = polylinesRef.current[idx].getLatLngs() as L.LatLng[];
+                                polylinesRef.current[idx].setLatLngs([...currentPoints, ...newPoints]);
+
+                                legIndices[idx] = targetIndex;
+                            }
+                        });
 
                         if (progress < 1) {
                             animationFrameRef.current = requestAnimationFrame(animate);
                         } else {
-                            polyline.setLatLngs(combinedPath.map((p) => L.latLng(p[0], p[1])));
+                            decodedLegs.forEach((legPoints, idx) => {
+                                polylinesRef.current[idx].setLatLngs(legPoints.map(p => L.latLng(p[0], p[1])));
+                            });
                             animationFrameRef.current = null;
                         }
                     };
@@ -223,7 +220,7 @@ export default function AnimatedLeafletMap({
                     animationFrameRef.current = requestAnimationFrame(animate);
                     updateMapBounds();
                 } catch (error) {
-                    console.error('Error animating polyline:', error);
+                    console.error("Error animating legs:", error);
                 }
             });
         };

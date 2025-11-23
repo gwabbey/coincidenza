@@ -10,15 +10,30 @@ import Link from "next/link";
 import {TransportIcon} from "./icons";
 import Steps from "./steps";
 import {trainCategoryLongNames} from "@/train-categories";
+import {useEffect} from "react";
+
+function getMapUrl(from: { lat: number, lon: number }, to: { lat: number, lon: number }) {
+    const origin = `${from.lat},${from.lon}`;
+    const destination = `${to.lat},${to.lon}`;
+
+    if (typeof window === "undefined") return "";
+
+    const ua = navigator.userAgent;
+    const isAndroid = /Android/i.test(ua);
+
+    if (isAndroid) {
+        return `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&travelmode=walking`;
+    }
+
+    return `https://maps.apple.com/?saddr=${origin}&daddr=${destination}&dirflg=w`;
+}
 
 const getLegDescription = (leg: Leg) => {
     if (leg.mode === "WALK") {
-        if (!leg.distance) return `circa ${formatDuration(Math.round(leg.duration / 60))} a piedi`
-
+        if (!leg.distance) return "";
         const roundedMeters = Math.round(leg.distance / 100) * 100;
         const distanceInKm = leg.distance / 1000;
-        const distanceStr = distanceInKm > 1 ? `circa ${Number(distanceInKm.toFixed(1))} km` : `circa ${roundedMeters} metri`;
-        return `${formatDuration(Math.round(leg.duration / 60))} · ${distanceStr}`;
+        return distanceInKm > 1 ? `circa ${Number(distanceInKm.toFixed(1))} km` : `circa ${roundedMeters} metri`;
     }
     if (leg.mode === "WALK") return "";
     return trainCategoryLongNames[leg.routeLongName ?? ""] ?? leg.routeLongName;
@@ -31,6 +46,12 @@ interface ResultsProps {
 }
 
 export default function Results({directions, selectedTripIndex, onTripSelect}: ResultsProps) {
+    useEffect(() => {
+        if (!directions || directions.trips.length === 0) {
+            onTripSelect(null);
+        }
+    }, [directions, onTripSelect]);
+
     const handleSelectionChange = (keys: Selection) => {
         if (keys === "all") {
             onTripSelect(null);
@@ -50,6 +71,7 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                    onSelectionChange={handleSelectionChange}>
             {directions.trips.map((trip, index) => (
                 <AccordionItem key={index} value={index.toString()} className="z-10 transition-colors"
+                               classNames={{indicator: "text-foreground-500"}}
                                title={<div className="flex flex-col gap-1">
                                    <Steps trip={trip} />
                                    <span className="font-bold text-2xl flex flex-row items-center gap-x-2">
@@ -98,31 +120,33 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                                             {leg.headsign}
                                                         </span>
                                                 </div>) : (<span className="sm:text-lg text-md font-bold">
-                                                        cammina fino a {leg.to.name.toLowerCase() !== "end" ? leg.to.name : "destinazione"}
+                                                        cammina per circa {formatDuration(Math.round(leg.duration / 60), true)}
                                                     </span>)}
                                             <span className="text-foreground-500 text-sm">
                                                     {getLegDescription(leg)}
                                                 </span>
                                             {leg.mode !== "WALK" && leg.realTime.url && (<Button
                                                 as={Link}
+                                                target="_blank"
                                                 href={leg.realTime.url}
                                                 variant="bordered"
                                                 startContent={<IconAccessPoint />}
                                                 radius="full"
                                                 fullWidth
-                                                className="border-gray-500 border-1 self-center text-medium mt-4"
+                                                className="border-gray-500 border-1 self-center text-medium mt-2"
                                                 aria-label={`${leg.routeLongName || ""} ${leg.tripShortName || ""} in tempo reale`}
                                             >
                                                 traccia in tempo reale
                                             </Button>)}
                                             {leg.mode === "WALK" && (<Button
-                                                as={Link}
-                                                href={`https://maps.apple.com/?saddr=${leg.from.lat},${leg.from.lon}&daddr=${leg.to.lat},${leg.to.lon}&dirflg=w`}
+                                                onPress={() => {
+                                                    window.open(getMapUrl(leg.from, leg.to), "_blank");
+                                                }}
                                                 variant="bordered"
                                                 startContent={<IconMap />}
                                                 radius="full"
                                                 fullWidth
-                                                className="border-gray-500 border-1 self-center text-medium mt-4"
+                                                className="border-gray-500 border-1 self-center text-medium mt-2"
                                                 aria-label="indicazioni percorso a piedi"
                                             >
                                                 indicazioni
@@ -151,12 +175,13 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                                 </div>
 
                                                 <Accordion>
-                                                    <AccordionItem key={1} aria-label="fermate"
-                                                                   className={cn("text-sm text-foreground-500", leg.intermediateStops?.length === 0 && "pointer-events-none")}
+                                                    <AccordionItem key={1} aria-label="fermate" isCompact
+                                                                   className={cn("text-sm text-foreground-500 -ml-2 py-2", leg.intermediateStops?.length === 0 && "pointer-events-none")}
                                                                    classNames={{
                                                                        title: "text-sm text-foreground-500",
-                                                                       trigger: "-mb-8 pt-4 -ml-2 w-auto",
-                                                                       content: "mt-4 -mb-4 pl-2"
+                                                                       trigger: "w-auto gap-2",
+                                                                       content: "pl-4 pt-0 pb-2",
+                                                                       indicator: "text-sm text-foreground-500"
                                                                    }}
                                                                    title={leg.intermediateStops && `${leg.intermediateStops.length === 0 ? "nessuna" : leg.intermediateStops.length} 
                                                                            fermat${leg.intermediateStops.length <= 1 ? "a" : "e"}, ${formatDuration(Math.round(leg.duration / 60))}`}
@@ -188,7 +213,7 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                                                 </span>)}
                                                 </div>
                                             </div>)
-                                        }]} active={1} />
+                                        }]} active={-1} className="gap-0" />
 
                                         <div
                                             className={cn("flex flex-row md:flex-col md:justify-start justify-between gap-4 max-w-2xl", leg.realTime?.info?.length > 0 && "w-full")}>

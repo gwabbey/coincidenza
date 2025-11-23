@@ -5,14 +5,13 @@ import {differenceInMinutes} from "date-fns";
 
 function getTrackUrl(leg: Leg) {
     if (leg.tripId?.includes("sta") && leg.mode !== "BUS") return `/track/trenitalia/${leg.tripShortName}`
-    switch (leg.agencyId) {
-        case "12":
+    switch (leg.agencyName?.toLowerCase()) {
+        case "trentino trasporti s.p.a.":
             return `/track/trentino-trasporti/${leg.tripId?.split("_")[leg.tripId.split("_").length - 1]}`
-        case "TI":
-        case "IT:ITH3:Operator:05403151003:Trenitalia:0":
+        case "gab":
+        case "trenitalia":
             return `/track/trenitalia/${leg.tripShortName}`
-        case "TN":
-        case "1":
+        case "trenord":
             return `/track/trenord/${leg.tripShortName}`
         default:
             return "";

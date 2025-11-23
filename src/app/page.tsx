@@ -1,4 +1,4 @@
-import {getRfiAlerts, getRfiNotices} from "@/api/trenitalia/api";
+import {getRfiAlerts} from "@/api/trenitalia/api";
 import {cookies} from "next/headers";
 import {Button, Card, CardBody, Link} from "@heroui/react";
 import NextLink from "next/link";
@@ -11,12 +11,10 @@ export default async function Page() {
     const favorites = JSON.parse(decodeURIComponent(cookieStore.get('favorites')?.value ?? '[]'));
     const userLat = cookieStore.get("userLat")?.value ?? "";
     const userLon = cookieStore.get("userLon")?.value ?? "";
+    const alerts = await getRfiAlerts(["Trentino Alto Adige"]);
 
     let rfiId = "";
     let vtId = "";
-
-    const alerts = await getRfiAlerts(["Trentino Alto Adige"]);
-    const notices = await getRfiNotices(["Trentino Alto Adige"]);
 
     return (<div className="flex flex-col items-center justify-center gap-4 text-center max-w-4xl w-full mx-auto">
         <h1 className="text-4xl font-extrabold font-stretch-extra-expanded">coincidenza.it</h1>
@@ -55,18 +53,6 @@ export default async function Page() {
             <Favorites favorites={favorites} />
 
             {!userLat || !userLon || !rfiId || !vtId && (<RequestLocation />)}
-
-            {notices.length > 0 && <Card className="flex flex-col gap-4 p-4 w-full">
-                <div className="text-2xl font-bold text-center mx-auto">
-                    informazioni utili
-                </div>
-                <CardBody className="gap-2">
-                    {notices && notices.map((alert, index) => (<div key={index}
-                                                                    className={`flex flex-col ${alert.title.toLowerCase().includes("sciopero") ? "font-bold" : ""}`}>
-                        <Link href={alert.link} isExternal>{alert.title}</Link>
-                    </div>))}
-                </CardBody>
-            </Card>}
 
             <Card className="flex flex-col gap-4 p-4 w-full">
                 <div className="text-2xl font-bold text-center mx-auto">

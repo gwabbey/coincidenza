@@ -20,7 +20,7 @@ interface Props {
 
 const CURRENT_LOCATION_KEY = 'current-location';
 const CURRENT_LOCATION: Location = {
-    value: CURRENT_LOCATION_KEY, label: 'Posizione attuale', textValue: 'Posizione attuale', coordinates: null
+    value: CURRENT_LOCATION_KEY, label: 'La tua posizione', textValue: 'La tua posizione', coordinates: null
 };
 
 const GEOLOCATION_ERRORS: Record<number, string> = {
@@ -192,7 +192,7 @@ export const LocationAutocomplete = ({
     >
         {(item: Location) => (<AutocompleteItem
             key={item.value}
-            textValue={item.textValue || (typeof item.label === 'string' ? item.label : 'Posizione attuale')}
+            textValue={item.textValue || (typeof item.label === 'string' ? item.label : 'La tua posizione')}
             startContent={item.isTrainStation ?
                 <IconTrain stroke={1.5} /> : item.value === CURRENT_LOCATION_KEY ?
                     <IconMapPin stroke={1.5} /> : undefined}

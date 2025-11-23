@@ -17,11 +17,9 @@ export default function Providers({children}: { children: React.ReactNode }) {
             const inactiveTime = now - lastActiveRef.current;
 
             if (inactiveTime > MAX_INACTIVE_TIME) {
-                if (pathname === "/directions") {
-                    router.refresh();
-                    return;
+                if (pathname !== "/directions") {
+                    window.location.reload();
                 }
-                window.location.reload();
             } else {
                 lastActiveRef.current = now;
             }
