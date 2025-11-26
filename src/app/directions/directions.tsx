@@ -139,7 +139,10 @@ export default function Directions({search}: { search: { from: Location, to: Loc
             .flatMap((leg, legIndex, legs) => {
                 const stops: { lat: number; lon: number; name: string }[] = [];
 
-                if ((legIndex === 0 || legIndex === 1) && legs[legIndex].from.name !== "Start" && legs[legIndex].from.name !== selectedLocations!.from?.label) {
+                console.log(legs[legIndex].from.name, selectedLocations!.from?.label)
+                console.log(legs[legIndex].to.name, selectedLocations!.to?.label)
+
+                if (legs[legIndex].from.name !== "Start" && legs[legIndex].from.name !== selectedLocations!.from?.label) {
                     stops.push({
                         lat: leg.from.lat, lon: leg.from.lon, name: leg.from.name,
                     });
@@ -149,7 +152,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                     lat: stop.lat, lon: stop.lon, name: stop.name,
                 })));
 
-                if ((legIndex === legs.length - 1 || legIndex === legs.length) && legs[legIndex].to.name !== "End" && legs[legIndex].to.name !== selectedLocations!.to?.label) {
+                if (legs[legIndex].to.name !== "End" && legs[legIndex].to.name !== selectedLocations!.to?.label) {
                     stops.push({
                         lat: leg.to.lat, lon: leg.to.lon, name: leg.to.name,
                     });
