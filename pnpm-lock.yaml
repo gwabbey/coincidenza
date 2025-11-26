@@ -71,9 +71,6 @@ importers:
       jsonwebtoken:
         specifier: ^9.0.2
         version: 9.0.2
-      leaflet:
-        specifier: ^1.9.4
-        version: 1.9.4
       maplibre-gl:
         specifier: ^5.13.0
         version: 5.13.0
@@ -120,9 +117,6 @@ importers:
       '@types/jsonwebtoken':
         specifier: ^9.0.10
         version: 9.0.10
-      '@types/leaflet':
-        specifier: ^1.9.21
-        version: 1.9.21
       '@types/mapbox__polyline':
         specifier: ^1.0.5
         version: 1.0.5
@@ -1838,9 +1832,6 @@ packages:
   '@types/jsonwebtoken@9.0.10':
     resolution: {integrity: sha512-asx5hIG9Qmf/1oStypjanR7iKTv0gXQ1Ov/jfrX6kS/EO0OFni8orbmGCn0672NHR3kXHwpAwR+B368ZGN/2rA==}
 
-  '@types/leaflet@1.9.21':
-    resolution: {integrity: sha512-TbAd9DaPGSnzp6QvtYngntMZgcRk+igFELwR2N99XZn7RXUdKgsXMR+28bUO0rPsWp8MIu/f47luLIQuSLYv/w==}
-
   '@types/mapbox__polyline@1.0.5':
     resolution: {integrity: sha512-KNkXjtDPu3AgNbtikPyVqZEB5sF+Ls7sFtaZEgGEdU9YZUO5kF9nfDsJAWQqkBW8UVQNbq7Ob3Kube8l/b+3tQ==}
 
@@ -2493,9 +2484,6 @@ packages:
   kind-of@6.0.3:
     resolution: {integrity: sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==}
     engines: {node: '>=0.10.0'}
-
-  leaflet@1.9.4:
-    resolution: {integrity: sha512-nxS1ynzJOmOlHp+iL3FyWqK89GtNL8U8rvlMOsQdTTssxZwCXh8N2NB3GDQOL+YR3XnWyZAxwQixURb+FA74PA==}
 
   lightningcss-android-arm64@1.30.2:
     resolution: {integrity: sha512-BH9sEdOCahSgmkVhBLeU7Hc9DWeZ1Eb6wNS6Da8igvUwAe0sqROHddIlvU06q3WyXVEOYDZ6ykBZQnjTbmo4+A==}
@@ -5811,10 +5799,6 @@ snapshots:
       '@types/ms': 2.1.0
       '@types/node': 22.19.0
 
-  '@types/leaflet@1.9.21':
-    dependencies:
-      '@types/geojson': 7946.0.16
-
   '@types/mapbox__polyline@1.0.5':
     dependencies:
       '@types/geojson': 7946.0.16
@@ -6508,8 +6492,6 @@ snapshots:
   kdbush@4.0.2: {}
 
   kind-of@6.0.3: {}
-
-  leaflet@1.9.4: {}
 
   lightningcss-android-arm64@1.30.2:
     optional: true
