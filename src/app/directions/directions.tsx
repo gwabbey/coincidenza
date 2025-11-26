@@ -53,8 +53,11 @@ export default function Directions({search}: { search: { from: Location, to: Loc
         }));
     };
 
-    const setCookie = (name: string, value: { from: Location, to: Location, dateTime: string }) => {
-        document.cookie = `${name}=${JSON.stringify(value)}; path=/; expires=`;
+    const setCookie = (name: string, value: any, days = 30) => {
+        const expires = new Date();
+        expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
+        const encodedValue = encodeURIComponent(JSON.stringify(value));
+        document.cookie = `${name}=${encodedValue}; path=/; expires=${expires.toUTCString()};`;
     };
 
     const handleSearch = async () => {
@@ -125,14 +128,36 @@ export default function Directions({search}: { search: { from: Location, to: Loc
             lon: selectedLocations.from.coordinates!.lon,
             name: selectedLocations.from.label.toString(),
         },
+
         to: selectedLocations.to ? {
             lat: selectedLocations.to.coordinates!.lat,
             lon: selectedLocations.to.coordinates!.lon,
             name: selectedLocations.to.label.toString(),
         } : undefined,
-        intermediateStops: selectedTripIndex !== null && directions?.trips[selectedTripIndex] ? directions.trips[selectedTripIndex].legs.flatMap((leg) => leg.intermediateStops?.map((stop) => ({
-            lat: stop.lat, lon: stop.lon, name: stop.name,
-        })) ?? []) : [],
+
+        intermediateStops: selectedTripIndex !== null && directions?.trips[selectedTripIndex] ? directions.trips[selectedTripIndex].legs
+            .flatMap((leg, legIndex, legs) => {
+                const stops: { lat: number; lon: number; name: string }[] = [];
+
+                if ((legIndex === 0 || legIndex === 1) && legs[legIndex].from.name !== "Start" && legs[legIndex].from.name !== selectedLocations!.from?.label) {
+                    stops.push({
+                        lat: leg.from.lat, lon: leg.from.lon, name: leg.from.name,
+                    });
+                }
+
+                stops.push(...(leg.intermediateStops ?? []).map((stop) => ({
+                    lat: stop.lat, lon: stop.lon, name: stop.name,
+                })));
+
+                if ((legIndex === legs.length - 1 || legIndex === legs.length) && legs[legIndex].to.name !== "End" && legs[legIndex].to.name !== selectedLocations!.to?.label) {
+                    stops.push({
+                        lat: leg.to.lat, lon: leg.to.lon, name: leg.to.name,
+                    });
+                }
+
+                return stops;
+            })
+            .filter((item, index, arr) => index === arr.findIndex((a) => a.lat === item.lat && a.lon === item.lon)) : [],
         legs: selectedTripIndex !== null && directions?.trips[selectedTripIndex] ? directions.trips[selectedTripIndex].legs : [],
     } : undefined;
 
@@ -142,19 +167,19 @@ export default function Directions({search}: { search: { from: Location, to: Loc
         }));
     };
 
-    return (<div className="flex flex-col">
+    return (<div className="fixed inset-0 flex flex-col pt-18">
         <LeafletMap
             from={mapData?.from}
             to={mapData?.to}
             intermediateStops={mapData?.intermediateStops}
             legs={mapData?.legs}
-            className="w-screen rounded-t-large sticky top-[72px] z-10 -mt-4"
+            className="w-full h-1/2 rounded-t-large flex-shrink-0"
         />
 
-        <Card className="flex flex-col gap-2 p-4 -mt-8 z-20 max-h-3/4" fullWidth shadow="sm">
-            <h1 className="text-2xl font-bold text-center">Pianifica il tuo viaggio</h1>
+        <Card className="flex flex-col gap-2 p-4 -mt-4 z-20 flex-1 min-h-0 overflow-auto" fullWidth shadow="sm">
+            {!directions && <h1 className="text-2xl font-bold text-center flex-shrink-0">Pianifica il tuo viaggio</h1>}
 
-            {!directions ? (<div className="flex flex-col items-center gap-y-4">
+            {!directions ? (<div className="flex flex-col items-center gap-y-4 flex-shrink-0">
                 <div className="flex flex-col md:flex-row justify-center items-center gap-x-4 w-full">
                     <LocationAutocomplete
                         name="from"
@@ -230,69 +255,86 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                     </h1>
                     <p>{error}</p>
                 </div>)}
-            </div>) : (<Card
-                className="flex flex-row sm:flex-col justify-between sm:justify-center items-center p-4">
-                <div className="sm:text-center sm:text-nowrap">
-                    <div
-                        className="flex flex-col sm:flex-row gap-1 font-bold sm:justify-center justify-start">
-                        <div className="flex">
-                            <IconCircleLetterA size={18} className="self-center shrink-0 mr-1 sm:hidden" />
-                            {selectedLocations.from?.label}
+            </div>) : (<>
+                <Card
+                    className="flex flex-row sm:flex-col justify-between sm:justify-center items-center p-4 flex-shrink-0">
+                    <div className="sm:text-center sm:text-nowrap">
+                        <div
+                            className="flex flex-col sm:flex-row gap-1 font-bold sm:justify-center justify-start">
+                            <div className="flex">
+                                <IconCircleLetterA size={18} className="self-center shrink-0 mr-1 sm:hidden" />
+                                {selectedLocations.from?.label}
+                            </div>
+                            <IconArrowDown size={16} stroke={2.5} className="shrink-0 sm:hidden" />
+                            <IconArrowRight size={16} stroke={2.5}
+                                            className="shrink-0 self-center hidden sm:flex" />
+                            <div className="flex">
+                                <IconCircleLetterBFilled size={18}
+                                                         className="self-center shrink-0 mr-1 sm:hidden" />
+                                {selectedLocations.to?.label}
+                            </div>
                         </div>
-                        <IconArrowDown size={16} stroke={2.5} className="shrink-0 sm:hidden" />
-                        <IconArrowRight size={16} stroke={2.5} className="shrink-0 self-center hidden sm:flex" />
-                        <div className="flex">
-                            <IconCircleLetterBFilled size={18}
-                                                     className="self-center shrink-0 mr-1 sm:hidden" />{selectedLocations.to?.label}
-                        </div>
-                    </div>
-                    {date && time && (<div>{new Date(date.toString()).toLocaleDateString("it-IT", {
-                        day: "numeric", month: "long"
-                    })}, {format(new Date(date.year, date.month, date.day, time.hour, time.minute), "HH:mm")}</div>)}
-                    <Button startContent={<IconPencil className="shrink-0" />}
-                            onPress={() => setDirections(undefined)} variant="bordered" radius="full"
-                            className="hidden sm:flex mx-auto mt-2 border-gray-500 border-1 text-medium">
-                        modifica
-                    </Button>
-                </div>
-                <Button isIconOnly startContent={<IconPencil className="shrink-0" />}
-                        variant="bordered"
-                        radius="full"
-                        onPress={() => setDirections(undefined)} className="sm:hidden border-gray-500 border-1" />
-            </Card>)}
-
-            {directions && directions.direct.length > 0 && (<Card className="p-4 w-full mx-auto">
-                <div className="flex flex-row justify-between">
-                    <div className="flex flex-row gap-2 items-center">
-                        <IconWalk size={24} />
-                        <div className="flex flex-col justify-center">
-                                    <span className="sm:text-lg text-md font-bold">
-                                        circa{" "}
-                                        {formatDuration(Math.abs(directions.direct[0].legs[0].duration / 60), true)}{" "}
-                                        a piedi
-                                    </span>
-                            <span className="font-bold text-foreground-500">
-                                        arrivo stimato alle{" "}
-                                {format(directions.direct[0].legs[0].endTime, "HH:mm")}
-                                    </span>
-                        </div>
+                        {date && time && (<div>
+                            {new Date(date.toString()).toLocaleDateString("it-IT", {
+                                day: "numeric", month: "long"
+                            })}, {format(new Date(date.year, date.month, date.day, time.hour, time.minute), "HH:mm")}
+                        </div>)}
+                        <Button
+                            startContent={<IconPencil className="shrink-0" />}
+                            onPress={() => setDirections(undefined)}
+                            variant="bordered"
+                            radius="full"
+                            className="hidden sm:flex mx-auto mt-2 border-gray-500 border-1 text-medium"
+                        >
+                            modifica
+                        </Button>
                     </div>
                     <Button
-                        as={Link}
-                        href={`https://maps.apple.com/?saddr=${directions.direct[0].legs[0].from.lat},${directions.direct[0].legs[0].from.lon}&daddr=${directions.direct[0].legs[0].to.lat},${directions.direct[0].legs[0].to.lon}&dirflg=w`}
-                        variant="bordered"
                         isIconOnly
-                        isExternal
-                        startContent={<IconMap />}
+                        startContent={<IconPencil className="shrink-0" />}
+                        variant="bordered"
                         radius="full"
-                        className="border-gray-500 border-1 self-center"
-                        aria-label="percorso a piedi"
+                        onPress={() => setDirections(undefined)}
+                        className="sm:hidden border-gray-500 border-1"
                     />
-                </div>
-            </Card>)}
+                </Card>
 
-            {directions && <Results directions={directions} selectedTripIndex={selectedTripIndex}
-                                    onTripSelect={setSelectedTripIndex} />}
+                {directions.direct.length > 0 && (<Card className="p-4 w-full mx-auto flex-shrink-0">
+                    <div className="flex flex-row justify-between">
+                        <div className="flex flex-row gap-2 items-center">
+                            <IconWalk size={24} />
+                            <div className="flex flex-col justify-center">
+                                            <span className="sm:text-lg text-md font-bold">
+                                                circa{" "}
+                                                {formatDuration(Math.abs(directions.direct[0].legs[0].duration / 60), true)}{" "}
+                                                a piedi
+                                            </span>
+                                <span className="font-bold text-foreground-500">
+                                                arrivo stimato alle{" "}
+                                    {format(directions.direct[0].legs[0].endTime, "HH:mm")}
+                                            </span>
+                            </div>
+                        </div>
+                        <Button
+                            as={Link}
+                            href={`https://maps.apple.com/?saddr=${directions.direct[0].legs[0].from.lat},${directions.direct[0].legs[0].from.lon}&daddr=${directions.direct[0].legs[0].to.lat},${directions.direct[0].legs[0].to.lon}&dirflg=w`}
+                            variant="bordered"
+                            isIconOnly
+                            isExternal
+                            startContent={<IconMap />}
+                            radius="full"
+                            className="border-gray-500 border-1 self-center"
+                            aria-label="percorso a piedi"
+                        />
+                    </div>
+                </Card>)}
+
+                <Results
+                    directions={directions}
+                    selectedTripIndex={selectedTripIndex}
+                    onTripSelect={setSelectedTripIndex}
+                />
+            </>)}
         </Card>
     </div>);
 }

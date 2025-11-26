@@ -23,3 +23,9 @@ html {
     padding: 0 !important;
     border: none !important;
 }
+
+.leaflet-zoom-anim,
+.leaflet-zoom-animated {
+    transition-timing-function: linear !important;
+    transition-duration: 100ms !important;
+}

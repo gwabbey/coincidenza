@@ -1,10 +1,11 @@
 import {capitalize, clients, findMatchingStation, getDistance} from "@/utils";
 import axios from 'axios';
 import {parseStringPromise} from "xml2js";
-import {Trip} from "../types";
+import {Train, Trip} from "../types";
 import {getMonitor} from "./monitor";
 import stationLocations from "@/station-locations.json";
 import stations from "@/stations.json";
+import {differenceInMinutes} from "date-fns";
 
 interface RfiItem {
     title: string;
@@ -106,17 +107,26 @@ function getCategory(trip: any): string {
 export async function getMonitorTrip(rfiId: string, tripId: string) {
     const monitor = await getMonitor(rfiId);
     if (!monitor) return null;
-    const train = monitor.trains.find(train => String(train.number) === String(tripId));
+
+    const train = monitor.trains.find((t) => String(t.number) === String(tripId));
     if (!train) return null;
-    return train;
+
+    return {
+        ...train,
+        info: monitor.alerts ? {
+            infoNote: monitor.alerts,
+            source: "RFI",
+            url: null,
+            insertTimestamp: new Date().toISOString()
+        } : null,
+    };
 }
 
 async function getTripsById(id: string) {
     if (!id) return null;
 
     const {
-        data,
-        status
+        data, status
     } = await axios.get<string>(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`);
 
     if (!data?.trim() || status !== 200) return null;
@@ -208,7 +218,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
     let delay = trip.ritardo;
     let lastKnownLocation = capitalize(trip.stazioneUltimoRilevamento || "--");
 
-    if (trip.stazioneUltimoRilevamento.toLowerCase().trim() === currentStop.stazione.toLowerCase().trim() && currentStop.fermata.ritardoPartenza === 0) {
+    if (lastKnownLocation === capitalize(currentStop.stazione) && currentStop.fermata.ritardoPartenza === 0) {
         delay = 0
     }
 
@@ -217,33 +227,29 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
 
         if (isStationed) delay = currentStop?.fermata.ritardoArrivo
 
-        const scheduled = new Date(currentStop.fermata.partenzaReale);
-        const delta = scheduled.getTime() - now;
-        const isDepartingNow = currentStop.fermata.partenzaReale && currentStop.fermata.arrivoReale && Math.abs(delta) <= 60000;
+        const justDeparted = currentStop.fermata.partenzaReale && capitalize(currentStop.stazione) === lastKnownLocation;
 
-        if (isDepartingNow && delay !== currentStop?.fermata.ritardoPartenza) {
-            delay = currentStop?.fermata.ritardoPartenza;
+        const diff = differenceInMinutes(currentStop.fermata.partenzaReale, currentStop.fermata.partenza_teorica)
+        if (justDeparted && delay !== diff) {
+            delay = diff;
         }
     }
-    1
 
     if (trip.nonPartito && !currentStop.fermata.partenzaReale && !trip.ritardo) {
         delay = null
         currentStopIndex = -1
     }
 
-    const getMonitorDelay = async (stop: any, trainNumber: string, tripDelay: number) => {
+    const getMonitor = async (stop: any, trainNumber: string): Promise<(Train & {
+        info: { infoNote: string; insertTimestamp: string; source: string; url: string | null } | null
+    }) | null> => {
         const stationName = stop?.stazione;
         if (!stationName) return null;
 
         const rfiId = findMatchingStation(capitalize(stationName));
         if (!rfiId) return null;
 
-        const monitor = await getMonitorTrip(rfiId, trainNumber);
-        if (monitor && !isNaN(Number(monitor.delay)) && Number(monitor.delay) > tripDelay && Number(monitor.delay) > 0) {
-            return Number(monitor.delay);
-        }
-        return null;
+        return await getMonitorTrip(rfiId, trainNumber);
     };
 
     const isLateForDeparture = currentStop?.fermata && !currentStop?.fermata.partenzaReale && (currentStop?.fermata.partenza_teorica + trip.ritardo * 60000 < now);
@@ -251,10 +257,16 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
 
     let rfiDelay = null;
 
-    if (trip.nonPartito || isLateForDeparture) {
-        rfiDelay = await getMonitorDelay(currentStop, trip.numeroTreno, trip.ritardo);
-    } else if (isLateForArrival) {
-        rfiDelay = await getMonitorDelay(nextStop, trip.numeroTreno, trip.ritardo);
+    const stopToCheck = trip.nonPartito || isLateForDeparture ? currentStop : isLateForArrival || trip.ritardo > 15 ? nextStop : null;
+
+    if (stopToCheck) {
+        const monitor = await getMonitor(stopToCheck, trip.numeroTreno);
+        monitor && monitor.info && info.push(monitor.info)
+        const delay = Number(monitor?.delay);
+
+        if (delay > trip.ritardo && delay > 0) {
+            rfiDelay = delay;
+        }
     }
 
     if (rfiDelay !== null) {
@@ -306,7 +318,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
             .map((alert) => ({
                 message: alert.infoNote ?? "",
                 date: timestampToIso(alert.insertTimestamp) ?? "",
-                source: "Viaggiatreno",
+                source: alert.source || "VT",
                 url: null
             }))
             .filter((alert, i: number, self) => self.findIndex((a) => a.message === alert.message) === i) : []

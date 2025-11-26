@@ -324,6 +324,7 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
                     };
                 })}
                 active={preciseActiveIndex}
+                color={`#${trip.delay ? trip.color : "6B7282"}`}
             />
         </div>
 
