@@ -453,7 +453,7 @@ export default function LibreMap({
 
     return (<div
         ref={mapContainerRef}
-        style={{height: '400px', width: '100%'}}
+        style={{height: '300px', width: '100%'}}
         className={className}
     />);
 }

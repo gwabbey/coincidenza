@@ -139,9 +139,6 @@ export default function Directions({search}: { search: { from: Location, to: Loc
             .flatMap((leg, legIndex, legs) => {
                 const stops: { lat: number; lon: number; name: string }[] = [];
 
-                console.log(legs[legIndex].from.name, selectedLocations!.from?.label)
-                console.log(legs[legIndex].to.name, selectedLocations!.to?.label)
-
                 if (legs[legIndex].from.name !== "Start" && legs[legIndex].from.name !== selectedLocations!.from?.label) {
                     stops.push({
                         lat: leg.from.lat, lon: leg.from.lon, name: leg.from.name,
@@ -170,7 +167,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
         }));
     };
 
-    return (<div className="fixed inset-0 flex flex-col pt-18">
+    return (<div className="fixed inset-0 flex flex-col pt-18 px-4">
         <LeafletMap
             from={mapData?.from}
             to={mapData?.to}
@@ -179,7 +176,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
             className="w-full h-1/2 rounded-t-large flex-shrink-0"
         />
 
-        <Card className="flex flex-col gap-2 p-4 -mt-4 z-20 flex-1 min-h-0 overflow-auto" fullWidth shadow="sm">
+        <Card className="flex flex-col gap-2 p-4 -mt-4 z-20 flex-1 min-h-0 overflow-auto" fullWidth>
             {!directions && <h1 className="text-2xl font-bold text-center flex-shrink-0">Pianifica il tuo viaggio</h1>}
 
             {!directions ? (<div className="flex flex-col items-center gap-y-4 flex-shrink-0">

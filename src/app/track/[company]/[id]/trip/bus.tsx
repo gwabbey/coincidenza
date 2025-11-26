@@ -47,7 +47,7 @@ const calculatePreciseActiveIndex = (trip: TripProps): number => {
 
     let currentIndex = lastKnownStopIndex;
 
-    if (lastKnownStopIndex === -1) {
+    if (lastKnownStopIndex === -1 && !trip.delay) {
         for (let i = 0; i < trip.stops.length - 1; i++) {
             const stop = trip.stops[i];
             const next = trip.stops[i + 1];
@@ -324,7 +324,7 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
                     };
                 })}
                 active={preciseActiveIndex}
-                color={`#${trip.delay ? trip.color : "6B7282"}`}
+                color={`#${trip.delay !== null ? trip.color : "36454F"}`}
             />
         </div>
 
