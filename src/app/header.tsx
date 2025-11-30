@@ -18,7 +18,7 @@ export default function Header() {
 
     return (<div
         className="flex justify-between items-center p-4 sticky top-0 z-50 backdrop-blur-3xl bg-foreground-50/50 transition-all">
-        <Link href="/" className="font-thin text-2xl italic transition">coincidenza.it</Link>
+        <Link prefetch={false} href="/" className="font-thin text-2xl italic">coincidenza.it</Link>
         <div className="flex gap-2">
             <Button
                 onPress={() => setTheme(theme === 'light' ? 'dark' : 'light')}

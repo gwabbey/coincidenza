@@ -5,7 +5,6 @@ import {Train, Trip} from "../types";
 import {getMonitor} from "./monitor";
 import stationLocations from "@/station-locations.json";
 import stations from "@/stations.json";
-import {differenceInMinutes} from "date-fns";
 
 interface RfiItem {
     title: string;
@@ -112,12 +111,8 @@ export async function getMonitorTrip(rfiId: string, tripId: string) {
     if (!train) return null;
 
     return {
-        ...train,
-        info: monitor.alerts ? {
-            infoNote: monitor.alerts,
-            source: "RFI",
-            url: null,
-            insertTimestamp: new Date().toISOString()
+        ...train, info: monitor.alerts ? {
+            infoNote: monitor.alerts, source: "RFI", url: null, insertTimestamp: new Date().toISOString()
         } : null,
     };
 }
@@ -218,20 +213,13 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
     let delay = trip.ritardo;
     let lastKnownLocation = capitalize(trip.stazioneUltimoRilevamento || "--");
 
-    if (lastKnownLocation === capitalize(currentStop.stazione) && currentStop.fermata.ritardoPartenza === 0) {
-        delay = 0
-    }
-
     if (currentStop?.fermata) {
         const isStationed = currentStop?.fermata.arrivoReale && !currentStop?.fermata.partenzaReale;
-
-        if (isStationed) delay = currentStop?.fermata.ritardoArrivo
+        if (isStationed) delay = currentStop?.fermata.ritardoArrivo;
 
         const justDeparted = currentStop.fermata.partenzaReale && capitalize(currentStop.stazione) === lastKnownLocation;
-
-        const diff = differenceInMinutes(currentStop.fermata.partenzaReale, currentStop.fermata.partenza_teorica)
-        if (justDeparted && delay !== diff) {
-            delay = diff;
+        if (justDeparted && delay !== currentStop?.fermata.ritardoPartenza) {
+            delay = currentStop?.fermata.ritardoPartenza;
         }
     }
 

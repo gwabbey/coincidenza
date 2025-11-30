@@ -140,7 +140,7 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                             </Button>)}
                                             {leg.mode === "WALK" && (<Button
                                                 onPress={() => {
-                                                    window.open(getMapUrl(leg.from, leg.to), "_blank");
+                                                    window.open(getMapUrl(leg.from, leg.to));
                                                 }}
                                                 variant="bordered"
                                                 startContent={<IconMap />}

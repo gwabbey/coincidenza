@@ -82,7 +82,7 @@ const calculatePreciseActiveIndex = (trip: TripProps) => {
 export default function Train({trip: initialTrip}: { trip: TripProps }) {
     const [trip, setTrip] = useState<TripProps>(initialTrip);
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
-    const [isExpanded, setIsExpanded] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(trip.status === "canceled");
     const notifsModal = useDisclosure();
     const [isOverflowing, setIsOverflowing] = useState(false);
     const textRef = useRef<HTMLSpanElement>(null);
@@ -90,22 +90,17 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
     const hasMultiple = trip.info && trip.info.length > 1;
 
     useEffect(() => {
-        // If we already have multiple items, we know we need the button.
-        // If expanded, we don't need to calculate (prevents flickering).
         if (hasMultiple || isExpanded) return;
 
         const checkOverflow = () => {
             const el = textRef.current;
             if (el) {
-                // If scrollHeight is greater than clientHeight, the text is clamped
                 setIsOverflowing(el.scrollHeight > el.clientHeight);
             }
         };
 
-        // Small timeout ensures the DOM has rendered the text before measuring
         const timer = setTimeout(checkOverflow, 0);
 
-        // Optional: Re-check on window resize
         window.addEventListener('resize', checkOverflow);
 
         return () => {
@@ -114,8 +109,7 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
         }
     }, [trip.info, hasMultiple, isExpanded]);
 
-    // Show button if: Multiple alerts OR Single alert with overflowing text
-    const showExpandButton = hasMultiple || isOverflowing;
+    const showExpandButton = hasMultiple || isOverflowing || trip.status !== 'canceled';
 
     useEffect(() => {
         const updateIndex = () => {
@@ -316,82 +310,53 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
             <Divider className="my-2" />
         </div>
 
-        {trip.info && trip.info.length > 0 &&
-            <Card
-                isFooterBlurred
-                fullWidth
-                className={cn(
-                    "flex flex-col bg-warning-500/50 max-w-md w-full mx-auto transition-all ease-in-out",
-                    // If expanded, allow full height.
-                    // If NOT expanded but has button, restrict height.
-                    // If NO button needed (short text), allow auto height so it doesn't look empty.
-                    isExpanded ? "max-h-[1000px] pb-12" : showExpandButton ? "h-34" : "h-auto pb-4"
-                )}
-            >
-                <div className="flex-1 overflow-hidden p-4">
-                    <div className="flex gap-1">
-                        <IconAlertTriangleFilled className="shrink-0 pt-1" />
-                        <div className="flex-1">
-                            {trip.info.map((alert, index) => (
-                                <div key={index} className="flex flex-col gap-2">
-                                    <div className="flex flex-col">
-                                        {/* Apply line-clamp-3 ONLY if:
-                      1. We are not expanded
-                      2. AND (It's the first item OR we want to clamp all items)
-
-                      The ref goes on the first item to measure overflow for single-alert cases.
-                  */}
+        {trip.info && trip.info.length > 0 && <Card
+            isFooterBlurred
+            fullWidth
+            className={cn("flex flex-col bg-warning-500/50 max-w-md w-full mx-auto transition-all ease-in-out", isExpanded ? "h-auto" : "h-34", isExpanded && showExpandButton && "pb-12")}>
+            <div className="flex-1 overflow-hidden p-4">
+                <div className="flex gap-1">
+                    <IconAlertTriangleFilled className="shrink-0 pt-1" />
+                    <div className="flex-1">
+                        {trip.info.map((alert, index) => (<div key={index} className="flex flex-col gap-2">
+                            <div className="flex flex-col">
                                         <span
                                             ref={index === 0 ? textRef : null}
-                                            className={cn(
-                                                !isExpanded && "line-clamp-3",
-                                                "transition-all"
-                                            )}
+                                            className={cn(!isExpanded && "line-clamp-3", "transition-all")}
                                         >
                     {alert.message}
                   </span>
-                                        <span className="text-sm text-foreground-500">
+                                <span className="text-sm text-foreground-500">
                     {formatDate(alert.date)}
                   </span>
-                                    </div>
-                                    {index !== trip.info.length - 1 && (
-                                        <Divider className="mb-2" />
-                                    )}
-                                </div>
-                            ))}
-                        </div>
+                            </div>
+                            {index !== trip.info.length - 1 && (<Divider className="mb-2" />)}
+                        </div>))}
                     </div>
                 </div>
+            </div>
 
-                {trip.status !== "canceled" && showExpandButton && (
-                    <CardFooter
-                        className="px-4 py-2 flex items-center justify-center m-0 absolute bottom-0 z-10 text-medium text-center backdrop-blur w-full">
-                        <Button
-                            variant="bordered"
-                            endContent={
-                                isExpanded ? (
-                                    <IconArrowUp
-                                        size={16}
-                                        className="shrink-0 transition-transform duration-300"
-                                    />
-                                ) : (
-                                    <IconArrowDown
-                                        size={16}
-                                        className="shrink-0 transition-transform duration-300"
-                                    />
-                                )
-                            }
-                            radius="full"
-                            size="sm"
-                            className="border-foreground-500 border-1 self-center text-medium"
-                            aria-label={isExpanded ? "Chiudi avvisi" : "Espandi avvisi"}
-                            onPress={() => setIsExpanded(!isExpanded)}
-                        >
-                            {isExpanded ? "Chiudi" : "Espandi"}
-                        </Button>
-                    </CardFooter>
-                )}
-            </Card>}
+            {trip.status !== "canceled" && showExpandButton && (<CardFooter
+                className="px-4 py-2 flex items-center justify-center m-0 absolute bottom-0 z-10 text-medium text-center backdrop-blur w-full">
+                <Button
+                    variant="bordered"
+                    endContent={isExpanded ? (<IconArrowUp
+                        size={16}
+                        className="shrink-0 transition-transform duration-300"
+                    />) : (<IconArrowDown
+                        size={16}
+                        className="shrink-0 transition-transform duration-300"
+                    />)}
+                    radius="full"
+                    size="sm"
+                    className="border-foreground-500 border-1 self-center text-medium"
+                    aria-label={isExpanded ? "Chiudi avvisi" : "Espandi avvisi"}
+                    onPress={() => setIsExpanded(!isExpanded)}
+                >
+                    {isExpanded ? "Chiudi" : "Espandi"}
+                </Button>
+            </CardFooter>)}
+        </Card>}
 
         {trip.status !== "canceled" && (<div className="max-w-md w-full mx-auto">
             <Timeline
@@ -493,6 +458,7 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
                     };
                 })}
                 active={preciseActiveIndex}
+                color={`#${trip.color}`}
             />
         </div>)}
 

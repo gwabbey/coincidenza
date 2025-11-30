@@ -286,7 +286,7 @@ export default function LibreMap({
                         'text-font': ['Noto Sans Regular'],
                         'text-size': 12,
                         'text-variable-anchor': ['left', 'right', 'top', 'bottom'],
-                        'text-radial-offset': 0.75,
+                        'text-radial-offset': 1,
                         'text-justify': 'auto'
                     }, paint: {
                         'text-color': labelColor
