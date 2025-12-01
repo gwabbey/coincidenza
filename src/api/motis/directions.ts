@@ -6,7 +6,6 @@ import {getRealTimeData} from './realtime';
 import {Directions, GeocodeRequest, GeocodeResult, Location, Trip} from './types';
 import {trainCategoryLongNames} from "@/train-categories";
 import {differenceInMinutes} from "date-fns";
-import {getRailPolyline} from "@/api/signal/api";
 
 const MOTIS = process.env.MOTIS || "http://localhost:8080";
 
@@ -67,65 +66,33 @@ const processTripData = async (data: {
         return {trips: [], pageCursor: data.pageCursor, direct: []};
     }
 
-    const processedItineraries = await Promise.all(
-        data.itineraries.map(async (trip) => {
-            const processedLegs = (
-                await Promise.all(
-                    trip.legs.map(async (originalLeg) => {
-                        let points = originalLeg.legGeometry.points;
+    const processedItineraries = await Promise.all(data.itineraries.map(async (trip) => {
+        const processedLegs = (await Promise.all(trip.legs.map(async (originalLeg) => {
+            return {
+                ...originalLeg,
+                intermediateStops: originalLeg.intermediateStops?.map((stop: any) => ({
+                    ...stop, name: getStop(stop.name),
+                })),
+                headsign: capitalize(originalLeg.headsign || ""),
+                routeLongName: originalLeg.mode.includes("RAIL") && originalLeg.routeShortName ? trainCategoryLongNames[originalLeg.routeShortName.trim().toUpperCase()] : capitalize(originalLeg.routeLongName || ""),
+                routeShortName: originalLeg.routeShortName && (originalLeg.routeShortName === "REG" ? "R" : originalLeg.routeShortName.split("_")[0]),
+                from: {
+                    ...originalLeg.from, name: getStop(originalLeg.from.name),
+                },
+                to: {
+                    ...originalLeg.to, name: getStop(originalLeg.to.name),
+                },
+                tripShortName: originalLeg.tripShortName,
+                routeColor: originalLeg.routeShortName?.startsWith("R") ? "036633" : originalLeg.source?.includes("ttu") && !originalLeg.routeColor ? "1CC864" : originalLeg.routeColor,
+            };
+        }))).filter((leg) => {
+            if (!leg.from || !leg.to) return true;
+            if (leg.from.lat === leg.to.lat && leg.from.lon === leg.to.lon) return false;
+            return getDistance(leg.from.lat, leg.from.lon, leg.to.lat, leg.to.lon) >= 100;
+        });
 
-                        if (originalLeg.mode.includes("RAIL")) {
-                            const allStops = [
-                                originalLeg.from,
-                                ...(originalLeg.intermediateStops ?? []),
-                                originalLeg.to,
-                            ];
-
-                            points = await getRailPolyline(allStops);
-                        }
-
-                        return {
-                            ...originalLeg,
-                            intermediateStops: originalLeg.intermediateStops?.map((stop: any) => ({
-                                ...stop,
-                                name: getStop(stop.name),
-                            })),
-                            headsign: capitalize(originalLeg.headsign || ""),
-                            routeLongName:
-                                originalLeg.mode.includes("RAIL") && originalLeg.routeShortName
-                                    ? trainCategoryLongNames[originalLeg.routeShortName.trim().toUpperCase()]
-                                    : capitalize(originalLeg.routeLongName || ""),
-                            routeShortName:
-                                originalLeg.routeShortName &&
-                                (originalLeg.routeShortName === "REG" ? "R" : originalLeg.routeShortName.split("_")[0]),
-                            from: {
-                                ...originalLeg.from,
-                                name: getStop(originalLeg.from.name),
-                            },
-                            to: {
-                                ...originalLeg.to,
-                                name: getStop(originalLeg.to.name),
-                            },
-                            tripShortName: originalLeg.tripShortName,
-                            legGeometry: {...originalLeg.legGeometry, points},
-                            routeColor:
-                                ["R", "REG", "RV"].includes(originalLeg.routeShortName || "")
-                                    ? "036633"
-                                    : originalLeg.source?.includes("ttu") && !originalLeg.routeColor
-                                        ? "1CC864"
-                                        : originalLeg.routeColor,
-                        };
-                    })
-                )
-            ).filter((leg) => {
-                if (!leg.from || !leg.to) return true;
-                if (leg.from.lat === leg.to.lat && leg.from.lon === leg.to.lon) return false;
-                return getDistance(leg.from.lat, leg.from.lon, leg.to.lat, leg.to.lon) >= 100;
-            });
-
-            return {...trip, legs: processedLegs};
-        })
-    );
+        return {...trip, legs: processedLegs};
+    }));
 
     const seen = new Map<string, Trip>();
 
@@ -215,8 +182,7 @@ export async function getDirections(from: Location, to: Location, dateTime: stri
         const [fromPlace, toPlace] = await Promise.all([resolvePlace(from), resolvePlace(to)]);
 
         const {
-            data,
-            status
+            data, status
         } = await axios.get(`${MOTIS}/api/v5/plan?fromPlace=${fromPlace}&toPlace=${toPlace}&time=${dateTime}&maxPreTransitTime=1800&maxPostTransitTime=1800&withFares=false&joinInterlinedLegs=false&maxMatchingDistance=250&useRoutedTransfers=true${pageCursor ? `&pageCursor=${pageCursor}` : ""}`);
 
         if (status !== 200) {

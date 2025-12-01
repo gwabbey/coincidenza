@@ -64,7 +64,7 @@ export async function getTripSmartCaring(code: string, origin: string, date: str
 }
 
 export async function getTripCanvas(code: string, origin: string, timestamp: number) {
-    const {data} = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/tratteCanvas/${origin}/${code}/${timestamp}`);
+    const {data} = await axios.get(`https://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/tratteCanvas/${origin}/${code}/${timestamp}`);
     if (data.length === 0) return null;
     return data;
 }
@@ -111,7 +111,7 @@ export async function getMonitorTrip(rfiId: string, tripId: string) {
     if (!train) return null;
 
     return {
-        ...train, info: monitor.alerts ? {
+        ...train, info: monitor.alerts && !monitor.alerts.toLowerCase().includes("attraversare i binari") ? {
             infoNote: monitor.alerts, source: "RFI", url: null, insertTimestamp: new Date().toISOString()
         } : null,
     };
@@ -122,7 +122,7 @@ async function getTripsById(id: string) {
 
     const {
         data, status
-    } = await axios.get<string>(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`);
+    } = await axios.get<string>(`https://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/cercaNumeroTrenoTrenoAutocomplete/${id}`);
 
     if (!data?.trim() || status !== 200) return null;
 
@@ -153,7 +153,7 @@ export async function getActualTrip(id: string, company: string) {
     if (!parsed) return null;
 
     const results = await Promise.allSettled(parsed.map((t) => axios
-        .get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${t.origin}/${t.code}/${t.timestamp}`)
+        .get(`https://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/andamentoTreno/${t.origin}/${t.code}/${t.timestamp}`)
         .then((res) => ({
             trip: t, andamento: res.data,
         }))));
