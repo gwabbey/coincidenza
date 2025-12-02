@@ -1,9 +1,9 @@
 import {getClosestBusStops, getStopDepartures} from '@/api/trentino-trasporti/api'
-import {Spinner} from '@heroui/react'
 import {cookies} from 'next/headers'
 import {Suspense} from 'react'
 import RequestLocation from '../location'
 import {Monitor} from './monitor'
+import Loading from "@/components/loading";
 
 interface BusStop {
     stopId: number
@@ -124,13 +124,6 @@ async function Departures({userLat, userLon}: { userLat: number, userLon: number
             <p className="text-foreground-500">c'è stato un problema :( torna più tardi!</p>
         </div>)
     }
-}
-
-function Loading() {
-    return (<div className="flex-col py-4">
-        <Spinner color="default" size="lg" />
-        <p className="text-center text-foreground-500 text-lg">caricamento in corso...</p>
-    </div>)
 }
 
 export default async function Page() {

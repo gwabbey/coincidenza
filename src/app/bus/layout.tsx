@@ -32,7 +32,7 @@ export default async function Layout({
     if (cookieStore)
         return (
             <div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
-                <h1 className="text-2xl font-bold text-center">Partenze da fermate vicine</h1>
+                <h1 className="text-2xl font-bold text-center">Partenze dei bus</h1>
                 <Search
                     favorites={favorites}
                     initialLocationName={currentLocationName}
