@@ -2,10 +2,10 @@ import {getRfiAlerts} from "@/api/trenitalia/api";
 import {cookies} from "next/headers";
 import {Button} from "@heroui/button";
 import {Card, CardBody} from "@heroui/card";
+import {Link} from "@heroui/link";
 import {Favorites} from "@/app/favorites";
 import RequestLocation from "@/app/location";
 import {IconBus, IconGps, IconTrain} from "@tabler/icons-react";
-import Link from "next/link";
 
 export default async function Page() {
     const cookieStore = await cookies();
@@ -52,8 +52,7 @@ export default async function Page() {
                 </div>
                 <CardBody className="gap-2">
                     {alerts && alerts.map((alert, index) => (<div key={index} className="flex flex-col">
-                        <Link href={alert.link}
-                              className="relative inline-flex items-center tap-highlight-transparent outline-solid outline-transparent data-[focus-visible=true]:z-10 data-[focus-visible=true]:outline-2 data-[focus-visible=true]:outline-focus data-[focus-visible=true]:outline-offset-2 text-medium text-primary no-underline hover:opacity-hover active:opacity-disabled transition-opacity">{alert.title}</Link>
+                        <Link href={alert.link} isExternal>{alert.title}</Link>
                     </div>))}
                 </CardBody>
             </Card>}
@@ -72,9 +71,8 @@ export default async function Page() {
                             moderna e veloce in cui pianificare i propri viaggi con i mezzi pubblici usando
                             informazioni precise e aggiornate in tempo reale e raccogliendo più dati pubblici possibili.
                         </div>
-                        <div>il progetto è open source, pubblicato su <Link
-                            className="relative inline-flex items-center tap-highlight-transparent outline-solid outline-transparent data-[focus-visible=true]:z-10 data-[focus-visible=true]:outline-2 data-[focus-visible=true]:outline-focus data-[focus-visible=true]:outline-offset-2 text-medium text-primary no-underline hover:opacity-hover active:opacity-disabled transition-opacity"
-                            href="https://github.com/gwabbey">github</Link>.
+                        <div>il progetto è open source, pubblicato su <Link isExternal
+                                                                            href="https://github.com/gwabbey">github</Link>.
                         </div>
 
                         <div className="flex flex-col">
@@ -83,12 +81,11 @@ export default async function Page() {
                         </div>
                         <div className="flex-col inline">
                             <div className="pt-4 font-bold">fonti mappe:</div>
-                            <Link href="https://leafletjs.com">Leaflet</Link>, &copy; <Link
-                            className="relative inline-flex items-center tap-highlight-transparent outline-solid outline-transparent data-[focus-visible=true]:z-10 data-[focus-visible=true]:outline-2 data-[focus-visible=true]:outline-focus data-[focus-visible=true]:outline-offset-2 text-medium text-primary no-underline hover:opacity-hover active:opacity-disabled transition-opacity"
+                            <Link isExternal href="https://leafletjs.com">Leaflet</Link>, &copy; <Link
+                            isExternal
                             href="https://www.openstreetmap.org/copyright">OpenStreetMap</Link> contributors
                         </div>
                         <div className="italic">per più informazioni, domande, consigli, ecc. <Link
-                            className="relative inline-flex items-center tap-highlight-transparent outline-solid outline-transparent data-[focus-visible=true]:z-10 data-[focus-visible=true]:outline-2 data-[focus-visible=true]:outline-focus data-[focus-visible=true]:outline-offset-2 text-medium text-primary no-underline hover:opacity-hover active:opacity-disabled transition-opacity"
                             href="mailto:mail@g3b.dev">contattami
                             !!</Link>
                         </div>

@@ -222,10 +222,10 @@ export const Search = ({
                 key={item.value}
                 textValue={item.textValue}
             >
-                {typeof item.label === 'string' ? (<div className="flex flex-col">
+                <div className="flex flex-col">
                     <span className="text-sm">{item.label}</span>
                     <span className="text-xs text-default-400">{item.address}</span>
-                </div>) : (item.label)}
+                </div>
             </AutocompleteItem>)}
         </Autocomplete>
         <div className="flex gap-0">
@@ -243,8 +243,7 @@ export const Search = ({
                         type: 'spring', stiffness: 300, damping: 20
                     }}
                 >
-                    {isStarred ? <IconStarFilled className="text-warning" /> :
-                        <IconStar className="text-warning" />}
+                    {isStarred ? <IconStarFilled className="text-warning" /> : <IconStar className="text-warning" />}
                 </motion.div>}
             />
             <Button isIconOnly startContent={<IconMapPin />} radius="full" variant="bordered"

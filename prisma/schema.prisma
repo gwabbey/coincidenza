@@ -5,12 +5,13 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider     = "prisma-client"
+  output       = "../prisma/generated"
+  moduleFormat = "esm"
 }
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 model Subscription {
@@ -19,21 +20,21 @@ model Subscription {
   updatedAt DateTime @updatedAt
 
   deviceId String
-  
+
   endpoint String
   p256dh   String
   auth     String
-  
+
   deviceType String?
   platform   String?
   userAgent  String?
-  
-  isActive   Boolean  @default(true)
-  lastSent   DateTime?
-  failCount  Int      @default(0)
-  
-  tripAlerts    TripAlert[]
-  
+
+  isActive  Boolean   @default(true)
+  lastSent  DateTime?
+  failCount Int       @default(0)
+
+  tripAlerts TripAlert[]
+
   @@unique([endpoint, deviceId])
   @@index([deviceId])
   @@index([isActive])
@@ -43,23 +44,23 @@ model TripAlert {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
+
   subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
   subscriptionId String
-  
-  ids    Json      @default("{}") // { "rfi": "22476", "viaggiatreno": "12345-2024-06-30", "deutschebahn": "ICE123" }
-  operators       String[]   // ["Trenitalia", "OEBB", "Trenord"]
-  type       TripType
-  tripStartTime      DateTime
-  
+
+  ids           Json     @default("{}") // { "rfi": "22476", "viaggiatreno": "12345-2024-06-30", "deutschebahn": "ICE123" }
+  operators     String[] // ["Trenitalia", "OEBB", "Trenord"]
+  type          TripType
+  tripStartTime DateTime
+
   departureStationId String
   arrivalStationId   String
   departureTime      DateTime
-  arrivalTime      DateTime
-  daysOfWeek String[] @default([]) // ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-  
-  isActive           Boolean   @default(true)
-  
+  arrivalTime        DateTime
+  daysOfWeek         String[] @default([]) // ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+
+  isActive Boolean @default(true)
+
   @@index([departureStationId])
   @@index([arrivalStationId])
   @@index([subscriptionId])

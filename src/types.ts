@@ -5,7 +5,7 @@ export interface Coordinates {
 
 export interface Location {
     value: string;
-    label: string | JSX.Element;
+    label: string;
     textValue?: string;
     address?: string;
     coordinates: Coordinates | null;
