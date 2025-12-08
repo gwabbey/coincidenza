@@ -84,32 +84,7 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
     const [isExpanded, setIsExpanded] = useState(trip.status === "canceled");
     const notifsModal = useDisclosure();
-    const [isOverflowing, setIsOverflowing] = useState(false);
     const textRef = useRef<HTMLSpanElement>(null);
-
-    const hasMultiple = trip.info && trip.info.length > 1;
-
-    useEffect(() => {
-        if (hasMultiple || isExpanded) return;
-
-        const checkOverflow = () => {
-            const el = textRef.current;
-            if (el) {
-                setIsOverflowing(el.scrollHeight > el.clientHeight);
-            }
-        };
-
-        const timer = setTimeout(checkOverflow, 0);
-
-        window.addEventListener('resize', checkOverflow);
-
-        return () => {
-            clearTimeout(timer);
-            window.removeEventListener('resize', checkOverflow);
-        }
-    }, [trip.info, hasMultiple, isExpanded]);
-
-    const showExpandButton = hasMultiple || isOverflowing || trip.status !== 'canceled';
 
     useEffect(() => {
         const updateIndex = () => {
@@ -313,7 +288,7 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
         {trip.info && trip.info.length > 0 && <Card
             isFooterBlurred
             fullWidth
-            className={cn("flex flex-col bg-warning-500/50 max-w-md w-full mx-auto transition-all ease-in-out", isExpanded ? "h-auto" : "h-34", isExpanded && showExpandButton && "pb-12")}>
+            className={cn("flex flex-col bg-warning-500/50 max-w-md w-full mx-auto", isExpanded ? "h-auto" : "h-[168px]", isExpanded && "pb-10")}>
             <div className="flex-1 overflow-hidden p-4">
                 <div className="flex gap-1">
                     <IconAlertTriangleFilled className="shrink-0 pt-1" />
@@ -322,13 +297,14 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
                             <div className="flex flex-col">
                                         <span
                                             ref={index === 0 ? textRef : null}
-                                            className={cn(!isExpanded && "line-clamp-3", "transition-all")}
+                                            className={cn(!isExpanded && "line-clamp-4")}
                                         >
                     {alert.message}
-                  </span>
-                                <span className="text-sm text-foreground-500">
+                                            <span className="flex text-sm text-foreground-500">
                     {formatDate(alert.date)}
                   </span>
+                  </span>
+
                             </div>
                             {index !== trip.info.length - 1 && (<Divider className="mb-2" />)}
                         </div>))}
@@ -336,26 +312,21 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
                 </div>
             </div>
 
-            {trip.status !== "canceled" && showExpandButton && (<CardFooter
-                className="px-4 py-2 flex items-center justify-center m-0 absolute bottom-0 z-10 text-medium text-center backdrop-blur w-full">
-                <Button
-                    variant="bordered"
-                    endContent={isExpanded ? (<IconArrowUp
-                        size={16}
-                        className="shrink-0 transition-transform duration-300"
-                    />) : (<IconArrowDown
-                        size={16}
-                        className="shrink-0 transition-transform duration-300"
-                    />)}
-                    radius="full"
-                    size="sm"
-                    className="border-foreground-500 border-1 self-center text-medium"
-                    aria-label={isExpanded ? "Chiudi avvisi" : "Espandi avvisi"}
-                    onPress={() => setIsExpanded(!isExpanded)}
-                >
-                    {isExpanded ? "Chiudi" : "Espandi"}
-                </Button>
-            </CardFooter>)}
+            {trip.status !== "canceled" && !(trip.info.length === 1 && trip.info[0].message.length < 110) && (
+                <CardFooter
+                    className="px-4 py-2 flex items-center justify-center m-0 absolute bottom-0 z-10 text-medium text-center backdrop-blur w-full">
+                    <Button
+                        variant="bordered"
+                        endContent={isExpanded ? (<IconArrowUp size={16} />) : (<IconArrowDown size={16} />)}
+                        radius="full"
+                        size="sm"
+                        className="border-foreground-500 border-1 self-center text-medium"
+                        aria-label={isExpanded ? "Chiudi avvisi" : "Espandi avvisi"}
+                        onPress={() => setIsExpanded(!isExpanded)}
+                    >
+                        {isExpanded ? "Chiudi" : "Espandi"}
+                    </Button>
+                </CardFooter>)}
         </Card>}
 
         {trip.status !== "canceled" && (<div className="max-w-md w-full mx-auto">

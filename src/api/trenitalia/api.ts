@@ -112,7 +112,7 @@ export async function getMonitorTrip(rfiId: string, tripId: string) {
 
     return {
         ...train,
-        info: monitor.alerts && !["attraversare i binari", "aprire le porte", "oltrepassare la linea gialla"].some(str => monitor.alerts.toLowerCase().includes(str)) ? {
+        info: monitor.alerts && !["attraversare i binari", "aprire le porte", "la linea gialla"].some(str => monitor.alerts.toLowerCase().includes(str)) ? {
             infoNote: monitor.alerts, source: "RFI", url: null, insertTimestamp: new Date().toISOString()
         } : null,
     };
