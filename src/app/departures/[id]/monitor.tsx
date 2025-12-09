@@ -44,7 +44,7 @@ export function Monitor({monitor}: { monitor: StationMonitor }) {
     useEffect(() => {
         const intervalId = setInterval(() => {
             router.refresh();
-        }, parseInt(process.env.AUTO_REFRESH || "15000", 10));
+        }, 15000);
         return () => clearInterval(intervalId);
     }, [router]);
 
@@ -111,10 +111,9 @@ export function Monitor({monitor}: { monitor: StationMonitor }) {
                                             </span>)}
 
                             {!train.departing ? (<div className="flex items-center gap-1 whitespace-pre">
-                                {train.platform !== "Piazzale Esterno" && (
-                                    <p className="text-sm text-foreground-500">
-                                        {train.platform ? "binario" : ""}
-                                    </p>)}
+                                {train.platform !== "Piazzale Esterno" && (<p className="text-sm text-foreground-500">
+                                    {train.platform ? "binario" : ""}
+                                </p>)}
                                 <p className="text-sm text-blue-500 font-bold">
                                     {train.platform}
                                 </p>

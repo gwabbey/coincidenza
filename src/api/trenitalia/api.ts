@@ -216,7 +216,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
 
     if (currentStop?.fermata) {
         const isStationed = currentStop?.fermata.arrivoReale && !currentStop?.fermata.partenzaReale;
-        if (isStationed) delay = currentStop?.fermata.ritardoArrivo;
+        if (isStationed) delay = currentStop.fermata.ritardoArrivo;
 
         const justDeparted = currentStop.fermata.partenzaReale && capitalize(currentStop.stazione) === lastKnownLocation;
         if (justDeparted && delay !== currentStop?.fermata.ritardoPartenza) {

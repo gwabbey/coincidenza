@@ -286,6 +286,7 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
         </div>
 
         {trip.info && trip.info.length > 0 && <Card
+            shadow="none"
             isFooterBlurred
             fullWidth
             className={cn("flex flex-col bg-warning-500/50 max-w-md w-full mx-auto", isExpanded ? "h-auto" : "h-[168px]", isExpanded && "pb-10")}>
