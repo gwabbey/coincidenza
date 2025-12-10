@@ -4,7 +4,7 @@ import {Trip as TripProps} from "@/api/types";
 import {RouteModal} from "@/components/modal";
 import Timeline from "@/components/timeline";
 import {capitalize, findMatchingStation, formatDate, getDelayColor} from "@/utils";
-import {Button, Card, CardFooter, cn, Divider, useDisclosure} from "@heroui/react";
+import {Button, Card, CardBody, CardFooter, cn, Divider, useDisclosure} from "@heroui/react";
 import {IconAlertTriangleFilled, IconArrowDown, IconArrowUp} from "@tabler/icons-react";
 import Link from "next/link";
 import {useEffect, useRef, useState} from 'react';
@@ -179,6 +179,8 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
         }
     }
 
+    const showFooter = trip.status !== "canceled" && !(trip.info.length === 1 && trip.info[0].message.length < 110);
+
     return (<div className="flex flex-col gap-4">
         <div className="flex justify-center items-center text-center flex-wrap gap-x-2 gap-y-1 max-w-full">
             <div className="flex flex-col items-center gap-y-4 w-full">
@@ -289,8 +291,8 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
             shadow="none"
             isFooterBlurred
             fullWidth
-            className={cn("flex flex-col bg-warning-500/50 max-w-md w-full mx-auto", isExpanded ? "h-auto" : "h-[168px]", isExpanded && "pb-10")}>
-            <div className="flex-1 overflow-hidden p-4">
+            className={cn("flex flex-col bg-warning-500/50 max-w-md w-full mx-auto", isExpanded ? "h-auto" : "h-[168px]", showFooter && "pb-12")}>
+            <CardBody className="flex-1 overflow-hidden p-4">
                 <div className="flex gap-1">
                     <IconAlertTriangleFilled className="shrink-0 pt-1" />
                     <div className="flex-1">
@@ -311,11 +313,11 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
                         </div>))}
                     </div>
                 </div>
-            </div>
+            </CardBody>
 
-            {trip.status !== "canceled" && !(trip.info.length === 1 && trip.info[0].message.length < 110) && (
+            {showFooter && (
                 <CardFooter
-                    className="px-4 py-2 flex items-center justify-center m-0 absolute bottom-0 z-10 text-medium text-center backdrop-blur w-full">
+                    className="px-4 py-2 flex items-center justify-center m-0 absolute bottom-0 z-10 text-medium text-center backdrop-blur">
                     <Button
                         variant="bordered"
                         endContent={isExpanded ? (<IconArrowUp size={16} />) : (<IconArrowDown size={16} />)}
