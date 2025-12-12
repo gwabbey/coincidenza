@@ -23,11 +23,11 @@ export async function getRealTimeData(leg: Leg): Promise<RealTime> {
         const trip = await getTrentinoTrip(leg.tripId.split("_")[leg.tripId.split("_").length - 1]);
 
         return {
-            delay: trip?.delay ?? null, info: trip?.route?.news
-                ?.filter((alert: any) => new Date(alert.endDate) > new Date())
-                .map((alert: any) => ({
-                    message: alert.details, url: alert.url, source: alert.serviceType ?? "Trentino Trasporti",
-                })) || null, tracked: trip ? trip.delay !== null : false, url: getTrackUrl(leg)
+            delay: trip?.delay ?? null,
+            info: trip?.info ?? null,
+            tracked: trip ? trip.delay !== null : false,
+            url: getTrackUrl(leg),
+            status: trip?.status ?? "scheduled"
         }
     } else if (["TI", "Trenitalia", "südtirolmobil - altoadigemobilità"].some(s => leg.agencyId?.includes(s)) || leg.agencyId === "1" || leg.agencyId === "TN") {
         const date = new Date(leg.scheduledStartTime);
@@ -41,7 +41,8 @@ export async function getRealTimeData(leg: Leg): Promise<RealTime> {
                 delay: trip?.delay ?? null,
                 info: trip?.info || [],
                 tracked: trip ? trip.delay !== null : false,
-                url: getTrackUrl(leg)
+                url: getTrackUrl(leg),
+                status: trip?.status ?? "scheduled"
             }
         }
 
@@ -50,12 +51,12 @@ export async function getRealTimeData(leg: Leg): Promise<RealTime> {
             const delay = differenceInMinutes(new Date(leg.from.departure), new Date(leg.from.scheduledDeparture));
 
             return {
-                delay, info: [], tracked: true, url: null
+                delay, info: [], tracked: true, url: null, status: "active"
             }
         }
 
     }
     return {
-        delay: null, info: [], tracked: false, url: null
+        delay: null, info: [], tracked: false, url: null, status: "scheduled"
     }
 }

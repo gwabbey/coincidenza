@@ -148,4 +148,5 @@ export interface RealTime {
     delay: number | null
     url: string | null
     info: Info[]
+    status: string
 }

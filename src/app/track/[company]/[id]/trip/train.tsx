@@ -4,10 +4,10 @@ import {Trip as TripProps} from "@/api/types";
 import {RouteModal} from "@/components/modal";
 import Timeline from "@/components/timeline";
 import {capitalize, findMatchingStation, formatDate, getDelayColor} from "@/utils";
-import {Button, Card, CardBody, CardFooter, cn, Divider, useDisclosure} from "@heroui/react";
-import {IconAlertTriangleFilled, IconArrowDown, IconArrowUp} from "@tabler/icons-react";
+import {Button, Card, CardBody, Divider, useDisclosure} from "@heroui/react";
+import {IconAlertTriangleFilled} from "@tabler/icons-react";
 import Link from "next/link";
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useState} from 'react';
 
 const getCurrentMinutes = () => {
     return (new Date().getDate() * 24 * 60) + (new Date().getHours() * 60) + new Date().getMinutes() + (new Date().getSeconds() / 60);
@@ -82,9 +82,7 @@ const calculatePreciseActiveIndex = (trip: TripProps) => {
 export default function Train({trip: initialTrip}: { trip: TripProps }) {
     const [trip, setTrip] = useState<TripProps>(initialTrip);
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
-    const [isExpanded, setIsExpanded] = useState(trip.status === "canceled");
     const notifsModal = useDisclosure();
-    const textRef = useRef<HTMLSpanElement>(null);
 
     useEffect(() => {
         const updateIndex = () => {
@@ -179,8 +177,6 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
         }
     }
 
-    const showFooter = trip.status !== "canceled" && !(trip.info.length === 1 && trip.info[0].message.length < 110);
-
     return (<div className="flex flex-col gap-4">
         <div className="flex justify-center items-center text-center flex-wrap gap-x-2 gap-y-1 max-w-full">
             <div className="flex flex-col items-center gap-y-4 w-full">
@@ -232,7 +228,7 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
             <div className="flex flex-row items-center justify-between gap-2">
                 <Divider className="my-4 w-16" />
                 <div
-                    className="text-center">{formatDuration(new Date(trip.departureTime), new Date(trip.arrivalTime))}</div>
+                    className="text-center text-nowrap">{formatDuration(new Date(trip.departureTime), new Date(trip.arrivalTime))}</div>
                 <Divider className="my-4 w-16" />
             </div>
 
@@ -291,7 +287,7 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
             shadow="none"
             isFooterBlurred
             fullWidth
-            className={cn("flex flex-col bg-warning-500/50 max-w-md w-full mx-auto", isExpanded ? "h-auto" : "h-[168px]", showFooter && "pb-12")}>
+            className="flex flex-col bg-warning-500/50 max-w-md w-full mx-auto">
             <CardBody className="flex-1 overflow-hidden p-4">
                 <div className="flex gap-1">
                     <IconAlertTriangleFilled className="shrink-0 pt-1" />
@@ -299,8 +295,6 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
                         {trip.info.map((alert, index) => (<div key={index} className="flex flex-col gap-2">
                             <div className="flex flex-col">
                                         <span
-                                            ref={index === 0 ? textRef : null}
-                                            className={cn(!isExpanded && "line-clamp-4")}
                                         >
                     {alert.message}
                                             <span className="flex text-sm text-foreground-500">
@@ -314,22 +308,6 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
                     </div>
                 </div>
             </CardBody>
-
-            {showFooter && (
-                <CardFooter
-                    className="px-4 py-2 flex items-center justify-center m-0 absolute bottom-0 z-10 text-medium text-center backdrop-blur">
-                    <Button
-                        variant="bordered"
-                        endContent={isExpanded ? (<IconArrowUp size={16} />) : (<IconArrowDown size={16} />)}
-                        radius="full"
-                        size="sm"
-                        className="border-foreground-500 border-1 self-center text-medium"
-                        aria-label={isExpanded ? "Chiudi avvisi" : "Espandi avvisi"}
-                        onPress={() => setIsExpanded(!isExpanded)}
-                    >
-                        {isExpanded ? "Chiudi" : "Espandi"}
-                    </Button>
-                </CardFooter>)}
         </Card>}
 
         {trip.status !== "canceled" && (<div className="max-w-md w-full mx-auto">

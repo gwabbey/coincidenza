@@ -192,18 +192,18 @@ export const LocationAutocomplete = ({
     >
         {(item: Location) => (<AutocompleteItem
             key={item.value}
-            textValue={item.textValue || (typeof item.label === 'string' ? item.label : 'La tua posizione')}
+            textValue={item.textValue || item.label || 'La tua posizione'}
             startContent={item.isTrainStation ?
                 <IconTrain stroke={1.5} /> : item.value === CURRENT_LOCATION_KEY ?
                     <IconMapPin stroke={1.5} /> : undefined}
         >
-            {typeof item.label === 'string' ? (<div className="flex flex-col">
+            <div className="flex flex-col">
                             <span className={cn(item.value === CURRENT_LOCATION_KEY && "font-bold")}>
                                 {item.label}
                             </span>
                 {item.address && <span className="text-sm text-default-400">{item.address}</span>}
                 {item.isTrainStation && <span className="text-sm text-default-400">Stazione</span>}
-            </div>) : item.label}
+            </div>
         </AutocompleteItem>)}
     </Autocomplete>);
 };

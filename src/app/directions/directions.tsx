@@ -23,7 +23,7 @@ import Results from "./results";
 import {formatDuration} from "@/utils";
 import {format} from "date-fns";
 import {I18nProvider} from "@react-aria/i18n";
-import LeafletMap from "@/components/leaflet";
+import LeafletMap from "@/components/map";
 
 interface SelectedLocations {
     from: Location | null;
@@ -194,7 +194,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                             onPress={swapLocations}
                             startContent={<IconArrowsUpDown size={20} className="shrink-0" />}
                             radius="full"
-                            className="border-gray-500 border-1 -my-4 bg-content1 z-10"
+                            className="border-gray-500 border-1 -my-8 bg-content1 z-10"
                             aria-label="inverti selezione"
                         />
                     </div>

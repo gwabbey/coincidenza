@@ -152,7 +152,7 @@ export default function LibreMap({
                 map.addLayer({
                     id: 'start-marker-circle', type: 'circle', source: 'start-marker', paint: {
                         'circle-radius': 8,
-                        'circle-color': '#007AFF',
+                        'circle-color': '#0171F8',
                         'circle-stroke-width': 3,
                         'circle-stroke-color': '#ffffff'
                     }
@@ -208,9 +208,9 @@ export default function LibreMap({
                 map.addLayer({
                     id: 'end-marker-circle', type: 'circle', source: 'end-marker', paint: {
                         'circle-radius': 8,
-                        'circle-color': '#007AFF',
+                        'circle-color': '#0171F8',
                         'circle-stroke-width': 3,
-                        'circle-stroke-color': '#ffffff'
+                        'circle-stroke-color': '#fff'
                     }
                 });
 
@@ -333,8 +333,13 @@ export default function LibreMap({
         const startAnimation = async () => {
             try {
                 const decodedLegs = await Promise.all(legs.map(leg => decodePolyline(leg.legGeometry.points)));
-
-                const legIndices = legs.map(() => 0);
+                const totalPoints = decodedLegs.reduce((sum, leg) => sum + leg.length, 0);
+                const legEndPoints: number[] = [];
+                let cumulative = 0;
+                decodedLegs.forEach(leg => {
+                    cumulative += leg.length;
+                    legEndPoints.push(cumulative);
+                });
 
                 decodedLegs.forEach((_, idx) => {
                     const legColor = legs[idx].mode === "WALK" ? "#999999" : `#${legs[idx].routeColor || "016FED"}`;
@@ -365,12 +370,18 @@ export default function LibreMap({
                 const animate = (time: number) => {
                     const elapsed = time - startTime;
                     const progress = Math.min(elapsed / animationDuration, 1);
+                    const currentTotalPoint = Math.floor(progress * totalPoints);
 
+                    let pointsSoFar = 0;
                     decodedLegs.forEach((legPoints, idx) => {
-                        const targetIndex = Math.floor(progress * legPoints.length);
-                        if (targetIndex > legIndices[idx]) {
+                        const legStartPoint = pointsSoFar;
+                        const legEndPoint = legEndPoints[idx];
+
+                        if (currentTotalPoint >= legStartPoint) {
+                            const pointsIntoThisLeg = Math.min(currentTotalPoint - legStartPoint, legPoints.length);
+
                             const coordinates = legPoints
-                                .slice(0, targetIndex)
+                                .slice(0, pointsIntoThisLeg)
                                 .map(p => [p[1], p[0]]);
 
                             const source = map.getSource(`route-source-${idx}`) as maplibregl.GeoJSONSource;
@@ -381,9 +392,9 @@ export default function LibreMap({
                                     }
                                 });
                             }
-
-                            legIndices[idx] = targetIndex;
                         }
+
+                        pointsSoFar = legEndPoint;
                     });
 
                     if (progress < 1) {

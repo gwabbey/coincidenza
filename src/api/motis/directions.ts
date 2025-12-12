@@ -84,6 +84,7 @@ const processTripData = async (data: {
                 },
                 tripShortName: originalLeg.tripShortName,
                 routeColor: originalLeg.routeShortName?.startsWith("R") ? "036633" : originalLeg.source?.includes("ttu") && !originalLeg.routeColor ? "1CC864" : originalLeg.routeColor,
+                status: "scheduled"
             };
         }))).filter((leg) => {
             if (!leg.from || !leg.to) return true;
@@ -170,7 +171,7 @@ async function geocodeLocation({lat, lon, text}: GeocodeRequest): Promise<string
     }
 }
 
-export async function getDirections(from: Location, to: Location, dateTime: string, pageCursor?: string): Promise<Directions> {
+export async function getDirections(from: Location, to: Location, dateTime: string): Promise<Directions> {
     try {
         const resolvePlace = async (loc: Location): Promise<string> => {
             if (loc.text.toLowerCase().trim() === "posizione attuale") {
@@ -183,7 +184,7 @@ export async function getDirections(from: Location, to: Location, dateTime: stri
 
         const {
             data, status
-        } = await axios.get(`${MOTIS}/api/v5/plan?fromPlace=${fromPlace}&toPlace=${toPlace}&time=${dateTime}&maxPreTransitTime=1800&maxPostTransitTime=1800&withFares=false&joinInterlinedLegs=false&maxMatchingDistance=250&useRoutedTransfers=true${pageCursor ? `&pageCursor=${pageCursor}` : ""}`);
+        } = await axios.get(`${MOTIS}/api/v5/plan?fromPlace=${fromPlace}&toPlace=${toPlace}&time=${dateTime}&maxPreTransitTime=1800&maxPostTransitTime=1800&maxMatchingDistance=100&fastestDirectFactor=1.5&joinInterlinedLegs=false&useRoutedTransfers=true&maxDirectTime=3600`);
 
         if (status !== 200) {
             console.error("Invalid MOTIS response:", data);
