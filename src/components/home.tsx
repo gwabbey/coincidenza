@@ -15,21 +15,17 @@ export const Home = ({alerts, favorites}: { alerts: any, favorites: any }) => {
                 calcola percorso
             </Button>
         </Link>
-        <div className="flex flex-row items-center justify-center gap-x-4 w-full">
-            <Link href="/bus" className="w-full rounded-large">
-                <Button fullWidth size='lg'
-                        startContent={<IconBus className="shrink-0" size={24} />}
-                        className="font-bold text-lg sm:text-2xl p-4 text-wrap text-white bg-gradient-to-r from-green-500 to-lime-600">
-                    partenze bus
-                </Button>
-            </Link>
-            <Link href="/departures" className="w-full rounded-large">
-                <Button fullWidth size='lg'
-                        startContent={<IconTrain className="shrink-0" size={24} />}
-                        className="font-bold text-lg sm:text-2xl p-4 text-wrap text-white bg-gradient-to-r from-red-500 to-red-700">
-                    partenze treni
-                </Button>
-            </Link>
+        <div className="flex flex-row items-center justify-center w-full gap-x-4">
+            <Button fullWidth size='lg' as={Link} href="/bus"
+                    startContent={<IconBus className="shrink-0" />}
+                    className="font-bold text-medium sm:text-2xl text-white bg-gradient-to-r from-green-500 to-lime-600">
+                partenze bus
+            </Button>
+            <Button fullWidth size='lg' as={Link} href="/departures"
+                    startContent={<IconTrain className="shrink-0" />}
+                    className="font-bold text-medium sm:text-2xl text-white bg-gradient-to-r from-red-500 to-red-700">
+                partenze treni
+            </Button>
         </div>
 
         <div className="flex flex-col gap-4 w-full">
