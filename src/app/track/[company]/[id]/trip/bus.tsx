@@ -4,10 +4,11 @@ import {Stop, Trip as TripProps} from "@/api/trentino-trasporti/types";
 import {RouteModal} from "@/components/modal";
 import Timeline from "@/components/timeline";
 import {formatDate, getDelayColor} from "@/utils";
-import {addToast, Button, Card, Divider, Link, useDisclosure} from "@heroui/react";
-import {IconAlertTriangleFilled, IconInfoTriangleFilled} from "@tabler/icons-react";
+import {addToast, Button, Card, CardBody, Divider, Link, useDisclosure} from "@heroui/react";
+import {IconAlertTriangleFilled, IconExternalLink} from "@tabler/icons-react";
 import {useEffect, useState} from 'react';
 import {Info} from "@/api/motis/types";
+import {useRouter} from "next/navigation";
 
 export const getCurrentMinutes = (): number => {
     return new Date().getHours() * 60 + new Date().getMinutes() + (new Date().getSeconds() / 60);
@@ -45,8 +46,6 @@ const calculatePreciseActiveIndex = (trip: TripProps): number => {
         return trip.stops.length - 1;
     }
 
-    let currentIndex = lastKnownStopIndex;
-
     if (lastKnownStopIndex === -1 && !trip.delay) {
         for (let i = 0; i < trip.stops.length - 1; i++) {
             const stop = trip.stops[i];
@@ -68,33 +67,34 @@ const calculatePreciseActiveIndex = (trip: TripProps): number => {
         return 0;
     }
 
-    const currentStop = trip.stops[currentIndex];
-    const nextStop = trip.stops[currentIndex + 1];
+    const currentStop = trip.stops[lastKnownStopIndex];
+    const nextStop = trip.stops[lastKnownStopIndex + 1];
 
     const currentStopDeparture = timeToMinutes(currentStop.scheduledDeparture) + delay;
     const nextStopArrival = timeToMinutes(nextStop.scheduledArrival) + delay;
 
     if (currentMinutes < currentStopDeparture) {
-        return currentIndex;
+        return lastKnownStopIndex;
     }
 
     if (currentMinutes < nextStopArrival) {
         const segmentDuration = nextStopArrival - currentStopDeparture;
         if (segmentDuration <= 0) {
-            return currentIndex;
+            return lastKnownStopIndex;
         }
         const progress = (currentMinutes - currentStopDeparture) / segmentDuration;
-        return currentIndex + Math.min(progress, 0.9999);
+        return lastKnownStopIndex + Math.min(progress, 0.9999);
     }
 
     if (currentMinutes >= nextStopArrival) {
-        return currentIndex + 0.9999;
+        return lastKnownStopIndex + 0.9999;
     }
 
-    return currentIndex;
+    return lastKnownStopIndex;
 };
 
 export default function Bus({trip: initialTrip}: { trip: TripProps }) {
+    const router = useRouter();
     const [trip, setTrip] = useState(initialTrip);
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
     const {isOpen, onOpen, onOpenChange} = useDisclosure();
@@ -206,6 +206,10 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
         return `${duration}min`;
     };
 
+    const setCookie = (name: string, value: string) => {
+        document.cookie = `${name}=${value}; path=/; expires=0`;
+    };
+
     return (<div className="flex flex-col gap-4">
         <div className="flex justify-center items-center text-center flex-wrap gap-x-2 gap-y-1 max-w-full">
                 <span
@@ -228,7 +232,7 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
 
             <div className="flex flex-row items-center justify-between gap-2">
                 <Divider className="my-4 w-16" />
-                <div className="text-center">{formatDuration(tripDuration)}</div>
+                <div className="text-center text-nowrap">{formatDuration(tripDuration)}</div>
                 <Divider className="my-4 w-16" />
             </div>
 
@@ -283,17 +287,29 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
             <Divider className="my-2" />
         </div>
 
-        <div className="flex flex-col items-center justify-center">
-            {trip.info && trip.info.length > 0 && (<Button
-                variant="flat"
-                color="warning"
+        <div className="flex flex-col items-center justify-center gap-6">
+            {trip.info && trip.info.length > 0 && <Card
+                shadow="none"
+                isFooterBlurred
                 fullWidth
-                className="flex items-center font-bold sm:w-fit mx-auto mb-6 max-w-md"
-                startContent={<IconInfoTriangleFilled />}
-                onPress={onOpen}
-            >
-                Avvisi
-            </Button>)}
+                className="flex flex-col bg-warning-500/50 max-w-md w-full mx-auto">
+                <CardBody className="flex-1 overflow-hidden p-4">
+                    <div className="flex gap-1">
+                        <IconAlertTriangleFilled className="shrink-0 pt-1" />
+                        <div className="flex-1">
+                            {trip.info.map((alert, index) => (<div key={index} className="flex flex-col gap-2">
+                                <div className="flex flex-col">
+                                    <span>{alert.message} {alert.url &&
+                                        <Link color="foreground" isExternal href={alert.url} className="font-bold">più
+                                            info <IconExternalLink className="shrink-0 ml-1" size={16} /></Link>}</span>
+                                </div>
+                                {index !== trip.info.length - 1 && (<Divider className="mb-2" />)}
+                            </div>))}
+                        </div>
+                    </div>
+                </CardBody>
+            </Card>}
+
             <Timeline
                 steps={trip.stops.map((stop: Stop, index: number) => {
                     const isPastStop = index <= Math.floor(preciseActiveIndex);
@@ -302,7 +318,13 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
 
                     return {
                         content: (<div className="flex flex-col w-full min-w-0">
-                            <span className="font-bold">{stop.name}</span>
+                            <Link color="foreground" className="font-bold leading-none cursor-pointer" onPress={() => {
+                                console.log(stop.lat, stop.lon, stop.name)
+                                setCookie('lat', stop.lat);
+                                setCookie('lon', stop.lon);
+                                setCookie('name', stop.name);
+                                router.push("/bus");
+                            }}>{stop.name}</Link>
                             <div className="text-foreground-500 text-sm">
                                 {stop.scheduledDeparture ? (<div className="flex gap-1">
                                     {isPastStop && (<span>

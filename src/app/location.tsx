@@ -14,9 +14,6 @@ export default function RequestLocation() {
                 document.cookie = `userLon=${lon}; path=/; max-age=1800`
                 document.cookie = `locationRejected=false; path=/; max-age=1800`
             })
-            .catch(() => {
-                document.cookie = `locationRejected=true; path=/;`
-            })
             .finally(() => {
                 window.location.reload()
             })

@@ -1,16 +1,13 @@
 "use client";
 
-import {geocodeAddress} from "@/api/apple-maps/geolocation";
-import {reverseGeocode} from "@/api/nominatim/geolocation";
-import {getUserLocation} from '@/components/geolocation';
-import {Favorite, Location} from "@/types";
-import {Autocomplete, AutocompleteItem, Button, Spinner} from "@heroui/react";
-import {IconMapPin, IconStar, IconStarFilled} from "@tabler/icons-react";
-import {motion} from "motion/react";
+import {type Location, searchLocation} from "@/api/motis/geocoding";
+import {Autocomplete, AutocompleteItem, Image, Spinner} from "@heroui/react";
+import {IconBus, IconMapPin, IconTrain} from "@tabler/icons-react";
 import {useRouter} from "next/navigation";
-import {Key, useCallback, useEffect, useRef, useState} from "react";
+import {Key, useEffect, useRef, useState} from "react";
 import {useDebouncedCallback} from 'use-debounce';
-
+import {getUserLocation} from "@/components/geolocation";
+/*
 const useStarState = (favorites: any[]) => {
     const [isStarred, setIsStarred] = useState(false);
 
@@ -30,105 +27,77 @@ const useStarState = (favorites: any[]) => {
     }, [favorites]);
 
     return {isStarred, setIsStarred, checkIfStarred};
-};
+};*/
 
-interface LocationAutocompleteProps {
-    label?: string;
-    disabled?: boolean;
-    debounceDelay?: number;
-    favorites?: Favorite[];
-    initialLocationName?: string;
-}
-
-export const Search = ({
-                           label = "cerca un luogo",
-                           disabled = false,
-                           debounceDelay = 300,
-                           favorites = [],
-                           initialLocationName = '',
-                       }: LocationAutocompleteProps) => {
+export const Search = ({lat, lon, name, closest}: { lat: string, lon: string, name: string, closest: Location[] }) => {
     const router = useRouter();
-    const [value, setValue] = useState("");
-    const [data, setData] = useState<Location[]>([]);
+    const [value, setValue] = useState(name);
+    const [data, setData] = useState<Location[]>(closest ?? []);
     const [loading, setLoading] = useState(false);
     const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
-    const {isStarred, setIsStarred, checkIfStarred} = useStarState(favorites);
-    const lastClickRef = useRef(0);
+    const hasRequestedLocation = useRef(false);
 
     const setCookie = (name: string, value: string) => {
-        document.cookie = `${name}=${value}; path=/; max-age=${3600}`;
+        document.cookie = `${name}=${value}; path=/; expires=0`;
     };
 
-    const getCookie = (name: string): string | null => {
-        const value = `; ${document.cookie}`;
-        const parts = value.split(`; ${name}=`);
-        if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
-        return null;
-    };
+    // const getCookieValue = (name: string) => document.cookie.split('; ').find(row => row.startsWith(name + '='))?.split('=')[1] ?? null;
 
-    const getCookieValue = (name: string) => document.cookie.split('; ').find(row => row.startsWith(name + '='))?.split('=')[1] ?? null;
+    // const saveFavorites = (favorites: any[]) => document.cookie = `favorites=${encodeURIComponent(JSON.stringify(favorites))}; path=/; max-age=31536000`;
 
-    const saveFavorites = (favorites: any[]) => document.cookie = `favorites=${encodeURIComponent(JSON.stringify(favorites))}; path=/; max-age=31536000`;
+    /* const toggleFavorite = async () => {
+         const now = Date.now();
+         if (now - lastClickRef.current < 1000) return;
+         lastClickRef.current = now;
 
-    const toggleFavorite = async () => {
-        const now = Date.now();
-        if (now - lastClickRef.current < 1000) return;
-        lastClickRef.current = now;
+         const lat = parseFloat(getCookieValue('userLat') || '');
+         const lon = parseFloat(getCookieValue('userLon') || '');
+         if (isNaN(lat) || isNaN(lon)) return;
 
-        const lat = parseFloat(getCookieValue('userLat') || '');
-        const lon = parseFloat(getCookieValue('userLon') || '');
-        if (isNaN(lat) || isNaN(lon)) return;
+         const i = favorites.findIndex(f => Math.abs(f.lat - lat) < 0.0001 && Math.abs(f.lon - lon) < 0.0001);
 
-        const i = favorites.findIndex(f => Math.abs(f.lat - lat) < 0.0001 && Math.abs(f.lon - lon) < 0.0001);
+         let name;
 
-        let name;
+         if (!value || value === "La tua posizione") {
+             name = await reverseGeocode(lat, lon);
+         } else {
+             name = value;
+         }
 
-        if (!value || value === "La tua posizione") {
-            name = await reverseGeocode(lat, lon);
-        } else {
-            name = value;
-        }
+         if (i !== -1) {
+             favorites.splice(i, 1);
+             setIsStarred(false);
+         } else {
+             favorites.push({lat, lon, name, type: 'bus', createdAt: new Date().toISOString()});
+             setIsStarred(true);
+         }
 
-        if (i !== -1) {
-            favorites.splice(i, 1);
-            setIsStarred(false);
-        } else {
-            favorites.push({lat, lon, name, type: 'bus', createdAt: new Date().toISOString()});
-            setIsStarred(true);
-        }
-
-        saveFavorites(favorites);
-        router.refresh();
-    };
+         saveFavorites(favorites);
+         router.refresh();
+     };*/
 
     const setUserLocationAsDefault = async () => {
         try {
             const {lat, lon} = await getUserLocation();
-            setCookie('userLat', lat.toString());
-            setCookie('userLon', lon.toString());
+            setCookie('lat', lat.toString());
+            setCookie('lon', lon.toString());
             setValue('La tua posizione');
-            checkIfStarred();
-            router.refresh();
         } catch (error) {
-            console.error('Error getting user location:', error);
+            setCookie('lat', '46.0722416');
+            setCookie('lon', '11.1193186');
+        } finally {
+            router.refresh();
         }
-    };
+    }
 
     useEffect(() => {
-        const userLat = getCookie('userLat');
-        const userLon = getCookie('userLon');
+        if (hasRequestedLocation.current) return;
+        hasRequestedLocation.current = true;
 
-        if (!userLat || !userLon) {
+        if (!lat || !lon) {
             setUserLocationAsDefault();
-        } else {
-            if (initialLocationName) {
-                setValue(initialLocationName);
-                setIsStarred(true);
-            } else {
-                checkIfStarred();
-            }
         }
-    }, [checkIfStarred, initialLocationName]);
+    }, []);
 
     const onSelectionChange = async (key: Key | null) => {
         if (!key) return;
@@ -138,21 +107,21 @@ export const Search = ({
             return;
         }
 
-        const selectedItem = data.find(item => item.value === key);
-        if (selectedItem && selectedItem.coordinates) {
-            setCookie('userLat', selectedItem.coordinates.lat.toString());
-            setCookie('userLon', selectedItem.coordinates.lon.toString());
+        const selectedItem = data.find(item => item.id === key);
+        if (selectedItem && selectedItem.lat && selectedItem.lon) {
+            setCookie('lat', selectedItem.lat.toString());
+            setCookie('lon', selectedItem.lon.toString());
+            setCookie('name', selectedItem.name);
 
-            setValue(selectedItem.textValue || selectedItem.label as string);
+            setValue(selectedItem.name);
             setSelectedLocation(selectedItem);
-            checkIfStarred();
         }
         router.refresh();
     };
 
     const onInputChange = (value: string) => {
         setValue(value);
-        if (!selectedLocation || value !== (selectedLocation.textValue || selectedLocation.label)) {
+        if (!selectedLocation || value !== (selectedLocation.name)) {
             setSelectedLocation(null);
             if (value !== 'La tua posizione') {
                 fetchData(value);
@@ -169,24 +138,11 @@ export const Search = ({
         setLoading(true);
 
         try {
-            const geocodingResults = await geocodeAddress(query, {
-                limitToCountries: 'IT',
-                lang: 'it-IT',
-                userLocation: `${getCookie('userLat') || "46.0722416"},${getCookie('userLon') || "11.1193186"}`,
-                searchLocation: '46.0722416,11.1193186'
+            const search = await searchLocation({
+                lat, lon, query
             });
 
-            const geocodedLocations: Location[] = geocodingResults.results.map((location: any) => ({
-                value: JSON.stringify(location),
-                label: location.displayLines[0],
-                textValue: location.displayLines[0],
-                address: [location.structuredAddress?.locality ?? location.displayLines[1], location.structuredAddress?.fullThoroughfare ?? location.structuredAddress?.subLocality,].filter(Boolean).join(', '),
-                coordinates: {
-                    lat: location.location.latitude, lon: location.location.longitude,
-                },
-            }));
-
-            setData(geocodedLocations);
+            setData(search);
         } catch (error) {
             if ((error as Error).name === 'AbortError') {
                 console.log("Request aborted");
@@ -196,58 +152,68 @@ export const Search = ({
         } finally {
             setLoading(false);
         }
-    }, debounceDelay);
+    }, 500);
 
     return (<div className="flex items-center justify-center gap-x-2">
         <Autocomplete
-            label={label}
-            selectedKey={selectedLocation?.value}
+            label="Cerca..."
+            selectedKey={`${selectedLocation?.lat}-${selectedLocation?.lon}-${selectedLocation?.id}`}
             inputValue={value}
             allowsCustomValue
+            fullWidth
             variant="underlined"
             onInputChange={onInputChange}
             onSelectionChange={onSelectionChange}
-            isDisabled={disabled}
             classNames={{
                 selectorButton: "hidden", endContentWrapper: "mr-1"
             }}
             endContent={loading && <Spinner size="sm" color="default" />}
-            items={data}
+            items={value.trim() ? data : closest}
             listboxProps={{
-                emptyContent: "nessun risultato.",
+                emptyContent: "Nessun risultato.",
             }}
             size="lg"
         >
             {(item: Location) => (<AutocompleteItem
-                key={item.value}
-                textValue={item.textValue}
+                startContent={item.category && item.category !== "none" ? (<Image
+                    width={24} radius="none" className="w-6"
+                    src={`https://motis.g3b.dev/icons/${item.category}.svg`}
+                />) : item.modes?.some(mode => mode.includes("RAIL")) ? (
+                    <IconTrain />) : item.modes?.some(mode => mode.includes("BUS")) ? (<IconBus />) : (<IconMapPin />)}
+                key={item.id}
+                textValue={item.name}
             >
                 <div className="flex flex-col">
-                    <span className="text-sm">{item.label}</span>
-                    <span className="text-xs text-default-400">{item.address}</span>
+                    <span className="text-sm">{item.name}</span>
+                    <span className="text-xs text-default-400">{item.area}</span>
                 </div>
             </AutocompleteItem>)}
         </Autocomplete>
         <div className="flex gap-0">
-            <Button
-                isIconOnly
-                onPress={toggleFavorite}
-                radius="full"
-                variant="bordered"
-                className="border-none"
-                startContent={<motion.div
-                    initial={false}
-                    animate={isStarred ? {rotate: 360} : {rotate: 0}}
-                    whileTap={{scale: 1.2}}
-                    transition={{
-                        type: 'spring', stiffness: 300, damping: 20
-                    }}
-                >
-                    {isStarred ? <IconStarFilled className="text-warning" /> : <IconStar className="text-warning" />}
-                </motion.div>}
-            />
-            <Button isIconOnly startContent={<IconMapPin />} radius="full" variant="bordered"
-                    onPress={setUserLocationAsDefault} className="border-none" />
+            {/*<Button
+                    isIconOnly
+                    onPress={toggleFavorite}
+                    radius="full"
+                    variant="bordered"
+                    className="border-none"
+                    startContent={
+                        <motion.div
+                            initial={false}
+                            animate={isStarred ? {rotate: 360} : {rotate: 0}}
+                            whileTap={{scale: 1.2}}
+                            transition={{
+                                type: 'spring',
+                                stiffness: 300,
+                                damping: 20
+                            }}
+                        >
+                            {isStarred ?
+                                <IconStarFilled className="text-warning" /> :
+                                <IconStar className="text-warning" />
+                            }
+                        </motion.div>
+                    }
+                />*/}
         </div>
     </div>);
 };

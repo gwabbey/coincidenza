@@ -1,13 +1,10 @@
 "use client";
 
-import {geocodeAddress} from "@/api/apple-maps/geolocation";
-import {searchStation} from "@/api/nominatim/geolocation";
-import {Location} from "@/types";
-import {capitalize} from "@/utils";
-import {addToast, Autocomplete, AutocompleteItem, cn, Spinner} from "@heroui/react";
-import {IconMapPin, IconTrain} from "@tabler/icons-react";
+import {addToast, Autocomplete, AutocompleteItem, cn, Image, Spinner} from "@heroui/react";
 import {Key, useEffect, useState} from "react";
 import {useDebouncedCallback} from 'use-debounce';
+import {searchLocation} from "@/api/motis/geocoding";
+import {IconBus, IconMapPin, IconTrain} from "@tabler/icons-react";
 
 interface Props {
     name: string;
@@ -15,18 +12,17 @@ interface Props {
     selected?: string;
     debounceDelay?: number;
     disabled?: boolean;
-    onLocationSelect: (location: Location | null) => void;
+    onLocationSelect: (location: any) => void;
 }
-
-const CURRENT_LOCATION_KEY = 'current-location';
-const CURRENT_LOCATION: Location = {
-    value: CURRENT_LOCATION_KEY, label: 'La tua posizione', textValue: 'La tua posizione', coordinates: null
-};
 
 const GEOLOCATION_ERRORS: Record<number, string> = {
     1: "Accesso alla posizione negato. Controlla i permessi del browser.",
     2: "Posizione non disponibile. Verifica che il GPS sia attivo.",
     3: "Timeout nel recupero della posizione."
+};
+
+const CURRENT_LOCATION = {
+    _key: "current-location", id: "current-location", name: "La tua posizione", area: null, lat: null, lon: null,
 };
 
 export const LocationAutocomplete = ({
@@ -37,8 +33,7 @@ export const LocationAutocomplete = ({
                                          onLocationSelect,
                                      }: Props) => {
     const [value, setValue] = useState(selected);
-    const [selectedKey, setSelectedKey] = useState<string | null>(null);
-    const [items, setItems] = useState<Location[]>([CURRENT_LOCATION]);
+    const [items, setItems] = useState<any[]>([CURRENT_LOCATION]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -52,7 +47,7 @@ export const LocationAutocomplete = ({
 
         return new Promise((resolve, reject) => {
             navigator.geolocation.getCurrentPosition(resolve, reject, {
-                enableHighAccuracy: true, timeout: 10000, maximumAge: 300000
+                enableHighAccuracy: true, timeout: 10000
             });
         });
     };
@@ -60,15 +55,12 @@ export const LocationAutocomplete = ({
     const handleCurrentLocation = async () => {
         try {
             const position = await getCurrentPosition();
-            const coords = {
-                lat: position.coords.latitude, lon: position.coords.longitude
+
+            const locationData = {
+                name: "La tua posizione", lat: position.coords.latitude, lon: position.coords.longitude,
             };
 
-            const locationData: Location = {
-                ...CURRENT_LOCATION, coordinates: coords
-            };
-
-            setValue(CURRENT_LOCATION.label as string);
+            setValue("La tua posizione");
             onLocationSelect(locationData);
         } catch (error) {
             const errorMessage = error instanceof GeolocationPositionError ? GEOLOCATION_ERRORS[error.code] || "Errore nel recupero della posizione." : "Errore nel recupero della posizione.";
@@ -82,21 +74,19 @@ export const LocationAutocomplete = ({
     const onSelectionChange = async (key: Key | null) => {
         if (!key) return;
 
-        setSelectedKey(key as string);
-
         if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
         }
 
-        if (key === CURRENT_LOCATION_KEY) {
+        if (key === "current-location") {
             await handleCurrentLocation();
-            setSelectedKey(null);
             return;
         }
 
-        const selected = items.find(item => item.value === key);
+        const selected = items.find(item => item._key === key);
+        console.log(selected);
         if (selected) {
-            setValue(selected.textValue || selected.label as string);
+            setValue(selected.name);
             onLocationSelect(selected);
         }
     };
@@ -104,7 +94,7 @@ export const LocationAutocomplete = ({
     const onInputChange = (newValue: string) => {
         setValue(newValue);
 
-        if (!newValue || newValue.trim().length === 0) {
+        if (!newValue.trim()) {
             setItems([CURRENT_LOCATION]);
             onLocationSelect(null);
             return;
@@ -114,7 +104,9 @@ export const LocationAutocomplete = ({
     };
 
     const fetchData = useDebouncedCallback(async (query: string) => {
+        console.log(query);
         if (!query || query.trim().length === 0) {
+            console.log("condition")
             setItems([CURRENT_LOCATION]);
             return;
         }
@@ -122,44 +114,32 @@ export const LocationAutocomplete = ({
         setLoading(true);
 
         try {
-            let userCoords: { lat: number, lon: number } | null = null;
+            let userCoords: { lat: string, lon: string } | null = null;
             try {
                 const position = await getCurrentPosition();
                 userCoords = {
-                    lat: position.coords.latitude, lon: position.coords.longitude
+                    lat: position.coords.latitude.toString(), lon: position.coords.longitude.toString()
                 };
             } catch {
                 // do nothing, user location is optional
             }
 
-            const [stations, search] = await Promise.all([searchStation(query), geocodeAddress(query, {
-                limitToCountries: 'IT',
-                lang: 'it-IT',
-                userLocation: userCoords ? `${userCoords.lat},${userCoords.lon}` : undefined,
-                searchLocation: '46.0722416,11.1193186'
-            })]);
+            const search = await searchLocation({
+                lat: userCoords?.lat ?? "46.0722416", lon: userCoords?.lon ?? "11.1193186", query
+            });
 
-            const stationLocations: Location[] = stations.features.map((feature: any) => ({
-                value: feature.properties.osm_id.toString(),
-                label: capitalize(feature.properties.name),
-                textValue: capitalize(feature.properties.name),
-                coordinates: {
-                    lat: feature.geometry.coordinates[1], lon: feature.geometry.coordinates[0],
-                },
-                isTrainStation: true,
+            const locations = search.map((location: any) => ({
+                _key: location._key,
+                id: location.id,
+                name: location.name,
+                area: location.area,
+                lat: location.lat,
+                lon: location.lon,
+                category: location.category,
             }));
 
-            const locations: Location[] = search.results.map((location: any) => ({
-                value: JSON.stringify(location),
-                label: location.displayLines[0],
-                textValue: location.displayLines[0],
-                address: [location.structuredAddress?.locality ?? location.displayLines[1], location.structuredAddress?.fullThoroughfare ?? location.structuredAddress?.subLocality].filter(Boolean).join(', '),
-                coordinates: {
-                    lat: location.location.latitude, lon: location.location.longitude
-                }
-            }));
-
-            setItems([CURRENT_LOCATION, ...stationLocations, ...locations]);
+            setItems([CURRENT_LOCATION, ...locations]);
+            console.log(items)
         } catch (error) {
             addToast({title: "Errore durante la ricerca."});
             setItems([CURRENT_LOCATION]);
@@ -170,7 +150,6 @@ export const LocationAutocomplete = ({
 
     return (<Autocomplete
         label={label}
-        selectedKey={selectedKey}
         inputValue={value}
         allowsCustomValue
         selectorIcon={<></>}
@@ -190,19 +169,26 @@ export const LocationAutocomplete = ({
         }}
         size="lg"
     >
-        {(item: Location) => (<AutocompleteItem
-            key={item.value}
-            textValue={item.textValue || item.label || 'La tua posizione'}
-            startContent={item.isTrainStation ?
-                <IconTrain stroke={1.5} /> : item.value === CURRENT_LOCATION_KEY ?
-                    <IconMapPin stroke={1.5} /> : undefined}
+        {(item) => (<AutocompleteItem
+            key={item._key}
+            startContent={item.name === "La tua posizione" ?
+                <div className="flex items-center justify-center self-center mx-auto w-6">
+                    <div
+                        className="relative w-4 h-4 rounded-full shadow-large bg-[#0171F8] border-[3px] border-white after:absolute after:inset-[-6px] after:rounded-full after:bg-[#0171F8]/30" />
+                </div> : item.category && item.category !== "none" ? (
+                    <Image
+                        width={24} radius="none" className="w-6"
+                        src={`https://motis.g3b.dev/icons/${item.category}.svg`}
+                    />) : item.modes?.some((mode: string[]) => mode.includes("RAIL")) ? (
+                    <IconTrain />) : item.modes?.some((mode: string[]) => mode.includes("BUS")) ? (<IconBus />) : (
+                    <IconMapPin />)}
+            textValue={item.name || 'La tua posizione'}
         >
             <div className="flex flex-col">
-                            <span className={cn(item.value === CURRENT_LOCATION_KEY && "font-bold")}>
-                                {item.label}
-                            </span>
-                {item.address && <span className="text-sm text-default-400">{item.address}</span>}
-                {item.isTrainStation && <span className="text-sm text-default-400">Stazione</span>}
+                        <span className={cn(item.name === "La tua posizione" && "font-bold")}>
+                            {item.name}
+                        </span>
+                {item.area && <span className="text-sm text-default-400">{item.area}</span>}
             </div>
         </AutocompleteItem>)}
     </Autocomplete>);

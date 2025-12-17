@@ -24,5 +24,7 @@ export interface Stop {
     name: string;
     scheduledArrival: string;
     scheduledDeparture: string;
+    lat: string;
+    lon: string;
     status: "regular" | "not_planned" | "canceled";
 }

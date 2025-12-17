@@ -1,7 +1,7 @@
 "use server";
 
 import axios from 'axios';
-import { getCachedMapsToken } from './auth';
+import {getCachedMapsToken} from './auth';
 
 /**
  * Generates a geocoding request.
@@ -19,7 +19,7 @@ export async function geocodeAddress(
     }
 ) {
     const token = await getCachedMapsToken();
-    const params: Record<string, string> = { q: address };
+    const params: Record<string, string> = {q: address};
     if (options?.limitToCountries) params.limitToCountries = options.limitToCountries;
     if (options?.lang) params.lang = options.lang;
     if (options?.searchLocation) params.searchLocation = options.searchLocation;
@@ -42,7 +42,7 @@ export async function reverseGeocode(latitude: number, longitude: number) {
         headers: {
             Authorization: `Bearer ${token}`,
         },
-        params: { loc: `${latitude},${longitude}`, lang: 'it-IT' }
+        params: {loc: `${latitude},${longitude}`, lang: 'it-IT'}
     });
     return response.data;
 }

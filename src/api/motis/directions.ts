@@ -1,28 +1,13 @@
 "use server";
 
-import {capitalize} from '@/utils';
+import {capitalize, getDistance} from '@/utils';
 import axios from 'axios';
 import {getRealTimeData} from './realtime';
-import {Directions, GeocodeRequest, GeocodeResult, Location, Trip} from './types';
+import {Directions, Location, Trip} from './types';
 import {trainCategoryLongNames} from "@/train-categories";
 import {differenceInMinutes} from "date-fns";
 
 const MOTIS = process.env.MOTIS || "http://localhost:8080";
-
-function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-    const R = 6371000;
-    const dLat = toRadians(lat2 - lat1);
-    const dLon = toRadians(lon2 - lon1);
-
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(toRadians(lat1)) * Math.cos(toRadians(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
-
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
-}
-
-function toRadians(degrees: number): number {
-    return degrees * Math.PI / 180;
-}
 
 const getStop = (name: string): string => {
     if (!name) return "";
@@ -87,9 +72,21 @@ const processTripData = async (data: {
                 status: "scheduled"
             };
         }))).filter((leg) => {
-            if (!leg.from || !leg.to) return true;
-            if (leg.from.lat === leg.to.lat && leg.from.lon === leg.to.lon) return false;
-            return getDistance(leg.from.lat, leg.from.lon, leg.to.lat, leg.to.lon) >= 100;
+            if (!leg.from || !leg.to) {
+                return true;
+            }
+
+            if (leg.from.lat == null || leg.from.lon == null || leg.to.lat == null || leg.to.lon == null) {
+                return true;
+            }
+
+            if (leg.from.lat === leg.to.lat && leg.from.lon === leg.to.lon) {
+                return false;
+            }
+
+            const distance = getDistance(leg.from.lat, leg.from.lon, leg.to.lat, leg.to.lon);
+
+            return distance >= 100;
         });
 
         return {...trip, legs: processedLegs};
@@ -151,47 +148,46 @@ const processTripData = async (data: {
     };
 };
 
-async function geocodeLocation({lat, lon, text}: GeocodeRequest): Promise<string> {
-    try {
-        const {data} = await axios.get<GeocodeResult[]>(`${MOTIS}/api/v1/geocode?place=${lat},${lon}&text=${text}&language=it`);
-
-        if (data.length > 0) {
-            const best = data[0];
-            const dist = getDistance(lat, lon, best.lat, best.lon);
-
-            if (dist <= 250 && best.type === "STOP") {
-                return best.id;
-            }
-        }
-
-        return `${lat},${lon}`;
-    } catch (err) {
-        console.error("Geocode error:", err);
-        return `${lat},${lon}`;
+const resolvePlace = (loc: Location): string => {
+    if (loc.lat != null && loc.lon != null && loc.type !== "STOP") {
+        return `${loc.lat},${loc.lon}`;
     }
-}
+
+    if (loc.id && loc.id.trim() !== "") {
+        return loc.id;
+    }
+
+    throw new Error("missing id and coordinates");
+};
 
 export async function getDirections(from: Location, to: Location, dateTime: string): Promise<Directions> {
     try {
-        const resolvePlace = async (loc: Location): Promise<string> => {
-            if (loc.text.toLowerCase().trim() === "posizione attuale") {
-                return `${loc.lat},${loc.lon}`;
+        const fromPlace = resolvePlace(from);
+        const toPlace = resolvePlace(to);
+        console.log(fromPlace, toPlace, dateTime)
+
+        const {data, status} = await axios.get(`${MOTIS}/api/v5/plan`, {
+            params: {
+                fromPlace,
+                toPlace,
+                time: dateTime,
+                maxPreTransitTime: 1800,
+                maxPostTransitTime: 1800,
+                maxMatchingDistance: 100,
+                fastestDirectFactor: 1.5,
+                joinInterlinedLegs: false,
+                useRoutedTransfers: true,
+                maxDirectTime: 3600
             }
-            return geocodeLocation(loc);
-        };
+        });
 
-        const [fromPlace, toPlace] = await Promise.all([resolvePlace(from), resolvePlace(to)]);
-
-        const {
-            data, status
-        } = await axios.get(`${MOTIS}/api/v5/plan?fromPlace=${fromPlace}&toPlace=${toPlace}&time=${dateTime}&maxPreTransitTime=1800&maxPostTransitTime=1800&maxMatchingDistance=100&fastestDirectFactor=1.5&joinInterlinedLegs=false&useRoutedTransfers=true&maxDirectTime=3600`);
 
         if (status !== 200) {
             console.error("Invalid MOTIS response:", data);
             return {trips: [], pageCursor: "", direct: []};
         }
 
-        return await processTripData(data);
+        return processTripData(data);
     } catch (error) {
         console.error("Error fetching directions:", error);
         return {trips: [], pageCursor: "", direct: []};

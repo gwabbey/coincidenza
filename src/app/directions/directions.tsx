@@ -1,8 +1,7 @@
 "use client";
 
 import {getDirections} from "@/api/motis/directions";
-import {type Directions} from "@/api/motis/types";
-import {type Location} from "@/types";
+import {type Directions, type Location} from "@/api/motis/types";
 import {Button, Card, DateInput, DateValue, Link, TimeInput, TimeInputValue} from "@heroui/react";
 import {CalendarDate, Time} from "@internationalized/date";
 import {
@@ -23,7 +22,7 @@ import Results from "./results";
 import {formatDuration} from "@/utils";
 import {format} from "date-fns";
 import {I18nProvider} from "@react-aria/i18n";
-import LeafletMap from "@/components/map";
+import Map from "@/components/map";
 
 interface SelectedLocations {
     from: Location | null;
@@ -48,9 +47,11 @@ export default function Directions({search}: { search: { from: Location, to: Loc
     const [selectedTripIndex, setSelectedTripIndex] = useState<number | null>(null);
 
     const handleLocationSelect = (type: "from" | "to", location: Location | null) => {
-        setSelectedLocations((prev) => ({
-            ...prev, [type]: location,
-        }));
+        if (location) {
+            setSelectedLocations((prev) => ({
+                ...prev, [type]: location,
+            }));
+        }
     };
 
     const setCookie = (name: string, value: any, days = 30) => {
@@ -77,33 +78,35 @@ export default function Directions({search}: { search: { from: Location, to: Loc
 
             setCookie("q", {
                 from: {
-                    value: selectedLocations.from.value,
-                    label: selectedLocations.from.label,
-                    textValue: selectedLocations.from.textValue,
-                    address: selectedLocations.from.address,
-                    coordinates: selectedLocations.from.coordinates,
-                    isTrainStation: selectedLocations.from.isTrainStation
+                    lat: selectedLocations.from.lat,
+                    lon: selectedLocations.from.lon,
+                    name: selectedLocations.from.name,
+                    area: selectedLocations.from.area,
                 }, to: {
-                    value: selectedLocations.to.value,
-                    label: selectedLocations.to.label,
-                    textValue: selectedLocations.to.textValue,
-                    address: selectedLocations.to.address,
-                    coordinates: selectedLocations.to.coordinates,
-                    isTrainStation: selectedLocations.to.isTrainStation
+                    lat: selectedLocations.to.lat,
+                    lon: selectedLocations.to.lon,
+                    name: selectedLocations.to.name,
+                    area: selectedLocations.to.area
                 }, dateTime: localIsoString
             })
 
             const result = await getDirections({
-                lat: selectedLocations.from.coordinates!.lat,
-                lon: selectedLocations.from.coordinates!.lon,
-                text: selectedLocations.from.label.toString(),
-                isTrainStation: selectedLocations.from.isTrainStation ?? false,
+                id: selectedLocations.from.id,
+                lat: selectedLocations.from.lat,
+                lon: selectedLocations.from.lon,
+                name: selectedLocations.from.name,
+                area: selectedLocations.from.area,
+                type: selectedLocations.from.type,
             }, {
-                lat: selectedLocations.to.coordinates!.lat,
-                lon: selectedLocations.to.coordinates!.lon,
-                text: selectedLocations.to.label.toString(),
-                isTrainStation: selectedLocations.to.isTrainStation ?? false,
+                id: selectedLocations.to.id,
+                lat: selectedLocations.to.lat,
+                lon: selectedLocations.to.lon,
+                name: selectedLocations.to.name,
+                area: selectedLocations.to.area,
+                type: selectedLocations.to.type,
             }, localIsoString);
+
+            console.log(selectedLocations)
 
             if (!result) {
                 setError("Errore nel recupero dei dati. Riprova più tardi.");
@@ -120,26 +123,22 @@ export default function Directions({search}: { search: { from: Location, to: Loc
         }
     };
 
-    const isSameLocation = selectedLocations.from?.coordinates!.lat === selectedLocations.to?.coordinates!.lat && selectedLocations.from?.coordinates!.lon === selectedLocations.to?.coordinates!.lon;
+    const isSameLocation = selectedLocations.from?.lat === selectedLocations.to?.lat && selectedLocations.from?.lon === selectedLocations.to?.lon;
 
     const mapData = selectedLocations.from ? {
         from: {
-            lat: selectedLocations.from.coordinates!.lat,
-            lon: selectedLocations.from.coordinates!.lon,
-            name: selectedLocations.from.label.toString(),
+            lat: selectedLocations.from.lat, lon: selectedLocations.from.lon, name: selectedLocations.from.name,
         },
 
         to: selectedLocations.to ? {
-            lat: selectedLocations.to.coordinates!.lat,
-            lon: selectedLocations.to.coordinates!.lon,
-            name: selectedLocations.to.label.toString(),
+            lat: selectedLocations.to.lat, lon: selectedLocations.to.lon, name: selectedLocations.to.name,
         } : undefined,
 
         intermediateStops: selectedTripIndex !== null && directions?.trips[selectedTripIndex] ? directions.trips[selectedTripIndex].legs
             .flatMap((leg, legIndex, legs) => {
                 const stops: { lat: number; lon: number; name: string }[] = [];
 
-                if (legs[legIndex].from.name !== "Start" && legs[legIndex].from.name !== selectedLocations!.from?.label) {
+                if (legs[legIndex].from.name !== "Start" && legs[legIndex].from.name !== selectedLocations!.from?.area) {
                     stops.push({
                         lat: leg.from.lat, lon: leg.from.lon, name: leg.from.name,
                     });
@@ -149,7 +148,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                     lat: stop.lat, lon: stop.lon, name: stop.name,
                 })));
 
-                if (legs[legIndex].to.name !== "End" && legs[legIndex].to.name !== selectedLocations!.to?.label) {
+                if (legs[legIndex].to.name !== "End" && legs[legIndex].to.name !== selectedLocations!.to?.area) {
                     stops.push({
                         lat: leg.to.lat, lon: leg.to.lon, name: leg.to.name,
                     });
@@ -168,9 +167,17 @@ export default function Directions({search}: { search: { from: Location, to: Loc
     };
 
     return (<div className="fixed inset-0 flex flex-col pt-18 px-4">
-        <LeafletMap
-            from={mapData?.from}
-            to={mapData?.to}
+        <Map
+            from={{
+                lat: parseFloat(mapData?.from?.lat ?? ""),
+                lon: parseFloat(mapData?.from?.lon ?? ""),
+                name: mapData?.from.name
+            }}
+            to={{
+                lat: parseFloat(mapData?.to?.lat ?? ""),
+                lon: parseFloat(mapData?.to?.lon ?? ""),
+                name: mapData?.to?.name
+            }}
             intermediateStops={mapData?.intermediateStops}
             legs={mapData?.legs}
             className="w-full h-1/2 rounded-t-large flex-shrink-0"
@@ -183,7 +190,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                 <div className="flex flex-col md:flex-row justify-center items-center gap-x-4 w-full">
                     <LocationAutocomplete
                         name="from"
-                        selected={selectedLocations.from?.textValue}
+                        selected={selectedLocations.from?.name}
                         label="partenza"
                         onLocationSelect={(location) => handleLocationSelect("from", location)}
                     />
@@ -209,7 +216,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                     />
                     <LocationAutocomplete
                         name="to"
-                        selected={selectedLocations.to?.textValue}
+                        selected={selectedLocations.to?.name}
                         label="arrivo"
                         onLocationSelect={(location) => handleLocationSelect("to", location)}
                     />
@@ -246,7 +253,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                     isDisabled={!selectedLocations.from || !selectedLocations.to || !date || !time || isLoading || (selectedLocations && isSameLocation) || today > date || date > nextWeek}
                     isLoading={isLoading}
                 >
-                    {!isLoading && "cerca"}
+                    {!isLoading && "Cerca"}
                 </Button>
 
                 {error && (<div className="pointer-events-auto text-center max-w-2xl mx-auto">
@@ -263,7 +270,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                             className="flex flex-col sm:flex-row gap-1 font-bold sm:justify-center justify-start">
                             <div className="flex">
                                 <IconCircleLetterA size={18} className="self-center shrink-0 mr-1 sm:hidden" />
-                                {selectedLocations.from?.label}
+                                {selectedLocations.from?.name}
                             </div>
                             <IconArrowDown size={16} stroke={2.5} className="shrink-0 sm:hidden" />
                             <IconArrowRight size={16} stroke={2.5}
@@ -271,7 +278,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                             <div className="flex">
                                 <IconCircleLetterBFilled size={18}
                                                          className="self-center shrink-0 mr-1 sm:hidden" />
-                                {selectedLocations.to?.label}
+                                {selectedLocations.to?.name}
                             </div>
                         </div>
                         {date && time && (<div>

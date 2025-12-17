@@ -1,28 +1,16 @@
-export interface Location {
-    lat: number
-    lon: number
-    text: string
-    isTrainStation: boolean
-}
-
 export interface Directions {
     trips: Trip[]
     direct: Trip[]
     pageCursor?: string
 }
 
-export interface GeocodeRequest {
-    lat: number
-    lon: number
-    text: string
-}
-
-export interface GeocodeResult {
+export interface Location {
     id: string
-    lat: number
-    lon: number
-    type: string
+    lat: string
+    lon: string
     name: string
+    area: string
+    type: string
 }
 
 export interface Trip {

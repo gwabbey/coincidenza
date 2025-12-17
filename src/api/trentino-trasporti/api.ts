@@ -52,20 +52,20 @@ export async function getAllStops() {
     return await fetchData('stops');
 }
 
-export async function getClosestBusStops(userLat: number, userLon: number) {
+export async function getClosestBusStops(lat: string, lon: string) {
     const stops = await getAllStops();
 
     const stopsWithDistance = stops.map((stop: any) => ({
-        ...stop, distance: getDistance(userLat, userLon, stop.stopLat, stop.stopLon),
+        ...stop, distance: getDistance(parseFloat(lat), parseFloat(lon), stop.stopLat, stop.stopLon),
     }));
 
     return stopsWithDistance.sort((a: any, b: any) => a.distance - b.distance);
 }
 
-export async function getStopDepartures(stopId: number, type: string) {
+export async function getStopDepartures(stopId: string, type: string) {
     const [departures, routes] = await Promise.all([fetchData('trips_new', {
         params: {
-            type, stopId: stopId.toString(), limit: "3", refDateTime: new Date().toISOString()
+            type, stopId: stopId.toString(), limit: "6", refDateTime: new Date().toISOString()
         }
     }), getRoutes(type)]);
 
@@ -153,6 +153,8 @@ export async function getTripDetails(id: string) {
             scheduledArrival: getValidTime(stop.arrivalTime),
             scheduledDeparture: getValidTime(stop.departureTime),
             status: "regular",
+            lat: stops.find((s: any) => s.stopId === stop.stopId).stopLat ?? "",
+            lon: stops.find((s: any) => s.stopId === stop.stopId).stopLon ?? ""
         })),
         info: routes
             .find((route: any) => route.routeId === trip.routeId)
@@ -163,4 +165,105 @@ export async function getTripDetails(id: string) {
                 url: alert.url,
             })),
     }
+}
+
+type BusStop = {
+    stopId: string
+    stopName: string
+    distance: number
+    type: string
+}
+
+type Trip = {
+    tripId: string
+    stopId: string
+    stopName: string
+    distance: number
+    delay?: number
+    stopNext?: string
+    stopTimes: Array<{
+        stopId: string
+        departureTime: string
+    }>
+    oraArrivoProgrammataAFermataSelezionata: string
+}
+
+export async function getFilteredDepartures(lat: string, lon: string) {
+    const allStops = await getClosestBusStops(lat, lon)
+    const walkableStops = getNearbyStops(allStops, 0.1)
+
+    if (walkableStops.length === 0) {
+        return {error: 'no_stops', trips: []}
+    }
+
+    const departurePromises = walkableStops.map(async (stop) => {
+        try {
+            const departures = await getStopDepartures(stop.stopId, stop.type)
+            if (!departures) return []
+
+            return departures.map((trip: any) => ({
+                ...trip,
+                stopId: stop.stopId,
+                stopName: stop.stopName,
+                distance: stop.distance
+            }))
+        } catch (error) {
+            console.error(`Error fetching departures for stop ${stop.stopId}:`, error)
+            return []
+        }
+    })
+
+    const allDeparturesArrays = await Promise.all(departurePromises)
+    const allDepartures = allDeparturesArrays.flat()
+
+    const uniqueTrips = filterTrips(allDepartures)
+    const sortedTrips = sortTripsByDepartureTime(uniqueTrips)
+
+    return {error: null, trips: sortedTrips}
+}
+
+function getNearbyStops(stops: BusStop[], radiusKm: number = 1): BusStop[] {
+    const nearby = stops.filter(stop => stop.distance <= radiusKm)
+    if (nearby.length === 0 && radiusKm < 10) {
+        return getNearbyStops(stops, radiusKm * 2)
+    }
+    return nearby
+}
+
+function filterTrips(trips: Trip[]): Trip[] {
+    const seen = new Set<string>()
+    const now = new Date()
+
+    return trips.filter(trip => {
+        if (seen.has(trip.tripId)) return false
+        seen.add(trip.tripId)
+
+        if (trip.stopTimes[trip.stopTimes.length - 1].stopId === trip.stopId) {
+            return false
+        }
+
+        const selectedStop = trip.stopTimes.find(
+            s => String(s.stopId) === String(trip.stopId)
+        )
+        if (!selectedStop) return false
+
+        const [h, m, s] = selectedStop.departureTime.split(":").map(Number)
+        const departure = new Date(now)
+        departure.setHours(h, m, s, 0)
+
+        if (trip.delay) {
+            departure.setMinutes(departure.getMinutes() + trip.delay)
+        }
+
+        const diff = now.getTime() - departure.getTime()
+        return !(diff > 120000 && trip.stopNext !== trip.stopId)
+    })
+}
+
+function sortTripsByDepartureTime(trips: Trip[]): Trip[] {
+    return trips.sort((a, b) => {
+        const timeA = new Date(a.oraArrivoProgrammataAFermataSelezionata).getTime()
+        const timeB = new Date(b.oraArrivoProgrammataAFermataSelezionata).getTime()
+        return timeA - timeB
+    })
 }

@@ -3,10 +3,9 @@
 import {Directions, IntermediateStop, Leg} from "@/api/motis/types";
 import Timeline from "@/components/timeline";
 import {formatDuration, getDelayColor} from "@/utils";
-import {Accordion, AccordionItem, Button, cn, Divider, Selection} from "@heroui/react";
+import {Accordion, AccordionItem, Button, cn, Divider, Link, Selection} from "@heroui/react";
 import {IconAccessPoint, IconAlertTriangle, IconArrowRight, IconExternalLink, IconMap} from "@tabler/icons-react";
 import {format} from "date-fns";
-import Link from "next/link";
 import {TransportIcon} from "./icons";
 import Steps from "./steps";
 import {trainCategoryLongNames} from "@/train-categories";
@@ -238,7 +237,9 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                                                 <div key={index}
                                                                      className="flex flex-col gap-2">
                                                                     {alert.url ? (<div className="flex flex-col">
-                                                                        <Link href={alert.url} target="_blank">
+                                                                        <Link href={alert.url} isExternal
+                                                                              color="foreground"
+                                                                              className="inline text-small">
                                                                             {alert.message}
                                                                             <IconExternalLink
                                                                                 className="shrink-0 ml-1 mb-1 inline text-center"

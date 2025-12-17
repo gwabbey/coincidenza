@@ -3,15 +3,6 @@ export interface Coordinates {
     lon: number;
 }
 
-export interface Location {
-    value: string;
-    label: string;
-    textValue?: string;
-    address?: string;
-    coordinates: Coordinates | null;
-    isTrainStation?: boolean;
-}
-
 export interface Favorite {
     lat: number;
     lon: number;
