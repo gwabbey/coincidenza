@@ -138,7 +138,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
             .flatMap((leg, legIndex, legs) => {
                 const stops: { lat: number; lon: number; name: string }[] = [];
 
-                if (legs[legIndex].from.name !== "Start" && legs[legIndex].from.name !== selectedLocations!.from?.area) {
+                if (legs[legIndex].from.name !== "Start" && legs[legIndex].from.name !== selectedLocations!.from?.name) {
                     stops.push({
                         lat: leg.from.lat, lon: leg.from.lon, name: leg.from.name,
                     });
@@ -148,7 +148,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                     lat: stop.lat, lon: stop.lon, name: stop.name,
                 })));
 
-                if (legs[legIndex].to.name !== "End" && legs[legIndex].to.name !== selectedLocations!.to?.area) {
+                if (legs[legIndex].to.name !== "End" && legs[legIndex].to.name !== selectedLocations!.to?.name) {
                     stops.push({
                         lat: leg.to.lat, lon: leg.to.lon, name: leg.to.name,
                     });
@@ -192,10 +192,12 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                         name="from"
                         selected={selectedLocations.from?.name}
                         label="partenza"
+                        disabled={isLoading}
                         onLocationSelect={(location) => handleLocationSelect("from", location)}
                     />
                     <div className="w-full max-w-md flex items-center justify-end md:hidden">
                         <Button
+                            isDisabled={isLoading}
                             isIconOnly
                             variant="ghost"
                             onPress={swapLocations}
@@ -218,6 +220,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                         name="to"
                         selected={selectedLocations.to?.name}
                         label="arrivo"
+                        disabled={isLoading}
                         onLocationSelect={(location) => handleLocationSelect("to", location)}
                     />
                     <div className="flex flex-row justify-center items-center gap-4 max-w-md w-full">
@@ -228,6 +231,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                                 classNames={{label: "text-sm"}}
                                 size="lg"
                                 isInvalid={date ? (today > date || date > nextWeek) : false}
+                                isDisabled={isLoading}
                                 value={date}
                                 onChange={setDate}
                             />
@@ -235,6 +239,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                                 variant="underlined"
                                 label="ora"
                                 classNames={{label: "text-sm"}}
+                                isDisabled={isLoading}
                                 size="lg"
                                 hourCycle={24}
                                 value={time}

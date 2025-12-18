@@ -161,6 +161,7 @@ export const Search = ({lat, lon, name, closest}: { lat: string, lon: string, na
             inputValue={value}
             allowsCustomValue
             fullWidth
+            isClearable={false}
             variant="underlined"
             onInputChange={onInputChange}
             onSelectionChange={onSelectionChange}

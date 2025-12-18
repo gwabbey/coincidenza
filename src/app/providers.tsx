@@ -3,49 +3,43 @@
 import {useEffect, useRef} from "react";
 import {HeroUIProvider, ToastProvider} from "@heroui/react";
 import {ThemeProvider} from "next-themes";
-import {usePathname, useRouter} from "next/navigation";
+import {useRouter} from "next/navigation";
 
 export default function Providers({children}: { children: React.ReactNode }) {
     const router = useRouter();
-    const pathname = usePathname();
-    const lastActiveRef = useRef(Date.now());
-    const MAX_INACTIVE_TIME = 5 * 60 * 1000;
+    const ref = useRef(false);
 
     useEffect(() => {
-        const checkIfReloadNeeded = () => {
-            const now = Date.now();
-            const inactiveTime = now - lastActiveRef.current;
+        const refresh = () => {
+            if (ref.current) return;
+            ref.current = true;
 
-            if (inactiveTime > MAX_INACTIVE_TIME) {
-                if (pathname !== "/directions") {
-                    window.location.reload();
-                }
-            } else {
-                lastActiveRef.current = now;
-            }
+            router.refresh();
+
+            setTimeout(() => {
+                ref.current = false;
+            }, 2000);
         };
 
-        const handleVisibility = () => {
-            if (document.visibilityState === "visible") {
-                checkIfReloadNeeded();
-            }
+        const onVisible = () => {
+            if (document.visibilityState === "visible") refresh();
         };
 
-        window.addEventListener("focus", checkIfReloadNeeded);
-        document.addEventListener("visibilitychange", handleVisibility);
+        const onFocus = () => refresh();
+
+        window.addEventListener("focus", onFocus);
+        document.addEventListener("visibilitychange", onVisible);
 
         return () => {
-            window.removeEventListener("focus", checkIfReloadNeeded);
-            document.removeEventListener("visibilitychange", handleVisibility);
+            window.removeEventListener("focus", onFocus);
+            document.removeEventListener("visibilitychange", onVisible);
         };
-    }, []);
+    }, [router]);
 
-    return (
-        <ThemeProvider attribute="class" scriptProps={{"data-cfasync": "false"}}>
-            <HeroUIProvider navigate={router.push} locale="it-IT">
-                {children}
-                <ToastProvider placement="top-center" />
-            </HeroUIProvider>
-        </ThemeProvider>
-    );
+    return (<ThemeProvider attribute="class" scriptProps={{"data-cfasync": "false"}}>
+        <HeroUIProvider navigate={router.push} locale="it-IT">
+            {children}
+            <ToastProvider placement="top-center" />
+        </HeroUIProvider>
+    </ThemeProvider>);
 }

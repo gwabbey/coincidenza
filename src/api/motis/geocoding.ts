@@ -48,6 +48,8 @@ function cleanup(data: SearchResult[]): Location[] {
         .map((item) => {
             const hasRail = item.modes?.some(m => m.includes("RAIL")) ?? false;
             const _key = `${item.lat}-${item.lon}-${item.id}`;
+            const defaultArea = item.areas?.find(a => a.default);
+            const matchedArea = item.areas?.find(a => a.matched && a.name !== defaultArea?.name);
 
             return {
                 _key,
@@ -58,11 +60,14 @@ function cleanup(data: SearchResult[]): Location[] {
                 name: capitalize(item.name),
                 lat: item.lat,
                 lon: item.lon,
-                area: hasRail ? "Stazione" : item.areas?.at(-1)?.name ?? "",
+                area: hasRail ? "Stazione" : [defaultArea?.name ?? "", matchedArea?.name ?? ""]
+                    .filter(Boolean)
+                    .map(name => name.replaceAll(" - ", "-"))
+                    .join(", ")
             };
         })
         .filter(item => {
-            if (seen.has(item._key)) return false;
+            if (seen.has(item._key) || !item.name) return false;
             seen.add(item._key);
             return true;
         })
@@ -79,8 +84,8 @@ export async function searchLocation({lat, lon, query}: {
     query: string
 }): Promise<Location[]> {
     const isInvalid = isNaN(+lat) || isNaN(+lon)
-    const {data} = await axios.get<SearchResult[]>(`${MOTIS}/api/v1/geocode?place=${isInvalid ? "46.0722416" : lat},${isInvalid ? "11.1193186" : lon}&text=${query}&language=it`);
-
+    const {data} = await axios.get<SearchResult[]>(`${MOTIS}/api/v1/geocode?place=46.0722416,11.1193186&text=${query}&language=it`);
+    console.log(`${MOTIS}/api/v1/geocode?place=${isInvalid ? "46.0722416" : lat},${isInvalid ? "11.1193186" : lon}&text=${query}&language=it`)
     return cleanup(data);
 }
 

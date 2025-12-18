@@ -4,7 +4,7 @@ import {addToast, Autocomplete, AutocompleteItem, cn, Image, Spinner} from "@her
 import {Key, useEffect, useState} from "react";
 import {useDebouncedCallback} from 'use-debounce';
 import {searchLocation} from "@/api/motis/geocoding";
-import {IconBus, IconMapPin, IconTrain} from "@tabler/icons-react";
+import {IconBus, IconLocation, IconMapPin, IconTrain} from "@tabler/icons-react";
 
 interface Props {
     name: string;
@@ -104,9 +104,7 @@ export const LocationAutocomplete = ({
     };
 
     const fetchData = useDebouncedCallback(async (query: string) => {
-        console.log(query);
         if (!query || query.trim().length === 0) {
-            console.log("condition")
             setItems([CURRENT_LOCATION]);
             return;
         }
@@ -136,10 +134,10 @@ export const LocationAutocomplete = ({
                 lat: location.lat,
                 lon: location.lon,
                 category: location.category,
+                modes: location.modes,
             }));
 
             setItems([CURRENT_LOCATION, ...locations]);
-            console.log(items)
         } catch (error) {
             addToast({title: "Errore durante la ricerca."});
             setItems([CURRENT_LOCATION]);
@@ -161,7 +159,7 @@ export const LocationAutocomplete = ({
         endContent={loading && <Spinner size="sm" color="default" />}
         className="max-w-md"
         classNames={{
-            selectorButton: "hidden", endContentWrapper: "mr-0"
+            selectorButton: "hidden", endContentWrapper: "mr-1"
         }}
         items={items}
         listboxProps={{
@@ -172,14 +170,10 @@ export const LocationAutocomplete = ({
         {(item) => (<AutocompleteItem
             key={item._key}
             startContent={item.name === "La tua posizione" ?
-                <div className="flex items-center justify-center self-center mx-auto w-6">
-                    <div
-                        className="relative w-4 h-4 rounded-full shadow-large bg-[#0171F8] border-[3px] border-white after:absolute after:inset-[-6px] after:rounded-full after:bg-[#0171F8]/30" />
-                </div> : item.category && item.category !== "none" ? (
-                    <Image
-                        width={24} radius="none" className="w-6"
-                        src={`https://motis.g3b.dev/icons/${item.category}.svg`}
-                    />) : item.modes?.some((mode: string[]) => mode.includes("RAIL")) ? (
+                <IconLocation /> : item.category && item.category !== "none" ? (<Image
+                    width={24} radius="none" className="w-6"
+                    src={`https://motis.g3b.dev/icons/${item.category}.svg`}
+                />) : item.modes?.some((mode: string[]) => mode.includes("RAIL")) ? (
                     <IconTrain />) : item.modes?.some((mode: string[]) => mode.includes("BUS")) ? (<IconBus />) : (
                     <IconMapPin />)}
             textValue={item.name || 'La tua posizione'}

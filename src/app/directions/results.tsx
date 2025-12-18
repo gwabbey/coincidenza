@@ -46,9 +46,7 @@ interface ResultsProps {
 
 export default function Results({directions, selectedTripIndex, onTripSelect}: ResultsProps) {
     useEffect(() => {
-        if (!directions || directions.trips.length === 0) {
-            onTripSelect(null);
-        }
+        onTripSelect(null);
     }, [directions, onTripSelect]);
 
     const handleSelectionChange = (keys: Selection) => {
@@ -141,9 +139,9 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                                 traccia in tempo reale
                                             </Button>)}
                                             {leg.mode === "WALK" && (<Button
-                                                onPress={() => {
-                                                    window.open(getMapUrl(leg.from, leg.to));
-                                                }}
+                                                as={Link}
+                                                target="_blank"
+                                                href={getMapUrl(leg.from, leg.to)}
                                                 variant="bordered"
                                                 startContent={<IconMap />}
                                                 radius="full"
