@@ -190,8 +190,8 @@ type Trip = {
 
 export async function getFilteredDepartures(lat: string, lon: string) {
     const allStops = await getClosestBusStops(lat, lon)
-    const walkableStops = getNearbyStops(allStops, 0.1)
-
+    const walkableStops = getNearbyStops(allStops, 100)
+    
     if (walkableStops.length === 0) {
         return {error: 'no_stops', trips: []}
     }
@@ -202,10 +202,7 @@ export async function getFilteredDepartures(lat: string, lon: string) {
             if (!departures) return []
 
             return departures.map((trip: any) => ({
-                ...trip,
-                stopId: stop.stopId,
-                stopName: stop.stopName,
-                distance: stop.distance
+                ...trip, stopId: stop.stopId, stopName: stop.stopName, distance: stop.distance
             }))
         } catch (error) {
             console.error(`Error fetching departures for stop ${stop.stopId}:`, error)
@@ -222,11 +219,13 @@ export async function getFilteredDepartures(lat: string, lon: string) {
     return {error: null, trips: sortedTrips}
 }
 
-function getNearbyStops(stops: BusStop[], radiusKm: number = 1): BusStop[] {
-    const nearby = stops.filter(stop => stop.distance <= radiusKm)
-    if (nearby.length === 0 && radiusKm < 10) {
-        return getNearbyStops(stops, radiusKm * 2)
+function getNearbyStops(stops: BusStop[], radiusMeters = 100): BusStop[] {
+    const nearby = stops.filter(stop => stop.distance <= radiusMeters)
+
+    if (nearby.length === 0 && radiusMeters < 10_000) {
+        return getNearbyStops(stops, radiusMeters * 2)
     }
+
     return nearby
 }
 
@@ -242,9 +241,7 @@ function filterTrips(trips: Trip[]): Trip[] {
             return false
         }
 
-        const selectedStop = trip.stopTimes.find(
-            s => String(s.stopId) === String(trip.stopId)
-        )
+        const selectedStop = trip.stopTimes.find(s => String(s.stopId) === String(trip.stopId))
         if (!selectedStop) return false
 
         const [h, m, s] = selectedStop.departureTime.split(":").map(Number)

@@ -107,15 +107,17 @@ export const Search = ({lat, lon, name, closest}: { lat: string, lon: string, na
             return;
         }
 
-        const selectedItem = data.find(item => item.id === key);
-        if (selectedItem && selectedItem.lat && selectedItem.lon) {
-            setCookie('lat', selectedItem.lat.toString());
-            setCookie('lon', selectedItem.lon.toString());
-            setCookie('name', selectedItem.name);
+        const selectedItem = data.find(item => getKey(item) === key);
 
-            setValue(selectedItem.name);
-            setSelectedLocation(selectedItem);
-        }
+        if (!selectedItem) return;
+
+        setCookie('lat', selectedItem.lat.toString());
+        setCookie('lon', selectedItem.lon.toString());
+        setCookie('name', selectedItem.name);
+
+        setValue(selectedItem.name);
+        setSelectedLocation(selectedItem);
+
         router.refresh();
     };
 
@@ -131,7 +133,7 @@ export const Search = ({lat, lon, name, closest}: { lat: string, lon: string, na
 
     const fetchData = useDebouncedCallback(async (query: string) => {
         if (!query || query.trim().length < 3) {
-            setData([]);
+            setData(closest);
             return;
         }
 
@@ -154,10 +156,14 @@ export const Search = ({lat, lon, name, closest}: { lat: string, lon: string, na
         }
     }, 500);
 
+
+    const getKey = (item: Location) => `${item.lat}-${item.lon}-${item.id}`;
+
+
     return (<div className="flex items-center justify-center gap-x-2">
         <Autocomplete
             label="Cerca..."
-            selectedKey={`${selectedLocation?.lat}-${selectedLocation?.lon}-${selectedLocation?.id}`}
+            selectedKey={selectedLocation ? getKey(selectedLocation) : null}
             inputValue={value}
             allowsCustomValue
             fullWidth
@@ -181,7 +187,7 @@ export const Search = ({lat, lon, name, closest}: { lat: string, lon: string, na
                     src={`https://motis.g3b.dev/icons/${item.category}.svg`}
                 />) : item.modes?.some(mode => mode.includes("RAIL")) ? (
                     <IconTrain />) : item.modes?.some(mode => mode.includes("BUS")) ? (<IconBus />) : (<IconMapPin />)}
-                key={item.id}
+                key={getKey(item)}
                 textValue={item.name}
             >
                 <div className="flex flex-col">

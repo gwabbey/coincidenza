@@ -319,7 +319,6 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
                     return {
                         content: (<div className="flex flex-col w-full min-w-0">
                             <Link color="foreground" className="font-bold leading-none cursor-pointer" onPress={() => {
-                                console.log(stop.lat, stop.lon, stop.name)
                                 setCookie('lat', stop.lat);
                                 setCookie('lon', stop.lon);
                                 setCookie('name', stop.name);
