@@ -27,40 +27,60 @@ const calculatePreciseActiveIndex = (trip: TripProps): number => {
         return -1;
     }
 
-    const firstStop = trip.stops[0];
-    const firstArrivalTime = timeToMinutes(firstStop.scheduledArrival) + delay;
-    const firstDepartureTime = timeToMinutes(firstStop.scheduledDeparture) + delay;
+    const normalizeTime = (timeStr: string, previousTime?: number): number => {
+        let minutes = timeToMinutes(timeStr);
 
-    if (currentMinutes < firstArrivalTime) {
+        if (previousTime !== undefined && minutes < previousTime - 180) {
+            minutes += 1440;
+        }
+
+        return minutes;
+    };
+
+    const firstStop = trip.stops[0];
+    let firstArrivalTime = timeToMinutes(firstStop.scheduledArrival) + delay;
+    let firstDepartureTime = timeToMinutes(firstStop.scheduledDeparture) + delay;
+
+    let normalizedCurrentMinutes = currentMinutes;
+    if (currentMinutes < firstArrivalTime - 180) {
+        normalizedCurrentMinutes = currentMinutes + 1440;
+    }
+
+    if (normalizedCurrentMinutes < firstArrivalTime) {
         return -1;
     }
 
-    if (lastKnownStopIndex === -1 && currentMinutes < firstDepartureTime) {
+    if (lastKnownStopIndex === -1 && normalizedCurrentMinutes < firstDepartureTime) {
         return 0;
     }
 
     const lastStop = trip.stops[trip.stops.length - 1];
-    const lastArrivalTime = timeToMinutes(lastStop.scheduledArrival) + delay;
+    let lastArrivalTime = normalizeTime(lastStop.scheduledArrival, firstArrivalTime) + delay;
 
-    if (currentMinutes >= lastArrivalTime || lastKnownStopIndex >= trip.stops.length - 1) {
+    if (normalizedCurrentMinutes >= lastArrivalTime || lastKnownStopIndex >= trip.stops.length - 1) {
         return trip.stops.length - 1;
     }
 
     if (lastKnownStopIndex === -1 && !trip.delay) {
+        let prevTime = firstArrivalTime;
+
         for (let i = 0; i < trip.stops.length - 1; i++) {
             const stop = trip.stops[i];
             const next = trip.stops[i + 1];
-            const stopArrival = timeToMinutes(stop.scheduledArrival) + delay;
-            const stopDeparture = timeToMinutes(stop.scheduledDeparture) + delay;
-            const nextArrival = timeToMinutes(next.scheduledArrival) + delay;
 
-            if (currentMinutes >= stopArrival && currentMinutes < stopDeparture) {
+            const stopArrival = normalizeTime(stop.scheduledArrival, prevTime) + delay;
+            const stopDeparture = normalizeTime(stop.scheduledDeparture, stopArrival) + delay;
+            const nextArrival = normalizeTime(next.scheduledArrival, stopDeparture) + delay;
+
+            prevTime = nextArrival;
+
+            if (normalizedCurrentMinutes >= stopArrival && normalizedCurrentMinutes < stopDeparture) {
                 return i;
             }
-            if (currentMinutes >= stopDeparture && currentMinutes < nextArrival) {
+            if (normalizedCurrentMinutes >= stopDeparture && normalizedCurrentMinutes < nextArrival) {
                 const duration = nextArrival - stopDeparture;
                 if (duration <= 0) return i;
-                const progress = (currentMinutes - stopDeparture) / duration;
+                const progress = (normalizedCurrentMinutes - stopDeparture) / duration;
                 return i + progress;
             }
         }
@@ -70,23 +90,23 @@ const calculatePreciseActiveIndex = (trip: TripProps): number => {
     const currentStop = trip.stops[lastKnownStopIndex];
     const nextStop = trip.stops[lastKnownStopIndex + 1];
 
-    const currentStopDeparture = timeToMinutes(currentStop.scheduledDeparture) + delay;
-    const nextStopArrival = timeToMinutes(nextStop.scheduledArrival) + delay;
+    let currentStopDeparture = normalizeTime(currentStop.scheduledDeparture, firstArrivalTime) + delay;
+    let nextStopArrival = normalizeTime(nextStop.scheduledArrival, currentStopDeparture) + delay;
 
-    if (currentMinutes < currentStopDeparture) {
+    if (normalizedCurrentMinutes < currentStopDeparture) {
         return lastKnownStopIndex;
     }
 
-    if (currentMinutes < nextStopArrival) {
+    if (normalizedCurrentMinutes < nextStopArrival) {
         const segmentDuration = nextStopArrival - currentStopDeparture;
         if (segmentDuration <= 0) {
             return lastKnownStopIndex;
         }
-        const progress = (currentMinutes - currentStopDeparture) / segmentDuration;
+        const progress = (normalizedCurrentMinutes - currentStopDeparture) / segmentDuration;
         return lastKnownStopIndex + Math.min(progress, 0.9999);
     }
 
-    if (currentMinutes >= nextStopArrival) {
+    if (normalizedCurrentMinutes >= nextStopArrival) {
         return lastKnownStopIndex + 0.9999;
     }
 

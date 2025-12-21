@@ -110,7 +110,7 @@ const Timeline = ({
                 >
                     <div className="relative z-10">
                         <div
-                            className={cn("flex justify-center items-center after:shadow-small outline-none bg-[var(--active-color)] w-4 h-4 after:w-3 after:h-3 rounded-full after:rounded-full top-1/2 ring-transparent border-0 after:transition-all shadow-small transition-colors", isActive ? "after:bg-[var(--active-color-dark)]" : "after:bg-white")}
+                            className={cn("flex justify-center items-center after:shadow-small outline-none bg-(--active-color) w-4 h-4 after:w-3 after:h-3 rounded-full after:rounded-full top-1/2 ring-transparent border-0 after:transition-all shadow-small transition-colors", isActive ? "after:bg-(--active-color-dark)" : "after:bg-white")}
                         />
                     </div>
 
