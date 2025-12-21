@@ -243,12 +243,12 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
 
             <div
                 className="flex sm:flex-col flex-row justify-between items-center gap-y-2 py-4 max-w-md w-full mx-auto">
-                <div className="flex flex-col flex-grow min-w-0">
+                <div className="flex flex-col grow min-w-0">
                     {trip.status !== "canceled" ? (<div className="flex-col">
-                        <p className={`${trip.status === "scheduled" ? "text-center" : "sm:text-center text-left"} text-lg font-bold truncate flex-grow min-w-0`}>
+                        <p className={`${trip.status === "scheduled" ? "text-center" : "sm:text-center text-left"} text-lg font-bold truncate grow min-w-0`}>
                             {trip.status === "scheduled" ? "Non ancora partito" : capitalize(trip.lastKnownLocation || "--")}
                         </p>
-                        {(!trip.lastUpdate && trip.delay) ? (<p className={"text-center font-bold flex-grow min-w-0"}>
+                        {(!trip.lastUpdate && trip.delay) ? (<p className={"text-center font-bold grow min-w-0"}>
                             Partenza prevista con un ritardo di <span
                             className={`text-${getDelayColor(trip.delay)}`}>{trip.delay}</span> min
                         </p>) : null}
@@ -396,7 +396,7 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
                             </div>
 
                             {stop.status !== "canceled" && (<Button
-                                className={`flex p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors whitespace-pre-wrap flex-shrink-0 ${stop.actualPlatform ? 'text-white' : 'text-foreground-500'}`}
+                                className={`flex p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors whitespace-pre-wrap shrink-0 ${stop.actualPlatform ? 'text-white' : 'text-foreground-500'}`}
                                 radius="sm"
                                 variant={stop.actualPlatform ? 'solid' : 'ghost'}
                                 color={stop.actualPlatform ? 'success' : 'default'}

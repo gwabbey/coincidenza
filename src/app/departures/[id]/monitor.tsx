@@ -80,20 +80,20 @@ export function Monitor({monitor}: { monitor: StationMonitor }) {
                             {train.departureTime}
                         </div>
 
-                        <div className="flex flex-col text-left w-full flex-grow min-w-0">
+                        <div className="flex flex-col text-left w-full grow min-w-0">
                             <div className="flex items-center justify-between w-full min-w-0 gap-2">
                                 {getTrackUrl(train.company, train.number, train.category) && train.category !== "bus" ? (
                                     <Link
-                                        className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow"
+                                        className="font-bold text-base sm:text-lg truncate min-w-0 grow"
                                         href={getTrackUrl(train.company, train.number, train.category)!}
                                     >
                                         {capitalize(train.destination)}
                                     </Link>) : (<span
-                                    className="font-bold text-base sm:text-lg truncate min-w-0 flex-grow">
+                                    className="font-bold text-base sm:text-lg truncate min-w-0 grow">
                                                     {capitalize(train.destination)}
                                                 </span>)}
                                 {train.delay !== "0" && (
-                                    <p className={cn("text-lg font-bold uppercase flex-shrink-0 whitespace-nowrap", train.delay > 0 ? `text-${getDelayColor(train.delay)}` : "text-danger")}>
+                                    <p className={cn("text-lg font-bold uppercase shrink-0 whitespace-nowrap", train.delay > 0 ? `text-${getDelayColor(train.delay)}` : "text-danger")}>
                                         {parseInt(train.delay) > 0 ? `+${train.delay}'` : train.delay}
                                     </p>)}
                             </div>

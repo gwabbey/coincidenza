@@ -242,18 +242,18 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
             </Card>
         </div>
 
-        <div className="sticky top-[72px] bg-white dark:bg-black z-20">
+        <div className="sticky top-18 bg-white dark:bg-black z-20">
             <Divider className="my-2" />
 
             <div
                 className="flex sm:flex-col flex-row justify-between items-center gap-y-2 py-4 w-full max-w-md mx-auto">
-                <div className="flex flex-col flex-grow min-w-0">
-                    <p className="text-lg font-bold text-left sm:text-center truncate flex-grow min-w-0">
+                <div className="flex flex-col grow min-w-0">
+                    <p className="text-lg font-bold text-left sm:text-center truncate grow min-w-0">
                         {trip.stops.length > 0 && !isDeparting ? trip.stops[activeIndex]?.name : "--"}
                     </p>
 
                     {!isDeparting && !trip.stops[activeIndex] && (
-                        <p className="text-lg font-bold text-center truncate flex-grow min-w-0">
+                        <p className="text-lg font-bold text-center truncate grow min-w-0">
                             dati in tempo reale non disponibili
                         </p>)}
 
@@ -271,7 +271,7 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
 
                 {trip.delay !== null && (<div className="shrink-0">
                     <Button
-                        className={`p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors text-white bg-${trip.status === "completed" ? "default-400" : getDelayColor(trip.delay)}`}
+                        className={`p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none transition-colors! text-white bg-${trip.status === "completed" ? "default-400" : getDelayColor(trip.delay)}`}
                         radius="sm"
                         variant="solid"
                         disabled

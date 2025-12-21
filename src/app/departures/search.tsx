@@ -76,7 +76,7 @@ export default function Search({selected}: { selected?: string }) {
 
     return (
         <div className="flex items-center justify-center gap-x-2 max-w-4xl w-full mx-auto">
-            <Autocomplete className="flex-grow"
+            <Autocomplete className="grow"
                           label="cerca una stazione"
                           size="lg"
                           isVirtualized

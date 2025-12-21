@@ -180,13 +180,13 @@ export default function Directions({search}: { search: { from: Location, to: Loc
             }}
             intermediateStops={mapData?.intermediateStops}
             legs={mapData?.legs}
-            className="w-full h-1/2 rounded-t-large flex-shrink-0"
+            className="w-full h-1/2 rounded-t-large shrink-0"
         />
 
-        <Card className="flex flex-col gap-2 p-4 -mt-4 z-20 flex-1 min-h-0 overflow-auto" fullWidth>
-            {!directions && <h1 className="text-2xl font-bold text-center flex-shrink-0">Pianifica il tuo viaggio</h1>}
+        <Card className="flex flex-col gap-2 p-4 -mt-4 z-20 flex-1 min-h-0 overflow-auto rounded-b-none" fullWidth>
+            {!directions && <h1 className="text-2xl font-bold text-center shrink-0">Pianifica il tuo viaggio</h1>}
 
-            {!directions ? (<div className="flex flex-col items-center gap-y-4 flex-shrink-0">
+            {!directions ? (<div className="flex flex-col items-center gap-y-4 shrink-0">
                 <div className="flex flex-col md:flex-row justify-center items-center gap-x-4 w-full">
                     <LocationAutocomplete
                         name="from"
@@ -269,7 +269,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                 </div>)}
             </div>) : (<>
                 <Card
-                    className="flex flex-row sm:flex-col justify-between sm:justify-center items-center p-4 flex-shrink-0">
+                    className="flex flex-row sm:flex-col justify-between sm:justify-center items-center p-4 shrink-0">
                     <div className="sm:text-center sm:text-nowrap">
                         <div
                             className="flex flex-col sm:flex-row gap-1 font-bold sm:justify-center justify-start">
@@ -311,7 +311,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                     />
                 </Card>
 
-                {directions.direct.length > 0 && (<Card className="p-4 w-full mx-auto flex-shrink-0">
+                {directions.direct.length > 0 && (<Card className="p-4 w-full mx-auto shrink-0">
                     <div className="flex flex-row justify-between">
                         <div className="flex flex-row gap-2 items-center">
                             <IconWalk size={24} />

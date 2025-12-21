@@ -28,13 +28,11 @@ function getStopsAway(
 
     const selectedTime = getAdjustedTime(stopTimes[selectedIndex]);
 
-    // ⏱️ If we're close in time → 0 stops away
     const diffMinutes = (selectedTime.getTime() - now.getTime()) / 60000;
     if (diffMinutes <= proximityMinutes && diffMinutes >= 0) {
         return 0;
     }
 
-    // 🚏 Otherwise use index logic
     const passedIndex = stopTimes.findLastIndex(
         stop => getAdjustedTime(stop) <= now
     );
@@ -87,12 +85,12 @@ export function Monitor({trips}: { trips: any[] }) {
                     <div className="flex flex-row justify-between gap-4">
                         <div className="flex gap-2 w-full">
                             <div
-                                className="flex items-center justify-center w-full max-w-16 p-2 text-lg font-bold text-center rounded-small bg-gray-500 text-white self-center min-h-[2.5rem]">
+                                className="flex items-center justify-center w-full max-w-16 p-2 text-lg font-bold text-center rounded-small bg-gray-500 text-white self-center min-h-10">
                                 {formatDate(scheduledTime)}
                             </div>
                             <Link color="foreground" href={`/track/trentino-trasporti/${trip.tripId}`}
-                                  className="text-base sm:text-lg min-w-0 flex-grow">
-                                <div className="flex flex-col text-left w-full flex-grow min-w-0">
+                                  className="text-base sm:text-lg min-w-0 grow">
+                                <div className="flex flex-col text-left w-full grow min-w-0">
                                     <div className="flex items-center justify-between w-full min-w-0 gap-2">
                                         <div className="flex items-center gap-x-1 sm:gap-x-2 min-w-0">
                                             <div
@@ -108,11 +106,11 @@ export function Monitor({trips}: { trips: any[] }) {
                                             </div>
                                         </div>
                                         {!trip.lastEventRecivedAt && (
-                                            <p className="text-lg font-bold uppercase flex-shrink-0 whitespace-nowrap text-foreground-500">
+                                            <p className="text-lg font-bold uppercase shrink-0 whitespace-nowrap text-foreground-500">
                                                 <IconAntennaBarsOff />
                                             </p>)}
                                         {isDelayed && (
-                                            <p className={`text-lg font-bold uppercase flex-shrink-0 whitespace-nowrap text-${getDelayColor(trip.delay)}`}>
+                                            <p className={`text-lg font-bold uppercase shrink-0 whitespace-nowrap text-${getDelayColor(trip.delay)}`}>
                                                 {trip.delay < 0 ? '' : trip.delay > 0 ? '+' : ""}
                                                 {trip.delay !== 0 && `${trip.delay}'`}
                                             </p>)}
