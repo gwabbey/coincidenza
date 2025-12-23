@@ -19,98 +19,67 @@ const timeToMinutes = (date: string): number => {
 };
 
 const calculatePreciseActiveIndex = (trip: TripProps): number => {
+    if (!trip.stops?.length) return -1;
+
     const currentMinutes = getCurrentMinutes();
-    const delay = trip.delay;
-    const lastKnownStopIndex = trip.currentStopIndex;
+    const activeIndex = trip.currentStopIndex;
 
-    if (!trip.stops || trip.stops.length === 0) {
-        return -1;
-    }
+    if (trip.lastUpdate && activeIndex === -1) return -1;
 
-    const normalizeTime = (timeStr: string, previousTime?: number): number => {
+    const delay = trip.delay || 0;
+    const normalizeTime = (timeStr: string, prevTime?: number): number => {
         let minutes = timeToMinutes(timeStr);
-
-        if (previousTime !== undefined && minutes < previousTime - 180) {
-            minutes += 1440;
-        }
-
+        if (prevTime !== undefined && minutes < prevTime - 180) minutes += 1440;
         return minutes;
     };
 
-    const firstStop = trip.stops[0];
-    let firstArrivalTime = timeToMinutes(firstStop.scheduledArrival) + delay;
-    let firstDepartureTime = timeToMinutes(firstStop.scheduledDeparture) + delay;
+    const firstArrival = timeToMinutes(trip.stops[0].scheduledArrival) + delay;
+    const lastArrival = normalizeTime(trip.stops[trip.stops.length - 1].scheduledArrival, firstArrival) + delay;
 
-    let normalizedCurrentMinutes = currentMinutes;
-    if (currentMinutes < firstArrivalTime - 180) {
-        normalizedCurrentMinutes = currentMinutes + 1440;
+    let now = currentMinutes;
+    if (firstArrival > 1260 && now < 180) {
+        now += 1440;
     }
 
-    if (normalizedCurrentMinutes < firstArrivalTime) {
-        return -1;
+    if (now < firstArrival) return -1;
+    if (now >= lastArrival) return trip.stops.length - 1;
+
+    if (trip.lastUpdate && activeIndex >= 0 && activeIndex < trip.stops.length - 1) {
+        const currentStop = trip.stops[activeIndex];
+        const nextStop = trip.stops[activeIndex + 1];
+
+        const departure = normalizeTime(currentStop.scheduledDeparture, firstArrival) + delay;
+        const arrival = normalizeTime(nextStop.scheduledArrival, departure) + delay;
+
+        if (now < departure) return activeIndex;
+
+        const duration = arrival - departure;
+        if (duration <= 0) return activeIndex;
+
+        const progress = Math.min((now - departure) / duration, 0.9999);
+        return activeIndex + progress;
     }
 
-    if (lastKnownStopIndex === -1 && normalizedCurrentMinutes < firstDepartureTime) {
-        return 0;
-    }
+    let prevTime = firstArrival;
+    for (let i = 0; i < trip.stops.length - 1; i++) {
+        const stop = trip.stops[i];
+        const next = trip.stops[i + 1];
 
-    const lastStop = trip.stops[trip.stops.length - 1];
-    let lastArrivalTime = normalizeTime(lastStop.scheduledArrival, firstArrivalTime) + delay;
+        const arrival = normalizeTime(stop.scheduledArrival, prevTime) + delay;
+        const departure = normalizeTime(stop.scheduledDeparture, arrival) + delay;
+        const nextArrival = normalizeTime(next.scheduledArrival, departure) + delay;
+        prevTime = nextArrival;
 
-    if (normalizedCurrentMinutes >= lastArrivalTime || lastKnownStopIndex >= trip.stops.length - 1) {
-        return trip.stops.length - 1;
-    }
+        if (now >= arrival && now < departure) return i;
 
-    if (lastKnownStopIndex === -1 && !trip.delay) {
-        let prevTime = firstArrivalTime;
-
-        for (let i = 0; i < trip.stops.length - 1; i++) {
-            const stop = trip.stops[i];
-            const next = trip.stops[i + 1];
-
-            const stopArrival = normalizeTime(stop.scheduledArrival, prevTime) + delay;
-            const stopDeparture = normalizeTime(stop.scheduledDeparture, stopArrival) + delay;
-            const nextArrival = normalizeTime(next.scheduledArrival, stopDeparture) + delay;
-
-            prevTime = nextArrival;
-
-            if (normalizedCurrentMinutes >= stopArrival && normalizedCurrentMinutes < stopDeparture) {
-                return i;
-            }
-            if (normalizedCurrentMinutes >= stopDeparture && normalizedCurrentMinutes < nextArrival) {
-                const duration = nextArrival - stopDeparture;
-                if (duration <= 0) return i;
-                const progress = (normalizedCurrentMinutes - stopDeparture) / duration;
-                return i + progress;
-            }
+        if (now >= departure && now < nextArrival) {
+            const duration = nextArrival - departure;
+            if (duration <= 0) return i;
+            return i + (now - departure) / duration;
         }
-        return 0;
     }
 
-    const currentStop = trip.stops[lastKnownStopIndex];
-    const nextStop = trip.stops[lastKnownStopIndex + 1];
-
-    let currentStopDeparture = normalizeTime(currentStop.scheduledDeparture, firstArrivalTime) + delay;
-    let nextStopArrival = normalizeTime(nextStop.scheduledArrival, currentStopDeparture) + delay;
-
-    if (normalizedCurrentMinutes < currentStopDeparture) {
-        return lastKnownStopIndex;
-    }
-
-    if (normalizedCurrentMinutes < nextStopArrival) {
-        const segmentDuration = nextStopArrival - currentStopDeparture;
-        if (segmentDuration <= 0) {
-            return lastKnownStopIndex;
-        }
-        const progress = (normalizedCurrentMinutes - currentStopDeparture) / segmentDuration;
-        return lastKnownStopIndex + Math.min(progress, 0.9999);
-    }
-
-    if (normalizedCurrentMinutes >= nextStopArrival) {
-        return lastKnownStopIndex + 0.9999;
-    }
-
-    return lastKnownStopIndex;
+    return 0;
 };
 
 export default function Bus({trip: initialTrip}: { trip: TripProps }) {

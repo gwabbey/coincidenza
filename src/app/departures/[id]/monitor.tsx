@@ -136,6 +136,7 @@ export function Monitor({monitor}: { monitor: StationMonitor }) {
                                     </p>
                                 </motion.div>
                             </div>)}
+                            <div className="italic text-sm">{train.alerts}</div>
                         </div>
                     </div>
                 </div>

@@ -50,6 +50,7 @@ export interface Train {
         name: string;
         time: string;
     }[];
+    alerts: string;
 }
 
 export interface StationMonitor {

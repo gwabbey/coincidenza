@@ -37,7 +37,7 @@ export interface Location {
     name: string
     lat: number
     lon: number
-    area: string
+    address: string
     modes: string[]
 }
 
@@ -60,7 +60,7 @@ function cleanup(data: SearchResult[]): Location[] {
                 name: capitalize(item.name),
                 lat: item.lat,
                 lon: item.lon,
-                area: hasRail ? "Stazione" : [defaultArea?.name ?? "", matchedArea?.name ?? ""]
+                address: hasRail ? "Stazione" : [defaultArea?.name ?? "", matchedArea?.name ?? ""]
                     .filter(Boolean)
                     .map(name => name.replaceAll(" - ", "-"))
                     .join(", ")
@@ -78,14 +78,8 @@ function cleanup(data: SearchResult[]): Location[] {
         });
 }
 
-export async function searchLocation({lat, lon, query}: {
-    lat: string
-    lon: string
-    query: string
-}): Promise<Location[]> {
-    const isInvalid = isNaN(+lat) || isNaN(+lon)
+export async function searchLocation(query: string): Promise<Location[]> {
     const {data} = await axios.get<SearchResult[]>(`${MOTIS}/api/v1/geocode?place=46.0722416,11.1193186&text=${query}&language=it`);
-    console.log(`${MOTIS}/api/v1/geocode?place=${isInvalid ? "46.0722416" : lat},${isInvalid ? "11.1193186" : lon}&text=${query}&language=it`)
     return cleanup(data);
 }
 

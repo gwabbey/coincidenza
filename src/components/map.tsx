@@ -437,19 +437,31 @@ export default function LibreMap({
 
         const allPoints: [number, number][] = [];
 
-        if (from) allPoints.push([from.lon, from.lat]);
-        if (to) allPoints.push([to.lon, to.lat]);
+        if (from && !isNaN(from.lat) && !isNaN(from.lon)) {
+            allPoints.push([from.lon, from.lat]);
+        }
+        if (to && !isNaN(to.lat) && !isNaN(to.lon)) {
+            allPoints.push([to.lon, to.lat]);
+        }
 
         if (legs.length > 0) {
             const decodedLegs = await Promise.all(legs.map(leg => decodePolyline(leg.legGeometry.points)));
             decodedLegs.forEach(legPoints => {
-                legPoints.forEach(p => allPoints.push([p[1], p[0]]));
+                legPoints.forEach(p => {
+                    const lat = Number(p[0]);
+                    const lon = Number(p[1]);
+                    if (!isNaN(lat) && !isNaN(lon)) {
+                        allPoints.push([lon, lat]);
+                    }
+                });
             });
         }
 
         if (intermediateStops) {
-            intermediateStops.forEach((stop) => {
-                allPoints.push([stop.lon, stop.lat]);
+            intermediateStops.forEach(stop => {
+                if (!isNaN(stop.lat) && !isNaN(stop.lon)) {
+                    allPoints.push([stop.lon, stop.lat]);
+                }
             });
         }
 
@@ -457,7 +469,7 @@ export default function LibreMap({
             const bounds = allPoints.reduce((bounds, coord) => bounds.extend(coord as [number, number]), new maplibregl.LngLatBounds(allPoints[0], allPoints[0]));
 
             mapRef.current.fitBounds(bounds, {
-                padding: 50, duration: 1000
+                padding: 50, duration: 1000,
             });
         }
     };

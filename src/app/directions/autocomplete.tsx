@@ -1,10 +1,10 @@
 "use client";
 
-import {addToast, Autocomplete, AutocompleteItem, cn, Image, Spinner} from "@heroui/react";
+import {addToast, Autocomplete, AutocompleteItem, cn, Spinner} from "@heroui/react";
 import {Key, useEffect, useState} from "react";
 import {useDebouncedCallback} from 'use-debounce';
-import {searchLocation} from "@/api/motis/geocoding";
-import {IconBus, IconLocation, IconMapPin, IconTrain} from "@tabler/icons-react";
+import {IconLocation} from "@tabler/icons-react";
+import {searchLocation} from "@/api/apple-maps/geocoding";
 
 interface Props {
     name: string;
@@ -22,7 +22,7 @@ const GEOLOCATION_ERRORS: Record<number, string> = {
 };
 
 const CURRENT_LOCATION = {
-    _key: "current-location", id: "current-location", name: "La tua posizione", area: null, lat: null, lon: null,
+    id: "current-location", name: "La tua posizione", address: null, lat: null, lon: null,
 };
 
 export const LocationAutocomplete = ({
@@ -83,8 +83,7 @@ export const LocationAutocomplete = ({
             return;
         }
 
-        const selected = items.find(item => item._key === key);
-        console.log(selected);
+        const selected = items.find(item => item.id === key);
         if (selected) {
             setValue(selected.name);
             onLocationSelect(selected);
@@ -95,8 +94,6 @@ export const LocationAutocomplete = ({
         setValue(newValue);
 
         if (!newValue.trim()) {
-            setItems([CURRENT_LOCATION]);
-            onLocationSelect(null);
             return;
         }
 
@@ -109,35 +106,26 @@ export const LocationAutocomplete = ({
             return;
         }
 
+        const currentQuery = query;
         setLoading(true);
 
         try {
-            let userCoords: { lat: string, lon: string } | null = null;
-            try {
-                const position = await getCurrentPosition();
-                userCoords = {
-                    lat: position.coords.latitude.toString(), lon: position.coords.longitude.toString()
-                };
-            } catch {
-                // do nothing, user location is optional
-            }
-
-            const search = await searchLocation({
-                lat: userCoords?.lat ?? "46.0722416", lon: userCoords?.lon ?? "11.1193186", query
+            const search = await searchLocation(query, {
+                userLocation: "46.0722416,11.1193186"
             });
 
             const locations = search.map((location: any) => ({
-                _key: location._key,
                 id: location.id,
                 name: location.name,
-                area: location.area,
+                address: location.address,
                 lat: location.lat,
                 lon: location.lon,
                 category: location.category,
-                modes: location.modes,
             }));
 
-            setItems([CURRENT_LOCATION, ...locations]);
+            if (value === currentQuery) {
+                setItems([CURRENT_LOCATION, ...locations]);
+            }
         } catch (error) {
             addToast({title: "Errore durante la ricerca."});
             setItems([CURRENT_LOCATION]);
@@ -149,8 +137,6 @@ export const LocationAutocomplete = ({
     return (<Autocomplete
         label={label}
         inputValue={value}
-        allowsCustomValue
-        selectorIcon={<></>}
         variant="underlined"
         isClearable={false}
         onInputChange={onInputChange}
@@ -168,21 +154,15 @@ export const LocationAutocomplete = ({
         size="lg"
     >
         {(item) => (<AutocompleteItem
-            key={item._key}
-            startContent={item.name === "La tua posizione" ?
-                <IconLocation /> : item.category && item.category !== "none" ? (<Image
-                    width={24} radius="none" className="w-6"
-                    src={`https://motis.g3b.dev/icons/${item.category}.svg`}
-                />) : item.modes?.some((mode: string[]) => mode.includes("RAIL")) ? (
-                    <IconTrain />) : item.modes?.some((mode: string[]) => mode.includes("BUS")) ? (<IconBus />) : (
-                    <IconMapPin />)}
+            key={item.id}
+            startContent={item.name === "La tua posizione" && <IconLocation />}
             textValue={item.name || 'La tua posizione'}
         >
             <div className="flex flex-col">
                         <span className={cn(item.name === "La tua posizione" && "font-bold")}>
                             {item.name}
                         </span>
-                {item.area && <span className="text-sm text-default-400">{item.area}</span>}
+                {item.address && <span className="text-sm text-default-400">{item.address}</span>}
             </div>
         </AutocompleteItem>)}
     </Autocomplete>);

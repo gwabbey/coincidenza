@@ -19,22 +19,44 @@ export async function fetchData(endpoint: string, options: { params?: Record<str
             "Content-Type": "application/json",
             "X-Requested-With": "it.tndigit.mit",
             Authorization: `Basic ${Buffer.from(`${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`).toString("base64")}`
-        }, signal: controller.signal,
+        }, signal: controller.signal, timeout: 30000, validateStatus: (status) => status < 500,
     });
 
     axiosRetry(client, {
-        retries: 5, retryDelay: axiosRetry.exponentialDelay,
+        retries: 3, retryDelay: axiosRetry.exponentialDelay, retryCondition: (error) => {
+            return axiosRetry.isNetworkOrIdempotentRequestError(error) || (error.response?.status ?? 0) >= 500;
+        },
     });
 
     try {
         const response = await client.get(url);
         clearTimeout(timeout);
-        return response.data;
-    } catch (error: any) {
-        if (axios.isCancel(error)) {
+
+        if (!response.data) {
+            console.warn('empty response:', endpoint);
             return null;
         }
-        throw new Error(`trentino trasporti data fetch error: ${error.message}`);
+
+        return response.data;
+    } catch (error: any) {
+        clearTimeout(timeout);
+
+        if (axios.isCancel(error)) {
+            console.warn('request timeout or cancelled:', endpoint);
+            return null;
+        }
+
+        if (error.response) {
+            console.error(`trentino trasporti error ${error.response.status}:`, endpoint);
+            if (error.response.status === 404) {
+                return null;
+            }
+        } else if (error.request) {
+            console.error('no response received:', endpoint);
+        }
+
+        console.error('trentino trasporti error:', error.message);
+        return null;
     }
 }
 
@@ -191,7 +213,7 @@ type Trip = {
 export async function getFilteredDepartures(lat: string, lon: string) {
     const allStops = await getClosestBusStops(lat, lon)
     const walkableStops = getNearbyStops(allStops, 100)
-    
+
     if (walkableStops.length === 0) {
         return {error: 'no_stops', trips: []}
     }

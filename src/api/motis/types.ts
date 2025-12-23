@@ -9,8 +9,7 @@ export interface Location {
     lat: string
     lon: string
     name: string
-    area: string
-    type: string
+    address: string
 }
 
 export interface Trip {

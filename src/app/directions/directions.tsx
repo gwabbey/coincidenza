@@ -2,8 +2,8 @@
 
 import {getDirections} from "@/api/motis/directions";
 import {type Directions, type Location} from "@/api/motis/types";
-import {Button, Card, DateInput, DateValue, Link, TimeInput, TimeInputValue} from "@heroui/react";
-import {CalendarDate, Time} from "@internationalized/date";
+import {Button, Card, DateInput, Link, TimeInput, TimeInputValue} from "@heroui/react";
+import {CalendarDate, type DateValue, Time} from "@internationalized/date";
 import {
     IconArrowDown,
     IconArrowRight,
@@ -29,11 +29,10 @@ interface SelectedLocations {
     to: Location | null;
 }
 
-export default function Directions({search}: { search: { from: Location, to: Location, dateTime: string } | null }) {
+export default function Directions({recent}: { recent: { from: Location, to: Location } | null }) {
     const [selectedLocations, setSelectedLocations] = useState<SelectedLocations>({
-        from: search!.from, to: search!.to,
+        from: null, to: null,
     });
-
     const dateTime = new Date();
     const today = new CalendarDate(dateTime.getFullYear(), dateTime.getMonth() + 1, dateTime.getDate());
     const nextWeek = new CalendarDate(dateTime.getFullYear(), dateTime.getMonth() + 1, dateTime.getDate() + 7);
@@ -54,13 +53,6 @@ export default function Directions({search}: { search: { from: Location, to: Loc
         }
     };
 
-    const setCookie = (name: string, value: any, days = 30) => {
-        const expires = new Date();
-        expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-        const encodedValue = encodeURIComponent(JSON.stringify(value));
-        document.cookie = `${name}=${encodedValue}; path=/; expires=${expires.toUTCString()};`;
-    };
-
     const handleSearch = async () => {
         if (document.activeElement instanceof HTMLElement) {
             document.activeElement.blur();
@@ -71,42 +63,25 @@ export default function Directions({search}: { search: { from: Location, to: Loc
         setIsLoading(true);
         setError(null);
         setDirections(undefined);
+        setSelectedTripIndex(null);
 
         try {
             const combinedDateTime = new Date(date.year, date.month - 1, date.day, time.hour, time.minute);
             const localIsoString = combinedDateTime.toISOString();
 
-            setCookie("q", {
-                from: {
-                    lat: selectedLocations.from.lat,
-                    lon: selectedLocations.from.lon,
-                    name: selectedLocations.from.name,
-                    area: selectedLocations.from.area,
-                }, to: {
-                    lat: selectedLocations.to.lat,
-                    lon: selectedLocations.to.lon,
-                    name: selectedLocations.to.name,
-                    area: selectedLocations.to.area
-                }, dateTime: localIsoString
-            })
-
             const result = await getDirections({
-                id: selectedLocations.from.id,
-                lat: selectedLocations.from.lat,
-                lon: selectedLocations.from.lon,
-                name: selectedLocations.from.name,
-                area: selectedLocations.from.area,
-                type: selectedLocations.from.type,
+                id: selectedLocations.from!.id,
+                lat: selectedLocations.from!.lat,
+                lon: selectedLocations.from!.lon,
+                name: selectedLocations.from!.name,
+                address: selectedLocations.from!.address,
             }, {
-                id: selectedLocations.to.id,
-                lat: selectedLocations.to.lat,
-                lon: selectedLocations.to.lon,
-                name: selectedLocations.to.name,
-                area: selectedLocations.to.area,
-                type: selectedLocations.to.type,
+                id: selectedLocations.to!.id,
+                lat: selectedLocations.to!.lat,
+                lon: selectedLocations.to!.lon,
+                name: selectedLocations.to!.name,
+                address: selectedLocations.to!.address,
             }, localIsoString);
-
-            console.log(selectedLocations)
 
             if (!result) {
                 setError("Errore nel recupero dei dati. Riprova più tardi.");
@@ -203,17 +178,18 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                             onPress={swapLocations}
                             startContent={<IconArrowsUpDown size={20} className="shrink-0" />}
                             radius="full"
-                            className="border-gray-500 border-1 -my-8 bg-content1 z-10"
+                            className="border-gray-500 border -my-8 bg-content1 z-10"
                             aria-label="inverti selezione"
                         />
                     </div>
                     <Button
+                        isDisabled={isLoading}
                         isIconOnly
                         variant="ghost"
                         onPress={swapLocations}
                         startContent={<IconArrowsLeftRight size={20} className="shrink-0" />}
                         radius="full"
-                        className="border-gray-500 border-1 self-center md:flex hidden"
+                        className="border-gray-500 border self-center md:flex hidden"
                         aria-label="inverti selezione"
                     />
                     <LocationAutocomplete
@@ -296,7 +272,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                             onPress={() => setDirections(undefined)}
                             variant="bordered"
                             radius="full"
-                            className="hidden sm:flex mx-auto mt-2 border-gray-500 border-1 text-medium"
+                            className="hidden sm:flex mx-auto mt-2 border-gray-500 border text-medium"
                         >
                             modifica
                         </Button>
@@ -307,7 +283,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                         variant="bordered"
                         radius="full"
                         onPress={() => setDirections(undefined)}
-                        className="sm:hidden border-gray-500 border-1"
+                        className="sm:hidden border-gray-500 border"
                     />
                 </Card>
 
@@ -335,7 +311,7 @@ export default function Directions({search}: { search: { from: Location, to: Loc
                             isExternal
                             startContent={<IconMap />}
                             radius="full"
-                            className="border-gray-500 border-1 self-center"
+                            className="border-gray-500 border self-center"
                             aria-label="percorso a piedi"
                         />
                     </div>

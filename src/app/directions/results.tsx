@@ -9,7 +9,6 @@ import {format} from "date-fns";
 import {TransportIcon} from "./icons";
 import Steps from "./steps";
 import {trainCategoryLongNames} from "@/train-categories";
-import {useEffect} from "react";
 
 function getMapUrl(from: { lat: number, lon: number }, to: { lat: number, lon: number }) {
     const origin = `${from.lat},${from.lon}`;
@@ -45,10 +44,6 @@ interface ResultsProps {
 }
 
 export default function Results({directions, selectedTripIndex, onTripSelect}: ResultsProps) {
-    useEffect(() => {
-        onTripSelect(null);
-    }, [directions, onTripSelect]);
-
     const handleSelectionChange = (keys: Selection) => {
         if (keys === "all") {
             onTripSelect(null);
@@ -229,7 +224,7 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                                                        base: "mt-4"
                                                                    }}
                                                                    startContent={<IconAlertTriangle />}
-                                                                   className={cn("bg-warning-500/50 px-4 scrollbar-hide rounded-large max-h-64 overflow-scroll", leg.realTime.status === "canceled" && "pointer-events-none")}>
+                                                                   className={cn("bg-warning-500/50 px-4 scrollbar-hide rounded-large max-h-64 overflow-scroll", leg.realTime.status === "canceled" && "pointer-events-none max-h-full")}>
                                                         <div className="pb-2 text-small">
                                                             {leg && leg.realTime.info && leg.realTime.info.map((alert, index) => (
                                                                 <div key={index}

@@ -6,6 +6,7 @@ import {getRealTimeData} from './realtime';
 import {Directions, Location, Trip} from './types';
 import {trainCategoryLongNames} from "@/train-categories";
 import {differenceInMinutes} from "date-fns";
+import axiosRetry from "axios-retry";
 
 const MOTIS = process.env.MOTIS || "http://localhost:8080";
 
@@ -149,7 +150,7 @@ const processTripData = async (data: {
 };
 
 const resolvePlace = (loc: Location): string => {
-    if (loc.lat != null && loc.lon != null && loc.type !== "STOP") {
+    if (loc.lat != null && loc.lon != null) {
         return `${loc.lat},${loc.lon}`;
     }
 
@@ -161,26 +162,41 @@ const resolvePlace = (loc: Location): string => {
 };
 
 export async function getDirections(from: Location, to: Location, dateTime: string): Promise<Directions> {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000);
+
+    const client = axios.create({
+        signal: controller.signal, timeout: 30000, validateStatus: (status) => status < 500,
+    });
+
+    axiosRetry(client, {
+        retries: 3, retryDelay: axiosRetry.exponentialDelay, retryCondition: (error) => {
+            return axiosRetry.isNetworkOrIdempotentRequestError(error) || (error.response?.status ?? 0) >= 500;
+        }, onRetry: (retryCount) => {
+            console.log(`Retry attempt ${retryCount} for directions request`);
+        }
+    });
+
     try {
         const fromPlace = resolvePlace(from);
         const toPlace = resolvePlace(to);
-        console.log(fromPlace, toPlace, dateTime)
 
-        const {data, status} = await axios.get(`${MOTIS}/api/v5/plan`, {
+        const {data, status} = await client.get(`${MOTIS}/api/v5/plan`, {
             params: {
                 fromPlace,
                 toPlace,
                 time: dateTime,
-                maxPreTransitTime: 1800,
-                maxPostTransitTime: 1800,
+                maxPreTransitTime: 1200,
+                maxPostTransitTime: 1200,
                 maxMatchingDistance: 100,
                 fastestDirectFactor: 1.5,
-                joinInterlinedLegs: false,
+                joinInterlinedLegs: true,
                 useRoutedTransfers: true,
                 maxDirectTime: 3600
             }
         });
 
+        clearTimeout(timeout);
 
         if (status !== 200) {
             console.error("Invalid MOTIS response:", data);
@@ -188,8 +204,15 @@ export async function getDirections(from: Location, to: Location, dateTime: stri
         }
 
         return processTripData(data);
-    } catch (error) {
-        console.error("Error fetching directions:", error);
+    } catch (error: any) {
+        clearTimeout(timeout);
+
+        if (axios.isCancel(error)) {
+            console.warn("Directions request timeout");
+            return {trips: [], pageCursor: "", direct: []};
+        }
+
+        console.error("Error fetching directions:", error.message);
         return {trips: [], pageCursor: "", direct: []};
     }
 }

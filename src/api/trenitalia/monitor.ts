@@ -44,9 +44,7 @@ export async function getVtId(name: string): Promise<string> {
 }
 
 async function getVtDepartures(id: string) {
-    const response = await axios.get(
-        `http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/partenze/${id}/${new Date().toString()}`
-    );
+    const response = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/partenze/${id}/${new Date().toString()}`);
 
     if (response.status === 200) {
         return response.data;
@@ -61,17 +59,12 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
         });
 
         axiosRetry(client, {
-            retries: 3,
-            onRetry: (retryCount, error) => {
-                console.log(
-                    `retry attempt ${retryCount} for error ${error.response?.statusText}`
-                );
+            retries: 3, onRetry: (retryCount, error) => {
+                console.log(`retry attempt ${retryCount} for error ${error.response?.statusText}`);
             },
         });
 
-        const response = await client.get(
-            `https://iechub.rfi.it/ArriviPartenze/ArrivalsDepartures/Monitor?placeId=${rfiId}&arrivals=False`
-        );
+        const response = await client.get(`https://iechub.rfi.it/ArriviPartenze/ArrivalsDepartures/Monitor?placeId=${rfiId}&arrivals=False`);
         const $ = cheerio.load(response.data);
 
         const name = capitalize($('h1[id="nomeStazioneId"]').text().trim());
@@ -103,15 +96,10 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
             const departureTime = $(element).find('td[id="ROrario"]').text().trim();
 
             let delay = $(element).find('td[id="RRitardo"]').text().trim() || '0';
-            const platform = category === "autocorsa" || category === "bus"
-                ? "Piazzale Esterno"
-                : $(element).find('td[id="RBinario"] div').text().trim();
-            const departing =
-                $(element).find('td[id="RExLampeggio"] img').attr('alt')?.toLowerCase().trim() === "si";
+            const platform = category === "autocorsa" || category === "bus" ? "Piazzale Esterno" : $(element).find('td[id="RBinario"] div').text().trim();
+            const departing = $(element).find('td[id="RExLampeggio"] img').attr('alt')?.toLowerCase().trim() === "si";
 
-            const vtTrain = vtData.find((vt: any) =>
-                vt.numeroTreno && vt.numeroTreno.toString() === number
-            );
+            const vtTrain = vtData.find((vt: any) => vt.numeroTreno && vt.numeroTreno.toString() === number);
 
             if (vtTrain) {
                 const rfiDelay = parseInt(delay.replace(/\D/g, '')) || 0;
@@ -148,12 +136,10 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
 
             company = getCompany(company);
 
-            let stops: any[];
-            const stopsText = $(element)
-                .find('td[id="RDettagli"] div[class="FermateSuccessivePopupStyle"] div[class="testoinfoaggiuntive"]')
-                .first()
-                .text()
-                .trim();
+            let stops;
+            const infoElements = $(element)
+                .find('td[id="RDettagli"] div.FermateSuccessivePopupStyle div.testoinfoaggiuntive');
+            const stopsText = infoElements.eq(0).text().trim();
 
             stops = stopsText
                 .replace(/^FERMA A:\s*/i, "")
@@ -163,17 +149,16 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
                     if (!match) return null;
 
                     return {
-                        name: capitalize(
-                            match[1]
-                                .trim()
-                                .toLowerCase()
-                                .replace(/'/g, "")
-                                .replace(/-/g, " ")
-                        ),
-                        time: match[2].replace(".", ":"),
+                        name: capitalize(match[1]
+                            .trim()
+                            .toLowerCase()
+                            .replace(/'/g, "")
+                            .replace(/-/g, " ")), time: match[2].replace(".", ":"),
                     };
                 })
-                .filter(Boolean);
+                .filter((x): x is { name: string; time: string } => x !== null);
+
+            const alerts = infoElements.eq(1).length && !["RITARDO", "CODA", "TESTA", "CLASSE"].some(word => infoElements.eq(1).text().trim().includes(word)) ? infoElements.eq(1).text().trim() : '';
 
             if (number && destination && departureTime) {
                 trains.push({
@@ -186,7 +171,8 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
                     delay,
                     platform,
                     departing,
-                    stops
+                    stops,
+                    alerts
                 });
             }
         });
