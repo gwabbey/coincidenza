@@ -8,7 +8,6 @@ import {addToast, Button, Card, CardBody, Divider, Link, useDisclosure} from "@h
 import {IconAlertTriangleFilled, IconExternalLink} from "@tabler/icons-react";
 import {useEffect, useState} from 'react';
 import {Info} from "@/api/motis/types";
-import {useRouter} from "next/navigation";
 
 export const getCurrentMinutes = (): number => {
     return new Date().getHours() * 60 + new Date().getMinutes() + (new Date().getSeconds() / 60);
@@ -41,7 +40,7 @@ const calculatePreciseActiveIndex = (trip: TripProps): number => {
         now += 1440;
     }
 
-    if (now < firstArrival) return -1;
+    if (now < firstArrival) return activeIndex === 0 ? 0 : -1;
     if (now >= lastArrival) return trip.stops.length - 1;
 
     if (trip.lastUpdate && activeIndex >= 0 && activeIndex < trip.stops.length - 1) {
@@ -83,10 +82,9 @@ const calculatePreciseActiveIndex = (trip: TripProps): number => {
 };
 
 export default function Bus({trip: initialTrip}: { trip: TripProps }) {
-    const router = useRouter();
     const [trip, setTrip] = useState(initialTrip);
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
-    const {isOpen, onOpen, onOpenChange} = useDisclosure();
+    const {isOpen, onOpenChange} = useDisclosure();
 
     useEffect(() => {
         if (trip.status === "completed") return;
@@ -195,10 +193,6 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
         return `${duration}min`;
     };
 
-    const setCookie = (name: string, value: string) => {
-        document.cookie = `${name}=${value}; path=/; expires=0`;
-    };
-
     return (<div className="flex flex-col gap-4">
         <div className="flex justify-center items-center text-center flex-wrap gap-x-2 gap-y-1 max-w-full">
                 <span
@@ -286,14 +280,22 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
                     <div className="flex gap-1">
                         <IconAlertTriangleFilled className="shrink-0 pt-1" />
                         <div className="flex-1">
-                            {trip.info.map((alert, index) => (<div key={index} className="flex flex-col gap-2">
-                                <div className="flex flex-col">
-                                    <span>{alert.message} {alert.url &&
-                                        <Link color="foreground" isExternal href={alert.url} className="font-bold">più
-                                            info <IconExternalLink className="shrink-0 ml-1" size={16} /></Link>}</span>
-                                </div>
-                                {index !== trip.info.length - 1 && (<Divider className="mb-2" />)}
-                            </div>))}
+                            {trip.info.slice(0, 4).map((alert, index) => (
+                                <div key={index} className="flex flex-col gap-2">
+                                    <div className="flex flex-col">
+                                        {alert.url ? (<div className="flex flex-col">
+                                            <Link href={alert.url} isExternal color="foreground" className="inline">
+                                                {alert.message}
+                                                <IconExternalLink
+                                                    className="shrink-0 ml-1 mb-1 inline text-center"
+                                                    size={16} />
+                                            </Link>
+                                        </div>) : (<div className="flex flex-col">
+                                            <span>{alert.message}</span>
+                                        </div>)}
+                                    </div>
+                                    {index !== trip.info.slice(0, 4).length - 1 && (<Divider className="mb-2" />)}
+                                </div>))}
                         </div>
                     </div>
                 </CardBody>
@@ -307,12 +309,8 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
 
                     return {
                         content: (<div className="flex flex-col w-full min-w-0">
-                            <Link color="foreground" className="font-bold leading-none cursor-pointer" onPress={() => {
-                                setCookie('lat', stop.lat);
-                                setCookie('lon', stop.lon);
-                                setCookie('name', stop.name);
-                                router.push("/bus");
-                            }}>{stop.name}</Link>
+                            <Link color="foreground" className="font-bold leading-none"
+                                  href={`/departures/${stop.id}`}>{stop.name}</Link>
                             <div className="text-foreground-500 text-sm">
                                 {stop.scheduledDeparture ? (<div className="flex gap-1">
                                     {isPastStop && (<span>

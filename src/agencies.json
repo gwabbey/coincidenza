@@ -1,0 +1,92 @@
+[
+  {
+    "name": "Trentino Trasporti",
+    "id": "tte",
+    "website": "https://trentinotrasporti.it",
+    "icon": "/tt.png"
+  },
+  {
+    "name": "Trentino Trasporti",
+    "id": "ttu",
+    "website": "https://trentinotrasporti.it",
+    "icon": "/tt.png"
+  },
+  {
+    "name": "Trenitalia",
+    "id": "rfi",
+    "website": "https://trenitalia.com",
+    "icon": "/fs.png"
+  },
+  {
+    "name": "ATV Verona",
+    "id": "atv",
+    "website": "https://atv.verona.it",
+    "icon": "/atv.png"
+  },
+  {
+    "name": "ATM Milano",
+    "id": "atm",
+    "website": "https://atm.it",
+    "icon": "/atm.png"
+  },
+  {
+    "name": "Brescia Trasporti",
+    "id": "brescianord",
+    "website": "https://arriva.it",
+    "icon": "/arriva.png"
+  },
+  {
+    "name": "Brescia Trasporti",
+    "id": "brescia",
+    "website": "https://arriva.it",
+    "icon": "/arriva.png"
+  },
+  {
+    "name": "Brescia Trasporti",
+    "id": "bresciasud",
+    "website": "https://arriva.it",
+    "icon": "/arriva.png"
+  },
+  {
+    "name": "Arriva",
+    "id": "arriva",
+    "website": "https://arriva.it",
+    "icon": "/arriva.png"
+  },
+  {
+    "name": "ACTV Venezia",
+    "id": "actvt",
+    "website": "https://actv.avmspa.it",
+    "icon": "/actv.png"
+  },
+  {
+    "name": "ACTV Venezia",
+    "id": "actvm",
+    "website": "https://actv.avmspa.it",
+    "icon": "/actv.png"
+  },
+  {
+    "name": "ATVO",
+    "id": "atvo",
+    "website": "https://atvo.it",
+    "icon": "/atvo.png"
+  },
+  {
+    "name": "Dolomitibus",
+    "id": "dolomitibus",
+    "website": "https://dolomitibus.it",
+    "icon": "/dolomitibus.png"
+  },
+  {
+    "name": "Busitalia Veneto",
+    "id": "bivt",
+    "website": "https://fsbusitalia.it",
+    "icon": "/fs.png"
+  },
+  {
+    "name": "MOM Treviso",
+    "id": "mom",
+    "website": "https://mobilitadimarca.it",
+    "icon": "/mom.png"
+  }
+]

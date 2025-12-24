@@ -4,10 +4,8 @@ export interface Coordinates {
 }
 
 export interface Favorite {
-    lat: number;
-    lon: number;
+    id: string;
     name: string;
     type: string;
     createdAt: string;
-    id?: string;
 }

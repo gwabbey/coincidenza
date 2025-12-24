@@ -84,17 +84,25 @@ export async function getClosestBusStops(lat: string, lon: string) {
     return stopsWithDistance.sort((a: any, b: any) => a.distance - b.distance);
 }
 
+async function getRouteById(type: string, routeId: string) {
+    const routes = await getRoutes(type);
+    if (!Array.isArray(routes)) {
+        return null;
+    }
+    return routes.find((r: any) => r.routeId === routeId) ?? null;
+}
+
 export async function getStopDepartures(stopId: string, type: string) {
-    const [departures, routes] = await Promise.all([fetchData('trips_new', {
+    const departures = await fetchData('trips_new', {
         params: {
             type, stopId: stopId.toString(), limit: "6", refDateTime: new Date().toISOString()
         }
-    }), getRoutes(type)]);
+    });
 
     if (!departures) return null;
-    return departures.map((trip: any) => ({
-        ...trip, route: routes.find((r: any) => r.routeId === trip.routeId) || null
-    }));
+    return Promise.all(departures.map(async (trip: any) => ({
+        ...trip, route: await getRouteById(type, trip.routeId)
+    })));
 }
 
 const routesCache = new Map<string, any>();
@@ -170,7 +178,7 @@ export async function getTripDetails(id: string) {
         arrivalTime: getValidTime(trip.stopTimes[trip.stopTimes.length - 1].arrivalTime),
         delay: trip.delay,
         stops: trip.stopTimes.map((stop: any) => ({
-            id: stop.stopId,
+            id: trip.type === "U" ? `ttu_${stop.stopId}` : `tte_${stop.stopId}`,
             name: getStopName(stop.stopId),
             scheduledArrival: getValidTime(stop.arrivalTime),
             scheduledDeparture: getValidTime(stop.departureTime),

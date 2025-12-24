@@ -4,7 +4,7 @@ import Train from "./trip/train";
 import Bus from "./trip/bus";
 import {getTripDetails as getTrentinoTrip} from "@/api/trentino-trasporti/api";
 
-export const revalidate = 0
+export const revalidate = 60
 
 export default async function Page({params}: {
     params: Promise<{ company: string, id: string }>

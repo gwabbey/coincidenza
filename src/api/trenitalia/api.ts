@@ -104,7 +104,7 @@ function getCategory(trip: any): string {
 }
 
 export async function getMonitorTrip(rfiId: string, tripId: string) {
-    const monitor = await getMonitor(rfiId);
+    const monitor = await getMonitor(rfiId.split("_")[1]);
     if (!monitor) return null;
 
     const train = monitor.trains.find((t) => String(t.number) === String(tripId));
@@ -113,7 +113,7 @@ export async function getMonitorTrip(rfiId: string, tripId: string) {
     return {
         ...train,
         info: monitor.alerts && !["attraversare i binari", "aprire le porte", "la linea gialla"].some(str => monitor.alerts.toLowerCase().includes(str)) ? {
-            infoNote: monitor.alerts, source: "RFI", url: null, insertTimestamp: new Date().toISOString()
+            infoNote: monitor.alerts, source: "RFI", url: null
         } : null,
     };
 }
@@ -230,7 +230,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
     }
 
     const getMonitor = async (stop: any, trainNumber: string): Promise<(Train & {
-        info: { infoNote: string; insertTimestamp: string; source: string; url: string | null } | null
+        info: { infoNote: string; source: string; url: string | null } | null
     }) | null> => {
         const stationName = stop?.stazione;
         if (!stationName) return null;
@@ -306,9 +306,9 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
         info: info ? info
             .map((alert) => ({
                 message: alert.infoNote ?? "",
-                date: timestampToIso(alert.insertTimestamp) ?? "",
                 source: alert.source || "VT",
-                url: null
+                url: null,
+                date: null
             }))
             .filter((alert, i: number, self) => self.findIndex((a) => a.message === alert.message) === i) : []
     }

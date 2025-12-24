@@ -32,13 +32,11 @@ export interface Area {
 
 export interface Location {
     id: string
-    type: string
     category: string
     name: string
     lat: number
     lon: number
     address: string
-    modes: string[]
 }
 
 function cleanup(data: SearchResult[]): Location[] {
@@ -79,8 +77,43 @@ function cleanup(data: SearchResult[]): Location[] {
 }
 
 export async function searchLocation(query: string): Promise<Location[]> {
-    const {data} = await axios.get<SearchResult[]>(`${MOTIS}/api/v1/geocode?place=46.0722416,11.1193186&text=${query}&language=it`);
-    return cleanup(data);
+    const {data} = await axios.get<SearchResult[]>(`${MOTIS}/api/v1/geocode?place=46.0722416,11.1193186&text=${query}&type=STOP`);
+
+    const seen = new Set<string>();
+
+    return data
+        .map((item) => {
+            const hasRail = item.modes?.some(m => m.includes("RAIL")) ?? false;
+
+            return {
+                id: item.id,
+                category: item.category,
+                name: capitalize(item.name),
+                lat: item.lat,
+                lon: item.lon,
+                address: hasRail ? "Stazione" : item.areas.find((a) => a.default)?.name ?? "",
+            };
+        })
+        .filter((item) => {
+            if (item.id.startsWith("trenitalia") || item.id.startsWith("gab") || item.id.startsWith("sta") || item.id.startsWith("trenord")) return false;
+            if (seen.has(item.id)) return false;
+            seen.add(item.id);
+
+            return true;
+        });
+}
+
+export async function getStop(id: string) {
+    try {
+        const {
+            data, status
+        } = await axios.get(`${MOTIS}/api/v5/stoptimes?stopId=${id}&n=0&exactRadius=false&radius=200`);
+        if (status === 200) return {
+            id: data.place.stopId, name: data.place.name, lat: data.place.lat.toString(), lon: data.place.lon.toString()
+        }
+    } catch (error) {
+        return null;
+    }
 }
 
 export async function reverseGeocode(lat: string, lon: string): Promise<Location[]> {

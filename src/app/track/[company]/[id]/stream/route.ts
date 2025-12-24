@@ -13,8 +13,7 @@ export async function GET(request: NextRequest, {params}: { params: Promise<{ co
     const isTrainCompany = company === "trenitalia" || company === "trenord";
     if (isTrainCompany && (!origin || !timestamp)) {
         return new Response(JSON.stringify({error: "Viaggiatreno requires origin station and timestamp"}), {
-            status: 400,
-            headers: {'Content-Type': 'application/json'}
+            status: 400, headers: {'Content-Type': 'application/json'}
         });
     }
 
@@ -25,6 +24,7 @@ export async function GET(request: NextRequest, {params}: { params: Promise<{ co
             let normalizedTrip;
 
             try {
+                let missingCount = 0;
                 switch (company) {
                     case "trenitalia":
                     case "trenord":
@@ -35,9 +35,15 @@ export async function GET(request: NextRequest, {params}: { params: Promise<{ co
                         const trenitaliaTrip = await getTrenitaliaTrip(origin, id, timestamp);
 
                         if (!trenitaliaTrip) {
-                            session.push({error: "Trip not found"});
-                            return true;
+                            missingCount++;
+                            if (missingCount > 3) {
+                                session.push({error: "Trip not found"});
+                                return true;
+                            }
+                            return false;
                         }
+
+                        missingCount = 0;
 
                         normalizedTrip = {
                             status: trenitaliaTrip.status,
@@ -63,11 +69,17 @@ export async function GET(request: NextRequest, {params}: { params: Promise<{ co
 
                     case "trentino-trasporti":
                         const trentinoTrip = await getTrentinoTrip(id);
+
                         if (!trentinoTrip) {
-                            session.push({error: "Trip not found"});
-                            return true;
+                            missingCount++;
+                            if (missingCount > 3) {
+                                session.push({error: "Trip not found"});
+                                return true;
+                            }
+                            return false;
                         }
 
+                        missingCount = 0;
                         normalizedTrip = {
                             status: trentinoTrip.status,
                             delay: trentinoTrip.delay,

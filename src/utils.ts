@@ -61,7 +61,7 @@ export function findMatchingStation(stationName: string): string | null {
 
     for (const [id, name] of Object.entries(stations)) {
         if (normalizedInput === normalize(name)) {
-            return id;
+            return `rfi_${id}`;
         }
     }
 

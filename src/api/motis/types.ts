@@ -126,7 +126,7 @@ export interface IntermediateStop {
 export interface Info {
     message: string;
     url: string | null;
-    date: string;
+    date: string | null;
     source: string;
 }
 

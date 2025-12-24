@@ -4,9 +4,8 @@ import {Trip as TripProps} from "@/api/types";
 import {RouteModal} from "@/components/modal";
 import Timeline from "@/components/timeline";
 import {capitalize, findMatchingStation, formatDate, getDelayColor} from "@/utils";
-import {Button, Card, CardBody, Divider, useDisclosure} from "@heroui/react";
+import {Button, Card, CardBody, Divider, Link, useDisclosure} from "@heroui/react";
 import {IconAlertTriangleFilled} from "@tabler/icons-react";
-import Link from "next/link";
 import {useEffect, useState} from 'react';
 
 const getCurrentMinutes = () => {
@@ -238,7 +237,7 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
             </Card>
         </div>
 
-        <div className="sticky top-[72px] bg-white dark:bg-black z-20">
+        <div className="sticky top-18 bg-white dark:bg-black z-20">
             <Divider className="my-2" />
 
             <div
@@ -264,7 +263,7 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
                 </div>
 
                 {(!["scheduled", "canceled"].includes(trip.status)) && (<Button
-                    className={`p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors text-white bg-${getDelayColor(trip.delay)}`}
+                    className={`p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none transition-colors! text-white bg-${getDelayColor(trip.delay)}`}
                     radius="sm"
                     variant="solid"
                     disabled
@@ -285,7 +284,6 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
 
         {trip.info && trip.info.length > 0 && <Card
             shadow="none"
-            isFooterBlurred
             fullWidth
             className="flex flex-col bg-warning-500/50 max-w-md w-full mx-auto">
             <CardBody className="flex-1 overflow-hidden p-4">
@@ -294,14 +292,7 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
                     <div className="flex-1">
                         {trip.info.map((alert, index) => (<div key={index} className="flex flex-col gap-2">
                             <div className="flex flex-col">
-                                        <span
-                                        >
-                    {alert.message}
-                                            <span className="flex text-sm text-foreground-500">
-                    {formatDate(alert.date)}
-                  </span>
-                  </span>
-
+                                <span>{alert.message}</span>
                             </div>
                             {index !== trip.info.length - 1 && (<Divider className="mb-2" />)}
                         </div>))}
@@ -343,21 +334,19 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
                     }
 
                     const isDepartureDelayed = stop.scheduledDeparture && expectedDepartureWithDelay && formatDate(stop.scheduledDeparture) !== formatDate(stop.actualDeparture || expectedDepartureWithDelay.toISOString());
-
                     const isArrivalDelayed = stop.scheduledArrival && expectedArrivalWithDelay && formatDate(stop.scheduledArrival) !== formatDate(stop.actualArrival || expectedArrivalWithDelay.toISOString());
 
                     return {
                         content: (<div className="flex items-start justify-between w-full">
                             <div className="flex-col">
-                                <Link
-                                    className={`break-words font-bold ${stop.status === "canceled" ? "line-through" : ""}`}
-                                    href={`/departures/${findMatchingStation(stop.name) ?? ""}`}>
+                                <Link color="foreground"
+                                      className="wrap-break-word font-bold leading-none"
+                                      href={`/departures/${findMatchingStation(stop.name) ?? ""}`}>
                                     {stop.name}
                                 </Link>
 
                                 {stop.status === "not_planned" && (
-                                    <p className="text-sm text-warning font-semibold">fermata
-                                        straordinaria</p>)}
+                                    <p className="text-sm text-warning font-semibold">fermata straordinaria</p>)}
 
                                 <div
                                     className={`text-foreground-500 text-sm ${stop.status === "canceled" ? "line-through" : ""}`}>
@@ -396,7 +385,7 @@ export default function Train({trip: initialTrip}: { trip: TripProps }) {
                             </div>
 
                             {stop.status !== "canceled" && (<Button
-                                className={`flex p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none !transition-colors whitespace-pre-wrap shrink-0 ${stop.actualPlatform ? 'text-white' : 'text-foreground-500'}`}
+                                className={`flex p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none transition-colors! whitespace-pre-wrap shrink-0 ${stop.actualPlatform ? 'text-white' : 'text-foreground-500'}`}
                                 radius="sm"
                                 variant={stop.actualPlatform ? 'solid' : 'ghost'}
                                 color={stop.actualPlatform ? 'success' : 'default'}
