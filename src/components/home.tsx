@@ -4,18 +4,17 @@ import {Favorites} from "@/app/favorites";
 import React, {useEffect} from "react";
 import Image from "next/image";
 
-// TODO: remove soon
-useEffect(() => {
-    const migrated = document.cookie
-        .split("; ")
-        .some(row => row.startsWith("favorites_migrated="));
-
-    if (migrated) return;
-    document.cookie = `favorites=[]; path=/; max-age=0`;
-    document.cookie = `favorites_migrated=true; path=/; max-age=${60 * 60 * 24 * 30}`;
-}, []);
-
 export const Home = ({alerts, favorites}: { alerts: any, favorites: any }) => {
+    useEffect(() => {
+        const migrated = document.cookie
+            .split("; ")
+            .some(row => row.startsWith("favorites_migrated="));
+
+        if (migrated) return;
+        document.cookie = `favorites=[]; path=/; max-age=0`;
+        document.cookie = `favorites_migrated=true; path=/; max-age=${60 * 60 * 24 * 30}`;
+    }, []);
+    
     return (<div className="flex flex-col items-center justify-center gap-8 text-center max-w-4xl w-full mx-auto">
         <div className="flex flex-col gap-y-2">
             <h1 className="text-5xl font-thin text-center">coincidenza</h1>
