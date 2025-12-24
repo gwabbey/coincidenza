@@ -31,7 +31,7 @@ import {
     IconTrees
 } from "@tabler/icons-react";
 import {useRouter} from "next/navigation";
-import {JSX, useEffect, useState} from "react";
+import {JSX, useState} from "react";
 
 const icons: Record<string, JSX.Element> = {
     bus: <IconBus />,
@@ -51,17 +51,6 @@ export function Favorites({favorites}: { favorites: Favorite[] }) {
     const [type, setType] = useState("");
 
     if (!favorites) return null;
-
-    // because of the change from lat,lon/id to id,name,type we gotta remove the old favorites and manually save em with the new system ://///////
-    useEffect(() => {
-        const migrated = document.cookie
-            .split("; ")
-            .some(row => row.startsWith("favorites_migrated="));
-
-        if (migrated) return;
-        document.cookie = `favorites=; path=/; max-age=0`;
-        document.cookie = `favorites_migrated=true; path=/; max-age=${60 * 60 * 24 * 30}`;
-    }, []);
 
     function editFavorite() {
         if (!editing) return;
