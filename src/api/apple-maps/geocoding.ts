@@ -1,8 +1,10 @@
 "use server";
 
-import axios from 'axios';
 import {getCachedMapsToken} from './auth';
 import {getDistance} from "@/utils";
+import {createAxiosClient} from "@/api/axios";
+
+const axios = createAxiosClient();
 
 export async function searchLocation(address: string, options?: {
     limitToCountries?: string

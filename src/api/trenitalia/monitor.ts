@@ -2,17 +2,17 @@
 
 import {trainCategoryShortNames} from "@/train-categories";
 import {capitalize} from "@/utils";
-import axios from 'axios';
-import axiosRetry from 'axios-retry';
 import * as cheerio from 'cheerio';
 import {StationMonitor, Train} from "../types";
+import {createAxiosClient} from "@/api/axios";
 
+const axios = createAxiosClient();
 const vtIdCache = new Map<string, string>();
 
 export async function getVtId(name: string): Promise<string> {
     if (vtIdCache.has(name)) return vtIdCache.get(name)!;
 
-    const res = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/autocompletaStazione/${name}`);
+    const res = await axios.get(`https://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/autocompletaStazione/${name}`);
     const lines = res.data.trim().split("\n").filter(Boolean);
 
     if (lines.length === 0) return "";
@@ -29,7 +29,7 @@ export async function getVtId(name: string): Promise<string> {
         const hour = now.getHours();
 
         if (hour >= 4 && hour <= 23) {
-            const testRes = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/partenze/${first.id}/0`)
+            const testRes = await axios.get(`https://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/partenze/${first.id}/0`)
                 .catch(() => null);
 
             if (!testRes?.data || Array.isArray(testRes.data) && testRes.data.length === 0) {
@@ -44,7 +44,7 @@ export async function getVtId(name: string): Promise<string> {
 }
 
 async function getVtDepartures(id: string) {
-    const response = await axios.get(`http://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/partenze/${id}/${new Date().toString()}`);
+    const response = await axios.get(`https://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/partenze/${id}/${new Date().toString()}`);
 
     if (response.status === 200) {
         return response.data;
@@ -54,27 +54,15 @@ async function getVtDepartures(id: string) {
 
 export async function getMonitor(rfiId: string, vtId: string = ""): Promise<StationMonitor | null> {
     try {
-        const client = axios.create({
-            timeout: 15000,
-        });
-
-        axiosRetry(client, {
-            retries: 3, onRetry: (retryCount, error) => {
-                console.log(`retry attempt ${retryCount} for error ${error.response?.statusText}`);
-            },
-        });
-
-        const response = await client.get(`https://iechub.rfi.it/ArriviPartenze/ArrivalsDepartures/Monitor?placeId=${rfiId}&arrivals=False`);
+        const response = await axios.get(`https://iechub.rfi.it/ArriviPartenze/ArrivalsDepartures/Monitor?placeId=${rfiId}&arrivals=False`);
         const $ = cheerio.load(response.data);
 
         const name = capitalize($('h1[id="nomeStazioneId"]').text().trim());
         const vtData = vtId !== "" ? await getVtDepartures(vtId) : [];
 
         const trains: Train[] = [];
-        const alerts = $('#barraInfoStazioneId > div')
-            .find('div[class="marqueeinfosupp"] div')
-            .text()
-            .trim();
+        const alertsText = $('#barraInfoStazioneId > div').find('div[class="marqueeinfosupp"] div').text().trim()
+        const alerts = !["attraversare i binari", "aprire le porte", "la linea gialla"].some(str => alertsText.toLowerCase().includes(str)) ? alertsText : "";
 
         $('#bodyTabId > tr').each((_, element) => {
             const hasContent = $(element).find('td').toArray().some(td => $(td).text().trim());

@@ -1,6 +1,8 @@
 "use server"
-import axios from "axios";
 import {capitalize} from "@/utils";
+import {createAxiosClient} from "@/api/axios";
+
+const axios = createAxiosClient();
 
 const MOTIS = process.env.MOTIS || "http://localhost:8080";
 

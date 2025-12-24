@@ -1,6 +1,7 @@
-import axios from 'axios';
-import axiosRetry from 'axios-retry';
 import {getDistance} from "@/utils";
+import {createAxiosClient} from "@/api/axios";
+
+const axios = createAxiosClient();
 
 export async function fetchData(endpoint: string, options: { params?: Record<string, string> } = {}) {
     let url = `https://app-tpl.tndigit.it/gtlservice/${endpoint}`;
@@ -10,27 +11,15 @@ export async function fetchData(endpoint: string, options: { params?: Record<str
         url += `?${searchParams.toString()}`;
     }
 
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
-
-    const client = axios.create({
-        headers: {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "X-Requested-With": "it.tndigit.mit",
-            Authorization: `Basic ${Buffer.from(`${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`).toString("base64")}`
-        }, signal: controller.signal, timeout: 30000, validateStatus: (status) => status < 500,
-    });
-
-    axiosRetry(client, {
-        retries: 3, retryDelay: axiosRetry.exponentialDelay, retryCondition: (error) => {
-            return axiosRetry.isNetworkOrIdempotentRequestError(error) || (error.response?.status ?? 0) >= 500;
-        },
-    });
-
     try {
-        const response = await client.get(url);
-        clearTimeout(timeout);
+        const response = await axios.get(url, {
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-Requested-With": "it.tndigit.mit",
+                Authorization: `Basic ${Buffer.from(`${process.env.TT_USERNAME}:${process.env.TT_PASSWORD}`).toString("base64")}`
+            }, timeout: 15000, validateStatus: (status) => status < 500,
+        });
 
         if (!response.data) {
             console.warn('empty response:', endpoint);
@@ -39,13 +28,6 @@ export async function fetchData(endpoint: string, options: { params?: Record<str
 
         return response.data;
     } catch (error: any) {
-        clearTimeout(timeout);
-
-        if (axios.isCancel(error)) {
-            console.warn('request timeout or cancelled:', endpoint);
-            return null;
-        }
-
         if (error.response) {
             console.error(`trentino trasporti error ${error.response.status}:`, endpoint);
             if (error.response.status === 404) {

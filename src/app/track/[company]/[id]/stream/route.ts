@@ -110,7 +110,7 @@ export async function GET(request: NextRequest, {params}: { params: Promise<{ co
                 return false;
             } catch (error) {
                 if (session.isConnected) {
-                    session.push({error: "Failed to fetch trip data"});
+                    session.push({error: `Error: ${error}`});
                 }
                 return true;
             }

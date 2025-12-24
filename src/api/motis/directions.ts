@@ -1,12 +1,14 @@
 "use server";
 
 import {capitalize, getDistance} from '@/utils';
-import axios from 'axios';
 import {getRealTimeData} from './realtime';
 import {Directions, Location, Trip} from './types';
 import {trainCategoryLongNames} from "@/train-categories";
 import {differenceInMinutes} from "date-fns";
 import axiosRetry from "axios-retry";
+import {createAxiosClient} from "@/api/axios";
+
+const axios = createAxiosClient();
 
 const MOTIS = process.env.MOTIS || "http://localhost:8080";
 
@@ -206,12 +208,7 @@ export async function getDirections(from: Location, to: Location, dateTime: stri
         return processTripData(data);
     } catch (error: any) {
         clearTimeout(timeout);
-
-        if (axios.isCancel(error)) {
-            console.warn("Directions request timeout");
-            return {trips: [], pageCursor: "", direct: []};
-        }
-
+        
         console.error("Error fetching directions:", error.message);
         return {trips: [], pageCursor: "", direct: []};
     }

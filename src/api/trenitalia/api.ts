@@ -1,10 +1,10 @@
 import {capitalize, clients, findMatchingStation, getDistance} from "@/utils";
-import axios from 'axios';
 import {parseStringPromise} from "xml2js";
 import {Train, Trip} from "../types";
 import {getMonitor} from "./monitor";
 import stationLocations from "@/station-locations.json";
 import stations from "@/stations.json";
+import {createAxiosClient} from "@/api/axios";
 
 interface RfiItem {
     title: string;
@@ -12,6 +12,8 @@ interface RfiItem {
     pubDate: Date;
     regions: string[];
 }
+
+const axios = createAxiosClient();
 
 const timestampToIso = (timestamp: number | null) => timestamp ? new Date(timestamp).toISOString() : null;
 
@@ -111,8 +113,7 @@ export async function getMonitorTrip(rfiId: string, tripId: string) {
     if (!train) return null;
 
     return {
-        ...train,
-        info: monitor.alerts && !["attraversare i binari", "aprire le porte", "la linea gialla"].some(str => monitor.alerts.toLowerCase().includes(str)) ? {
+        ...train, info: monitor.alerts ? {
             infoNote: monitor.alerts, source: "RFI", url: null
         } : null,
     };
@@ -305,10 +306,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
         }),
         info: info ? info
             .map((alert) => ({
-                message: alert.infoNote ?? "",
-                source: alert.source || "VT",
-                url: null,
-                date: null
+                message: alert.infoNote ?? "", source: alert.source || "VT", url: null, date: null
             }))
             .filter((alert, i: number, self) => self.findIndex((a) => a.message === alert.message) === i) : []
     }
