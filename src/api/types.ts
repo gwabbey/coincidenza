@@ -53,6 +53,20 @@ export interface Train {
     alerts: string;
 }
 
+export interface Bus {
+    id: string;
+    company: string;
+    route: string | null;
+    color: string | null;
+    vehicleId: string | null;
+    destination: string;
+    departureTime: string;
+    delay: number;
+    stopsAway: number | null;
+    started: boolean;
+    departing: boolean;
+}
+
 export interface StationMonitor {
     name: string;
     trains: Train[];

@@ -71,7 +71,7 @@ export default function Search({selected, selectedName}: { selected?: string, se
             setSavedFavorites([]);
         }
     }, []);
-    
+
     const isFavorite = selected ? savedFavorites.some(f => f.id === selected) : false;
 
     function addFavorite() {
@@ -94,7 +94,7 @@ export default function Search({selected, selectedName}: { selected?: string, se
         return Object.entries(rfiStations)
             .filter(([, name]) => name.toLowerCase().includes(q))
             .map(([id, name]) => ({
-                id: `rfi_${id}`, name, address: "Stazione dei treni", lat: 0, lon: 0, category: "rail",
+                id: `rfi_${id}`, name, address: "Stazione dei treni", lat: 0, lon: 0
             }));
     };
 
@@ -123,7 +123,7 @@ export default function Search({selected, selectedName}: { selected?: string, se
     useEffect(() => {
         if (selected && selectedName) {
             const selectedStop: Location = {
-                id: selected, name: selectedName, address: "", lat: 0, lon: 0, category: "bus"
+                id: selected, name: selectedName, address: "", lat: 0, lon: 0
             };
             setData([selectedStop]);
 

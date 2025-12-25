@@ -7,11 +7,8 @@ export function createAxiosClient() {
     });
 
     axiosRetry(client, {
-        retries: 3,
-        onRetry: (retryCount, error) => {
-            console.warn(
-                `retry attempt ${retryCount} for error ${error.response?.statusText}`
-            );
+        retries: 3, onRetry: (retryCount, error) => {
+            console.warn(`retry attempt ${retryCount} for error ${error.response?.statusText}`);
         },
     });
 

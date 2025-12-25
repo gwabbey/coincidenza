@@ -198,7 +198,7 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
                 <span
                     className="text-md font-bold rounded-small flex items-center gap-x-1 text-white whitespace-nowrap"
                     style={{
-                        backgroundColor: trip.route && trip.color ? `#${trip.color}` : "", padding: "0.1rem 0.5rem"
+                        backgroundColor: trip.color ? `#${trip.color}` : "", padding: "0.1rem 0.5rem"
                     }}>
                     {trip.route}
                 </span>

@@ -6,37 +6,9 @@ import {AnimatePresence, motion, useAnimationControls} from "motion/react"
 import {useRouter} from "next/navigation"
 import {useEffect} from "react"
 import {Link} from "@heroui/react";
+import {type Bus} from "@/api/types";
 
-function getStopsAway(selectedStopId: number, stopTimes: any[], delay: number | null = 0, proximityMinutes = 2): number | null {
-    const now = new Date();
-
-    const selectedIndex = stopTimes.findIndex(s => s.stopId === selectedStopId);
-    if (selectedIndex === -1) return null;
-
-    const getAdjustedTime = (stop: any) => {
-        const [h, m, s] = stop.departureTime.split(':').map(Number);
-        const t = new Date();
-        t.setHours(h, m, s || 0, 0);
-        if (delay) t.setMinutes(t.getMinutes() + delay);
-        return t;
-    };
-
-    const selectedTime = getAdjustedTime(stopTimes[selectedIndex]);
-
-    const diffMinutes = (selectedTime.getTime() - now.getTime()) / 60000;
-    if (diffMinutes <= proximityMinutes && diffMinutes >= 0) {
-        return 0;
-    }
-
-    const passedIndex = stopTimes.findLastIndex(stop => getAdjustedTime(stop) <= now);
-
-    if (passedIndex === -1) return selectedIndex + 1;
-
-    const stopsAway = selectedIndex - passedIndex;
-    return Math.max(stopsAway, 0);
-}
-
-export function Bus({trips}: { trips: any[] }) {
+export function Bus({trips}: { trips: Bus[] }) {
     const router = useRouter()
     const controls = useAnimationControls();
 
@@ -50,8 +22,7 @@ export function Bus({trips}: { trips: any[] }) {
     useEffect(() => {
         const i = setInterval(() => {
             controls.start({
-                opacity: [1, 0, 1],
-                transition: {
+                opacity: [1, 0, 1], transition: {
                     duration: 1, times: [0, 0.5, 1], ease: "easeInOut",
                 }
             });
@@ -69,24 +40,9 @@ export function Bus({trips}: { trips: any[] }) {
     return (<div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
         <AnimatePresence mode="popLayout" initial={false}>
             {trips.map((trip) => {
-                const now = Date.now()
-                const isDelayed = trip.delay !== null
-                const scheduledTime = new Date(trip.oraArrivoProgrammataAFermataSelezionata).toString()
-                const arrivalTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata).getTime()
-
-                const stopsAway = getStopsAway(trip.stopId, trip.stopTimes, trip.delay)
-                const startsFromSelectedStop = trip.stopTimes[0].stopId === trip.stopId
-
-                const [h, m, s] = trip.stopTimes[0].departureTime.split(':').map(Number)
-                const d = new Date()
-                d.setHours(h, m, s || 0, 0)
-                const hasDeparted = d < new Date()
-
-                const isArriving = arrivalTime - now <= 2 * 60 * 1000
-
                 return (<motion.div
-                    key={trip.tripId}
-                    layoutId={trip.tripId}
+                    key={trip.id}
+                    layoutId={trip.id}
                     layout
                     initial={{opacity: 0}}
                     animate={{opacity: 1, y: 0}}
@@ -97,30 +53,29 @@ export function Bus({trips}: { trips: any[] }) {
                         <div className="flex gap-2 w-full">
                             <div
                                 className="flex items-center justify-center w-full max-w-16 p-2 text-lg font-bold text-center rounded-small bg-gray-500 text-white self-center min-h-10">
-                                {formatDate(scheduledTime)}
+                                {formatDate(trip.departureTime)}
                             </div>
-                            <Link color="foreground" href={`/track/trentino-trasporti/${trip.tripId}`}
+                            <Link color="foreground" href={`/track/trentino-trasporti/${trip.id}`}
                                   className="text-base sm:text-lg min-w-0 grow">
                                 <div className="flex flex-col text-left w-full grow min-w-0">
                                     <div className="flex items-center justify-between w-full min-w-0 gap-2">
                                         <div className="flex items-center gap-x-1 sm:gap-x-2 min-w-0">
-                                            <div
-                                                className={`text-base sm:text-lg font-bold text-center rounded-small max-w-fit ${!trip.route?.routeColor && trip.type === "U" ? "bg-success text-white" : "bg-primary text-white"}`}
+                                            <span
+                                                className="text-md font-bold rounded-small flex items-center gap-x-1 text-white whitespace-nowrap"
                                                 style={{
-                                                    backgroundColor: trip.route && trip.route.routeColor ? `#${trip.route.routeColor}` : "",
+                                                    backgroundColor: trip.color ? `#${trip.color}` : "",
                                                     padding: "0.1rem 0.5rem"
                                                 }}>
-                                                {trip.route.routeShortName}
-                                            </div>
+                                                {trip.route}
+                                            </span>
                                             <div className="truncate font-bold text-base sm:text-lg min-w-0">
-                                                {trip.tripHeadsign}
+                                                {trip.destination}
                                             </div>
                                         </div>
-                                        {!trip.lastEventRecivedAt && (
+                                        {trip.delay === null ? (
                                             <p className="text-lg font-bold uppercase shrink-0 whitespace-nowrap text-foreground-500">
                                                 <IconAntennaBarsOff />
-                                            </p>)}
-                                        {isDelayed && (
+                                            </p>) : (
                                             <p className={`text-lg font-bold uppercase shrink-0 whitespace-nowrap text-${getDelayColor(trip.delay)}`}>
                                                 {trip.delay < 0 ? '' : trip.delay > 0 ? '+' : ""}
                                                 {trip.delay !== 0 && `${trip.delay}'`}
@@ -128,21 +83,16 @@ export function Bus({trips}: { trips: any[] }) {
                                     </div>
 
                                     <div className="text-sm text-foreground-500">
-                                        {!hasDeparted ? "non ancora partito" : stopsAway ? (
-                                            <span>a <strong>{stopsAway}</strong> fermat{stopsAway > 1 ? 'e' : 'a'} da
+                                        {!trip.started ? "non ancora partito" : trip.stopsAway ? (
+                                            <span>a <strong>{trip.stopsAway}</strong> fermat{trip.stopsAway > 1 ? 'e' : 'a'} da
                                         te</span>) : (<div className="flex items-center gap-1 whitespace-pre">
-                                            {isArriving ? (<div className="flex items-center gap-1 whitespace-pre">
+                                            {trip.departing && (<div className="flex items-center gap-1 whitespace-pre">
                                                 <motion.div animate={controls}>
                                                     <p className="text-sm text-green-500 font-bold">
-                                                        {startsFromSelectedStop ? "in partenza" : "in arrivo"}
+                                                        in partenza
                                                     </p>
                                                 </motion.div>
-                                                <p className="text-sm">
-                                                    {startsFromSelectedStop && "da qui"}
-                                                </p>
-                                            </div>) : (<p className="text-sm">
-                                                {startsFromSelectedStop ? "parte da" : "ferma"} qui
-                                            </p>)}
+                                            </div>)}
                                         </div>)}
                                     </div>
                                 </div>

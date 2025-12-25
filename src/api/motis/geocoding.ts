@@ -34,7 +34,6 @@ export interface Area {
 
 export interface Location {
     id: string
-    category: string
     name: string
     lat: number
     lon: number
@@ -56,7 +55,6 @@ function cleanup(data: SearchResult[]): Location[] {
                 id: item.id,
                 type: item.type,
                 modes: item.modes,
-                category: item.category,
                 name: capitalize(item.name),
                 lat: item.lat,
                 lon: item.lon,
@@ -89,7 +87,6 @@ export async function searchLocation(query: string): Promise<Location[]> {
 
             return {
                 id: item.id,
-                category: item.category,
                 name: capitalize(item.name),
                 lat: item.lat,
                 lon: item.lon,
@@ -111,11 +108,27 @@ export async function getStop(id: string) {
             data, status
         } = await axios.get(`${MOTIS}/api/v5/stoptimes?stopId=${id}&n=0&exactRadius=false&radius=200`);
         if (status === 200) return {
-            id: data.place.stopId, name: data.place.name, lat: data.place.lat.toString(), lon: data.place.lon.toString()
+            id: data.place.stopId,
+            name: data.place.name,
+            lat: data.place.lat.toString(),
+            lon: data.place.lon.toString(),
+            type: data.place.stopId.split("_")[0] === "ttu" ? "U" : "E"
         }
     } catch (error) {
         return null;
     }
+}
+
+export async function getStopsInArea(minLat: number, minLon: number, maxLat: number, maxLon: number): Promise<{
+    name: string, stopId: string, lat: string, lon: string, type: string
+}[]> {
+    const res = await fetch(`${MOTIS}/api/v1/map/stops?` + new URLSearchParams({
+        min: `${minLat},${maxLon}`, max: `${maxLat},${minLon}`,
+    }), {next: {revalidate: 60}});
+
+    if (!res.ok) return [];
+
+    return await res.json();
 }
 
 export async function reverseGeocode(lat: string, lon: string): Promise<Location[]> {

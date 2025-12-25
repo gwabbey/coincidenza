@@ -22,6 +22,16 @@ export function getDistance(lat1: number, lon1: number, lat2: number, lon2: numb
     return R * c;
 }
 
+export function getBoundingBox(lat: number, lon: number, radiusMeters: number) {
+    const earthRadius = 6378137;
+    const dLat = (radiusMeters / earthRadius) * (180 / Math.PI);
+    const dLon = (radiusMeters / (earthRadius * Math.cos((Math.PI * lat) / 180))) * (180 / Math.PI);
+
+    return {
+        minLat: lat - dLat, maxLat: lat + dLat, minLon: lon - dLon, maxLon: lon + dLon,
+    };
+}
+
 export const getDelayColor = (delay: number | null) => {
     if (delay === null) return 'gray';
     if (delay >= 10) return 'danger';
