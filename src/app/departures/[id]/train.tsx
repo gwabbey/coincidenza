@@ -89,7 +89,6 @@ export function Train({monitor}: { monitor: StationMonitor }) {
 
                 return (<motion.div
                     key={`${train.shortCategory || train.company || ""} ${train.number.toString()} ${train.destination}`}
-                    layout
                     initial={{opacity: 0}}
                     animate={{opacity: 1, y: 0}}
                     exit={{opacity: 0, y: -20, transition: {duration: 0.3}}}
@@ -137,10 +136,12 @@ export function Train({monitor}: { monitor: StationMonitor }) {
                                     {train.platform && train.platform !== "Piazzale Esterno" && (
                                         <p className="text-sm text-foreground-500">• binario</p>)}
                                     <motion.div
-                                        key={`${train.number}-blink-${blinkKey}`}
+                                        key={blinkKey}
                                         initial={{opacity: 1}}
                                         animate={{opacity: [1, 0, 1]}}
-                                        transition={{duration: 1, times: [0, 0.5, 1], ease: "easeInOut"}}
+                                        transition={{
+                                            duration: 1, times: [0, 0.5, 1], ease: "easeInOut",
+                                        }}
                                     >
                                         <p className="text-sm text-blue-500 font-bold">
                                             {train.platform}

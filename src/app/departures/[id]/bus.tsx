@@ -127,10 +127,12 @@ export function Bus({trips}: { trips: any[] }) {
                                         te</span>) : (<div className="flex items-center gap-1 whitespace-pre">
                                             {isArriving ? (<div className="flex items-center gap-1 whitespace-pre">
                                                 <motion.div
-                                                    key={`${trip.tripId}-blink-${blinkKey}`}
+                                                    key={blinkKey}
                                                     initial={{opacity: 1}}
                                                     animate={{opacity: [1, 0, 1]}}
-                                                    transition={{duration: 1, times: [0, 0.5, 1], ease: "easeInOut"}}
+                                                    transition={{
+                                                        duration: 1, times: [0, 0.5, 1], ease: "easeInOut",
+                                                    }}
                                                 >
                                                     <p className="text-sm text-green-500 font-bold">
                                                         {startsFromSelectedStop ? "in partenza" : "in arrivo"}
