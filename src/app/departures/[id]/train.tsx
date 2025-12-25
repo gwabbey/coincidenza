@@ -137,12 +137,10 @@ export function Train({monitor}: { monitor: StationMonitor }) {
                                     {train.platform && train.platform !== "Piazzale Esterno" && (
                                         <p className="text-sm text-foreground-500">• binario</p>)}
                                     <motion.div
-                                        key={blinkKey}
+                                        key={`${train.number}-blink-${blinkKey}`}
                                         initial={{opacity: 1}}
                                         animate={{opacity: [1, 0, 1]}}
-                                        transition={{
-                                            duration: 1, times: [0, 0.5, 1], ease: "easeInOut",
-                                        }}
+                                        transition={{duration: 1, times: [0, 0.5, 1], ease: "easeInOut"}}
                                     >
                                         <p className="text-sm text-blue-500 font-bold">
                                             {train.platform}
