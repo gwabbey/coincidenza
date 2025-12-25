@@ -138,7 +138,6 @@ export function Train({monitor}: { monitor: StationMonitor }) {
                                         <p className="text-sm text-foreground-500">• binario</p>)}
                                     <motion.div
                                         key={blinkKey}
-                                        initial={{opacity: 1}}
                                         animate={{opacity: [1, 0, 1]}}
                                         transition={{
                                             duration: 1, times: [0, 0.5, 1], ease: "easeInOut",
