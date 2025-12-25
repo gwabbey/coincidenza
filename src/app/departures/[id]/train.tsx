@@ -3,9 +3,9 @@ import {StationMonitor} from '@/api/types';
 import {capitalize, getDelayColor} from '@/utils';
 import {Card, CardBody, cn, Link} from '@heroui/react';
 import {IconAlertTriangleFilled} from '@tabler/icons-react';
-import {AnimatePresence, motion} from 'motion/react';
+import {AnimatePresence, motion, useAnimationControls} from 'motion/react';
 import {useRouter} from 'next/navigation';
-import {useEffect, useState} from 'react';
+import {useEffect} from 'react';
 
 function getTrackUrl(company: string, id: string, category?: string): string | null {
     const normalizedCompany = company.toLowerCase().trim();
@@ -38,7 +38,7 @@ function getTrackUrl(company: string, id: string, category?: string): string | n
 
 export function Train({monitor}: { monitor: StationMonitor }) {
     const router = useRouter();
-    const [blinkKey, setBlinkKey] = useState(0);
+    const controls = useAnimationControls();
 
     useEffect(() => {
         const intervalId = setInterval(() => {
@@ -48,11 +48,17 @@ export function Train({monitor}: { monitor: StationMonitor }) {
     }, [router]);
 
     useEffect(() => {
-        const blinkInterval = setInterval(() => {
-            setBlinkKey((prev) => prev + 1);
+        const i = setInterval(() => {
+            controls.start({
+                opacity: [1, 0, 1],
+                transition: {
+                    duration: 1, times: [0, 0.5, 1], ease: "easeInOut",
+                }
+            });
         }, 1000);
-        return () => clearInterval(blinkInterval);
-    }, []);
+
+        return () => clearInterval(i);
+    }, [controls]);
 
     if (monitor.trains.length === 0) {
         return (<div className="text-center text-lg text-foreground-500 font-bold p-4">
@@ -61,7 +67,7 @@ export function Train({monitor}: { monitor: StationMonitor }) {
     }
 
     return (<div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
-        {monitor && (<AnimatePresence initial={false}>
+        {monitor && (<AnimatePresence mode="popLayout" initial={false}>
             {monitor.alerts && <Card
                 shadow="none"
                 fullWidth
@@ -136,13 +142,7 @@ export function Train({monitor}: { monitor: StationMonitor }) {
                                     </p>
                                     {train.platform && train.platform !== "Piazzale Esterno" && (
                                         <p className="text-sm text-foreground-500">• binario</p>)}
-                                    <motion.div
-                                        key={blinkKey}
-                                        animate={{opacity: [1, 0, 1]}}
-                                        transition={{
-                                            duration: 1, times: [0, 0.5, 1], ease: "easeInOut",
-                                        }}
-                                    >
+                                    <motion.div animate={controls}>
                                         <p className="text-sm text-blue-500 font-bold">
                                             {train.platform}
                                         </p>
