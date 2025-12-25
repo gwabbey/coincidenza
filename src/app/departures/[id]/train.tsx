@@ -61,7 +61,7 @@ export function Train({monitor}: { monitor: StationMonitor }) {
     }
 
     return (<div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
-        {monitor && (<AnimatePresence mode="popLayout" initial={false}>
+        {monitor && (<AnimatePresence initial={false}>
             {monitor.alerts && <Card
                 shadow="none"
                 fullWidth
@@ -89,6 +89,7 @@ export function Train({monitor}: { monitor: StationMonitor }) {
 
                 return (<motion.div
                     key={`${train.shortCategory || train.company || ""} ${train.number.toString()} ${train.destination}`}
+                    layout
                     initial={{opacity: 0}}
                     animate={{opacity: 1, y: 0}}
                     exit={{opacity: 0, y: -20, transition: {duration: 0.3}}}
