@@ -2,9 +2,9 @@
 
 import {formatDate, getDelayColor} from "@/utils"
 import {IconAntennaBarsOff} from "@tabler/icons-react"
-import {AnimatePresence, motion} from "motion/react"
+import {AnimatePresence, motion, useAnimationControls} from "motion/react"
 import {useRouter} from "next/navigation"
-import {useEffect, useState} from "react"
+import {useEffect} from "react"
 import {Link} from "@heroui/react";
 
 function getStopsAway(selectedStopId: number, stopTimes: any[], delay: number | null = 0, proximityMinutes = 2): number | null {
@@ -38,21 +38,27 @@ function getStopsAway(selectedStopId: number, stopTimes: any[], delay: number | 
 
 export function Bus({trips}: { trips: any[] }) {
     const router = useRouter()
-    const [blinkKey, setBlinkKey] = useState(0)
+    const controls = useAnimationControls();
 
     useEffect(() => {
         const intervalId = setInterval(() => {
-            router.refresh()
-        }, 15000)
-        return () => clearInterval(intervalId)
-    }, [router])
+            router.refresh();
+        }, 15000);
+        return () => clearInterval(intervalId);
+    }, [router]);
 
     useEffect(() => {
-        const blinkInterval = setInterval(() => {
-            setBlinkKey((prev) => prev + 1)
-        }, 1000)
-        return () => clearInterval(blinkInterval)
-    }, [])
+        const i = setInterval(() => {
+            controls.start({
+                opacity: [1, 0, 1],
+                transition: {
+                    duration: 1, times: [0, 0.5, 1], ease: "easeInOut",
+                }
+            });
+        }, 1000);
+
+        return () => clearInterval(i);
+    }, [controls]);
 
     if (trips.length === 0) {
         return (<div className="text-center text-lg text-foreground-500 font-bold p-4">
@@ -126,14 +132,7 @@ export function Bus({trips}: { trips: any[] }) {
                                             <span>a <strong>{stopsAway}</strong> fermat{stopsAway > 1 ? 'e' : 'a'} da
                                         te</span>) : (<div className="flex items-center gap-1 whitespace-pre">
                                             {isArriving ? (<div className="flex items-center gap-1 whitespace-pre">
-                                                <motion.div
-                                                    key={blinkKey}
-                                                    initial={{opacity: 1}}
-                                                    animate={{opacity: [1, 0, 1]}}
-                                                    transition={{
-                                                        duration: 1, times: [0, 0.5, 1], ease: "easeInOut",
-                                                    }}
-                                                >
+                                                <motion.div animate={controls}>
                                                     <p className="text-sm text-green-500 font-bold">
                                                         {startsFromSelectedStop ? "in partenza" : "in arrivo"}
                                                     </p>
