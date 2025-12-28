@@ -1,6 +1,6 @@
 import {Info} from "@/api/motis/types";
 
-export interface Trip {
+export interface TrainTrip {
     currentStopIndex: number,
     lastKnownLocation: string | null,
     lastUpdate: string | null,
@@ -13,7 +13,7 @@ export interface Trip {
     arrivalTime: string,
     delay: number,
     alertMessage: string | null,
-    stops: Stop[],
+    stops: TrainStop[],
     info: Info[],
     clientId: number,
     company: string,
@@ -22,7 +22,7 @@ export interface Trip {
     color: string,
 }
 
-export interface Stop {
+export interface TrainStop {
     id: string;
     name: string;
     scheduledArrival: string;
@@ -36,7 +36,36 @@ export interface Stop {
     status: "regular" | "not_planned" | "canceled";
 }
 
-export interface Train {
+export interface BusTrip {
+    id: string,
+    currentStopIndex: number,
+    lastKnownLocation: string | null,
+    lastUpdate: string | null,
+    status: string,
+    category: string | null,
+    route: string,
+    vehicleId: string | null,
+    origin: string,
+    destination: string,
+    departureTime: string,
+    arrivalTime: string,
+    delay: number,
+    color: string,
+    stops: BusStop[],
+    info: Info[],
+}
+
+export interface BusStop {
+    id: string;
+    name: string;
+    scheduledArrival: string;
+    scheduledDeparture: string;
+    lat: string;
+    lon: string;
+    status: "regular" | "not_planned" | "canceled";
+}
+
+export interface TrainDeparture {
     company: string | null;
     category: string | null;
     shortCategory: string | null;
@@ -53,7 +82,7 @@ export interface Train {
     alerts: string;
 }
 
-export interface Bus {
+export interface BusDeparture {
     id: string;
     company: string;
     route: string | null;
@@ -69,6 +98,6 @@ export interface Bus {
 
 export interface StationMonitor {
     name: string;
-    trains: Train[];
+    trains: TrainDeparture[];
     alerts: string;
 }

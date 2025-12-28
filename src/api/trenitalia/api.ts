@@ -1,6 +1,6 @@
 import {capitalize, clients, findMatchingStation, getDistance} from "@/utils";
 import {parseStringPromise} from "xml2js";
-import {Train, Trip} from "../types";
+import {TrainDeparture, TrainTrip} from "../types";
 import {getMonitor} from "./monitor";
 import stationLocations from "@/station-locations.json";
 import stations from "@/stations.json";
@@ -188,7 +188,7 @@ export async function guessTrip(id: string, date: Date) {
     return getTrip(parsed[0].origin, id, midnightTimestamp);
 }
 
-export async function getTrip(origin: string, id: string, timestamp: number): Promise<Trip | null> {
+export async function getTrip(origin: string, id: string, timestamp: number): Promise<TrainTrip | null> {
     const formattedDate = new Intl.DateTimeFormat("it-IT", {
         year: "numeric", month: "2-digit", day: "2-digit",
     })
@@ -230,7 +230,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
         currentStopIndex = -1
     }
 
-    const getMonitor = async (stop: any, trainNumber: string): Promise<(Train & {
+    const getMonitor = async (stop: any, trainNumber: string): Promise<(TrainDeparture & {
         info: { infoNote: string; source: string; url: string | null } | null
     }) | null> => {
         const stationName = stop?.stazione;

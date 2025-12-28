@@ -47,8 +47,8 @@ export default function LibreMap({
     const [mapInitialized, setMapInitialized] = useState(false);
 
     const isDark = resolvedTheme === 'dark';
-    const labelColor = isDark ? '#ffffff' : '#000000';
-    const haloColor = isDark ? '#000000' : '#ffffff';
+    const labelColor = '#000000';
+    const haloColor = '#ffffff';
 
     useEffect(() => {
         if (!mapContainerRef.current || mapRef.current) return;
@@ -56,22 +56,11 @@ export default function LibreMap({
         const map = new maplibregl.Map({
             container: mapContainerRef.current,
             attributionControl: false,
+            style: 'https://tiles.openfreemap.org/styles/bright',
             center: [11.119065, 46.072438],
             zoom: 12,
             minZoom: 5,
             maxZoom: 18,
-            style: {
-                version: 8, sources: {
-                    'osm-tiles': {
-                        type: 'raster',
-                        tiles: ['https://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'],
-                        tileSize: 256,
-                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                    }
-                }, layers: [{
-                    id: 'osm-tiles-layer', type: 'raster', source: 'osm-tiles'
-                }]
-            }
         });
 
         map.on('load', () => {
@@ -95,26 +84,7 @@ export default function LibreMap({
     useEffect(() => {
         if (!mapInitialized || !mapRef.current) return;
 
-        const tileUrl = `https://a.basemaps.cartocdn.com/${isDark ? 'dark' : 'light'}_all/{z}/{x}/{y}.png`;
         const map = mapRef.current;
-
-        if (map.getLayer('osm-tiles-layer')) map.removeLayer('osm-tiles-layer');
-        if (map.getSource('osm-tiles')) map.removeSource('osm-tiles');
-
-        const layers = map.getStyle().layers;
-        const beforeId = layers.length > 0 ? layers[0].id : undefined;
-
-        map.addSource('osm-tiles', {
-            type: 'raster',
-            tiles: [tileUrl],
-            tileSize: 256,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        });
-
-        map.addLayer({
-            id: 'osm-tiles-layer', type: 'raster', source: 'osm-tiles'
-        }, beforeId);
-
         const labelLayers = ['start-marker-label', 'end-marker-label', 'intermediate-stops-labels'];
 
         labelLayers.forEach(layerId => {
@@ -342,7 +312,7 @@ export default function LibreMap({
                 });
 
                 decodedLegs.forEach((_, idx) => {
-                    const legColor = legs[idx].mode === "WALK" ? "#999999" : `#${legs[idx].routeColor || "016FED"}`;
+                    const legColor = legs[idx].mode === "WALK" ? "#999999" : legs[idx].routeColor ? `#${legs[idx].routeColor}` : legs[idx].mode === "BUS" ? "#016FEE" : "red";
 
                     map.addSource(`route-source-${idx}`, {
                         type: 'geojson', data: {

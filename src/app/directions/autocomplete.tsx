@@ -139,6 +139,7 @@ export const LocationAutocomplete = ({
         inputValue={value}
         variant="underlined"
         isClearable={false}
+        allowsCustomValue
         onInputChange={onInputChange}
         onSelectionChange={onSelectionChange}
         isDisabled={disabled}

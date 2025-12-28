@@ -36,7 +36,7 @@ function getTrackUrl(company: string, id: string, category?: string): string | n
     }
 }
 
-export function Train({monitor}: { monitor: StationMonitor }) {
+export function Train({departures}: { departures: StationMonitor }) {
     const router = useRouter();
     const controls = useAnimationControls();
 
@@ -60,15 +60,15 @@ export function Train({monitor}: { monitor: StationMonitor }) {
         return () => clearInterval(i);
     }, [controls]);
 
-    if (monitor.trains.length === 0) {
+    if (departures.trains.length === 0) {
         return (<div className="text-center text-lg text-foreground-500 font-bold p-4">
             nessuna corsa in partenza
         </div>);
     }
 
     return (<div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
-        {monitor && (<AnimatePresence mode="popLayout" initial={false}>
-            {monitor.alerts && <Card
+        {departures && (<AnimatePresence mode="popLayout" initial={false}>
+            {departures.alerts && <Card
                 shadow="none"
                 fullWidth
                 className="flex flex-col bg-warning-500/50 mx-auto">
@@ -79,7 +79,7 @@ export function Train({monitor}: { monitor: StationMonitor }) {
                             <div className="flex flex-col gap-2">
                                 <div className="flex flex-col">
                                     <div className="flex flex-col">
-                                        <span>{monitor.alerts}</span>
+                                        <span>{departures.alerts}</span>
                                     </div>
                                 </div>
                             </div>
@@ -88,7 +88,7 @@ export function Train({monitor}: { monitor: StationMonitor }) {
                 </CardBody>
             </Card>}
 
-            {monitor.trains.map((train: any) => {
+            {departures.trains.map((train: any) => {
                 const trackUrl = getTrackUrl(train.company, train.number, train.category);
                 const isLinkable = trackUrl && train.category !== "bus";
                 const Wrapper = isLinkable ? Link : "div";

@@ -18,7 +18,7 @@ export default function Providers({children}: { children: React.ReactNode }) {
 
             setTimeout(() => {
                 ref.current = false;
-            }, 2000);
+            }, 5000);
         };
 
         const onVisible = () => {

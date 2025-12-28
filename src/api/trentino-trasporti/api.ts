@@ -98,12 +98,9 @@ export async function getStopDepartures(stopId: string, type: string) {
     })));
 }
 
-function getStopsAway(
-    selectedStopId: string,
-    stopTimes: { stopId: string; departureTime: string }[],
-    delay: number = 0,
-    proximityMinutes = 2
-): number | null {
+function getStopsAway(selectedStopId: string, stopTimes: {
+    stopId: string; departureTime: string
+}[], delay: number = 0, proximityMinutes = 2): number | null {
     const now = new Date();
 
     const selectedIndex = stopTimes.findIndex(s => s.stopId.toString() === selectedStopId);
@@ -118,7 +115,7 @@ function getStopsAway(
 
     const getAdjustedTime = (stop: typeof stopTimes[0]) => {
         const t = parseTime(stop.departureTime);
-        t.setMinutes(t.getMinutes() + delay);
+        t.setMinutes(t.getMinutes() + (Math.max(delay, 0)));
         return t;
     };
 
@@ -135,6 +132,33 @@ function getStopsAway(
 
     const stopsAway = selectedIndex - passedIndex;
     return Math.max(stopsAway, 0);
+}
+
+function filterTrips(trips: any[]) {
+    const now = new Date()
+
+    return trips.filter(trip => {
+        if (trip.stopTimes.at(-1).stopId.toString() === trip.stopId && trip.stopTimes[0].stopId.toString() !== trip.stopId) {
+            return false
+        }
+
+        const selectedStop = trip.stopTimes.find((s: any) => s.stopId.toString() === trip.stopId.toString())
+        if (!selectedStop) return false
+
+        const [h, m, s] = selectedStop.departureTime.split(":").map(Number)
+        const departure = new Date(now)
+        departure.setHours(h, m, s || 0, 0)
+
+        if (departure < now) {
+            departure.setDate(departure.getDate() + 1)
+        }
+
+        departure.setMinutes(departure.getMinutes() + (trip.delay ?? 0))
+
+        const diff = now.getTime() - departure.getTime()
+
+        return !(diff > 120000 && trip.stopNext !== trip.stopId)
+    })
 }
 
 export async function getFilteredDepartures(lat: string, lon: string) {
@@ -156,11 +180,13 @@ export async function getFilteredDepartures(lat: string, lon: string) {
         }
     })
 
-    const allDepartures = (await Promise.all(departurePromises)).flat()
-    const uniqueTrips = filterTrips(allDepartures)
-    const sortedTrips = sortTripsByDepartureTime(uniqueTrips)
+    const trips = filterTrips((await Promise.all(departurePromises)).flat()).sort((a, b) => {
+        const timeA = new Date(a.oraArrivoProgrammataAFermataSelezionata).getTime()
+        const timeB = new Date(b.oraArrivoProgrammataAFermataSelezionata).getTime()
+        return timeA - timeB
+    })
 
-    return sortedTrips.map((trip: any) => {
+    return trips.map((trip: any) => {
         const arrivalTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata).getTime()
 
         const [h, m, s] = trip.stopTimes[0].departureTime.split(':').map(Number)
@@ -265,40 +291,4 @@ export async function getTripDetails(id: string) {
                 url: alert.url,
             })),
     }
-}
-
-function filterTrips(trips: any[]) {
-    const seen = new Set<string>()
-    const now = new Date()
-
-    return trips.filter(trip => {
-        if (seen.has(trip.tripId)) return false
-        seen.add(trip.tripId)
-
-        if (trip.stopTimes[trip.stopTimes.length - 1].stopId === trip.stopId) {
-            return false
-        }
-
-        const selectedStop = trip.stopTimes.find((s: any) => String(s.stopId) === String(trip.stopId))
-        if (!selectedStop) return false
-
-        const [h, m, s] = selectedStop.departureTime.split(":").map(Number)
-        const departure = new Date(now)
-        departure.setHours(h, m, s, 0)
-
-        if (trip.delay) {
-            departure.setMinutes(departure.getMinutes() + trip.delay)
-        }
-
-        const diff = now.getTime() - departure.getTime()
-        return !(diff > 120000 && trip.stopNext !== trip.stopId)
-    })
-}
-
-function sortTripsByDepartureTime(trips: any[]) {
-    return trips.sort((a, b) => {
-        const timeA = new Date(a.oraArrivoProgrammataAFermataSelezionata).getTime()
-        const timeB = new Date(b.oraArrivoProgrammataAFermataSelezionata).getTime()
-        return timeA - timeB
-    })
 }

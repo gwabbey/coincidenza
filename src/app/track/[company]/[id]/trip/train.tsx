@@ -1,6 +1,6 @@
 'use client';
 
-import {Trip as TripProps} from "@/api/types";
+import {TrainTrip} from "@/api/types";
 import {RouteModal} from "@/components/modal";
 import Timeline from "@/components/timeline";
 import {capitalize, findMatchingStation, formatDate, getDelayColor} from "@/utils";
@@ -17,7 +17,7 @@ const timeToMinutes = (timeString: string, originalDate: Date) => {
     return (originalDate.getDate() * 24 * 60) + (hours * 60) + minutes;
 };
 
-const calculatePreciseActiveIndex = (trip: TripProps) => {
+const calculatePreciseActiveIndex = (trip: TrainTrip) => {
     const delay = trip.delay || 0;
     const currentMinutes = getCurrentMinutes();
     const activeStops = trip.stops.filter(stop => stop.status !== "canceled");
@@ -78,8 +78,8 @@ const calculatePreciseActiveIndex = (trip: TripProps) => {
     return lastPassedStopIndex !== -1 ? lastPassedStopIndex + 0.99 : Math.max(0, currentStopIndex);
 };
 
-export default function Train({trip: initialTrip}: { trip: TripProps }) {
-    const [trip, setTrip] = useState<TripProps>(initialTrip);
+export default function Train({trip: initialTrip}: { trip: TrainTrip }) {
+    const [trip, setTrip] = useState<TrainTrip>(initialTrip);
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
     const notifsModal = useDisclosure();
 

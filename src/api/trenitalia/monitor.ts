@@ -3,7 +3,7 @@
 import {trainCategoryShortNames} from "@/train-categories";
 import {capitalize} from "@/utils";
 import * as cheerio from 'cheerio';
-import {StationMonitor, Train} from "../types";
+import {StationMonitor, TrainDeparture} from "../types";
 import {createAxiosClient} from "@/api/axios";
 
 const axios = createAxiosClient();
@@ -60,7 +60,7 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
         const name = capitalize($('h1[id="nomeStazioneId"]').text().trim());
         const vtData = vtId !== "" ? await getVtDepartures(vtId) : [];
 
-        const trains: Train[] = [];
+        const trains: TrainDeparture[] = [];
         const alertsText = $('#barraInfoStazioneId > div').find('div[class="marqueeinfosupp"] div').text().trim()
         const alerts = !["attraversare i binari", "aprire le porte", "la linea gialla"].some(str => alertsText.toLowerCase().includes(str)) ? alertsText : "";
 
@@ -146,7 +146,7 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
                 })
                 .filter((x): x is { name: string; time: string } => x !== null);
 
-            const alerts = infoElements.eq(1).length && !["RITARDO", "CODA", "TESTA", "CLASSE"].some(word => infoElements.eq(1).text().trim().includes(word)) ? infoElements.eq(1).text().trim() : '';
+            const alerts = infoElements.eq(1).length && !["RITARDO", "CODA", "TESTA", "CLASSE", "NO-STOP"].some(word => infoElements.eq(1).text().trim().includes(word)) ? infoElements.eq(1).text().trim() : '';
 
             if (number && destination && departureTime) {
                 trains.push({

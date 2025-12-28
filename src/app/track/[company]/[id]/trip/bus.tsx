@@ -1,6 +1,6 @@
 'use client';
 
-import {Stop, Trip as TripProps} from "@/api/trentino-trasporti/types";
+import {BusTrip} from "@/api/types";
 import {RouteModal} from "@/components/modal";
 import Timeline from "@/components/timeline";
 import {formatDate, getDelayColor} from "@/utils";
@@ -17,7 +17,7 @@ const timeToMinutes = (date: string): number => {
     return new Date(date).getHours() * 60 + new Date(date).getMinutes();
 };
 
-const calculatePreciseActiveIndex = (trip: TripProps): number => {
+const calculatePreciseActiveIndex = (trip: BusTrip): number => {
     if (!trip.stops?.length) return -1;
 
     const currentMinutes = getCurrentMinutes();
@@ -81,7 +81,7 @@ const calculatePreciseActiveIndex = (trip: TripProps): number => {
     return 0;
 };
 
-export default function Bus({trip: initialTrip}: { trip: TripProps }) {
+export default function Bus({trip: initialTrip}: { trip: BusTrip }) {
     const [trip, setTrip] = useState(initialTrip);
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
     const {isOpen, onOpenChange} = useDisclosure();
@@ -302,7 +302,7 @@ export default function Bus({trip: initialTrip}: { trip: TripProps }) {
             </Card>}
 
             <Timeline
-                steps={trip.stops.map((stop: Stop, index: number) => {
+                steps={trip.stops.map((stop, index) => {
                     const isPastStop = index <= Math.floor(preciseActiveIndex);
                     const isFutureStop = index > Math.floor(preciseActiveIndex);
                     const stopBreak = Math.round((new Date(stop.scheduledDeparture).getTime() - new Date(stop.scheduledArrival).getTime()) / 60000);

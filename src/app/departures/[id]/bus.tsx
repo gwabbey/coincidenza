@@ -6,9 +6,9 @@ import {AnimatePresence, motion, useAnimationControls} from "motion/react"
 import {useRouter} from "next/navigation"
 import {useEffect} from "react"
 import {Link} from "@heroui/react";
-import {type Bus} from "@/api/types";
+import {type BusDeparture} from "@/api/types";
 
-export function Bus({trips}: { trips: Bus[] }) {
+export function Bus({departures}: { departures: BusDeparture[] }) {
     const router = useRouter()
     const controls = useAnimationControls();
 
@@ -31,7 +31,7 @@ export function Bus({trips}: { trips: Bus[] }) {
         return () => clearInterval(i);
     }, [controls]);
 
-    if (trips.length === 0) {
+    if (departures.length === 0) {
         return (<div className="text-center text-lg text-foreground-500 font-bold p-4">
             nessuna corsa in partenza
         </div>);
@@ -39,7 +39,7 @@ export function Bus({trips}: { trips: Bus[] }) {
 
     return (<div className="w-full max-w-4xl mx-auto flex flex-col gap-4">
         <AnimatePresence mode="popLayout" initial={false}>
-            {trips.map((trip) => {
+            {departures.map((trip) => {
                 return (<motion.div
                     key={trip.id}
                     layoutId={trip.id}

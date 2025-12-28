@@ -10,27 +10,6 @@ import {Train} from "./train";
 import {getFilteredDepartures} from "@/api/trentino-trasporti/api";
 import {Bus} from "./bus";
 
-async function TrainLoader({id, name}: { id: string; name: string }) {
-    const vtId = await getVtId(name);
-    const monitor = await getMonitor(id, vtId);
-
-    if (!monitor) return notFound();
-
-    return <Train monitor={monitor} />;
-}
-
-async function BusLoader({lat, lon}: { lat: string; lon: string }) {
-    const trips = await getFilteredDepartures(lat, lon);
-
-    if (!trips) {
-        return (<div className="text-center text-lg text-foreground-500 font-bold p-4">
-            dati non disponibili al momento. riprova più tardi.
-        </div>);
-    }
-
-    return <Bus trips={trips} />;
-}
-
 export const revalidate = 60;
 
 type StopContext = | { kind: "train"; agency: "rfi"; id: string; name: string } | {
@@ -41,6 +20,27 @@ type StopContext = | { kind: "train"; agency: "rfi"; id: string; name: string } 
     lat: string;
     lon: string
 };
+
+async function TrainLoader({id, name}: { id: string; name: string }) {
+    const vtId = await getVtId(name);
+    const departures = await getMonitor(id, vtId);
+
+    if (!departures) return notFound();
+
+    return <Train departures={departures} />;
+}
+
+async function BusLoader({lat, lon}: { lat: string; lon: string }) {
+    const departures = await getFilteredDepartures(lat, lon);
+
+    if (!departures) {
+        return (<div className="text-center text-lg text-foreground-500 font-bold p-4">
+            dati non disponibili al momento. riprova più tardi.
+        </div>);
+    }
+
+    return <Bus departures={departures} />;
+}
 
 async function resolveStop(fullId: string): Promise<StopContext | null> {
     const [agency, ...rest] = fullId.split("_");

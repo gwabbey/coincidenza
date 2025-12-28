@@ -89,49 +89,47 @@ export function Favorites({favorites}: { favorites: Favorite[] }) {
         router.refresh();
     }
 
-    return (<>
-        <Card fullWidth
-              className="p-4 max-w-4xl bg-gradient-to-tr from-content1 to-warning-300 transition-background">
-            <div className="text-2xl font-bold text-center mx-auto">
-                ⭐️ preferiti ⭐
-            </div>
-            <CardBody>
-                {favorites.length ? favorites.slice()
-                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                    .map((favorite: Favorite, index) => (
-                        <div key={index} className="flex justify-between items-center py-2">
-                            <Link color="foreground" href={`/departures/${favorite.id}`} className="gap-2">
-                                {icons[favorite.type] ?? <IconMapPin />}
-                                {favorite.name}
-                            </Link>
-                            <Dropdown placement="bottom-end">
-                                <DropdownTrigger>
-                                    <Button
-                                        isIconOnly
-                                        startContent={<IconDots />}
-                                        radius="full"
-                                        variant="flat"
-                                        className="border-none"
-                                    />
-                                </DropdownTrigger>
-                                <DropdownMenu variant="flat" key="options">
-                                    <DropdownItem startContent={<IconPencil />} key="edit"
-                                                  onPress={() => {
-                                                      setEditing(favorite);
-                                                      setName(favorite.name);
-                                                      setType(favorite.type);
-                                                      onOpen();
-                                                  }}>Modifica</DropdownItem>
-                                    <DropdownItem startContent={<IconTrash />} key="delete"
-                                                  className="text-danger" color="danger"
-                                                  onPress={() => deleteFavorite(favorite)}>Elimina</DropdownItem>
-                                </DropdownMenu>
-                            </Dropdown>
-                        </div>)) : (<p className="text-center text-foreground-500">
-                    qui vedrai le tue fermate e stazioni preferite!
-                </p>)}
-            </CardBody>
-        </Card>
+    return (<Card fullWidth
+                  className="p-4 max-w-4xl bg-linear-to-tr from-content1 to-warning-300 transition-background">
+        <div className="text-2xl font-bold text-center mx-auto">
+            ⭐️ preferiti ⭐
+        </div>
+        <CardBody>
+            {favorites.length ? favorites.slice()
+                .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                .map((favorite, index) => (
+                    <div key={index} className="flex justify-between items-center py-2">
+                        <Link color="foreground" href={`/departures/${favorite.id}`} className="gap-2">
+                            {icons[favorite.type] ?? <IconMapPin />}
+                            {favorite.name}
+                        </Link>
+                        <Dropdown placement="bottom-end">
+                            <DropdownTrigger>
+                                <Button
+                                    isIconOnly
+                                    startContent={<IconDots />}
+                                    radius="full"
+                                    variant="flat"
+                                    className="border-none"
+                                />
+                            </DropdownTrigger>
+                            <DropdownMenu variant="flat" key="options">
+                                <DropdownItem startContent={<IconPencil />} key="edit"
+                                              onPress={() => {
+                                                  setEditing(favorite);
+                                                  setName(favorite.name.trim());
+                                                  setType(favorite.type);
+                                                  onOpen();
+                                              }}>Modifica</DropdownItem>
+                                <DropdownItem startContent={<IconTrash />} key="delete"
+                                              className="text-danger" color="danger"
+                                              onPress={() => deleteFavorite(favorite)}>Elimina</DropdownItem>
+                            </DropdownMenu>
+                        </Dropdown>
+                    </div>)) : (<p className="text-center text-foreground-500">
+                qui vedrai le tue fermate e stazioni preferite!
+            </p>)}
+        </CardBody>
 
         <Modal isOpen={isOpen} onOpenChange={onClose} backdrop="blur" placement="center">
             <ModalContent>
@@ -169,5 +167,5 @@ export function Favorites({favorites}: { favorites: Favorite[] }) {
                 </ModalFooter>
             </ModalContent>
         </Modal>
-    </>)
+    </Card>)
 }

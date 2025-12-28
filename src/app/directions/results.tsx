@@ -31,7 +31,7 @@ const getLegDescription = (leg: Leg) => {
         if (!leg.distance) return "";
         const roundedMeters = Math.round(leg.distance / 100) * 100;
         const distanceInKm = leg.distance / 1000;
-        return distanceInKm > 1 ? `circa ${Number(distanceInKm.toFixed(1))} km` : `circa ${roundedMeters} metri`;
+        return roundedMeters > 999 ? `circa ${Number(distanceInKm.toFixed(1))} km` : `circa ${roundedMeters} metri`;
     }
     if (leg.mode === "WALK") return "";
     return trainCategoryLongNames[leg.routeLongName ?? ""] ?? leg.routeLongName;
