@@ -56,11 +56,11 @@ export default function LibreMap({
         const map = new maplibregl.Map({
             container: mapContainerRef.current,
             attributionControl: false,
-            style: 'https://tiles.openfreemap.org/styles/bright',
+            style: 'https://tiles.openfreemap.org/styles/liberty',
             center: [11.119065, 46.072438],
             zoom: 12,
             minZoom: 5,
-            maxZoom: 18,
+            maxZoom: 19,
         });
 
         map.on('load', () => {

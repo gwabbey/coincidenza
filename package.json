@@ -31,7 +31,6 @@
     "date-fns-tz": "^3.2.0",
     "dayjs": "^1.11.19",
     "dotenv": "^17.2.3",
-    "hafas-client": "^6.3.6",
     "https-proxy-agent": "^7.0.6",
     "ioredis": "^5.8.2",
     "jsonwebtoken": "^9.0.3",

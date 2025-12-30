@@ -5,7 +5,6 @@ import {getRealTimeData} from './realtime';
 import {Directions, Location, Trip} from './types';
 import {trainCategoryLongNames} from "@/train-categories";
 import {differenceInMinutes} from "date-fns";
-import axiosRetry from "axios-retry";
 import {createAxiosClient} from "@/api/axios";
 
 const axios = createAxiosClient();
@@ -151,54 +150,33 @@ const processTripData = async (data: {
     };
 };
 
-const resolvePlace = (loc: Location): string => {
+const resolvePlace = async (loc: Location): Promise<string> => {
     if (loc.lat != null && loc.lon != null) {
+        const {data} = await axios.get(`${MOTIS}/api/v1/reverse-geocode?place=${loc.lat},${loc.lon}&type=STOP`);
+        console.log(data[0].id)
+        if (data.length > 0) return data[0].id;
         return `${loc.lat},${loc.lon}`;
     }
 
-    if (loc.id && loc.id.trim() !== "") {
-        return loc.id;
-    }
-
-    throw new Error("missing id and coordinates");
+    throw new Error("unknown location");
 };
 
 export async function getDirections(from: Location, to: Location, dateTime: string): Promise<Directions> {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000);
-
-    const client = axios.create({
-        signal: controller.signal, timeout: 30000, validateStatus: (status) => status < 500,
-    });
-
-    axiosRetry(client, {
-        retries: 3, retryDelay: axiosRetry.exponentialDelay, retryCondition: (error) => {
-            return axiosRetry.isNetworkOrIdempotentRequestError(error) || (error.response?.status ?? 0) >= 500;
-        }, onRetry: (retryCount) => {
-            console.log(`Retry attempt ${retryCount} for directions request`);
-        }
-    });
-
     try {
-        const fromPlace = resolvePlace(from);
-        const toPlace = resolvePlace(to);
+        const fromPlace = await resolvePlace(from);
+        const toPlace = await resolvePlace(to);
 
-        const {data, status} = await client.get(`${MOTIS}/api/v5/plan`, {
+        const {data, status} = await axios.get(`${MOTIS}/api/v5/plan`, {
             params: {
                 fromPlace,
                 toPlace,
                 time: dateTime,
                 maxPreTransitTime: 1200,
                 maxPostTransitTime: 1200,
-                maxMatchingDistance: 100,
-                fastestDirectFactor: 1.5,
-                joinInterlinedLegs: true,
-                useRoutedTransfers: true,
-                maxDirectTime: 3600
+                maxDirectTime: 3600,
             }
         });
-
-        clearTimeout(timeout);
+        console.log(data)
 
         if (status !== 200) {
             console.error("Invalid MOTIS response:", data);
@@ -207,9 +185,7 @@ export async function getDirections(from: Location, to: Location, dateTime: stri
 
         return processTripData(data);
     } catch (error: any) {
-        clearTimeout(timeout);
-        
-        console.error("Error fetching directions:", error.message);
+        console.error("Error fetching directions:", error);
         return {trips: [], pageCursor: "", direct: []};
     }
 }

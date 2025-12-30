@@ -1,9 +1,7 @@
-import {capitalize, clients, findMatchingStation, getDistance} from "@/utils";
+import {capitalize, clients, findMatchingStation} from "@/utils";
 import {parseStringPromise} from "xml2js";
 import {TrainDeparture, TrainTrip} from "../types";
 import {getMonitor} from "./monitor";
-import stationLocations from "@/station-locations.json";
-import stations from "@/stations.json";
 import {createAxiosClient} from "@/api/axios";
 
 interface RfiItem {
@@ -273,6 +271,21 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
         }
     }
 
+    // eurocity trenord/oebb
+    /*if (trip.codiceCliente === 64) {
+        const {data: origin} = await axios.get(`https://int.bahn.de/web/api/reiseloesung/orte?suchbegriff=${trip.origine}&typ=ALL&limit=1`)
+
+        if (!origin) return null
+
+        const departures = await axios.get(
+            `https://int.bahn.de/web/api/reiseloesung/abfahrten?datum=${new Date(trip.orarioPartenza).toISOString().slice(0, 10)}&zeit=${new Date(trip.orarioPartenza).toTimeString().split(' ')[0]}&ortExtId=${origin[0].extId}&ortId=${origin[0].id}&mitVias=true`)
+
+        const match = departures.data.entries.find(
+            (e: any) => e.verkehrmittel?.name.match(/\d+/)?.[0] === trip.numeroTreno.toString()
+        );
+        console.log(match)
+    }*/
+
     return {
         currentStopIndex,
         delay,
@@ -309,43 +322,5 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
                 message: alert.infoNote ?? "", source: alert.source || "VT", url: null, date: null
             }))
             .filter((alert, i: number, self) => self.findIndex((a) => a.message === alert.message) === i) : []
-    }
-}
-
-export function getNearestStation(userLat: number, userLon: number): { rfiId: string, vtId: string } {
-    let nearest = stationLocations[0];
-    let minDistance = getDistance(userLat, userLon, nearest.lat, nearest.lon);
-
-    for (const station of stationLocations) {
-        const distance = getDistance(userLat, userLon, station.lat, station.lon);
-        if (distance < minDistance) {
-            minDistance = distance;
-            nearest = station;
-        }
-    }
-
-    const nomeLungo = nearest.localita?.nomeLungo;
-    const nomeBreve = nearest.localita?.nomeBreve;
-
-    if (!nomeLungo && !nomeBreve) {
-        return {
-            rfiId: "", vtId: "",
-        }
-    }
-
-    for (const [id, stationName] of Object.entries(stations)) {
-        const normalizedStationName = normalizeStationName(stationName);
-        const normalizedNomeLungo = nomeLungo ? normalizeStationName(nomeLungo) : '';
-        const normalizedNomeBreve = nomeBreve ? normalizeStationName(nomeBreve) : '';
-
-        if (normalizedStationName === normalizedNomeLungo || normalizedStationName === normalizedNomeBreve || normalizedStationName.includes(normalizedNomeLungo) || normalizedStationName.includes(normalizedNomeBreve) || normalizedNomeLungo.includes(normalizedStationName) || normalizedNomeBreve.includes(normalizedStationName)) {
-            return {
-                rfiId: id, vtId: nearest.codiceStazione
-            }
-        }
-    }
-
-    return {
-        rfiId: "", vtId: "",
     }
 }

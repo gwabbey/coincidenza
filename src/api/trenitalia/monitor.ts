@@ -146,7 +146,7 @@ export async function getMonitor(rfiId: string, vtId: string = ""): Promise<Stat
                 })
                 .filter((x): x is { name: string; time: string } => x !== null);
 
-            const alerts = infoElements.eq(1).length && !["RITARDO", "CODA", "TESTA", "CLASSE", "NO-STOP"].some(word => infoElements.eq(1).text().trim().includes(word)) ? infoElements.eq(1).text().trim() : '';
+            const alerts = infoElements.eq(1).length && !["RITARDO", "CODA", "TESTA", "CLASSE", "NO-STOP", "No Stop", "CON BUS SOSTITUTIVO DAL PIAZZALE ANTISTANTE LA STAZIONE"].some(word => infoElements.eq(1).text().trim().includes(word)) ? infoElements.eq(1).text().trim() : '';
 
             if (number && destination && departureTime) {
                 trains.push({
