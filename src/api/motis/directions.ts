@@ -174,9 +174,9 @@ export async function getDirections(from: Location, to: Location, dateTime: stri
                 maxPreTransitTime: 1200,
                 maxPostTransitTime: 1200,
                 maxDirectTime: 3600,
+                searchWindow: 7200
             }
         });
-        console.log(data)
 
         if (status !== 200) {
             console.error("Invalid MOTIS response:", data);
