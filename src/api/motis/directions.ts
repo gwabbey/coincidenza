@@ -151,14 +151,36 @@ const processTripData = async (data: {
 };
 
 const resolvePlace = async (loc: Location): Promise<string> => {
-    if (loc.lat != null && loc.lon != null) {
-        const {data} = await axios.get(`${MOTIS}/api/v1/reverse-geocode?place=${loc.lat},${loc.lon}&type=STOP`);
-        console.log(data[0].id)
-        if (data.length > 0) return data[0].id;
-        return `${loc.lat},${loc.lon}`;
+    if (loc.lat == null || loc.lon == null) {
+        throw new Error("unknown location");
     }
 
-    throw new Error("unknown location");
+    const {data} = await axios.get(
+        `${MOTIS}/api/v1/reverse-geocode`,
+        {
+            params: {
+                place: `${loc.lat},${loc.lon}`,
+                type: "STOP"
+            }
+        }
+    );
+
+    if (data.length > 0) {
+        const stop = data[0];
+
+        const dist = getDistance(
+            parseFloat(loc.lat),
+            parseFloat(loc.lon),
+            parseFloat(stop.lat),
+            parseFloat(stop.lon)
+        );
+
+        if (dist <= 50) {
+            return stop.id;
+        }
+    }
+
+    return `${loc.lat},${loc.lon}`;
 };
 
 export async function getDirections(from: Location, to: Location, dateTime: string): Promise<Directions> {
@@ -174,7 +196,8 @@ export async function getDirections(from: Location, to: Location, dateTime: stri
                 maxPreTransitTime: 1200,
                 maxPostTransitTime: 1200,
                 maxDirectTime: 3600,
-                searchWindow: 7200
+                searchWindow: 7200,
+                numItineraries: 5
             }
         });
 

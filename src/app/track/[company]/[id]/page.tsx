@@ -3,8 +3,13 @@ import {notFound} from "next/navigation";
 import Train from "./trip/train";
 import Bus from "./trip/bus";
 import {getTripDetails as getTrentinoTrip} from "@/api/trentino-trasporti/api";
+import {Metadata} from 'next';
 
 export const revalidate = 60
+
+export const metadata: Metadata = {
+    title: "viaggio in tempo reale | coincidenza"
+};
 
 export default async function Page({params}: {
     params: Promise<{ company: string, id: string }>

@@ -29,7 +29,7 @@ interface SelectedLocations {
     to: Location | null;
 }
 
-export default function Directions({recent}: { recent: { from: Location, to: Location } | null }) {
+export default function Directions() {
     const [selectedLocations, setSelectedLocations] = useState<SelectedLocations>({
         from: null, to: null,
     });
@@ -159,7 +159,7 @@ export default function Directions({recent}: { recent: { from: Location, to: Loc
         />
 
         <Card className="flex flex-col gap-2 p-4 -mt-4 z-20 flex-1 min-h-0 overflow-auto rounded-b-none" fullWidth>
-            {!directions && <h1 className="text-2xl font-bold text-center shrink-0">Pianifica il tuo viaggio</h1>}
+            {!directions && <h1 className="text-2xl font-bold text-center shrink-0">calcola percorso</h1>}
 
             {!directions ? (<div className="flex flex-col items-center gap-y-4 shrink-0">
                 <div className="flex flex-col md:flex-row justify-center items-center gap-x-4 w-full">
@@ -234,7 +234,7 @@ export default function Directions({recent}: { recent: { from: Location, to: Loc
                     isDisabled={!selectedLocations.from || !selectedLocations.to || !date || !time || isLoading || (selectedLocations && isSameLocation) || today > date || date > nextWeek}
                     isLoading={isLoading}
                 >
-                    {!isLoading && "Cerca"}
+                    {!isLoading && "cerca..."}
                 </Button>
 
                 {error && (<div className="pointer-events-auto text-center max-w-2xl mx-auto">

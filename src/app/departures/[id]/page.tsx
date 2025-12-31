@@ -9,16 +9,37 @@ import {getMonitor, getVtId} from "@/api/trenitalia/monitor";
 import {Train} from "./train";
 import {getFilteredDepartures} from "@/api/trentino-trasporti/api";
 import {Bus} from "./bus";
+import type {Metadata} from 'next'
 
 export const revalidate = 60;
 
+type Props = {
+    params: Promise<{ id: string }>
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>
+}
+
+export async function generateMetadata({params}: Props): Promise<Metadata> {
+    const {id} = await params
+
+    if (!id) return {
+        title: ""
+    }
+
+    const stop = await resolveStop(id);
+
+    if (!stop) {
+        return {
+            title: ""
+        }
+    }
+
+    return {
+        title: `partenze da ${stop.name} | coincidenza`, description: `prossime corse in partenza da ${stop.name}`
+    }
+}
+
 type StopContext = | { kind: "train"; agency: "rfi"; id: string; name: string } | {
-    kind: "bus";
-    agency: "tte" | "ttu";
-    id: string;
-    name: string;
-    lat: string;
-    lon: string
+    kind: "bus"; agency: "tte" | "ttu"; id: string; name: string; lat: string; lon: string
 };
 
 async function TrainLoader({id, name}: { id: string; name: string }) {
@@ -64,14 +85,14 @@ async function resolveStop(fullId: string): Promise<StopContext | null> {
 }
 
 export default async function Page({params}: { params: Promise<{ id: string }> }) {
-    const fullId = (await params).id;
-    const stop = await resolveStop(fullId);
+    const {id} = await params;
+    const stop = await resolveStop(id);
     if (!stop) return notFound();
 
     return (<div className="flex flex-col gap-4 text-center">
         <h1 className="text-2xl font-bold">Partenze da {stop.name}</h1>
 
-        <Search selected={fullId} selectedName={stop.name} />
+        <Search selected={id} selectedName={stop.name} />
 
         <Suspense fallback={<Loading />}>
             {stop.kind === "train" ? (<TrainLoader id={stop.id} name={stop.name} />) : (
