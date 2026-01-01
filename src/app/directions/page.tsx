@@ -11,5 +11,5 @@ export default async function Page() {
     // const recentRaw = cookieStore.get('recent')?.value ?? '{}';
     // const recent = JSON.parse(decodeURIComponent(recentRaw));
 
-    if (cookieStore) return <Directions />;
+    return <Directions />;
 }
