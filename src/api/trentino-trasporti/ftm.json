@@ -1,0 +1,192 @@
+[
+  {
+    "id": 1,
+    "tt": 2426,
+    "name": "Trento"
+  },
+  {
+    "id": 3,
+    "tt": 2571,
+    "name": "Trento Nord"
+  },
+  {
+    "id": 4,
+    "tt": 2572,
+    "name": "Gardolo"
+  },
+  {
+    "id": 5,
+    "tt": 2573,
+    "name": "Zona Industriale"
+  },
+  {
+    "id": 6,
+    "tt": 2574,
+    "name": "Lamar"
+  },
+  {
+    "id": 7,
+    "tt": 2528,
+    "name": "Lavis"
+  },
+  {
+    "id": 8,
+    "tt": 2530,
+    "name": "Zambana"
+  },
+  {
+    "id": 9,
+    "tt": 2576,
+    "name": "Nave S. Felice"
+  },
+  {
+    "id": 11,
+    "tt": 2578,
+    "name": "Grumo S. Michele"
+  },
+  {
+    "id": 12,
+    "tt": 2579,
+    "name": "Mezzocorona Ferrovia"
+  },
+  {
+    "id": 13,
+    "tt": 2580,
+    "name": "Mezzocorona Borgata"
+  },
+  {
+    "id": 14,
+    "tt": 2581,
+    "name": "Mezzolombardo"
+  },
+  {
+    "id": 15,
+    "tt": 2582,
+    "name": "Masi di Vigo"
+  },
+  {
+    "id": 16,
+    "tt": 2583,
+    "name": "Crescino"
+  },
+  {
+    "id": 17,
+    "tt": 2584,
+    "name": "Denno"
+  },
+  {
+    "id": 19,
+    "tt": 2586,
+    "name": "Mollaro"
+  },
+  {
+    "id": 20,
+    "tt": 2587,
+    "name": "Segno"
+  },
+  {
+    "id": 21,
+    "tt": 2588,
+    "name": "Taio"
+  },
+  {
+    "id": 22,
+    "tt": 2589,
+    "name": "Dermulo"
+  },
+  {
+    "id": 23,
+    "tt": 2590,
+    "name": "Tassullo"
+  },
+  {
+    "id": 24,
+    "tt": 2591,
+    "name": "Cles"
+  },
+  {
+    "id": 25,
+    "tt": 2592,
+    "name": "Cles Polo Scolastico"
+  },
+  {
+    "id": 26,
+    "tt": 2593,
+    "name": "Mostizzolo"
+  },
+  {
+    "id": 27,
+    "tt": 2594,
+    "name": "Bozzana"
+  },
+  {
+    "id": 28,
+    "tt": 2595,
+    "name": "Tozzaga"
+  },
+  {
+    "id": 29,
+    "tt": 2596,
+    "name": "Cassana"
+  },
+  {
+    "id": 30,
+    "tt": 2597,
+    "name": "Cavizzana"
+  },
+  {
+    "id": 31,
+    "tt": 2598,
+    "name": "Caldes"
+  },
+  {
+    "id": 32,
+    "tt": 2599,
+    "name": "Terzolas"
+  },
+  {
+    "id": 33,
+    "tt": 2600,
+    "name": "Malé"
+  },
+  {
+    "id": 34,
+    "tt": 2601,
+    "name": "Croviana"
+  },
+  {
+    "id": 35,
+    "tt": 2602,
+    "name": "Monclassico"
+  },
+  {
+    "id": 36,
+    "tt": 2604,
+    "name": "Dimaro-Pressòn"
+  },
+  {
+    "id": 37,
+    "tt": 2605,
+    "name": "Mastellina"
+  },
+  {
+    "id": 38,
+    "tt": 2606,
+    "name": "Daolasa"
+  },
+  {
+    "id": 39,
+    "tt": 2614,
+    "name": "Piano"
+  },
+  {
+    "id": 40,
+    "tt": 2615,
+    "name": "Marilleva"
+  },
+  {
+    "id": 41,
+    "tt": 5718,
+    "name": "Mezzana"
+  }
+]

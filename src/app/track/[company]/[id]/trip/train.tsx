@@ -3,7 +3,7 @@
 import {TrainTrip} from "@/api/types";
 import {RouteModal} from "@/components/modal";
 import Timeline from "@/components/timeline";
-import {capitalize, findMatchingStation, formatDate, getDelayColor} from "@/utils";
+import {capitalize, formatDate, getDelayColor, getMatchingRfiStation} from "@/utils";
 import {Button, Card, CardBody, Divider, Link, useDisclosure} from "@heroui/react";
 import {IconAlertTriangleFilled} from "@tabler/icons-react";
 import {useEffect, useState} from 'react';
@@ -341,7 +341,7 @@ export default function Train({trip: initialTrip}: { trip: TrainTrip }) {
                             <div className="flex-col">
                                 <Link color="foreground"
                                       className="wrap-break-word font-bold leading-none"
-                                      href={`/departures/${findMatchingStation(stop.name) ?? ""}`}>
+                                      href={`/departures/${trip.company == "italo" ? `rfi_${stop.id}` : getMatchingRfiStation(stop.name) ?? ""}`}>
                                     {stop.name}
                                 </Link>
 

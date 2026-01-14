@@ -11,6 +11,36 @@ export const clients: Record<number, string> = {
     64: "trenitalia", // 64: "bahn"
 };
 
+export function getTripColor(routeShortName: string, source: string = ""): string {
+    const agency = source?.split(".")[0];
+    const category = routeShortName?.split(" ")[0];
+
+    if (agency === "ttu") return "00C951";
+    if (agency === "tte") return "0A6DE5";
+
+    switch (category) {
+        case "R":
+        case "RV":
+        case "RE":
+        case "REG":
+            return "036633";
+        case "FR":
+        case "FB":
+        case "AV":
+        case "EC":
+        case "RJ":
+        case "EXP":
+        case "FA":
+            return "CA2A31";
+        case "E":
+        case "IC":
+        case "ICN":
+            return "0A6DE5";
+        default:
+            return "036633";
+    }
+}
+
 export function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371e3;
     const a1 = lat1 * Math.PI / 180;
@@ -61,16 +91,16 @@ export const capitalize = (str: string) => {
     return str.toLowerCase().replace(/\b\w/g, char => char.toUpperCase()).replace(/([-.])\s*(\w)/g, (_, symbol, char) => `${symbol} ${char.toUpperCase()}`);
 };
 
-export function findMatchingStation(stationName: string): string | null {
-    if (!stationName || stationName.trim() === '') {
+export function getMatchingRfiStation(name: string): string | null {
+    if (!name || name.trim() === '') {
         return null;
     }
 
     const normalize = (s: string) => s.replace(/\s*[-.]\s*/g, match => match.trim()).replace(/\b\/Av\b/gi, "").trim();
-    const normalizedInput = normalize(stationName);
+    const normalized = normalize(name);
 
     for (const [id, name] of Object.entries(stations)) {
-        if (normalizedInput === normalize(name)) {
+        if (normalized === normalize(name)) {
             return `rfi_${id}`;
         }
     }

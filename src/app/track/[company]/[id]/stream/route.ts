@@ -1,5 +1,6 @@
 import {getTrip as getTrenitaliaTrip} from "@/api/trenitalia/api";
 import {getTrip as getTrentinoTrip} from "@/api/trentino-trasporti/api";
+import {getTrip as getItaloTrip} from "@/api/italo/api";
 import {createResponse} from "better-sse";
 import crypto from 'crypto';
 import {NextRequest} from "next/server";
@@ -52,6 +53,42 @@ export async function GET(request: NextRequest, {params}: { params: Promise<{ co
                             lastUpdate: trenitaliaTrip.lastUpdate,
                             currentStopIndex: trenitaliaTrip.currentStopIndex,
                             stops: trenitaliaTrip.stops.map((stop: any) => ({
+                                id: stop.id,
+                                name: stop.name,
+                                scheduledPlatform: stop.scheduledPlatform,
+                                actualPlatform: stop.actualPlatform,
+                                scheduledArrival: stop.scheduledArrival,
+                                actualArrival: stop.actualArrival,
+                                scheduledDeparture: stop.scheduledDeparture,
+                                actualDeparture: stop.actualDeparture,
+                                departureDelay: stop.departureDelay,
+                                arrivalDelay: stop.arrivalDelay,
+                                status: stop.status
+                            }))
+                        }
+                        break;
+
+                    case "italo":
+                        const italoTrip = await getItaloTrip(id);
+
+                        if (!italoTrip) {
+                            missingCount++;
+                            if (missingCount > 3) {
+                                session.push({error: "Trip not found"});
+                                return true;
+                            }
+                            return false;
+                        }
+
+                        missingCount = 0;
+
+                        normalizedTrip = {
+                            status: italoTrip.status,
+                            delay: italoTrip.delay,
+                            lastKnownLocation: italoTrip.lastKnownLocation,
+                            lastUpdate: italoTrip.lastUpdate,
+                            currentStopIndex: italoTrip.currentStopIndex,
+                            stops: italoTrip.stops.map((stop: any) => ({
                                 id: stop.id,
                                 name: stop.name,
                                 scheduledPlatform: stop.scheduledPlatform,

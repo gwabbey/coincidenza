@@ -67,7 +67,8 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                classNames={{indicator: "text-foreground-500"}}
                                title={<div className="flex flex-col gap-1">
                                    <Steps trip={trip} />
-                                   <span className="font-bold text-2xl flex flex-row items-center gap-x-2">
+                                   <span
+                                       className="font-bold text-2xl flex flex-row items-center gap-x-2">
                                            <span
                                                className={cn(`text-${getDelayColor(trip.legs[0]?.mode !== "WALK" ? trip.legs[0]?.realTime?.delay : trip.legs[1]?.realTime?.delay ?? null)}`)}>
                                                {format(new Date(trip.startTime), "HH:mm")}
@@ -107,7 +108,7 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                                         padding: "0.1rem 0.5rem",
                                                         textAlign: leg.routeColor ? "center" : "left",
                                                         color: "white",
-                                                    }}> {leg.routeShortName} {leg.tripShortName}
+                                                    }}> {leg.routeShortName} {leg.mode.includes("RAIL") && leg.tripShortName}
                                                         </span>
                                                 <span
                                                     className="sm:text-lg text-md font-bold">
@@ -116,23 +117,24 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                             </div>) : (<span className="sm:text-lg text-md font-bold">
                                                         cammina per circa {formatDuration(Math.round(leg.duration / 60), true)}
                                                     </span>)}
-                                            <span
-                                                className={`${leg.realTime.status === "canceled" ? "font-bold text-danger" : "text-foreground-500 text-sm"}`}>
-                                                    {leg.realTime.status === "canceled" ? "Cancellato" : getLegDescription(leg)}
+                                            <span className="text-foreground-500 text-sm">
+                                                    {leg.realTime.status === "canceled" ?
+                                                        <strong>Cancellato</strong> : getLegDescription(leg)}
                                                 </span>
-                                            {leg.mode !== "WALK" && leg.realTime.url && (<Button
-                                                as={Link}
-                                                target="_blank"
-                                                href={leg.realTime.url}
-                                                variant="bordered"
-                                                startContent={<IconAccessPoint />}
-                                                radius="full"
-                                                fullWidth
-                                                className="border-gray-500 border-1 self-center text-medium mt-2"
-                                                aria-label={`${leg.routeLongName || ""} ${leg.tripShortName || ""} in tempo reale`}
-                                            >
-                                                traccia in tempo reale
-                                            </Button>)}
+                                            {leg.mode !== "WALK" && leg.realTime.url && leg.realTime.status != "canceled" && (
+                                                <Button
+                                                    as={Link}
+                                                    target="_blank"
+                                                    href={leg.realTime.url}
+                                                    variant="bordered"
+                                                    startContent={<IconAccessPoint />}
+                                                    radius="full"
+                                                    fullWidth
+                                                    className="border-gray-500 border-1 self-center text-medium mt-2"
+                                                    aria-label={`${leg.routeLongName || ""} ${leg.tripShortName || ""} in tempo reale`}
+                                                >
+                                                    traccia in tempo reale
+                                                </Button>)}
                                             {leg.mode === "WALK" && (<Button
                                                 as={Link}
                                                 target="_blank"
@@ -221,7 +223,7 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                                                        indicator: "text-foreground",
                                                                        title: "font-bold",
                                                                        trigger: "py-3",
-                                                                       base: "mt-4"
+                                                                       base: leg.realTime.status !== "canceled" && "mt-4"
                                                                    }}
                                                                    startContent={<IconAlertTriangle />}
                                                                    className={cn("bg-warning-500/50 px-4 scrollbar-hide rounded-large max-h-64 overflow-scroll", leg.realTime.status === "canceled" && "pointer-events-none max-h-full")}>

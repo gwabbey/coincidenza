@@ -1,4 +1,4 @@
-import {capitalize, clients, findMatchingStation} from "@/utils";
+import {capitalize, clients, getMatchingRfiStation, getTripColor} from "@/utils";
 import {parseStringPromise} from "xml2js";
 import {TrainDeparture, TrainTrip} from "../types";
 import {getMonitor} from "./monitor";
@@ -234,7 +234,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
         const stationName = stop?.stazione;
         if (!stationName) return null;
 
-        const rfiId = findMatchingStation(capitalize(stationName));
+        const rfiId = getMatchingRfiStation(capitalize(stationName));
         if (!rfiId) return null;
 
         return await getMonitorTrip(rfiId, trainNumber);
@@ -301,7 +301,7 @@ export async function getTrip(origin: string, id: string, timestamp: number): Pr
         alertMessage: trip.subTitle,
         clientId: trip.codiceCliente || 0,
         company: clients[trip.codiceCliente],
-        color: getCategory(trip) === "R" ? "036633" : getCategory(trip).startsWith("IC") ? "0A6DE5" : "CA2A31",
+        color: getTripColor(getCategory(trip)),
         stops: canvas.map((stop: any) => {
             return {
                 id: stop.id,

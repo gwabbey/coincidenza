@@ -30,6 +30,15 @@ async function decodePolyline(encoded: string): Promise<Array<[number, number]>>
     return polyline.decode(encoded, 6) as Array<[number, number]>;
 }
 
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371000;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
 export default function LibreMap({
                                      from, to, intermediateStops = [], legs = [], className, animationDuration = 2000,
                                  }: MapProps) {
@@ -45,10 +54,46 @@ export default function LibreMap({
     });
     const animationFrameRef = useRef<number | null>(null);
     const [mapInitialized, setMapInitialized] = useState(false);
+    const [simplifiedStops, setSimplifiedStops] = useState<Coordinate[]>([]);
 
     const isDark = resolvedTheme === 'dark';
     const labelColor = '#000000';
-    const haloColor = '#ffffff';
+    const haloColor = '#fff';
+
+    useEffect(() => {
+        if (!intermediateStops || intermediateStops.length === 0) {
+            setSimplifiedStops(prev => prev.length === 0 ? prev : []);
+            return;
+        }
+
+        const simplified: Coordinate[] = [];
+        const MERGE_THRESHOLD = 50;
+
+        for (let i = 0; i < intermediateStops.length; i++) {
+            const current = intermediateStops[i];
+            const next = intermediateStops[i + 1];
+
+            if (next) {
+                const distance = calculateDistance(current.lat, current.lon, next.lat, next.lon);
+
+                if (distance < MERGE_THRESHOLD) {
+                    const mergedStop: Coordinate = {
+                        lat: (current.lat + next.lat) / 2,
+                        lon: (current.lon + next.lon) / 2,
+                        name: current.name || next.name
+                    };
+                    simplified.push(mergedStop);
+                    i++;
+                } else {
+                    simplified.push(current);
+                }
+            } else {
+                simplified.push(current);
+            }
+        }
+
+        setSimplifiedStops(simplified);
+    }, [intermediateStops]);
 
     useEffect(() => {
         if (!mapContainerRef.current || mapRef.current) return;
@@ -61,6 +106,7 @@ export default function LibreMap({
             zoom: 12,
             minZoom: 5,
             maxZoom: 19,
+
         });
 
         map.on('load', () => {
@@ -124,7 +170,7 @@ export default function LibreMap({
                         'circle-radius': 8,
                         'circle-color': '#0171F8',
                         'circle-stroke-width': 3,
-                        'circle-stroke-color': '#ffffff'
+                        'circle-stroke-color': '#fff'
                     }
                 });
 
@@ -229,10 +275,10 @@ export default function LibreMap({
             map.removeSource('intermediate-stops');
         }
 
-        if (intermediateStops && intermediateStops.length > 0) {
+        if (simplifiedStops && simplifiedStops.length > 0) {
             map.addSource('intermediate-stops', {
                 type: 'geojson', data: {
-                    type: 'FeatureCollection', features: intermediateStops.map(stop => ({
+                    type: 'FeatureCollection', features: simplifiedStops.map(stop => ({
                         type: 'Feature', properties: {name: stop.name || ''}, geometry: {
                             type: 'Point', coordinates: [stop.lon, stop.lat]
                         }
@@ -245,28 +291,29 @@ export default function LibreMap({
                     'circle-radius': 5,
                     'circle-color': '#007AFF',
                     'circle-stroke-width': 2,
-                    'circle-stroke-color': '#ffffff'
+                    'circle-stroke-color': '#fff'
                 }
             });
 
-            if (intermediateStops.some(stop => stop.name)) {
+            if (simplifiedStops.some(stop => stop.name)) {
                 map.addLayer({
                     id: 'intermediate-stops-labels', type: 'symbol', source: 'intermediate-stops', layout: {
                         'text-field': ['get', 'name'],
                         'text-font': ['Noto Sans Regular'],
                         'text-size': 12,
-                        'text-variable-anchor': ['left', 'right', 'top', 'bottom'],
+                        'text-variable-anchor': ['left', 'right'],
                         'text-radial-offset': 1,
                         'text-justify': 'auto'
                     }, paint: {
-                        'text-color': labelColor
+                        'text-color': labelColor,
+
                     }
                 });
             }
         }
 
         updateMapBounds();
-    }, [intermediateStops, mapInitialized]);
+    }, [simplifiedStops, mapInitialized]);
 
     useEffect(() => {
         if (!mapInitialized || !mapRef.current) return;
@@ -312,7 +359,7 @@ export default function LibreMap({
                 });
 
                 decodedLegs.forEach((_, idx) => {
-                    const legColor = legs[idx].mode === "WALK" ? "#999999" : legs[idx].routeColor ? `#${legs[idx].routeColor}` : legs[idx].mode === "BUS" ? "#016FEE" : "red";
+                    const legColor = legs[idx].mode === "WALK" ? "#999999" : legs[idx].routeColor ? `#${legs[idx].routeColor}` : "#036633";
 
                     map.addSource(`route-source-${idx}`, {
                         type: 'geojson', data: {
@@ -427,8 +474,8 @@ export default function LibreMap({
             });
         }
 
-        if (intermediateStops) {
-            intermediateStops.forEach(stop => {
+        if (simplifiedStops) {
+            simplifiedStops.forEach(stop => {
                 if (!isNaN(stop.lat) && !isNaN(stop.lon)) {
                     allPoints.push([stop.lon, stop.lat]);
                 }

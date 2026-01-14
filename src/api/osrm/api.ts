@@ -6,14 +6,14 @@ import {cache} from "react";
 
 const axios = createAxiosClient();
 
-export async function getRailPolyline(stops: (From | IntermediateStop | To)[]) {
+export async function getRoadPolyline(stops: (From | IntermediateStop | To)[]) {
     if (!stops || stops.length === 0) return "";
 
     const coords = stops.map((stop) => `${stop.lon},${stop.lat}`).join(";");
 
     const getCachedPolyline = cache(async (coords: string) => {
         try {
-            const {data} = await axios.get(`https://signal.eu.org/osm/eu/route/v1/train/${coords}?overview=full`);
+            const {data} = await axios.get(`https://router.project-osrm.org/route/v1/driving/${coords}?overview=full`);
 
             const line = data.routes?.[0]?.geometry;
             if (!line) return "";

@@ -3,6 +3,7 @@ import {notFound} from "next/navigation";
 import Train from "./trip/train";
 import Bus from "./trip/bus";
 import {getTripDetails as getTrentinoTrip} from "@/api/trentino-trasporti/api";
+import {getTrip as getItaloTrip} from "@/api/italo/api";
 import {Metadata} from 'next';
 
 export const revalidate = 60
@@ -15,7 +16,7 @@ export default async function Page({params}: {
     params: Promise<{ company: string, id: string }>
 }) {
     const {company, id} = await params;
-    if (["trenitalia", "trenord", "trentino-trasporti"].indexOf(company) === -1) {
+    if (["trenitalia", "trenord", "trentino-trasporti", "italo"].indexOf(company) === -1) {
         notFound();
     }
 
@@ -41,6 +42,14 @@ export default async function Page({params}: {
             notFound();
         }
         return <Bus trip={trip} />
+    }
+
+    if (company === "italo") {
+        const trip = await getItaloTrip(id);
+        if (!trip) {
+            notFound();
+        }
+        return <Train trip={trip} />
     }
 
 }

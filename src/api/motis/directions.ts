@@ -1,11 +1,13 @@
 "use server";
 
-import {capitalize, getDistance} from '@/utils';
+import {capitalize, getDistance, getTripColor} from '@/utils';
 import {getRealTimeData} from './realtime';
 import {Directions, Location, Trip} from './types';
 import {trainCategoryLongNames} from "@/train-categories";
 import {differenceInMinutes} from "date-fns";
 import {createAxiosClient} from "@/api/axios";
+import {getRailPolyline} from "@/api/signal/api";
+import {getRoadPolyline} from "@/api/osrm/api";
 
 const axios = createAxiosClient();
 
@@ -29,7 +31,7 @@ const getStop = (name: string): string => {
     return capitalize(name);
 };
 
-function getTripSignature(trip: Trip): string {
+function getSignature(trip: Trip): string {
     const nonWalkLegs = trip.legs.filter((l) => l.mode !== "WALK");
 
     if (nonWalkLegs.length === 0) {
@@ -46,6 +48,19 @@ function getTripSignature(trip: Trip): string {
         .join("|");
 }
 
+async function getShapes(leg: any): Promise<string> {
+    const stops = [leg.from, ...(leg.intermediateStops ?? []), leg.to].filter(Boolean);
+    if (leg.mode?.includes("RAIL")) {
+        return await getRailPolyline(stops);
+    }
+
+    if (!leg.agencyName?.includes("Trentino trasporti") && leg.mode?.includes("BUS")) {
+        return await getRoadPolyline(stops);
+    }
+
+    return leg.legGeometry.points ?? "";
+}
+
 const processTripData = async (data: {
     itineraries: Trip[]; direct: Trip[]; pageCursor?: string
 }): Promise<Directions> => {
@@ -55,14 +70,22 @@ const processTripData = async (data: {
 
     const processedItineraries = await Promise.all(data.itineraries.map(async (trip) => {
         const processedLegs = (await Promise.all(trip.legs.map(async (originalLeg) => {
+            const points = await getShapes(originalLeg);
+            const route = originalLeg.routeShortName;
+
             return {
                 ...originalLeg,
+                legGeometry: {
+                    points,
+                    precision: originalLeg.legGeometry.precision ?? 0,
+                    length: originalLeg.legGeometry.length ?? 0,
+                },
                 intermediateStops: originalLeg.intermediateStops?.map((stop: any) => ({
-                    ...stop, name: getStop(stop.name),
+                    ...stop, name: getStop(stop.name)
                 })),
                 headsign: capitalize(originalLeg.headsign || ""),
-                routeLongName: originalLeg.mode.includes("RAIL") && originalLeg.routeShortName ? trainCategoryLongNames[originalLeg.routeShortName.trim().toUpperCase()] : capitalize(originalLeg.routeLongName || ""),
-                routeShortName: originalLeg.routeShortName && (originalLeg.routeShortName === "REG" ? "R" : originalLeg.routeShortName.split("_")[0]),
+                routeLongName: originalLeg.mode.includes("RAIL") && route ? trainCategoryLongNames[route.trim().toUpperCase()] : capitalize(originalLeg.routeLongName || ""),
+                routeShortName: route && (route === "REG" ? "R" : route.startsWith("RE") ? "RE" : route.startsWith("R") ? "R" : route.startsWith("S") ? "S" : route.split("_")[0]),
                 from: {
                     ...originalLeg.from, name: getStop(originalLeg.from.name),
                 },
@@ -70,8 +93,8 @@ const processTripData = async (data: {
                     ...originalLeg.to, name: getStop(originalLeg.to.name),
                 },
                 tripShortName: originalLeg.tripShortName,
-                routeColor: originalLeg.routeShortName?.startsWith("R") ? "036633" : originalLeg.source?.includes("ttu") && !originalLeg.routeColor ? "1CC864" : originalLeg.routeColor,
-                status: "scheduled"
+                routeColor: !originalLeg.routeColor && route && originalLeg.source ? getTripColor(route, originalLeg.source) : originalLeg.routeColor,
+                status: "scheduled",
             };
         }))).filter((leg) => {
             if (!leg.from || !leg.to) {
@@ -97,7 +120,7 @@ const processTripData = async (data: {
     const seen = new Map<string, Trip>();
 
     for (const trip of processedItineraries) {
-        const signature = getTripSignature(trip);
+        const signature = getSignature(trip);
 
         if (!seen.has(signature)) {
             seen.set(signature, trip);
@@ -155,27 +178,17 @@ const resolvePlace = async (loc: Location): Promise<string> => {
         throw new Error("unknown location");
     }
 
-    const {data} = await axios.get(
-        `${MOTIS}/api/v1/reverse-geocode`,
-        {
-            params: {
-                place: `${loc.lat},${loc.lon}`,
-                type: "STOP"
-            }
-        }
-    );
-
-    if (data.length > 0) {
+    const {data} = await axios.get(`${MOTIS}/api/v1/reverse-geocode`, {
+        params: {
+            place: `${loc.lat},${loc.lon}`, type: "STOP",
+        },
+    });
+    console.log(data)
+    if (Array.isArray(data) && data.length > 0) {
         const stop = data[0];
+        const dist = getDistance(Number(loc.lat), Number(loc.lon), Number(stop.lat), Number(stop.lon));
 
-        const dist = getDistance(
-            parseFloat(loc.lat),
-            parseFloat(loc.lon),
-            parseFloat(stop.lat),
-            parseFloat(stop.lon)
-        );
-
-        if (dist <= 50) {
+        if (dist <= 150) {
             return stop.id;
         }
     }

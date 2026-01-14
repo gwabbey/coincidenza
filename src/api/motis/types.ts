@@ -121,6 +121,7 @@ export interface IntermediateStop {
     pickupType: string
     dropoffType: string
     cancelled: boolean
+    importance: number
 }
 
 export interface Info {

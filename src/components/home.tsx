@@ -14,11 +14,11 @@ export const Home = ({alerts, favorites}: { alerts: any, favorites: any }) => {
         document.cookie = `favorites=[]; path=/; max-age=0`;
         document.cookie = `favorites_migrated=true; path=/; max-age=${60 * 60 * 24 * 30}`;
     }, []);
-    
+
     return (<div className="flex flex-col items-center justify-center gap-8 text-center max-w-4xl w-full mx-auto">
         <div className="flex flex-col gap-y-2">
             <h1 className="text-5xl font-thin text-center">coincidenza</h1>
-            <div className="text-xl max-w-4xl">pianifica i tuoi spostamenti senza problemi</div>
+            <div className="text-xl max-w-4xl">pianifica i tuoi spostamenti senza problemi!</div>
         </div>
 
         <div className="flex flex-col gap-y-4 w-full">
@@ -42,7 +42,7 @@ export const Home = ({alerts, favorites}: { alerts: any, favorites: any }) => {
         <div className="flex flex-col gap-8 w-full">
             {alerts.length > 0 && <Card className="flex flex-col gap-4 p-4 w-full">
                 <div className="text-2xl font-bold text-center mx-auto">
-                    ⚠️ avvisi ⚠️
+                    ⚠️ Avvisi ⚠️
                 </div>
                 <CardBody className="gap-2">
                     {alerts && alerts.map((alert: any, index: number) => (<div key={index} className="flex flex-col">
@@ -55,12 +55,13 @@ export const Home = ({alerts, favorites}: { alerts: any, favorites: any }) => {
 
             <Card className="flex flex-col gap-4 p-4 w-full">
                 <div className="text-2xl font-bold text-center mx-auto">
-                    il progetto
+                    Il progetto
                 </div>
                 <CardBody className="gap-2">
                     <div className="flex flex-col gap-4 max-w-4xl mx-auto text-center">
-                        <div>coincidenza.it ha lo scopo di rendere i viaggi con i mezzi pubblici <strong>semplici
-                            e comodi</strong>, con particolare attenzione ai dati in tempo reale, la precisione e
+                        <div><strong>coincidenza.it</strong> ha lo scopo di rendere i viaggi con i mezzi
+                            pubblici <strong>semplici
+                                e comodi</strong>, con particolare attenzione ai dati in tempo reale, la precisione e
                             l'accessibilità.
                         </div>
                         {/*<div>
@@ -69,30 +70,28 @@ export const Home = ({alerts, favorites}: { alerts: any, favorites: any }) => {
                         <Divider />
                         <div>il progetto è <strong>open source</strong>, pubblicato su <Link isExternal
                                                                                              href="https://github.com/gwabbey">github</Link>.
-                            il progetto è sviluppato e ideato interamente da me per passione.
                         </div>
                         <Divider />
 
                         <div className="flex flex-col gap-y-2">
-                            <div>il servizio utilizza <strong>dati pubblici</strong> di varie aziende.</div>
-                            <div>tra queste al momento sono supportate Trentino Trasporti, Trenitalia, STA Alto Adige,
-                                ATV Verona, Arriva, Trenord, ATM Milano, ACTV Venezia, MOM Treviso, Busitalia Veneto e
-                                altre.
+                            <div>Il servizio utilizza <strong>dati pubblici</strong> di varie aziende.</div>
+                            <div>Tra queste al momento sono supportate Trentino Trasporti, Trenitalia, STA, Trenord,
+                                ATV, Arriva, ATM, ACTV, MOM, Busitalia, ecc.
                             </div>
                             <div>
-                                man mano che il progetto cresce, verranno aggiunte più compagnie, in modo da espandere
-                                il servizio nel resto d'italia e, in futuro, anche in altri stati.
+                                Con la crescita del progetto, verranno progressivamente integrate nuove compagnie,
+                                estendendo il servizio al resto d’Italia e, in futuro, anche ad altri Stati.
                             </div>
                         </div>
                         <Divider />
                         <div className="flex-col inline">
-                            <div className="font-bold">mappe</div>
+                            <div className="font-bold">Mappe</div>
                             <Link isExternal href="https://maplibre.org">MapLibre</Link>, &copy; <Link
                             isExternal href="https://www.openstreetmap.org/copyright">OpenStreetMap</Link> contributors
                             ❤️
                         </div>
                         <Divider />
-                        <div className="italic">per più informazioni, domande, consigli, idee, ecc. non esitare a <Link
+                        <div className="italic">Per più informazioni, domande, consigli, idee, ecc. non esitare a <Link
                             href="mailto:mail@g3b.dev">contattarmi !!</Link>
                         </div>
                     </div>

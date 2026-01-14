@@ -241,6 +241,7 @@ export async function getTripDetails(id: string) {
     const stopMap = new Map<string, string>(stops.map((stop: any) => [stop.stopId, stop.stopName]));
     const getStopName = (stopId: string) => stopMap.get(stopId) ?? "--";
     const getRoute = (routeId: string) => routes.find((r: any) => r.routeId === routeId);
+    const route = getRoute(trip.routeId);
 
     let lastValidTime: Date | null = null;
 
@@ -266,8 +267,8 @@ export async function getTripDetails(id: string) {
         status: trip.lastSequenceDetection === trip.stopTimes[trip.stopTimes.length - 1].stopSequence ? "completed" : !trip.lastEventRecivedAt ? "scheduled" : "active",
         category: trip.type === "U" ? "Urbano" : "Extraurbano",
         vehicleId: trip.matricolaBus,
-        color: getRoute(trip.routeId).routeColor ? getRoute(trip.routeId).routeColor : trip.type === "U" ? "1AC964" : "2C7FFF",
-        route: getRoute(trip.routeId).routeShortName,
+        color: route.routeColor ? route.routeColor : trip.type === "U" ? "1AC964" : "2C7FFF",
+        route: route.routeShortName,
         origin: getStopName(trip.stopTimes[0].stopId),
         destination: trip.tripHeadsign,
         departureTime: getValidTime(trip.stopTimes[0].departureTime),

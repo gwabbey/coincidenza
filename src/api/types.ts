@@ -25,8 +25,8 @@ export interface TrainTrip {
 export interface TrainStop {
     id: string;
     name: string;
-    scheduledArrival: string;
-    scheduledDeparture: string;
+    scheduledArrival: string | null;
+    scheduledDeparture: string | null;
     actualArrival: string | null;
     actualDeparture: string | null;
     arrivalDelay: number | null;

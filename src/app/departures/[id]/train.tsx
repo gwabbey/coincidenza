@@ -21,11 +21,11 @@ function getTrackUrl(company: string, id: string, category?: string): string | n
     switch (normalizedCompany) {
         case "trenord":
             return `/track/trenord/${id}`;
+        case "italo":
+            return `/track/italo/${id}`;
         case "trentino trasporti":
             return null;
         case "sad":
-            return null;
-        case "italo":
             return null;
         case "öbb":
             return null;
