@@ -206,8 +206,8 @@ export async function getDirections(from: Location, to: Location, dateTime: stri
                 fromPlace,
                 toPlace,
                 time: dateTime,
-                maxPreTransitTime: 1200,
-                maxPostTransitTime: 1200,
+                maxPreTransitTime: 1800,
+                maxPostTransitTime: 1800,
                 maxDirectTime: 3600,
                 searchWindow: 7200,
                 numItineraries: 5
