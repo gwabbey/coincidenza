@@ -82,7 +82,6 @@ const calculatePreciseActiveIndex = (trip: BusTrip): number => {
 };
 
 export default function Bus({trip: initialTrip}: { trip: BusTrip }) {
-    console.log(initialTrip);
     const [trip, setTrip] = useState(initialTrip);
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
     const {isOpen, onOpenChange} = useDisclosure();
