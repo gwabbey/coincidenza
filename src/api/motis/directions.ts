@@ -7,7 +7,7 @@ import {trainCategoryLongNames} from "@/train-categories";
 import {differenceInMinutes} from "date-fns";
 import {createAxiosClient} from "@/api/axios";
 import {getRailPolyline} from "@/api/signal/api";
-import {getRoadPolyline} from "@/api/osrm/api";
+import {getRoadPolyline} from "@/api/valhalla/api";
 
 const axios = createAxiosClient();
 
@@ -54,7 +54,7 @@ async function getShapes(leg: any): Promise<string> {
         return await getRailPolyline(stops);
     }
 
-    if (!leg.agencyName?.includes("Trentino trasporti") && leg.mode?.includes("BUS")) {
+    if (leg.mode?.includes("BUS")) {
         return await getRoadPolyline(stops);
     }
 
@@ -188,7 +188,7 @@ const resolvePlace = async (loc: Location): Promise<string> => {
         const stop = data[0];
         const dist = getDistance(Number(loc.lat), Number(loc.lon), Number(stop.lat), Number(stop.lon));
 
-        if (dist <= 150) {
+        if (dist <= 50) {
             return stop.id;
         }
     }
