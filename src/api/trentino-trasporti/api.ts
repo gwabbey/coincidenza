@@ -245,9 +245,9 @@ export async function getTripDetails(id: string) {
 
     let lastValidTime: Date | null = null;
 
-    const getValidTime = (timeStr: string) => {
-        if (timeStr) {
-            const iso = stringToIso(timeStr);
+    const getValidTime = (time: string) => {
+        if (time) {
+            const iso = stringToIso(time);
             lastValidTime = new Date(iso);
             return iso;
         } else if (lastValidTime) {
@@ -261,6 +261,7 @@ export async function getTripDetails(id: string) {
 
     return {
         id: trip.tripId,
+        company: "trentino-trasporti",
         currentStopIndex: !trip.lastEventRecivedAt ? -1 : trip.lastSequenceDetection - 1,
         lastKnownLocation: trip.lastEventRecivedAt && new Date(trip.lastEventRecivedAt) > new Date(stringToIso(trip.stopTimes[0].departureTime)) ? getStopName(trip.stopTimes[trip.lastSequenceDetection - 1]) : null,
         lastUpdate: trip.lastEventRecivedAt,

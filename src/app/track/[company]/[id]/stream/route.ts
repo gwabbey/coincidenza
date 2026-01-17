@@ -4,6 +4,7 @@ import {getTrip as getItaloTrip} from "@/api/italo/api";
 import {createResponse} from "better-sse";
 import crypto from 'crypto';
 import {NextRequest} from "next/server";
+import {getTrip as getCiceroTrip} from "@/api/cicero/api";
 
 export async function GET(request: NextRequest, {params}: { params: Promise<{ company: string, id: string }> }) {
     const {company, id} = await params;
@@ -122,6 +123,27 @@ export async function GET(request: NextRequest, {params}: { params: Promise<{ co
                             delay: trentinoTrip.delay,
                             lastUpdate: trentinoTrip.lastUpdate,
                             currentStopIndex: trentinoTrip.currentStopIndex,
+                        };
+                        break;
+
+                    case "atv":
+                        const ciceroTrip = await getCiceroTrip(company, id, new Date().toISOString());
+
+                        if (!ciceroTrip) {
+                            missingCount++;
+                            if (missingCount > 3) {
+                                session.push({error: "Trip not found"});
+                                return true;
+                            }
+                            return false;
+                        }
+
+                        missingCount = 0;
+                        normalizedTrip = {
+                            status: ciceroTrip.status,
+                            delay: ciceroTrip.delay,
+                            lastUpdate: ciceroTrip.lastUpdate,
+                            currentStopIndex: ciceroTrip.currentStopIndex,
                         };
                         break;
 

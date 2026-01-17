@@ -82,6 +82,7 @@ const calculatePreciseActiveIndex = (trip: BusTrip): number => {
 };
 
 export default function Bus({trip: initialTrip}: { trip: BusTrip }) {
+    console.log(initialTrip);
     const [trip, setTrip] = useState(initialTrip);
     const [preciseActiveIndex, setPreciseActiveIndex] = useState(-1);
     const {isOpen, onOpenChange} = useDisclosure();
@@ -109,7 +110,7 @@ export default function Bus({trip: initialTrip}: { trip: BusTrip }) {
 
         const setupSSE = () => {
             cleanup();
-            eventSource = new EventSource(`/track/trentino-trasporti/${trip.id}/stream`);
+            eventSource = new EventSource(`/track/${trip.company}/${trip.id}/stream`);
 
             eventSource.onopen = () => {
                 reconnectAttempts = 0;
@@ -252,7 +253,7 @@ export default function Bus({trip: initialTrip}: { trip: BusTrip }) {
                     </div>)}
                 </div>
 
-                {trip.delay !== null && (<div className="shrink-0">
+                {trip.delay != null && (<div className="shrink-0">
                     <Button
                         className={`p-1 h-auto w-auto uppercase font-bold text-md pointer-events-none transition-colors! text-white bg-${trip.status === "completed" ? "default-400" : getDelayColor(trip.delay)}`}
                         radius="sm"
@@ -321,7 +322,7 @@ export default function Bus({trip: initialTrip}: { trip: BusTrip }) {
                                             {formatDate(stopBreak > 1 ? stop.scheduledArrival : stop.scheduledDeparture)}
                                         </span>)}
                                     {isFutureStop && (<span className={`font-bold text-${getDelayColor(trip.delay)}`}>
-                                        {formatDate(new Date(new Date(stopBreak > 1 ? stop.scheduledArrival : stop.scheduledDeparture).getTime() + trip.delay * 60_000).toISOString())}
+                                        {formatDate(new Date(new Date(stopBreak > 1 ? stop.scheduledArrival : stop.scheduledDeparture).getTime() + (trip.delay ?? 0) * 60_000).toISOString())}
                                     </span>)}
                                 </div>) : (<div>--</div>)}
                                 {stopBreak > 1 && (<span className="text-foreground-500">

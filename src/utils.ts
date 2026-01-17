@@ -63,7 +63,7 @@ export function getBoundingBox(lat: number, lon: number, radiusMeters: number) {
 }
 
 export const getDelayColor = (delay: number | null) => {
-    if (delay === null) return 'gray';
+    if (delay == null) return 'gray';
     if (delay >= 10) return 'danger';
     if (delay >= 3) return 'warning';
     if (delay >= 0) return 'success';

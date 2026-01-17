@@ -49,8 +49,9 @@ export interface BusTrip {
     destination: string,
     departureTime: string,
     arrivalTime: string,
-    delay: number,
+    delay: number | null,
     color: string,
+    company: string,
     stops: BusStop[],
     info: Info[],
 }

@@ -239,7 +239,7 @@ export default function Directions() {
 
                 {error && (<div className="pointer-events-auto text-center max-w-2xl mx-auto">
                     <h1 className="text-2xl font-bold">
-                        {error.includes("Nessun") ? "Nessun itinerario trovato" : "Errore"}
+                        Errore
                     </h1>
                     <p>{error}</p>
                 </div>)}

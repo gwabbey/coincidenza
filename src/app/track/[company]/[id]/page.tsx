@@ -2,6 +2,7 @@ import {getActualTrip, getTrip} from "@/api/trenitalia/api";
 import {notFound} from "next/navigation";
 import Train from "./trip/train";
 import Bus from "./trip/bus";
+import {getTrip as getCiceroTrip} from "@/api/cicero/api";
 import {getTripDetails as getTrentinoTrip} from "@/api/trentino-trasporti/api";
 import {getTrip as getItaloTrip} from "@/api/italo/api";
 import {Metadata} from 'next';
@@ -16,9 +17,23 @@ export default async function Page({params}: {
     params: Promise<{ company: string, id: string }>
 }) {
     const {company, id} = await params;
+
+
+    if (company === "atv") {
+        const trip = await getCiceroTrip("ATV", id, new Date().toISOString());
+
+        if (!trip) {
+            notFound();
+        }
+
+        return <Bus trip={trip} />;
+    }
+
+
     if (["trenitalia", "trenord", "trentino-trasporti", "italo"].indexOf(company) === -1) {
         notFound();
     }
+
 
     if (["trenitalia", "trenord"].indexOf(company) > -1) {
         const data = await getActualTrip(id, company);

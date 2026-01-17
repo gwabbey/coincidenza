@@ -1,5 +1,4 @@
 'use client';
-import {useTheme} from 'next-themes';
 import {useEffect, useRef, useState} from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
@@ -42,7 +41,6 @@ function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: numbe
 export default function LibreMap({
                                      from, to, intermediateStops = [], legs = [], className, animationDuration = 2000,
                                  }: MapProps) {
-    const {resolvedTheme} = useTheme();
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<maplibregl.Map | null>(null);
     const markersRef = useRef<{
@@ -56,7 +54,6 @@ export default function LibreMap({
     const [mapInitialized, setMapInitialized] = useState(false);
     const [simplifiedStops, setSimplifiedStops] = useState<Coordinate[]>([]);
 
-    const isDark = resolvedTheme === 'dark';
     const labelColor = '#000000';
     const haloColor = '#fff';
 
@@ -67,7 +64,7 @@ export default function LibreMap({
         }
 
         const simplified: Coordinate[] = [];
-        const MERGE_THRESHOLD = 50;
+        const MERGE_THRESHOLD = 150;
 
         for (let i = 0; i < intermediateStops.length; i++) {
             const current = intermediateStops[i];
@@ -140,7 +137,7 @@ export default function LibreMap({
             }
         });
 
-    }, [resolvedTheme, mapInitialized, isDark, labelColor, haloColor]);
+    }, [mapInitialized, labelColor, haloColor]);
 
     useEffect(() => {
         if (!mapInitialized || !mapRef.current) return;
@@ -265,24 +262,29 @@ export default function LibreMap({
 
         const map = mapRef.current;
 
-        if (map.getLayer('intermediate-stops-circles')) {
-            map.removeLayer('intermediate-stops-circles');
-        }
-        if (map.getLayer('intermediate-stops-labels')) {
-            map.removeLayer('intermediate-stops-labels');
-        }
-        if (map.getSource('intermediate-stops')) {
-            map.removeSource('intermediate-stops');
-        }
+        if (map.getLayer('intermediate-stops-circles')) map.removeLayer('intermediate-stops-circles');
+        if (map.getLayer('intermediate-stops-labels')) map.removeLayer('intermediate-stops-labels');
+        if (map.getSource('intermediate-stops')) map.removeSource('intermediate-stops');
 
         if (simplifiedStops && simplifiedStops.length > 0) {
+            const isFirstLegWalk = legs.length > 0 && legs[0].mode === 'WALK';
+            const hasStartName = !!from?.name;
+
+            const features = simplifiedStops.map((stop, index) => {
+                const shouldHideLabel = index === 0 && isFirstLegWalk && hasStartName;
+
+                return {
+                    type: 'Feature', properties: {
+                        name: shouldHideLabel ? '' : (stop.name || '')
+                    }, geometry: {
+                        type: 'Point', coordinates: [stop.lon, stop.lat]
+                    }
+                };
+            });
+
             map.addSource('intermediate-stops', {
                 type: 'geojson', data: {
-                    type: 'FeatureCollection', features: simplifiedStops.map(stop => ({
-                        type: 'Feature', properties: {name: stop.name || ''}, geometry: {
-                            type: 'Point', coordinates: [stop.lon, stop.lat]
-                        }
-                    }))
+                    type: 'FeatureCollection', features: features as any
                 }
             });
 
@@ -306,14 +308,13 @@ export default function LibreMap({
                         'text-justify': 'auto'
                     }, paint: {
                         'text-color': labelColor,
-
                     }
                 });
             }
         }
 
         updateMapBounds();
-    }, [simplifiedStops, mapInitialized]);
+    }, [simplifiedStops, mapInitialized, legs, from, labelColor]);
 
     useEffect(() => {
         if (!mapInitialized || !mapRef.current) return;
