@@ -267,7 +267,7 @@ export default function LibreMap({
         if (map.getSource('intermediate-stops')) map.removeSource('intermediate-stops');
 
         if (simplifiedStops?.length) {
-            const THRESHOLD = 50;
+            const THRESHOLD = 150;
 
             const firstStop = simplifiedStops[0];
             const lastStop = simplifiedStops.at(-1);
@@ -501,7 +501,6 @@ export default function LibreMap({
 
     return (<div
         ref={mapContainerRef}
-        style={{height: '300px', width: '100%'}}
         className={className}
     />);
 }

@@ -141,7 +141,7 @@ export default function Directions() {
         }));
     };
 
-    return (<div className="fixed inset-0 flex flex-col pt-18 px-4">
+    return (<div className="fixed inset-0 flex flex-col lg:flex-row-reverse pt-18 lg:pt-22 px-4">
         <Map
             from={{
                 lat: parseFloat(mapData?.from?.lat ?? ""),
@@ -155,10 +155,13 @@ export default function Directions() {
             }}
             intermediateStops={mapData?.intermediateStops}
             legs={mapData?.legs}
-            className="w-full h-1/2 rounded-t-large shrink-0"
+            className="w-full h-75 lg:h-full lg:w-1/2 rounded-t-large lg:rounded-r-large lg:rounded-t-none shrink-0 shadow-large"
         />
 
-        <Card className="flex flex-col gap-2 p-4 -mt-4 z-20 flex-1 min-h-0 overflow-auto rounded-b-none" fullWidth>
+        <Card
+            shadow="lg"
+            className="flex flex-col gap-2 p-4 -mt-4 z-20 flex-1 min-h-0 overflow-auto rounded-b-none lg:rounded-tl-large lg:rounded-tr-none lg:mt-0"
+            fullWidth>
             {!directions && <h1 className="text-2xl font-bold text-center shrink-0">calcola percorso</h1>}
 
             {!directions ? (<div className="flex flex-col items-center gap-y-4 shrink-0">

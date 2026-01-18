@@ -1,13 +1,14 @@
 "use server";
 
 import {capitalize, getDistance, getTripColor} from '@/utils';
-import {getRealTimeData} from './realtime';
-import {Directions, Location, Trip} from './types';
+import {Directions, Leg, Location, RealTime, Trip} from './types';
 import {trainCategoryLongNames} from "@/train-categories";
 import {differenceInMinutes} from "date-fns";
 import {createAxiosClient} from "@/api/axios";
 import {getRailPolyline} from "@/api/signal/api";
 import {getRoadPolyline} from "@/api/valhalla/api";
+import {getTripDetails as getTrentinoTrip} from "../trentino-trasporti/api";
+import {guessTrip} from "@/api/trenitalia/api";
 
 const axios = createAxiosClient();
 
@@ -59,6 +60,65 @@ async function getShapes(leg: any): Promise<string> {
     }
 
     return leg.legGeometry.points ?? "";
+}
+
+function getTrackUrl(leg: Leg) {
+    if (leg.tripId?.includes("sta") && leg.mode !== "BUS") return `/track/trenitalia/${leg.tripShortName}`
+    switch (leg.agencyName?.toLowerCase()) {
+        case "trentino trasporti s.p.a.":
+            return `/track/trentino-trasporti/${leg.tripId?.split("_")[leg.tripId.split("_").length - 1]}`
+        case "trenitalia":
+            return `/track/trenitalia/${leg.tripShortName}`
+        case "trenord":
+            return `/track/trenord/${leg.tripShortName}`
+        default:
+            return "";
+    }
+}
+
+export async function getRealTimeData(leg: Leg): Promise<RealTime> {
+    if (leg.tripId) {
+        switch (leg.agencyName?.toLowerCase()) {
+            case "trentino trasporti s.p.a.":
+                const trip = await getTrentinoTrip(leg.tripId.split("_")[leg.tripId.split("_").length - 1]);
+
+                return {
+                    delay: trip?.delay ?? null,
+                    info: trip?.info ?? [],
+                    tracked: trip ? trip.delay !== null : false,
+                    url: getTrackUrl(leg),
+                    status: trip?.status ?? "scheduled"
+                }
+            case "trenitalia":
+            case "südtirolmobil - altoadigemobilità":
+            case "trenord":
+                const date = new Date(leg.scheduledStartTime);
+                date.setHours(0, 0, 0, 0);
+
+                if (leg.tripShortName !== "") {
+                    const trip = await guessTrip(leg.tripShortName ?? "", date);
+
+                    return {
+                        delay: trip?.delay ?? null,
+                        info: trip?.info ?? [],
+                        tracked: trip ? trip.delay !== null : false,
+                        url: getTrackUrl(leg),
+                        status: trip?.status ?? "scheduled"
+                    }
+                }
+
+                if (leg.from.departure !== leg.from.scheduledDeparture) {
+                    const delay = differenceInMinutes(new Date(leg.from.departure), new Date(leg.from.scheduledDeparture));
+
+                    return {
+                        delay, info: [], tracked: true, url: null, status: "active"
+                    }
+                }
+        }
+    }
+    return {
+        delay: null, info: [], tracked: false, url: null, status: "scheduled"
+    }
 }
 
 const processTripData = async (data: {
@@ -145,18 +205,44 @@ const processTripData = async (data: {
     const trips = await Promise.all(Array.from(seen.values())
         .slice(0, 5)
         .map(async (trip) => {
-            const updatedLegs = await Promise.all(trip.legs.map(async (leg) => {
-                const realTime = await getRealTimeData(leg);
-                return {...leg, realTime};
-            }));
+            const isToday = (date: Date) => {
+                const now = new Date();
+                return (
+                    date.getFullYear() === now.getFullYear() &&
+                    date.getMonth() === now.getMonth() &&
+                    date.getDate() === now.getDate()
+                );
+            };
+
+            const tripStart = new Date(trip.startTime);
+            const fetchRealtime = isToday(tripStart);
+
+            const updatedLegs = await Promise.all(
+                trip.legs.map(async (leg) => {
+                    if (!fetchRealtime) {
+                        return {
+                            ...leg, realTime: {
+                                delay: null,
+                                info: [],
+                                tracked: false,
+                                url: "",
+                                status: "scheduled"
+                            }
+                        };
+                    }
+
+                    const realTime = await getRealTimeData(leg);
+                    return {...leg, realTime};
+                })
+            );
 
             const firstLeg = updatedLegs[0];
             const secondLeg = updatedLegs[1];
             const prevLeg = updatedLegs[updatedLegs.length - 2];
             const lastLeg = updatedLegs[updatedLegs.length - 1];
 
-            const firstStart = firstLeg?.mode !== "WALK" ? new Date(firstLeg.scheduledStartTime).getTime() + (firstLeg.realTime.delay ?? 0) * 60000 : secondLeg?.realTime?.delay ? new Date(firstLeg.scheduledStartTime).getTime() + secondLeg.realTime.delay * 60000 : new Date(firstLeg.startTime).getTime();
-            const lastEnd = lastLeg?.mode !== "WALK" ? new Date(lastLeg.scheduledEndTime).getTime() + (lastLeg.realTime.delay ?? 0) * 60000 : prevLeg?.mode !== "WALK" && prevLeg?.realTime?.delay ? new Date(lastLeg.scheduledEndTime).getTime() + prevLeg.realTime.delay * 60000 : new Date(lastLeg.endTime).getTime();
+            const firstStart = firstLeg?.mode !== "WALK" ? new Date(firstLeg.scheduledStartTime).getTime() + (firstLeg.realTime?.delay ?? 0) * 60000 : secondLeg?.realTime?.delay ? new Date(firstLeg.scheduledStartTime).getTime() + secondLeg.realTime.delay * 60000 : new Date(firstLeg.startTime).getTime();
+            const lastEnd = lastLeg?.mode !== "WALK" ? new Date(lastLeg.scheduledEndTime).getTime() + (lastLeg.realTime?.delay ?? 0) * 60000 : prevLeg?.mode !== "WALK" && prevLeg?.realTime?.delay ? new Date(lastLeg.scheduledEndTime).getTime() + prevLeg.realTime.delay * 60000 : new Date(lastLeg.endTime).getTime();
             const duration = differenceInMinutes(new Date(lastEnd), new Date(firstStart));
 
             return {

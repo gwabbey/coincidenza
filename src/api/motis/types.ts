@@ -135,6 +135,6 @@ export interface RealTime {
     tracked: boolean
     delay: number | null
     url: string | null
-    info: Info[]
+    info: Info[] | []
     status: string
 }
