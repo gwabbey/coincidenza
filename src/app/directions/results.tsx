@@ -91,7 +91,7 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                })()}
                            </div>}
             >
-                <div className="flex flex-col space-y-8 pb-2">
+                <div className="flex flex-col space-y-4 pb-2">
                     {trip.legs
                         .map((leg, index) => (<div key={index} className="flex flex-col gap-4">
                             <div className="flex flex-col gap-2">
@@ -152,7 +152,7 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                             </div>
 
                             {leg.mode !== "WALK" && (
-                                <div className="pl-8 md:px-8 flex flex-col md:flex-row justify-between">
+                                <div className="pl-8 flex flex-col lg:flex-row w-full justify-between">
                                     {leg.realTime.status !== "canceled" && <Timeline steps={[{
                                         content: (<div className="flex flex-col">
                                                         <span className="font-bold">
@@ -212,7 +212,7 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                     }]} active={-1} className="gap-0" />}
 
                                     <div
-                                        className={cn("flex flex-row md:flex-col md:justify-start justify-between gap-4 max-w-2xl", leg.realTime?.info?.length > 0 && "w-full")}>
+                                        className={cn("flex flex-row md:flex-col md:justify-start justify-between gap-4 lg:mt-0 mt-4", leg.realTime?.info?.length > 0 && "lg:max-w-80 w-full items-center")}>
                                         {leg.realTime && leg.realTime.info && leg.realTime.info.length > 0 && (
                                             <Accordion isCompact
                                                        hideIndicator={leg.realTime.status === "canceled"}
@@ -221,8 +221,7 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                                                classNames={{
                                                                    indicator: "text-foreground",
                                                                    title: "font-bold",
-                                                                   trigger: "py-3",
-                                                                   base: leg.realTime.status !== "canceled" && "mt-4"
+                                                                   trigger: "py-3"
                                                                }}
                                                                startContent={<IconAlertTriangle />}
                                                                className={cn("bg-warning-500/50 px-4 scrollbar-hide rounded-large max-h-64 overflow-scroll", leg.realTime.status === "canceled" && "pointer-events-none max-h-full")}>
