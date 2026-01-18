@@ -110,21 +110,23 @@ export const LocationAutocomplete = ({
         setLoading(true);
 
         try {
-            const search = await searchLocation(query, {
-                userLocation: "46.0722416,11.1193186"
-            });
+            if (query !== "La tua posizione") {
+                const search = await searchLocation(query, {
+                    userLocation: "46.0722416,11.1193186"
+                });
 
-            const locations = search.map((location: any) => ({
-                id: location.id,
-                name: location.name,
-                address: location.address,
-                lat: location.lat,
-                lon: location.lon,
-                category: location.category,
-            }));
+                const locations = search.map((location: any) => ({
+                    id: location.id,
+                    name: location.name,
+                    address: location.address,
+                    lat: location.lat,
+                    lon: location.lon,
+                    category: location.category,
+                }));
 
-            if (value === currentQuery) {
-                setItems([CURRENT_LOCATION, ...locations]);
+                if (value === currentQuery) {
+                    setItems([CURRENT_LOCATION, ...locations]);
+                }
             }
         } catch (error) {
             addToast({title: "Errore durante la ricerca."});

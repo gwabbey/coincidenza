@@ -141,7 +141,7 @@ export default function Directions() {
         }));
     };
 
-    return (<div className="fixed inset-0 flex flex-col lg:flex-row-reverse pt-18 lg:pt-22 px-4">
+    return (<div className="fixed inset-0 flex flex-col sm:flex-row-reverse pt-18 sm:pt-22 sm:pb-4 px-4">
         <Map
             from={{
                 lat: parseFloat(mapData?.from?.lat ?? ""),
@@ -155,17 +155,18 @@ export default function Directions() {
             }}
             intermediateStops={mapData?.intermediateStops}
             legs={mapData?.legs}
-            className="w-full h-75 lg:h-full lg:w-1/2 rounded-t-large lg:rounded-r-large lg:rounded-t-none shrink-0 shadow-large"
+            className="w-full h-75 sm:h-full sm:w-1/2 rounded-t-large sm:rounded-r-large sm:rounded-t-none shrink-0 shadow-large"
         />
 
         <Card
             shadow="lg"
-            className="flex flex-col gap-2 p-4 -mt-4 z-20 flex-1 min-h-0 overflow-auto rounded-b-none lg:rounded-tl-large lg:rounded-tr-none lg:mt-0"
+            className="flex flex-col gap-2 p-4 -mt-4 z-20 flex-1 min-h-0 overflow-auto rounded-b-none sm:rounded-l-large sm:rounded-tr-none sm:mt-0"
             fullWidth>
-            {!directions && <h1 className="text-2xl font-bold text-center shrink-0">calcola percorso</h1>}
+
+            {!directions && <h1 className="text-2xl font-bold text-center shrink-0 gap-0">calcola percorso</h1>}
 
             {!directions ? (<div className="flex flex-col items-center gap-y-4 shrink-0">
-                <div className="flex flex-col md:flex-row justify-center items-center gap-x-4 w-full">
+                <div className="flex flex-col lg:flex-row justify-center items-center gap-x-4 w-full">
                     <LocationAutocomplete
                         name="from"
                         selected={selectedLocations.from?.name}
@@ -173,7 +174,7 @@ export default function Directions() {
                         disabled={isLoading}
                         onLocationSelect={(location) => handleLocationSelect("from", location)}
                     />
-                    <div className="w-full max-w-md flex items-center justify-end md:hidden">
+                    <div className="w-full max-w-md flex items-center justify-end lg:hidden">
                         <Button
                             isDisabled={isLoading}
                             isIconOnly
@@ -192,7 +193,7 @@ export default function Directions() {
                         onPress={swapLocations}
                         startContent={<IconArrowsLeftRight size={20} className="shrink-0" />}
                         radius="full"
-                        className="border-gray-500 border self-center md:flex hidden"
+                        className="border-gray-500 border self-center lg:flex hidden"
                         aria-label="inverti selezione"
                     />
                     <LocationAutocomplete
@@ -232,7 +233,7 @@ export default function Directions() {
                     onPress={handleSearch}
                     variant="ghost"
                     color="primary"
-                    className="self-center font-bold max-w-md md:max-w-32 w-full text-lg"
+                    className="self-center font-bold max-w-md lg:max-w-32 w-full text-lg"
                     startContent={!isLoading && <IconSearch stroke={2} className="shrink-0" />}
                     isDisabled={!selectedLocations.from || !selectedLocations.to || !date || !time || isLoading || (selectedLocations && isSameLocation) || today > date || date > nextWeek}
                     isLoading={isLoading}
@@ -248,20 +249,20 @@ export default function Directions() {
                 </div>)}
             </div>) : (<>
                 <Card
-                    className="flex flex-row sm:flex-col justify-between sm:justify-center items-center p-4 shrink-0">
-                    <div className="sm:text-center sm:text-nowrap">
+                    className="flex flex-row lg:flex-col justify-between lg:justify-center items-center p-4 shrink-0">
+                    <div className="lg:text-center lg:text-nowrap">
                         <div
-                            className="flex flex-col sm:flex-row gap-1 font-bold sm:justify-center justify-start">
+                            className="flex flex-col lg:flex-row gap-1 font-bold lg:justify-center justify-start">
                             <div className="flex">
-                                <IconCircleLetterA size={18} className="self-center shrink-0 mr-1 sm:hidden" />
+                                <IconCircleLetterA size={18} className="self-center shrink-0 mr-1 lg:hidden" />
                                 {selectedLocations.from?.name}
                             </div>
-                            <IconArrowDown size={16} stroke={2.5} className="shrink-0 sm:hidden" />
+                            <IconArrowDown size={16} stroke={2.5} className="shrink-0 lg:hidden" />
                             <IconArrowRight size={16} stroke={2.5}
-                                            className="shrink-0 self-center hidden sm:flex" />
+                                            className="shrink-0 self-center hidden lg:flex" />
                             <div className="flex">
                                 <IconCircleLetterBFilled size={18}
-                                                         className="self-center shrink-0 mr-1 sm:hidden" />
+                                                         className="self-center shrink-0 mr-1 lg:hidden" />
                                 {selectedLocations.to?.name}
                             </div>
                         </div>
@@ -275,7 +276,7 @@ export default function Directions() {
                             onPress={() => setDirections(undefined)}
                             variant="bordered"
                             radius="full"
-                            className="hidden sm:flex mx-auto mt-2 border-gray-500 border text-medium"
+                            className="hidden lg:flex mx-auto mt-2 border-gray-500 border text-medium"
                         >
                             modifica
                         </Button>
@@ -286,7 +287,7 @@ export default function Directions() {
                         variant="bordered"
                         radius="full"
                         onPress={() => setDirections(undefined)}
-                        className="sm:hidden border-gray-500 border"
+                        className="lg:hidden border-gray-500 border"
                     />
                 </Card>
 
