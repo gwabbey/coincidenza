@@ -332,6 +332,7 @@ export default function LibreMap({
         }
 
         const map = mapRef.current;
+
         const existingLayers = map.getStyle().layers;
         existingLayers.forEach((layer) => {
             if (layer.id.startsWith('route-layer-')) {
@@ -348,9 +349,7 @@ export default function LibreMap({
         if (legs.length === 0) {
             const source = map.getSource('route-source') as maplibregl.GeoJSONSource;
             if (source) {
-                source.setData({
-                    type: 'FeatureCollection', features: []
-                });
+                source.setData({type: 'FeatureCollection', features: []});
             }
             return;
         }
@@ -358,6 +357,26 @@ export default function LibreMap({
         const startAnimation = async () => {
             try {
                 const decodedLegs = await Promise.all(legs.map(leg => decodePolyline(leg.legGeometry.points)));
+
+                if (decodedLegs.length > 0 && map.getSource('start-marker')) {
+                    const firstPoint = decodedLegs[0][0];
+                    (map.getSource('start-marker') as maplibregl.GeoJSONSource).setData({
+                        type: 'Feature',
+                        properties: {name: from?.name || 'Partenza'},
+                        geometry: {type: 'Point', coordinates: [firstPoint[1], firstPoint[0]]}
+                    });
+                }
+
+                if (decodedLegs.length > 0 && map.getSource('end-marker')) {
+                    const lastLeg = decodedLegs[decodedLegs.length - 1];
+                    const lastPoint = lastLeg[lastLeg.length - 1];
+                    (map.getSource('end-marker') as maplibregl.GeoJSONSource).setData({
+                        type: 'Feature',
+                        properties: {name: to?.name || 'Destinazione'},
+                        geometry: {type: 'Point', coordinates: [lastPoint[1], lastPoint[0]]}
+                    });
+                }
+
                 const totalPoints = decodedLegs.reduce((sum, leg) => sum + leg.length, 0);
                 const legEndPoints: number[] = [];
                 let cumulative = 0;
@@ -371,9 +390,7 @@ export default function LibreMap({
 
                     map.addSource(`route-source-${idx}`, {
                         type: 'geojson', data: {
-                            type: 'Feature', properties: {}, geometry: {
-                                type: 'LineString', coordinates: []
-                            }
+                            type: 'Feature', properties: {}, geometry: {type: 'LineString', coordinates: []}
                         }
                     });
 
@@ -382,11 +399,11 @@ export default function LibreMap({
                     const beforeId = markerLayer?.id;
 
                     map.addLayer({
-                        id: `route-layer-${idx}`, type: 'line', source: `route-source-${idx}`, layout: {
-                            'line-join': 'round', 'line-cap': 'round'
-                        }, paint: {
-                            'line-color': legColor, 'line-width': 6, 'line-opacity': 0.9
-                        }
+                        id: `route-layer-${idx}`,
+                        type: 'line',
+                        source: `route-source-${idx}`,
+                        layout: {'line-join': 'round', 'line-cap': 'round'},
+                        paint: {'line-color': legColor, 'line-width': 6, 'line-opacity': 0.9}
                     }, beforeId);
                 });
 
@@ -403,22 +420,17 @@ export default function LibreMap({
                         const legEndPoint = legEndPoints[idx];
 
                         if (currentTotalPoint >= legStartPoint) {
-                            const pointsIntoThisLeg = Math.min(currentTotalPoint - legStartPoint, legPoints.length);
-
                             const coordinates = legPoints
-                                .slice(0, pointsIntoThisLeg)
+                                .slice(0, Math.min(currentTotalPoint - legStartPoint, legPoints.length))
                                 .map(p => [p[1], p[0]]);
 
                             const source = map.getSource(`route-source-${idx}`) as maplibregl.GeoJSONSource;
                             if (source) {
                                 source.setData({
-                                    type: 'Feature', properties: {}, geometry: {
-                                        type: 'LineString', coordinates
-                                    }
+                                    type: 'Feature', properties: {}, geometry: {type: 'LineString', coordinates}
                                 });
                             }
                         }
-
                         pointsSoFar = legEndPoint;
                     });
 
@@ -430,9 +442,7 @@ export default function LibreMap({
                             const source = map.getSource(`route-source-${idx}`) as maplibregl.GeoJSONSource;
                             if (source) {
                                 source.setData({
-                                    type: 'Feature', properties: {}, geometry: {
-                                        type: 'LineString', coordinates
-                                    }
+                                    type: 'Feature', properties: {}, geometry: {type: 'LineString', coordinates}
                                 });
                             }
                         });
@@ -455,7 +465,7 @@ export default function LibreMap({
                 animationFrameRef.current = null;
             }
         };
-    }, [legs, mapInitialized, animationDuration]);
+    }, [legs, mapInitialized, animationDuration, from?.name, to?.name]);
 
     const updateMapBounds = async () => {
         if (!mapRef.current) return;
