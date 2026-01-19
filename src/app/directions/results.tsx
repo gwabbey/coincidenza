@@ -4,7 +4,13 @@ import {Directions, IntermediateStop, Leg} from "@/api/motis/types";
 import Timeline from "@/components/timeline";
 import {formatDuration, getDelayColor} from "@/utils";
 import {Accordion, AccordionItem, Button, cn, Divider, Link, Selection} from "@heroui/react";
-import {IconAccessPoint, IconAlertTriangle, IconArrowRight, IconExternalLink, IconMap} from "@tabler/icons-react";
+import {
+    IconAccessPoint,
+    IconAlertTriangle,
+    IconArrowRight,
+    IconChevronsRight,
+    IconExternalLink
+} from "@tabler/icons-react";
 import {format} from "date-fns";
 import {TransportIcon} from "./icons";
 import Steps from "./steps";
@@ -59,6 +65,7 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
 
     return (<Accordion
         variant="splitted" className="px-0 w-full mx-auto"
+        itemClasses={{base: "px-2"}}
         selectedKeys={selectedTripIndex !== null ? new Set([selectedTripIndex.toString()]) : new Set([])}
         onSelectionChange={handleSelectionChange}>
         {directions.trips.map((trip, index) => (
@@ -91,17 +98,18 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                })()}
                            </div>}
             >
-                <div className="flex flex-col space-y-4 pb-2">
+                <div className="flex flex-col space-y-4 pb-4">
                     {trip.legs
                         .map((leg, index) => (<div key={index} className="flex flex-col gap-4">
                             <div className="flex flex-col gap-2">
                                 <div className="flex flex-row gap-2 items-center">
                                     <TransportIcon type={leg.mode} size={24} />
-                                    <div className="flex flex-col justify-center w-full md:max-w-md">
-                                        {leg.mode !== "WALK" ? (<div
-                                            className="flex flex-row items-center gap-x-1 flex-wrap">
+                                    <div className="flex flex-row justify-between w-full">
+                                        <div className="flex flex-col justify-center">
+                                            {leg.mode !== "WALK" ? (<div
+                                                className="flex flex-row items-center gap-x-1 flex-wrap">
                                                 <span
-                                                    className="sm:text-lg text-md font-bold w-fit rounded-small flex flex-row items-center gap-x-1 text-white"
+                                                    className="text-md font-bold w-fit rounded-small flex flex-row items-center gap-x-1 text-white"
                                                     style={{
                                                         backgroundColor: leg.realTime.status === "canceled" ? "gray" : leg.routeColor ? `#${leg.routeColor}` : leg.mode === "BUS" ? "#016FEE" : "red",
                                                         padding: "0.1rem 0.5rem",
@@ -109,50 +117,52 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                                         color: "white",
                                                     }}> {leg.routeShortName} {leg.mode.includes("RAIL") && leg.tripShortName}
                                                         </span>
-                                            <span
-                                                className="sm:text-lg text-md font-bold">
+                                                <span
+                                                    className="text-md font-bold">
                                                             {leg.headsign}
                                                         </span>
-                                        </div>) : (<span className="sm:text-lg text-md font-bold">
+                                            </div>) : (<span className="text-md font-bold">
                                                         cammina per circa {formatDuration(Math.round(leg.duration / 60), true)}
                                                     </span>)}
-                                        <span className="text-foreground-500 text-sm">
+
+                                            <span className="text-foreground-500 text-sm">
                                                     {leg.realTime.status === "canceled" ?
                                                         <strong>Cancellato</strong> : getLegDescription(leg)}
                                                 </span>
+                                        </div>
+
+                                        {leg.mode === "WALK" && (<Button
+                                            as={Link}
+                                            isIconOnly
+                                            target="_blank"
+                                            href={getMapUrl(leg.from, leg.to)}
+                                            variant="bordered"
+                                            startContent={<IconChevronsRight />}
+                                            radius="full"
+                                            fullWidth
+                                            className="border-gray-500 border-1 self-center text-medium"
+                                            aria-label="indicazioni percorso a piedi"
+                                        />)}
+
                                         {leg.mode !== "WALK" && leg.realTime.url && leg.realTime.status != "canceled" && (
                                             <Button
                                                 as={Link}
                                                 target="_blank"
                                                 href={leg.realTime.url}
                                                 variant="bordered"
+                                                isIconOnly
                                                 startContent={<IconAccessPoint />}
                                                 radius="full"
                                                 fullWidth
-                                                className="border-gray-500 border-1 self-center text-medium mt-2"
+                                                className="border-gray-500 border-1 self-center text-medium"
                                                 aria-label={`${leg.routeLongName || ""} ${leg.tripShortName || ""} in tempo reale`}
-                                            >
-                                                traccia in tempo reale
-                                            </Button>)}
-                                        {leg.mode === "WALK" && (<Button
-                                            as={Link}
-                                            target="_blank"
-                                            href={getMapUrl(leg.from, leg.to)}
-                                            variant="bordered"
-                                            startContent={<IconMap />}
-                                            radius="full"
-                                            fullWidth
-                                            className="border-gray-500 border-1 self-center text-medium mt-2"
-                                            aria-label="indicazioni percorso a piedi"
-                                        >
-                                            indicazioni
-                                        </Button>)}
+                                            />)}
                                     </div>
                                 </div>
                             </div>
 
                             {leg.mode !== "WALK" && (
-                                <div className="pl-8 flex flex-col lg:flex-row w-full justify-between">
+                                <div className="pl-8 flex flex-col lg:flex-row w-full justify-between gap-x-2">
                                     {leg.realTime.status !== "canceled" && <Timeline steps={[{
                                         content: (<div className="flex flex-col">
                                                         <span className="font-bold">
@@ -183,11 +193,17 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                                                title={leg.intermediateStops && `${leg.intermediateStops.length === 0 ? "nessuna" : leg.intermediateStops.length} 
                                                                            fermat${leg.intermediateStops.length <= 1 ? "a" : "e"}, ${formatDuration(Math.round(leg.duration / 60))}`}
                                                                indicator={leg.intermediateStops?.length === 0 && <></>}>
-                                                    <div>
-                                                        {leg.intermediateStops && leg.intermediateStops.map((stop: IntermediateStop, index) => (
-                                                            <ul key={index} className="list-disc">
-                                                                <li>{stop.name} ({format(new Date(stop.departure).getTime() + ((leg.realTime?.delay || 0) * 60 * 1000), "HH:mm")})</li>
-                                                            </ul>))}
+                                                    <div className="space-y-1">
+                                                        {leg.intermediateStops?.map((stop: IntermediateStop, index) => (
+                                                            <div
+                                                                key={index}
+                                                                className="flex items-center gap-2 text-sm"
+                                                            >
+                                                                <span className="flex-1 truncate">{stop.name}</span>
+                                                                <span
+                                                                    className="tabular-nums text-foreground-500">
+                                                                    {format(new Date(stop.departure).getTime() + ((leg.realTime?.delay || 0) * 60 * 1000), "HH:mm")}</span>
+                                                            </div>))}
                                                     </div>
                                                 </AccordionItem>
                                             </Accordion>
@@ -211,10 +227,11 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                         </div>)
                                     }]} active={-1} className="gap-0" />}
 
-                                    <div
-                                        className={cn("flex flex-row md:flex-col md:justify-start justify-between gap-4 lg:mt-0 mt-4", leg.realTime?.info?.length > 0 && "lg:max-w-80 w-full items-center")}>
-                                        {leg.realTime && leg.realTime.info && leg.realTime.info.length > 0 && (
+                                    {leg.realTime && leg.realTime.info && leg.realTime.info.length > 0 && (
+                                        <div
+                                            className={cn("flex flex-row lg:flex-col lg:justify-start justify-between gap-4 lg:mt-0 mt-4", leg.realTime?.info?.length > 0 && "max-w-80 w-full items-center")}>
                                             <Accordion isCompact
+                                                       itemClasses={{base: "-mx-2"}}
                                                        hideIndicator={leg.realTime.status === "canceled"}
                                                        defaultExpandedKeys={leg.realTime.status === "canceled" ? ["1"] : []}>
                                                 <AccordionItem key={1} title="Avvisi"
@@ -246,9 +263,10 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                                             </div>))}
                                                     </div>
                                                 </AccordionItem>
-                                            </Accordion>)}
-                                    </div>
+                                            </Accordion>
+                                        </div>)}
                                 </div>)}
+                            {index < trip.legs.length - 1 && <Divider className="my-2" />}
                         </div>))}
                 </div>
             </AccordionItem>))}

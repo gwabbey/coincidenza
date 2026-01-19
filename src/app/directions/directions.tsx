@@ -2,7 +2,7 @@
 
 import {getDirections} from "@/api/motis/directions";
 import {type Directions, type Location} from "@/api/motis/types";
-import {Button, Card, DateInput, Link, TimeInput, TimeInputValue} from "@heroui/react";
+import {Button, Card, DateInput, Link, TimeInput, TimeInputValue,} from "@heroui/react";
 import {CalendarDate, type DateValue, Time} from "@internationalized/date";
 import {
     IconArrowDown,
@@ -14,7 +14,7 @@ import {
     IconMap,
     IconPencil,
     IconSearch,
-    IconWalk
+    IconWalk,
 } from "@tabler/icons-react";
 import {useState} from "react";
 import {LocationAutocomplete} from "./autocomplete";
@@ -32,20 +32,20 @@ interface SelectedLocations {
 export default function Directions() {
     const [selectedLocations, setSelectedLocations] = useState<SelectedLocations>({
         from: null, to: null,
-    });
+    },);
     const dateTime = new Date();
-    const today = new CalendarDate(dateTime.getFullYear(), dateTime.getMonth() + 1, dateTime.getDate());
-    const nextWeek = new CalendarDate(dateTime.getFullYear(), dateTime.getMonth() + 1, dateTime.getDate() + 7);
+    const today = new CalendarDate(dateTime.getFullYear(), dateTime.getMonth() + 1, dateTime.getDate(),);
+    const nextWeek = new CalendarDate(dateTime.getFullYear(), dateTime.getMonth() + 1, dateTime.getDate() + 7,);
 
     const [date, setDate] = useState<DateValue | null>(today);
-    const [time, setTime] = useState<TimeInputValue | null>(new Time(dateTime.getHours(), dateTime.getMinutes()));
+    const [time, setTime] = useState<TimeInputValue | null>(new Time(dateTime.getHours(), dateTime.getMinutes()),);
 
     const [directions, setDirections] = useState<Directions>();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [selectedTripIndex, setSelectedTripIndex] = useState<number | null>(null);
+    const [selectedTripIndex, setSelectedTripIndex] = useState<number | null>(null,);
 
-    const handleLocationSelect = (type: "from" | "to", location: Location | null) => {
+    const handleLocationSelect = (type: "from" | "to", location: Location | null,) => {
         if (location) {
             setSelectedLocations((prev) => ({
                 ...prev, [type]: location,
@@ -66,7 +66,7 @@ export default function Directions() {
         setSelectedTripIndex(null);
 
         try {
-            const combinedDateTime = new Date(date.year, date.month - 1, date.day, time.hour, time.minute);
+            const combinedDateTime = new Date(date.year, date.month - 1, date.day, time.hour, time.minute,);
             const localIsoString = combinedDateTime.toISOString();
 
             const result = await getDirections({
@@ -81,7 +81,7 @@ export default function Directions() {
                 lon: selectedLocations.to!.lon,
                 name: selectedLocations.to!.name,
                 address: selectedLocations.to!.address,
-            }, localIsoString);
+            }, localIsoString,);
 
             if (!result) {
                 setError("Errore nel recupero dei dati. Riprova più tardi.");
@@ -92,7 +92,7 @@ export default function Directions() {
             }
         } catch (e) {
             console.error(e);
-            setError("Errore durante la comunicazione con il servizio. Riprova più tardi.");
+            setError("Errore durante la comunicazione con il servizio. Riprova più tardi.",);
         } finally {
             setIsLoading(false);
         }
@@ -121,7 +121,7 @@ export default function Directions() {
 
                 stops.push(...(leg.intermediateStops ?? []).map((stop) => ({
                     lat: stop.lat, lon: stop.lon, name: stop.name,
-                })));
+                })),);
 
                 if (legs[legIndex].to.name !== "End" && legs[legIndex].to.name !== selectedLocations!.to?.name) {
                     stops.push({
@@ -131,12 +131,12 @@ export default function Directions() {
 
                 return stops;
             })
-            .filter((item, index, arr) => index === arr.findIndex((a) => a.lat === item.lat && a.lon === item.lon)) : [],
+            .filter((item, index, arr) => index === arr.findIndex((a) => a.lat === item.lat && a.lon === item.lon,),) : [],
         legs: selectedTripIndex !== null && directions?.trips[selectedTripIndex] ? directions.trips[selectedTripIndex].legs : [],
     } : undefined;
 
     const swapLocations = () => {
-        setSelectedLocations(prev => ({
+        setSelectedLocations((prev) => ({
             from: prev.to, to: prev.from,
         }));
     };
@@ -146,12 +146,12 @@ export default function Directions() {
             from={{
                 lat: parseFloat(mapData?.from?.lat ?? ""),
                 lon: parseFloat(mapData?.from?.lon ?? ""),
-                name: mapData?.from.name
+                name: mapData?.from.name,
             }}
             to={{
                 lat: parseFloat(mapData?.to?.lat ?? ""),
                 lon: parseFloat(mapData?.to?.lon ?? ""),
-                name: mapData?.to?.name
+                name: mapData?.to?.name,
             }}
             intermediateStops={mapData?.intermediateStops}
             legs={mapData?.legs}
@@ -161,9 +161,11 @@ export default function Directions() {
         <Card
             shadow="lg"
             className="flex flex-col gap-2 p-4 -mt-4 z-20 flex-1 min-h-0 overflow-auto rounded-b-none sm:rounded-l-large sm:rounded-tr-none sm:mt-0"
-            fullWidth>
-
-            {!directions && <h1 className="text-2xl font-bold text-center shrink-0 gap-0">calcola percorso</h1>}
+            fullWidth
+        >
+            {!directions && (<h1 className="text-2xl font-bold text-center shrink-0 gap-0">
+                calcola percorso
+            </h1>)}
 
             {!directions ? (<div className="flex flex-col items-center gap-y-4 shrink-0">
                 <div className="flex flex-col lg:flex-row justify-center items-center gap-x-4 w-full">
@@ -210,7 +212,7 @@ export default function Directions() {
                                 label="data"
                                 classNames={{label: "text-sm"}}
                                 size="lg"
-                                isInvalid={date ? (today > date || date > nextWeek) : false}
+                                isInvalid={date ? today > date || date > nextWeek : false}
                                 isDisabled={isLoading}
                                 value={date}
                                 onChange={setDate}
@@ -242,34 +244,46 @@ export default function Directions() {
                 </Button>
 
                 {error && (<div className="pointer-events-auto text-center max-w-2xl mx-auto">
-                    <h1 className="text-2xl font-bold">
-                        Errore
-                    </h1>
+                    <h1 className="text-2xl font-bold">Errore</h1>
                     <p>{error}</p>
                 </div>)}
             </div>) : (<>
                 <Card
-                    className="flex flex-row lg:flex-col justify-between lg:justify-center items-center p-4 shrink-0">
+                    className="flex flex-row lg:flex-col justify-between lg:justify-center items-center py-4 px-2 shrink-0">
                     <div className="lg:text-center lg:text-nowrap">
                         <div
                             className="flex flex-col lg:flex-row gap-1 font-bold lg:justify-center justify-start">
-                            <div className="flex">
-                                <IconCircleLetterA size={18} className="self-center shrink-0 mr-1 lg:hidden" />
-                                {selectedLocations.from?.name}
+                            <div className="flex items-start">
+                                <IconCircleLetterA
+                                    size={18}
+                                    className="shrink-0 mr-1 lg:hidden mt-0.5"
+                                />
+                                <span className="line-clamp-2 leading-snug">{selectedLocations.from?.name}</span>
                             </div>
-                            <IconArrowDown size={16} stroke={2.5} className="shrink-0 lg:hidden" />
-                            <IconArrowRight size={16} stroke={2.5}
-                                            className="shrink-0 self-center hidden lg:flex" />
-                            <div className="flex">
-                                <IconCircleLetterBFilled size={18}
-                                                         className="self-center shrink-0 mr-1 lg:hidden" />
-                                {selectedLocations.to?.name}
+                            <IconArrowDown
+                                size={16}
+                                stroke={2.5}
+                                className="shrink-0 lg:hidden"
+                            />
+                            <IconArrowRight
+                                size={16}
+                                stroke={2.5}
+                                className="shrink-0 self-center hidden lg:flex"
+                            />
+                            <div className="flex items-start">
+                                <IconCircleLetterBFilled
+                                    size={18}
+                                    className="shrink-0 mr-1 lg:hidden mt-0.5"
+                                />
+                                <span className="line-clamp-2 leading-snug">{selectedLocations.to?.name}</span>
                             </div>
                         </div>
                         {date && time && (<div>
                             {new Date(date.toString()).toLocaleDateString("it-IT", {
-                                day: "numeric", month: "long"
-                            })}, {format(new Date(date.year, date.month, date.day, time.hour, time.minute), "HH:mm")}
+                                day: "numeric", month: "long",
+                            })}
+                            ,{" "}
+                            {format(new Date(date.year, date.month, date.day, time.hour, time.minute,), "HH:mm",)}
                         </div>)}
                         <Button
                             startContent={<IconPencil className="shrink-0" />}
@@ -296,15 +310,15 @@ export default function Directions() {
                         <div className="flex flex-row gap-2 items-center">
                             <IconWalk size={24} />
                             <div className="flex flex-col justify-center">
-                                            <span className="sm:text-lg text-md font-bold">
-                                                circa{" "}
-                                                {formatDuration(Math.abs(directions.direct[0].legs[0].duration / 60), true)}{" "}
-                                                a piedi
-                                            </span>
+                      <span className="sm:text-lg text-md font-bold">
+                        circa{" "}
+                          {formatDuration(Math.abs(directions.direct[0].legs[0].duration / 60), true,)}{" "}
+                          a piedi
+                      </span>
                                 <span className="font-bold text-foreground-500">
-                                                arrivo stimato alle{" "}
+                        arrivo stimato alle{" "}
                                     {format(directions.direct[0].legs[0].endTime, "HH:mm")}
-                                            </span>
+                      </span>
                             </div>
                         </div>
                         <Button
