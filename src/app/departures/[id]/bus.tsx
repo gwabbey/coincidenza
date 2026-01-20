@@ -80,15 +80,13 @@ export function Bus({departures}: { departures: BusDeparture[] }) {
                                             </div>
                                         </div>
                                         <div
-                                            className={cn("text-lg flex gap-x-1 font-bold shrink-0", trip.delay != null ? `text-${getDelayColor(Math.max(trip.delay, 0))}` : "text-foreground-500")}
+                                            className={cn("text-lg flex gap-x-1 font-bold shrink-0 transition-colors", trip.delay != null ? `text-${getDelayColor(Math.max(trip.delay, 0))}` : "text-foreground-500")}
                                         >
-                                            <span>
-                                              {minutesAway == 0 ? (<motion.div animate={controls}>
-                                                  <IconCircleFilled
-                                                      className={cn(trip.tracked ? "text-success" : "text-foreground-500")}
-                                                  />
-                                              </motion.div>) : minutesAway < 60 ? `${minutesAway} min` : formatDate(trip.departureTime)}
-                                            </span>
+                                            {minutesAway == 0 ? (<motion.div animate={controls}>
+                                                <IconCircleFilled
+                                                    className={cn(trip.tracked ? "text-success" : "text-foreground-500")}
+                                                />
+                                            </motion.div>) : minutesAway < 60 ? `${minutesAway} min` : formatDate(trip.departureTime)}
                                         </div>
                                     </div>
                                 </div>

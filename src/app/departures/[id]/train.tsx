@@ -118,7 +118,7 @@ export function Train({departures}: { departures: StationMonitor }) {
                                                 </span>
 
                                     {train.delay !== "0" && (
-                                        <p className={cn("text-lg font-bold uppercase shrink-0 whitespace-nowrap", train.delay > 0 ? `text-${getDelayColor(train.delay)}` : "text-danger")}>
+                                        <p className={cn("text-lg font-bold uppercase shrink-0 whitespace-nowrap transition-colors", train.delay > 0 ? `text-${getDelayColor(train.delay)}` : "text-danger")}>
                                             {parseInt(train.delay) > 0 ? `+${train.delay}'` : train.delay}
                                         </p>)}
                                 </div>

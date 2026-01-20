@@ -12,51 +12,46 @@ function stringToIso(date: string) {
 
 export async function getStopDepartures(agency: string, id: string) {
     const now = Date.now();
-    const earlier = now - 30 * 60000;
+    const searchStartTime = now - (15 * 60 * 1000);
 
     const {
         data,
         status
     } = await axios.post("https://www.mycicero.it/OTPProxy/host.ashx?url=momoservice/json/GetArriviPartenzePalina2", {
         CodAzienda: agency === "atv" ? "ATV" : agency,
-        Giorno: `/Date(${earlier}+0100)/`,
+        Giorno: `/Date(${searchStartTime}+0100)/`,
         CodFermata: id,
         IdSistema: "OTP_NE",
-        MaxNumeroPassaggi: {NumeroRisultati: 10},
+        MaxNumeroPassaggi: {NumeroRisultati: 20},
         MaxNumeroPassaggiLinee: {NumeroRisultati: 0},
-        OraDa: `/Date(${earlier}+0100)/`
+        OraDa: `/Date(${searchStartTime}+0100)/`
     }, {
         headers: {'Client': 'tpwebportal;5.4.1'}
     });
 
-    if (status !== 200) return null;
+    if (status !== 200 || !data.Oggetto?.Passaggi) return [];
 
-    const departures = data.Oggetto.Passaggi ?? [];
-
-    return departures
-        .filter((trip: any) => trip.CapolineaArrivo.Codice !== id)
-        .filter((trip: any) => {
-            const scheduled = new Date(stringToIso(trip.DataOraPartenza)).getTime();
-            const departureTime = scheduled + (trip.MinutiScostamento * 60000);
-            if (departureTime >= now) return true;
-            return !!trip.isPassaggioRealTime;
-        })
+    return data.Oggetto.Passaggi
         .map((trip: any) => {
             const scheduled = new Date(stringToIso(trip.DataOraPartenza)).getTime();
-            const departureTime = scheduled + (trip.MinutiScostamento * 60000);
+            const delay = !trip.MinutiScostamento && trip.isPassaggioRealTime ? 0 : trip.MinutiScostamento;
+            const departureTime = scheduled + (delay * 60000);
 
             return {
                 id: trip.Corsa.Codice,
                 route: trip.Percorso.Codice ?? "Bus",
                 color: trip.Percorso.Linea.Colore ?? (!trip.Percorso.Linea.Extraurbano ? "1AC964" : "2D7FFF"),
                 company: agency,
-                destination: capitalize(trip.Percorso.DestinazioneUtenza),
+                destination: capitalize(trip.Percorso?.DestinazioneUtenza?.split(",")[0] ?? "--"),
                 departureTime,
-                delay: !trip.MinutiScostamento && trip.isPassaggioRealTime ? 0 : trip.MinutiScostamento,
-                stopsAway: 0,
+                delay,
                 tracked: trip.isPassaggioRealTime,
+                isTerminus: trip.CapolineaArrivo.Codice === id,
                 departing: departureTime - now <= 60000,
             };
+        })
+        .filter((trip: any) => {
+            return !trip.isTerminus && trip.departureTime >= now;
         });
 }
 
@@ -104,7 +99,7 @@ export async function getTrip(agency: string, id: string, date: string) {
         currentStopIndex,
         company,
         lastKnownLocation: trip.StazioneUltimoRilevamento ? capitalize(trip.StazioneUltimoRilevamento) : currentStopIndex >= 0 ? capitalize(trip.Fermate[currentStopIndex].Localita.Descrizione) : null,
-        lastUpdate: currentStopIndex > -1 ? new Date(new Date(stringToIso(trip.Fermate[currentStopIndex].Orario)).getTime() + (delay || 0) * 60_000).toISOString() : delay != null ? new Date().toISOString() : null,
+        lastUpdate: currentStopIndex > -1 ? new Date(new Date(stringToIso(trip.Fermate[currentStopIndex].OrarioProgrammato)).getTime() + (delay || 0) * 60_000).toISOString() : delay != null ? new Date().toISOString() : null,
         status: delay ? "active" : "scheduled",
         category: trip.Linea.Extraurbano ? "E" : "U",
         vehicleId: null,
@@ -113,7 +108,7 @@ export async function getTrip(agency: string, id: string, date: string) {
         origin: capitalize(trip.Fermate[0].Localita.Descrizione),
         destination: capitalize(trip.Fermate[trip.Fermate.length - 1].Localita.Descrizione),
         departureTime: stringToIso(trip.Corsa.DataOraPartenza),
-        arrivalTime: stringToIso(trip.Fermate[trip.Fermate.length - 1].Orario),
+        arrivalTime: stringToIso(trip.Fermate[trip.Fermate.length - 1].OrarioProgrammato),
         delay,
         stops: trip.Fermate.map((stop: any) => ({
             id: `atv_${stop.Localita.Codice}`,
