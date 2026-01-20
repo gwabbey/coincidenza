@@ -35,7 +35,7 @@ export async function getStopDepartures(agency: string, id: string) {
         .map((trip: any) => {
             const scheduled = new Date(stringToIso(trip.DataOraPartenza)).getTime();
             const delay = !trip.MinutiScostamento && trip.isPassaggioRealTime ? 0 : trip.MinutiScostamento;
-            const departureTime = scheduled + (delay * 60000);
+            const actualDeparture = scheduled + 60000 + (delay * 60000);
 
             return {
                 id: trip.Corsa.Codice,
@@ -43,15 +43,16 @@ export async function getStopDepartures(agency: string, id: string) {
                 color: trip.Percorso.Linea.Colore ?? (!trip.Percorso.Linea.Extraurbano ? "1AC964" : "2D7FFF"),
                 company: agency,
                 destination: capitalize(trip.Percorso?.DestinazioneUtenza?.split(",")[0] ?? "--"),
-                departureTime,
+                departureTime: new Date(stringToIso(trip.DataOraPartenza)).toISOString(),
                 delay,
                 tracked: trip.isPassaggioRealTime,
                 isTerminus: trip.CapolineaArrivo.Codice === id,
-                departing: departureTime - now <= 60000,
+                actualDeparture,
+                departing: actualDeparture - now <= 60000,
             };
         })
         .filter((trip: any) => {
-            return !trip.isTerminus && trip.departureTime >= now;
+            return !trip.isTerminus && trip.actualDeparture >= now - 60000;
         });
 }
 
