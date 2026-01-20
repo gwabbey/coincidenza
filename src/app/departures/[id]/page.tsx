@@ -7,9 +7,9 @@ import stations from "@/stations.json";
 import {capitalize} from "@/utils";
 import {getMonitor, getVtId} from "@/api/trenitalia/monitor";
 import {Train} from "./train";
-import {getFilteredDepartures} from "@/api/trentino-trasporti/api";
 import {Bus} from "./bus";
 import type {Metadata} from 'next'
+import {getFilteredDepartures} from "@/api/departures";
 
 export const revalidate = 60;
 
@@ -39,7 +39,7 @@ export async function generateMetadata({params}: Props): Promise<Metadata> {
 }
 
 type StopContext = | { kind: "train"; agency: "rfi"; id: string; name: string } | {
-    kind: "bus"; agency: "tte" | "ttu"; id: string; name: string; lat: string; lon: string
+    kind: "bus"; agency: string; id: string; name: string; lat: string; lon: string
 };
 
 async function TrainLoader({id, name}: { id: string; name: string }) {
@@ -73,7 +73,7 @@ async function resolveStop(fullId: string): Promise<StopContext | null> {
         return {kind: "train", agency, id, name: capitalize(name)};
     }
 
-    if (agency === "tte" || agency === "ttu") {
+    if (agency === "tte" || agency === "ttu" || agency === "atv") {
         const stop = await getStop(fullId);
         if (!stop) return null;
         return {

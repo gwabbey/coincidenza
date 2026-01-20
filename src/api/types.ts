@@ -88,12 +88,10 @@ export interface BusDeparture {
     company: string;
     route: string | null;
     color: string | null;
-    vehicleId: string | null;
     destination: string;
     departureTime: string;
     delay: number;
-    stopsAway: number | null;
-    started: boolean;
+    tracked: boolean;
     departing: boolean;
 }
 

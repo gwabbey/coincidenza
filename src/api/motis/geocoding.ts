@@ -86,7 +86,7 @@ export async function searchLocation(query: string): Promise<Location[]> {
             const hasRail = item.modes?.some(m => m.includes("RAIL")) ?? false;
 
             return {
-                id: item.id,
+                id: item.id.startsWith("atv_") ? `atv_${item.id.split("StopPoint:")[1].replace("_ATV", "")}` : item.id,
                 name: capitalize(item.name),
                 lat: item.lat,
                 lon: item.lon,
@@ -104,9 +104,13 @@ export async function searchLocation(query: string): Promise<Location[]> {
 
 export async function getStop(id: string) {
     try {
+        let internalId = id;
+        if (id.startsWith("atv")) internalId = `atv_IT:ITH3:ScheduledStopPoint:${id.split("_")[1]}_ATV`
+
         const {
             data, status
-        } = await axios.get(`${MOTIS}/api/v5/stoptimes?stopId=${id}&n=0&exactRadius=false&radius=200`);
+        } = await axios.get(`${MOTIS}/api/v5/stoptimes?stopId=${internalId}&n=0&exactRadius=false&radius=200`);
+
         if (status === 200) return {
             id: data.place.stopId,
             name: data.place.name,

@@ -155,10 +155,11 @@ export default function LibreMap({
 
             if (!map.getSource('start-marker')) {
                 map.addSource('start-marker', {
-                    type: 'geojson', data: {
-                        type: 'Feature', properties: {name: from.name || 'Partenza'}, geometry: {
-                            type: 'Point', coordinates: [from.lon, from.lat]
-                        }
+                    type: 'geojson',
+                    data: {
+                        type: 'Feature',
+                        properties: {name: from.name || 'Partenza'},
+                        geometry: {type: 'Point', coordinates: [from.lon, from.lat]}
                     }
                 });
 
@@ -193,7 +194,7 @@ export default function LibreMap({
         }
 
         updateMapBounds();
-    }, [from, mapInitialized]);
+    }, [mapInitialized, from?.name]);
 
     useEffect(() => {
         if (!mapInitialized || !mapRef.current) return;
@@ -249,7 +250,7 @@ export default function LibreMap({
         }
 
         updateMapBounds();
-    }, [to, mapInitialized]);
+    }, [mapInitialized, to?.name]);
 
     useEffect(() => {
         if (!mapInitialized || !mapRef.current) return;
@@ -356,25 +357,47 @@ export default function LibreMap({
 
         const startAnimation = async () => {
             try {
+                const map = mapRef.current!;
                 const decodedLegs = await Promise.all(legs.map(leg => decodePolyline(leg.legGeometry.points)));
 
-                if (decodedLegs.length > 0 && map.getSource('start-marker')) {
-                    const firstPoint = decodedLegs[0][0];
-                    (map.getSource('start-marker') as maplibregl.GeoJSONSource).setData({
-                        type: 'Feature',
-                        properties: {name: from?.name || 'Partenza'},
-                        geometry: {type: 'Point', coordinates: [firstPoint[1], firstPoint[0]]}
-                    });
+                if (decodedLegs.length === 0) return;
+
+                if (from) {
+                    const firstLeg = decodedLegs[0];
+                    const firstPoint = firstLeg[0];
+                    const distStart = getDistance(from.lat, from.lon, firstPoint[0], firstPoint[1]);
+
+                    const finalStartCoords = distStart <= 50
+                        ? [firstPoint[1], firstPoint[0]]
+                        : [from.lon, from.lat];
+
+                    const startSource = map.getSource('start-marker') as maplibregl.GeoJSONSource;
+                    if (startSource) {
+                        startSource.setData({
+                            type: 'Feature',
+                            properties: {name: from.name || 'Partenza'},
+                            geometry: {type: 'Point', coordinates: finalStartCoords}
+                        });
+                    }
                 }
 
-                if (decodedLegs.length > 0 && map.getSource('end-marker')) {
+                if (to) {
                     const lastLeg = decodedLegs[decodedLegs.length - 1];
                     const lastPoint = lastLeg[lastLeg.length - 1];
-                    (map.getSource('end-marker') as maplibregl.GeoJSONSource).setData({
-                        type: 'Feature',
-                        properties: {name: to?.name || 'Destinazione'},
-                        geometry: {type: 'Point', coordinates: [lastPoint[1], lastPoint[0]]}
-                    });
+                    const distEnd = getDistance(to.lat, to.lon, lastPoint[0], lastPoint[1]);
+
+                    const finalEndCoords = distEnd <= 50
+                        ? [lastPoint[1], lastPoint[0]]
+                        : [to.lon, to.lat];
+
+                    const endSource = map.getSource('end-marker') as maplibregl.GeoJSONSource;
+                    if (endSource) {
+                        endSource.setData({
+                            type: 'Feature',
+                            properties: {name: to.name || 'Destinazione'},
+                            geometry: {type: 'Point', coordinates: finalEndCoords}
+                        });
+                    }
                 }
 
                 const totalPoints = decodedLegs.reduce((sum, leg) => sum + leg.length, 0);
@@ -465,7 +488,7 @@ export default function LibreMap({
                 animationFrameRef.current = null;
             }
         };
-    }, [legs, mapInitialized, animationDuration, from?.name, to?.name]);
+    }, [legs, mapInitialized, from?.name, to?.name, simplifiedStops]);
 
     const updateMapBounds = async () => {
         if (!mapRef.current) return;

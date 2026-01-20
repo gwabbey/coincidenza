@@ -1,7 +1,6 @@
-import {getBoundingBox, getDistance} from "@/utils";
 import {createAxiosClient} from "@/api/axios";
 import {cache} from "react";
-import {getStopsInArea} from "@/api/motis/geocoding";
+import {BusDeparture} from "@/api/types";
 
 const axios = createAxiosClient();
 
@@ -31,7 +30,7 @@ export async function fetchData(endpoint: string, options: { params?: Record<str
         return response.data;
     } catch (error: any) {
         if (error.response) {
-            console.error(`trentino trasporti error ${error.response.status}:`, endpoint);
+            console.error(`TT fetch error ${error.response.status}:`, endpoint);
             if (error.response.status === 404) {
                 return null;
             }
@@ -39,7 +38,7 @@ export async function fetchData(endpoint: string, options: { params?: Record<str
             console.error('no response received:', endpoint);
         }
 
-        console.error('trentino trasporti error:', error.message);
+        console.error('TT error:', error.message);
         return null;
     }
 }
@@ -52,31 +51,6 @@ export const getRoutes = cache(async (type: string) => {
     return await fetchData('routes', type ? {params: {type}} : undefined);
 });
 
-export async function getClosestStops(lat: string, lon: string) {
-    const latNum = parseFloat(lat);
-    const lonNum = parseFloat(lon);
-    const box = getBoundingBox(latNum, lonNum, 50);
-    const stops = await getStopsInArea(box.minLat, box.minLon, box.maxLat, box.maxLon);
-
-    const res = stops
-        .filter((stop: any) => stop.stopId.startsWith("ttu") || stop.stopId.startsWith("tte"))
-        .map((stop: any) => {
-            const [prefix, id] = stop.stopId.split("_");
-            const type = prefix === "ttu" ? "U" : "E";
-
-            return {
-                id,
-                type,
-                name: stop.name,
-                lat: stop.lat,
-                lon: stop.lon,
-                distance: getDistance(latNum, lonNum, stop.lat, stop.lon),
-            };
-        });
-
-    return res.sort((a, b) => a.distance - b.distance);
-}
-
 async function getRouteById(type: string, routeId: string) {
     const routes = await getRoutes(type);
     if (!Array.isArray(routes)) {
@@ -88,7 +62,7 @@ async function getRouteById(type: string, routeId: string) {
 export async function getStopDepartures(stopId: string, type: string) {
     const departures = await fetchData('trips_new', {
         params: {
-            type, stopId: stopId.toString(), limit: "6", refDateTime: new Date().toISOString()
+            type, stopId: stopId.toString(), limit: "10", refDateTime: new Date().toISOString()
         }
     });
 
@@ -96,42 +70,6 @@ export async function getStopDepartures(stopId: string, type: string) {
     return Promise.all(departures.map(async (trip: any) => ({
         ...trip, route: await getRouteById(type, trip.routeId)
     })));
-}
-
-function getStopsAway(selectedStopId: string, stopTimes: {
-    stopId: string; departureTime: string
-}[], delay: number = 0, proximityMinutes = 2): number | null {
-    const now = new Date();
-
-    const selectedIndex = stopTimes.findIndex(s => s.stopId.toString() === selectedStopId);
-    if (selectedIndex === -1) return null;
-
-    const parseTime = (timeStr: string) => {
-        const [h, m, s] = timeStr.split(':').map(Number);
-        const d = new Date();
-        d.setHours(h, m, s || 0, 0);
-        return d;
-    };
-
-    const getAdjustedTime = (stop: typeof stopTimes[0]) => {
-        const t = parseTime(stop.departureTime);
-        t.setMinutes(t.getMinutes() + (Math.max(delay, 0)));
-        return t;
-    };
-
-    const selectedTime = getAdjustedTime(stopTimes[selectedIndex]);
-    const diffMinutes = (selectedTime.getTime() - now.getTime()) / 60000;
-
-    if (diffMinutes >= 0 && diffMinutes <= proximityMinutes) return 0;
-
-    const passedIndex = stopTimes
-        .map(getAdjustedTime)
-        .findIndex((t, i, arr) => i === arr.length - 1 || (t <= now && arr[i + 1] > now));
-
-    if (passedIndex === -1) return selectedIndex + 1;
-
-    const stopsAway = selectedIndex - passedIndex;
-    return Math.max(stopsAway, 0);
 }
 
 function filterTrips(trips: any[]) {
@@ -161,51 +99,52 @@ function filterTrips(trips: any[]) {
     })
 }
 
-export async function getFilteredDepartures(lat: string, lon: string) {
-    const closestStops = await getClosestStops(lat, lon)
-
-    if (closestStops.length === 0) return [];
-
-    const departurePromises = closestStops.map(async (stop) => {
+export async function getDepartures(stops: Array<{
+    id: string,
+    name: string,
+    distance: number,
+    type: string
+}>): Promise<BusDeparture[]> {
+    const departurePromises = stops.map(async (stop) => {
         try {
             const departures = await getStopDepartures(stop.id, stop.type);
             if (!departures) return [];
 
             return departures.map((trip: any) => ({
-                ...trip, stopId: stop.id, stopName: stop.name, distance: stop.distance,
+                ...trip,
+                stopId: stop.id,
+                stopName: stop.name,
+                distance: stop.distance,
             }));
         } catch (error) {
-            console.error(`Error fetching departures for stop ${stop.id}:`, error);
+            console.error(`Error fetching TT departures for stop ${stop.id}:`, error);
             return [];
         }
-    })
+    });
 
     const trips = filterTrips((await Promise.all(departurePromises)).flat()).sort((a, b) => {
-        const timeA = new Date(a.oraArrivoProgrammataAFermataSelezionata).getTime()
-        const timeB = new Date(b.oraArrivoProgrammataAFermataSelezionata).getTime()
-        return timeA - timeB
+        const timeA = new Date(a.oraArrivoProgrammataAFermataSelezionata).getTime();
+        const timeB = new Date(b.oraArrivoProgrammataAFermataSelezionata).getTime();
+        return timeA - timeB;
     })
 
     return trips.map((trip: any) => {
-        const arrivalTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata).getTime()
+        const arrivalTime = new Date(trip.oraArrivoEffettivaAFermataSelezionata).getTime();
 
-        const [h, m, s] = trip.stopTimes[0].departureTime.split(':').map(Number)
-        const d = new Date()
-        d.setHours(h, m, s || 0, 0)
-        const started = d < new Date()
-        const departing = arrivalTime - Date.now() <= 2 * 60 * 1000
+        const [h, m, s] = trip.stopTimes[0].departureTime.split(':').map(Number);
+        const d = new Date();
+        d.setHours(h, m, s || 0, 0);
+        const departing = arrivalTime - Date.now() <= 60000;
 
         return {
             id: trip.tripId,
             route: trip.route.routeShortName ?? "Bus",
             color: trip.route.routeColor ?? (trip.type === "U" ? "1AC964" : "2D7FFF"),
-            company: "Trentino Trasporti",
-            vehicleId: trip.matricolaBus,
+            company: "trentino-trasporti",
             destination: trip.tripHeadsign,
             departureTime: trip.oraArrivoProgrammataAFermataSelezionata,
             delay: trip.delay,
-            stopsAway: getStopsAway(trip.stopId, trip.stopTimes, trip.delay),
-            started,
+            tracked: trip.lastEventRecivedAt,
             departing,
         };
     });

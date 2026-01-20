@@ -127,7 +127,7 @@ export async function GET(request: NextRequest, {params}: { params: Promise<{ co
                         break;
 
                     case "atv":
-                        const ciceroTrip = await getCiceroTrip(company, id, new Date().toISOString());
+                        const ciceroTrip = await getCiceroTrip("ATV", id, new Date().toISOString());
 
                         if (!ciceroTrip) {
                             missingCount++;

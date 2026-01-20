@@ -47,7 +47,7 @@ const Timeline = ({
         const currentStepIndex = Math.min(Math.floor(active), stepRefs.current.length - 1);
         const currentStep = stepRefs.current[currentStepIndex];
 
-        if (currentStep) {
+        if (currentStep && currentStepIndex > 0) {
             currentStep.scrollIntoView({
                 behavior: "smooth", block: "center",
             });
