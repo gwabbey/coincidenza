@@ -22,7 +22,7 @@ export async function getStopDepartures(agency: string, id: string) {
         Giorno: `/Date(${searchStartTime}+0100)/`,
         CodFermata: id,
         IdSistema: "OTP_NE",
-        MaxNumeroPassaggi: {NumeroRisultati: 20},
+        MaxNumeroPassaggi: {NumeroRisultati: 15},
         MaxNumeroPassaggiLinee: {NumeroRisultati: 0},
         OraDa: `/Date(${searchStartTime}+0100)/`
     }, {
