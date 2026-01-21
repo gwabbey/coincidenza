@@ -3,13 +3,13 @@ import axiosRetry from "axios-retry";
 
 export function createAxiosClient() {
     const client = axios.create({
-        timeout: 15000,
+        timeout: 5000
     });
 
     axiosRetry(client, {
-        retries: 3, onRetry: (retryCount, error) => {
+        retries: 5, onRetry: (retryCount, error) => {
             console.warn(`retry attempt ${retryCount} for error ${error.response?.statusText}`);
-        },
+        }
     });
 
     return client;

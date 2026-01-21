@@ -10,7 +10,7 @@ const axios = createAxiosClient();
 const vtIdCache = new Map<string, string>();
 
 export async function getVtId(name: string): Promise<string> {
-    if (vtIdCache.has(name)) return vtIdCache.get(name)!;
+    if (vtIdCache.has(name)) return vtIdCache.get(name) || "";
 
     const res = await axios.get(`https://www.viaggiatreno.it/infomobilita/resteasy/viaggiatreno/autocompletaStazione/${name}`);
     const lines = res.data.trim().split("\n").filter(Boolean);

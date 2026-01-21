@@ -50,8 +50,7 @@ export function Train({departures}: { departures: StationMonitor }) {
     useEffect(() => {
         const i = setInterval(() => {
             controls.start({
-                opacity: [1, 0, 1],
-                transition: {
+                opacity: [1, 0, 1], transition: {
                     duration: 1, times: [0, 0.5, 1], ease: "easeInOut",
                 }
             });
