@@ -155,8 +155,7 @@ export default function LibreMap({
 
             if (!map.getSource('start-marker')) {
                 map.addSource('start-marker', {
-                    type: 'geojson',
-                    data: {
+                    type: 'geojson', data: {
                         type: 'Feature',
                         properties: {name: from.name || 'Partenza'},
                         geometry: {type: 'Point', coordinates: [from.lon, from.lat]}
@@ -363,15 +362,18 @@ export default function LibreMap({
                 if (decodedLegs.length === 0) return;
 
                 if (from) {
-                    const firstLeg = decodedLegs[0];
+                    const firstLeg = decodedLegs.find(leg => leg.length > 0);
+
+                    if (!firstLeg) {
+                        return;
+                    }
+
                     const firstPoint = firstLeg[0];
-                    const distStart = getDistance(from.lat, from.lon, firstPoint[0], firstPoint[1]);
-
-                    const finalStartCoords = distStart <= 50
-                        ? [firstPoint[1], firstPoint[0]]
-                        : [from.lon, from.lat];
-
+                    const [lat, lon] = firstPoint;
+                    const distStart = getDistance(from.lat, from.lon, lat, lon);
+                    const finalStartCoords = distStart <= 50 ? [lon, lat] : [from.lon, from.lat];
                     const startSource = map.getSource('start-marker') as maplibregl.GeoJSONSource;
+
                     if (startSource) {
                         startSource.setData({
                             type: 'Feature',
@@ -382,20 +384,23 @@ export default function LibreMap({
                 }
 
                 if (to) {
-                    const lastLeg = decodedLegs[decodedLegs.length - 1];
+                    const lastLeg = [...decodedLegs]
+                        .reverse()
+                        .find(leg => leg.length > 0);
+
+                    if (!lastLeg) return;
+
                     const lastPoint = lastLeg[lastLeg.length - 1];
-                    const distEnd = getDistance(to.lat, to.lon, lastPoint[0], lastPoint[1]);
-
-                    const finalEndCoords = distEnd <= 50
-                        ? [lastPoint[1], lastPoint[0]]
-                        : [to.lon, to.lat];
-
+                    const [lat, lon] = lastPoint;
+                    const distEnd = getDistance(to.lat, to.lon, lat, lon);
+                    const finalEndCoords = distEnd <= 50 ? [lon, lat] : [to.lon, to.lat];
                     const endSource = map.getSource('end-marker') as maplibregl.GeoJSONSource;
+
                     if (endSource) {
                         endSource.setData({
-                            type: 'Feature',
-                            properties: {name: to.name || 'Destinazione'},
-                            geometry: {type: 'Point', coordinates: finalEndCoords}
+                            type: 'Feature', properties: {name: to.name || 'Destinazione'}, geometry: {
+                                type: 'Point', coordinates: finalEndCoords
+                            }
                         });
                     }
                 }

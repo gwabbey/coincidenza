@@ -21,9 +21,9 @@ export async function getRoadPolyline(stops: (From | IntermediateStop | To)[]) {
                     lon,
                     type: i === 0 || i === arr.length - 1 ? "break" : "via",
                     rank_candidates: false,
-                    radius: 20,
-                    minimum_reachability: 10,
-                    node_snap_tolerance: 10,
+                    radius: 30,
+                    minimum_reachability: 15,
+                    node_snap_tolerance: 15,
                 };
             });
 

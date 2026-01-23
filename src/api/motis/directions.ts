@@ -295,7 +295,6 @@ export async function getDirections(from: Location, to: Location, dateTime: stri
                 maxPreTransitTime: 1800,
                 maxPostTransitTime: 1800,
                 maxDirectTime: 3600,
-                searchWindow: 7200,
                 numItineraries: 5,
                 algorithm: "RAPTOR"
             }
