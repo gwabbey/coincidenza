@@ -40,7 +40,7 @@ export const LocationAutocomplete = ({
         setValue(selected);
     }, [selected]);
 
-    const getCurrentPosition = (): Promise<GeolocationPosition> => {
+    const getCurrentLocation = (): Promise<GeolocationPosition> => {
         if (typeof window === 'undefined' || !navigator.geolocation) {
             return Promise.reject(new Error("Geolocalizzazione non supportata!"));
         }
@@ -54,7 +54,7 @@ export const LocationAutocomplete = ({
 
     const handleCurrentLocation = async () => {
         try {
-            const position = await getCurrentPosition();
+            const position = await getCurrentLocation();
 
             const locationData = {
                 name: "La tua posizione", lat: position.coords.latitude, lon: position.coords.longitude,
@@ -93,11 +93,18 @@ export const LocationAutocomplete = ({
     const onInputChange = (newValue: string) => {
         setValue(newValue);
 
-        if (!newValue.trim()) {
+        if (!newValue || !newValue.trim()) {
+            setItems([CURRENT_LOCATION]);
             return;
         }
 
         fetchData(newValue);
+    };
+
+    const onFocus = () => {
+        if (!value || !value.trim()) {
+            setItems([CURRENT_LOCATION]);
+        }
     };
 
     const fetchData = useDebouncedCallback(async (query: string) => {
@@ -144,6 +151,7 @@ export const LocationAutocomplete = ({
         allowsCustomValue
         onInputChange={onInputChange}
         onSelectionChange={onSelectionChange}
+        onFocus={onFocus}
         isDisabled={disabled}
         endContent={loading && <Spinner size="sm" color="default" />}
         className="max-w-md"
@@ -154,6 +162,9 @@ export const LocationAutocomplete = ({
         listboxProps={{
             emptyContent: "nessun risultato."
         }}
+        popoverProps={{
+            shouldCloseOnScroll: false
+        }}
         size="lg"
     >
         {(item) => (<AutocompleteItem
@@ -162,9 +173,9 @@ export const LocationAutocomplete = ({
             textValue={item.name || 'La tua posizione'}
         >
             <div className="flex flex-col">
-                        <span className={cn(item.name === "La tua posizione" && "font-bold")}>
-                            {item.name}
-                        </span>
+                            <span className={cn(item.name === "La tua posizione" && "font-bold")}>
+                                {item.name}
+                            </span>
                 {item.address && <span className="text-sm text-default-400">{item.address}</span>}
             </div>
         </AutocompleteItem>)}
