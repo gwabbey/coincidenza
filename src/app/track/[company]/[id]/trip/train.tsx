@@ -292,7 +292,7 @@ export default function Train({trip: initialTrip}: { trip: TrainTrip }) {
                     <div className="flex-1">
                         {trip.info.map((alert, index) => (<div key={index} className="flex flex-col gap-2">
                             <div className="flex flex-col">
-                                <span>{alert.message}</span>
+                                <span>{alert.message} {alert.message.includes("ASCENSOR") ? ` (${trip.stops[Math.max(trip.currentStopIndex, 0)].name.toUpperCase()})` : ""}</span>
                             </div>
                             {index !== trip.info.length - 1 && (<Divider className="mb-2" />)}
                         </div>))}
