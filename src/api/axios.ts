@@ -3,14 +3,18 @@ import axiosRetry from "axios-retry";
 
 export function createAxiosClient() {
     const client = axios.create({
-        timeout: 10000
+        timeout: 15000
     });
 
     axiosRetry(client, {
         retries: 5, retryDelay: axiosRetry.exponentialDelay, retryCondition: (error) => {
-            return axiosRetry.isNetworkOrIdempotentRequestError(error) || error.code === 'ECONNABORTED';
+            if (error.code === 'ECONNABORTED') {
+                return true;
+            }
+
+            return axiosRetry.isNetworkOrIdempotentRequestError(error);
         }, onRetry: (retryCount, error) => {
-            console.warn(`Retry attempt ${retryCount} for error: ${error.response?.statusText || error.message}`);
+            console.warn(`Retry attempt ${retryCount} for error: ${error.code} - ${error.message}`);
         }
     });
 
