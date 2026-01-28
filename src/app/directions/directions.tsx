@@ -155,7 +155,7 @@ export default function Directions() {
             }}
             intermediateStops={mapData?.intermediateStops}
             legs={mapData?.legs}
-            className="w-full h-75 sm:h-full sm:w-1/2 rounded-t-large sm:rounded-r-large sm:rounded-t-none shrink-0 shadow-large"
+            className="w-full h-64 sm:h-full sm:w-1/2 rounded-t-large sm:rounded-r-large sm:rounded-t-none shrink-0 shadow-large"
         />
 
         <Card

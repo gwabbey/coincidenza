@@ -17,7 +17,8 @@ export default function RootLayout({
     <body>
     <meta name="keywords"
           content="coincidenza, trasporti, trentino, trenitalia, orari, tempo, reale, bus, treni, autobus, trento, calliano, rovereto, verona, bolzano, viaggatreno, gratuito, gratis, nuovi, rfi, ferrovie, atv" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="viewport"
+          content="width=device-width, height=device-height, initial-scale=1, minimum-scale=1, viewport-fit=cover" />
     <meta property="og:title" content="coincidenza" />
     <meta property="og:description" content="pianifica i tuoi spostamenti senza problemi" />
     <meta property="og:image" content="/android-chrome-192x192.png" />
