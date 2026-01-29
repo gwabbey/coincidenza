@@ -131,7 +131,7 @@ const processTripData = async (data: {
     const processedItineraries = await Promise.all(data.itineraries.map(async (trip) => {
         const processedLegs = (await Promise.all(trip.legs.map(async (originalLeg) => {
             const points = await getShapes(originalLeg);
-            const route = originalLeg.routeShortName;
+            const route = originalLeg.agencyName == "altoadigemobilità" ? originalLeg.routeLongName : originalLeg.routeShortName;
 
             return {
                 ...originalLeg,

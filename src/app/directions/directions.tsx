@@ -83,6 +83,8 @@ export default function Directions() {
                 address: selectedLocations.to!.address,
             }, localIsoString,);
 
+            console.log(result)
+
             if (!result) {
                 setError("Errore nel recupero dei dati. Riprova più tardi.");
             } else if ((!result.trips || result.trips.length === 0) && (!result.direct || result.direct.length === 0)) {
@@ -305,7 +307,7 @@ export default function Directions() {
                     />
                 </Card>
 
-                {directions.direct.length > 0 && (<Card className="p-4 w-full mx-auto shrink-0">
+                {directions.direct.length > 0 && (<Card className="py-4 px-2 w-full mx-auto shrink-0">
                     <div className="flex flex-row justify-between">
                         <div className="flex flex-row gap-2 items-center">
                             <IconWalk size={24} />

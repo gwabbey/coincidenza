@@ -10,31 +10,21 @@ const VALHALLA = process.env.VALHALLA || "http://valhalla:8002";
 export async function getRoadPolyline(stops: (From | IntermediateStop | To)[]) {
     if (!stops || stops.length === 0) return "";
 
-    const coords = stops.map((stop) => `${stop.lon},${stop.lat}`).join(";");
-
-    const getCachedPolyline = cache(async (coords: string) => {
+    const getCachedPolyline = cache(async (stopsKey: string) => {
         try {
-            const locations = coords.split(";").map((coord, i, arr) => {
-                const [lon, lat] = coord.split(",").map(Number);
-                return {
-                    lat,
-                    lon,
-                    type: i === 0 || i === arr.length - 1 ? "break" : "via",
-                    rank_candidates: false,
-                    radius: 30,
-                    minimum_reachability: 15,
-                    node_snap_tolerance: 15,
-                };
-            });
+            const parsedStops = JSON.parse(stopsKey);
+            const locations = parsedStops.map((stop: any, i: number, arr: any[]) => ({
+                lat: stop.lat,
+                lon: stop.lon,
+                type: i === 0 || i === arr.length - 1 ? "break" : "via",
+                rank_candidates: false,
+                radius: 30,
+                minimum_reachability: 10,
+                node_snap_tolerance: 10,
+            }));
 
-            const {data} = await axios.get(`${VALHALLA}/route`, {
-                params: {
-                    json: JSON.stringify({
-                        locations, costing: "bus", search_filter: {
-                            min_road_class: "tertiary", exclude_ramp: true
-                        }, directions_type: "none", alternates: 0
-                    })
-                },
+            const {data} = await axios.post(`${VALHALLA}/route`, {
+                locations, costing: "bus", directions_type: "none", alternates: 0
             });
 
             let line: string = data.trip?.legs?.[0]?.shape ?? "";
@@ -51,5 +41,5 @@ export async function getRoadPolyline(stops: (From | IntermediateStop | To)[]) {
         }
     });
 
-    return getCachedPolyline(coords);
+    return getCachedPolyline(JSON.stringify(stops));
 }
