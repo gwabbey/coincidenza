@@ -41,7 +41,6 @@ export default function Directions() {
     const [time, setTime] = useState<TimeInputValue | null>(new Time(dateTime.getHours(), dateTime.getMinutes()),);
 
     const [directions, setDirections] = useState<Directions>();
-    console.log(directions);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [selectedTripIndex, setSelectedTripIndex] = useState<number | null>(null,);

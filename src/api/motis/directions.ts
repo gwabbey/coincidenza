@@ -141,8 +141,9 @@ const processTripData = async (data: {
     if (!data.itineraries || !Array.isArray(data.itineraries) && !data.direct) {
         return {trips: [], pageCursor: data.pageCursor, direct: []};
     }
-
-    const processedItineraries = await Promise.all(data.itineraries.map(async (trip) => {
+    const processedItineraries = await Promise.all(data.itineraries.filter((trip) => {
+        return !trip.legs.some((leg: any) => leg.mode === "WALK" && leg.duration > 3600);
+    }).map(async (trip) => {
         const processedLegs = (await Promise.all(trip.legs.map(async (originalLeg) => {
             const points = await getShapes(originalLeg);
             const route = originalLeg.agencyName == "altoadigemobilità" ? originalLeg.displayName : originalLeg.routeShortName;
@@ -222,34 +223,24 @@ const processTripData = async (data: {
         .map(async (trip) => {
             const isToday = (date: Date) => {
                 const now = new Date();
-                return (
-                    date.getFullYear() === now.getFullYear() &&
-                    date.getMonth() === now.getMonth() &&
-                    date.getDate() === now.getDate()
-                );
+                return (date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate());
             };
 
             const tripStart = new Date(trip.startTime);
             const fetchRealtime = isToday(tripStart);
 
-            const updatedLegs = await Promise.all(
-                trip.legs.map(async (leg) => {
-                    if (!fetchRealtime) {
-                        return {
-                            ...leg, realTime: {
-                                delay: null,
-                                info: [],
-                                tracked: false,
-                                url: "",
-                                status: "scheduled"
-                            }
-                        };
-                    }
+            const updatedLegs = await Promise.all(trip.legs.map(async (leg) => {
+                if (!fetchRealtime) {
+                    return {
+                        ...leg, realTime: {
+                            delay: null, info: [], tracked: false, url: "", status: "scheduled"
+                        }
+                    };
+                }
 
-                    const realTime = await getRealTimeData(leg);
-                    return {...leg, realTime};
-                })
-            );
+                const realTime = await getRealTimeData(leg);
+                return {...leg, realTime};
+            }));
 
             const firstLeg = updatedLegs[0];
             const secondLeg = updatedLegs[1];
