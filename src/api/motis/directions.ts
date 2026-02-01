@@ -121,6 +121,20 @@ export async function getRealTimeData(leg: Leg): Promise<RealTime> {
     }
 }
 
+function getRouteLongName(leg: Leg) {
+    const route = leg.agencyName == "altoadigemobilità" ? leg.routeLongName : leg.routeShortName;
+
+    if (leg.mode.includes("RAIL") && route) {
+        if (leg.agencyName?.toLowerCase() == "trentino trasporti s.p.a.") {
+            return "Regionale Trentino Trasporti";
+        }
+
+        return trainCategoryLongNames[route.trim().toUpperCase()]
+    }
+
+    return capitalize(leg.routeLongName || "")
+}
+
 const processTripData = async (data: {
     itineraries: Trip[]; direct: Trip[]; pageCursor?: string
 }): Promise<Directions> => {
@@ -131,7 +145,8 @@ const processTripData = async (data: {
     const processedItineraries = await Promise.all(data.itineraries.map(async (trip) => {
         const processedLegs = (await Promise.all(trip.legs.map(async (originalLeg) => {
             const points = await getShapes(originalLeg);
-            const route = originalLeg.agencyName == "altoadigemobilità" ? originalLeg.routeLongName : originalLeg.routeShortName;
+            const route = originalLeg.agencyName == "altoadigemobilità" ? originalLeg.displayName : originalLeg.routeShortName;
+            const routeLongName = getRouteLongName(originalLeg)
 
             return {
                 ...originalLeg,
@@ -144,7 +159,7 @@ const processTripData = async (data: {
                     ...stop, name: getStop(stop.name)
                 })),
                 headsign: capitalize(originalLeg.headsign || ""),
-                routeLongName: originalLeg.mode.includes("RAIL") && route ? trainCategoryLongNames[route.trim().toUpperCase()] : capitalize(originalLeg.routeLongName || ""),
+                routeLongName,
                 routeShortName: route && (route === "REG" ? "R" : route.startsWith("RE") ? "RE" : route.startsWith("R") ? "R" : route.startsWith("S") ? "S" : route.split("_")[0]),
                 from: {
                     ...originalLeg.from, name: getStop(originalLeg.from.name),

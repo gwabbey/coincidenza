@@ -23,7 +23,6 @@
     "@tabler/icons-react": "^3.36.1",
     "@tailwindcss/postcss": "^4.1.18",
     "axios": "^1.13.2",
-    "axios-retry": "^4.5.0",
     "better-sse": "^0.15.1",
     "bullmq": "^5.66.5",
     "cheerio": "^1.1.2",

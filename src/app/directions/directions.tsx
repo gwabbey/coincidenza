@@ -41,6 +41,7 @@ export default function Directions() {
     const [time, setTime] = useState<TimeInputValue | null>(new Time(dateTime.getHours(), dateTime.getMinutes()),);
 
     const [directions, setDirections] = useState<Directions>();
+    console.log(directions);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [selectedTripIndex, setSelectedTripIndex] = useState<number | null>(null,);
@@ -165,12 +166,12 @@ export default function Directions() {
             className="flex flex-col gap-2 p-4 -mt-4 z-20 flex-1 min-h-0 overflow-auto rounded-b-none sm:rounded-l-large sm:rounded-tr-none sm:mt-0"
             fullWidth
         >
-            {!directions && (<h1 className="text-2xl font-bold text-center shrink-0 gap-0">
+            <h1 className="text-2xl font-bold text-center shrink-0 gap-0">
                 calcola percorso
-            </h1>)}
+            </h1>
 
             {!directions ? (<div className="flex flex-col items-center gap-y-4 shrink-0">
-                <div className="flex flex-col lg:flex-row justify-center items-center gap-x-4 w-full">
+                <div className="flex flex-col xl:flex-row justify-center items-center gap-x-4 w-full">
                     <LocationAutocomplete
                         name="from"
                         selected={selectedLocations.from?.name}
@@ -178,7 +179,7 @@ export default function Directions() {
                         disabled={isLoading}
                         onLocationSelect={(location) => handleLocationSelect("from", location)}
                     />
-                    <div className="w-full max-w-md flex items-center justify-end lg:hidden">
+                    <div className="w-full max-w-md flex items-center justify-end xl:hidden">
                         <Button
                             isDisabled={isLoading}
                             isIconOnly
@@ -197,7 +198,7 @@ export default function Directions() {
                         onPress={swapLocations}
                         startContent={<IconArrowsLeftRight size={20} className="shrink-0" />}
                         radius="full"
-                        className="border-gray-500 border self-center lg:flex hidden"
+                        className="border-gray-500 border self-center xl:flex hidden"
                         aria-label="inverti selezione"
                     />
                     <LocationAutocomplete
@@ -237,7 +238,7 @@ export default function Directions() {
                     onPress={handleSearch}
                     variant="ghost"
                     color="primary"
-                    className="self-center font-bold max-w-md lg:max-w-32 w-full text-lg"
+                    className="self-center font-bold max-w-md xl:max-w-32 w-full text-lg"
                     startContent={!isLoading && <IconSearch stroke={2} className="shrink-0" />}
                     isDisabled={!selectedLocations.from || !selectedLocations.to || !date || !time || isLoading || (selectedLocations && isSameLocation) || today > date || date > nextWeek}
                     isLoading={isLoading}
@@ -251,31 +252,31 @@ export default function Directions() {
                 </div>)}
             </div>) : (<>
                 <Card
-                    className="flex flex-row lg:flex-col justify-between lg:justify-center items-center py-4 px-2 shrink-0">
-                    <div className="lg:text-center lg:text-nowrap">
+                    className="flex flex-row xl:flex-col justify-between xl:justify-center items-center py-4 px-2 shrink-0">
+                    <div className="xl:text-center xl:text-nowrap">
                         <div
-                            className="flex flex-col lg:flex-row gap-1 font-bold lg:justify-center justify-start">
+                            className="flex flex-col xl:flex-row gap-1 font-bold xl:justify-center justify-start">
                             <div className="flex items-start">
                                 <IconCircleLetterA
                                     size={18}
-                                    className="shrink-0 mr-1 lg:hidden mt-0.5"
+                                    className="shrink-0 mr-1 xl:hidden mt-0.5"
                                 />
                                 <span className="line-clamp-2 leading-snug">{selectedLocations.from?.name}</span>
                             </div>
                             <IconArrowDown
                                 size={16}
                                 stroke={2.5}
-                                className="shrink-0 lg:hidden"
+                                className="shrink-0 xl:hidden"
                             />
                             <IconArrowRight
                                 size={16}
                                 stroke={2.5}
-                                className="shrink-0 self-center hidden lg:flex"
+                                className="shrink-0 self-center hidden xl:flex"
                             />
                             <div className="flex items-start">
                                 <IconCircleLetterBFilled
                                     size={18}
-                                    className="shrink-0 mr-1 lg:hidden mt-0.5"
+                                    className="shrink-0 mr-1 xl:hidden mt-0.5"
                                 />
                                 <span className="line-clamp-2 leading-snug">{selectedLocations.to?.name}</span>
                             </div>
@@ -292,7 +293,7 @@ export default function Directions() {
                             onPress={() => setDirections(undefined)}
                             variant="bordered"
                             radius="full"
-                            className="hidden lg:flex mx-auto mt-2 border-gray-500 border text-medium"
+                            className="hidden xl:flex mx-auto mt-2 border-gray-500 border text-medium"
                         >
                             modifica
                         </Button>
@@ -303,7 +304,7 @@ export default function Directions() {
                         variant="bordered"
                         radius="full"
                         onPress={() => setDirections(undefined)}
-                        className="lg:hidden border-gray-500 border"
+                        className="xl:hidden border-gray-500 border"
                     />
                 </Card>
 

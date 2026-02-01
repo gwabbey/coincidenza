@@ -169,7 +169,7 @@ export const LocationAutocomplete = ({
     >
         {(item) => (<AutocompleteItem
             key={item.id}
-            startContent={item.name === "La tua posizione" && <IconLocation />}
+            startContent={item.name === "La tua posizione" && <IconLocation className="shrink-0" />}
             textValue={item.name || 'La tua posizione'}
         >
             <div className="flex flex-col">

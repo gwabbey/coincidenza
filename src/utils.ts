@@ -16,7 +16,8 @@ export function getTripColor(routeShortName: string, source: string = ""): strin
     const category = routeShortName?.split(" ")[0];
 
     if (agency === "ttu") return "00C951";
-    if (agency === "tte") return "0A6DE5";
+    if (agency === "tte")
+        if (routeShortName.startsWith("R")) return "036633"; else return "0A6DE5";
 
     switch (category) {
         case "R":
