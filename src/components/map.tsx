@@ -38,6 +38,27 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): nu
     return R * c;
 }
 
+function findClosestPointOnPolyline(
+    targetLat: number,
+    targetLon: number,
+    polylinePoints: Array<[number, number]>
+): { lat: number; lon: number } {
+    let minDistance = Infinity;
+    let closestPoint = {lat: targetLat, lon: targetLon};
+
+    for (const point of polylinePoints) {
+        const [lat, lon] = point;
+        const distance = getDistance(targetLat, targetLon, lat, lon);
+
+        if (distance < minDistance) {
+            minDistance = distance;
+            closestPoint = {lat, lon};
+        }
+    }
+
+    return closestPoint;
+}
+
 export default function LibreMap({
                                      from, to, intermediateStops = [], legs = [], className, animationDuration = 2000,
                                  }: MapProps) {
@@ -53,6 +74,7 @@ export default function LibreMap({
     const animationFrameRef = useRef<number | null>(null);
     const [mapInitialized, setMapInitialized] = useState(false);
     const [simplifiedStops, setSimplifiedStops] = useState<Coordinate[]>([]);
+    const [snappedStops, setSnappedStops] = useState<Coordinate[]>([]);
 
     const labelColor = '#000000';
     const haloColor = '#fff';
@@ -91,6 +113,64 @@ export default function LibreMap({
 
         setSimplifiedStops(simplified);
     }, [intermediateStops]);
+
+    useEffect(() => {
+        const snapStopsToPolyline = async () => {
+            if (!simplifiedStops || simplifiedStops.length === 0 || legs.length === 0) {
+                setSnappedStops([]);
+                return;
+            }
+
+            try {
+                const decodedLegs = await Promise.all(legs.map(leg => decodePolyline(leg.legGeometry.points)));
+                const allPolylinePoints: Array<[number, number]> = [];
+
+                decodedLegs.forEach(legPoints => {
+                    allPolylinePoints.push(...legPoints);
+                });
+
+                if (allPolylinePoints.length === 0) {
+                    setSnappedStops(simplifiedStops);
+                    return;
+                }
+
+                const snapped = simplifiedStops.map((stop, index) => {
+                    const isFirst = index === 0;
+                    const isLast = index === simplifiedStops.length - 1;
+
+                    if (isFirst) {
+                        const [lat, lon] = allPolylinePoints[0];
+                        return {
+                            lat,
+                            lon,
+                            name: stop.name
+                        };
+                    } else if (isLast) {
+                        const [lat, lon] = allPolylinePoints[allPolylinePoints.length - 1];
+                        return {
+                            lat,
+                            lon,
+                            name: stop.name
+                        };
+                    } else {
+                        const closestPoint = findClosestPointOnPolyline(stop.lat, stop.lon, allPolylinePoints);
+                        return {
+                            lat: closestPoint.lat,
+                            lon: closestPoint.lon,
+                            name: stop.name
+                        };
+                    }
+                });
+
+                setSnappedStops(snapped);
+            } catch (error) {
+                console.error("Error snapping stops to polyline:", error);
+                setSnappedStops(simplifiedStops);
+            }
+        };
+
+        snapStopsToPolyline();
+    }, [simplifiedStops, legs]);
 
     useEffect(() => {
         if (!mapContainerRef.current || mapRef.current) return;
@@ -172,15 +252,26 @@ export default function LibreMap({
                 });
 
                 map.addLayer({
-                    id: 'start-marker-label', type: 'symbol', source: 'start-marker', layout: {
+                    id: 'start-marker-label',
+                    type: 'symbol',
+                    source: 'start-marker',
+                    layout: {
                         'text-field': ['get', 'name'],
                         'text-font': ['Noto Sans Bold'],
                         'text-size': 16,
-                        'text-variable-anchor': ['left', 'right', 'top', 'bottom'],
-                        'text-radial-offset': 1,
-                        'text-justify': 'auto'
-                    }, paint: {
-                        'text-color': labelColor
+                        'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+                        'text-radial-offset': 1.2,
+                        'text-justify': 'auto',
+                        'symbol-placement': 'point',
+                        'text-allow-overlap': false,
+                        'text-ignore-placement': false,
+                        'symbol-z-order': 'auto'
+                    },
+                    paint: {
+                        'text-color': labelColor,
+                        'text-halo-color': haloColor,
+                        'text-halo-width': 2,
+                        'text-halo-blur': 1
                     }
                 });
             } else {
@@ -228,15 +319,26 @@ export default function LibreMap({
                 });
 
                 map.addLayer({
-                    id: 'end-marker-label', type: 'symbol', source: 'end-marker', layout: {
+                    id: 'end-marker-label',
+                    type: 'symbol',
+                    source: 'end-marker',
+                    layout: {
                         'text-field': ['get', 'name'],
                         'text-font': ['Noto Sans Bold'],
                         'text-size': 16,
-                        'text-variable-anchor': ['left', 'right', 'top', 'bottom'],
-                        'text-radial-offset': 1,
-                        'text-justify': 'auto'
-                    }, paint: {
-                        'text-color': labelColor
+                        'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+                        'text-radial-offset': 1.2,
+                        'text-justify': 'auto',
+                        'symbol-placement': 'point',
+                        'text-allow-overlap': false,
+                        'text-ignore-placement': false,
+                        'symbol-z-order': 'auto'
+                    },
+                    paint: {
+                        'text-color': labelColor,
+                        'text-halo-color': haloColor,
+                        'text-halo-width': 2,
+                        'text-halo-blur': 1
                     }
                 });
             } else {
@@ -266,25 +368,26 @@ export default function LibreMap({
         if (map.getLayer('intermediate-stops-labels')) map.removeLayer('intermediate-stops-labels');
         if (map.getSource('intermediate-stops')) map.removeSource('intermediate-stops');
 
-        if (simplifiedStops?.length) {
+        if (snappedStops?.length) {
             const THRESHOLD = 150;
 
-            const firstStop = simplifiedStops[0];
-            const lastStop = simplifiedStops.at(-1);
+            const firstStop = snappedStops[0];
+            const lastStop = snappedStops.at(-1);
 
             const hideStart = from && firstStop && getDistance(from.lat, from.lon, firstStop.lat, firstStop.lon) < THRESHOLD;
-
             const hideEnd = to && lastStop && getDistance(to.lat, to.lon, lastStop.lat, lastStop.lon) < THRESHOLD;
 
-            const features = simplifiedStops.map((stop, index) => {
+            const features = snappedStops.map((stop, index) => {
                 const isStart = index === 0;
-                const isEnd = index === simplifiedStops.length - 1;
+                const isEnd = index === snappedStops.length - 1;
 
                 const hidden = (isStart && hideStart) || (isEnd && hideEnd);
 
                 return {
                     type: 'Feature', properties: {
-                        name: hidden ? '' : (stop.name || ''), hidden
+                        name: hidden ? '' : (stop.name || ''),
+                        hidden,
+                        priority: index
                     }, geometry: {
                         type: 'Point', coordinates: [stop.lon, stop.lat]
                     }
@@ -301,27 +404,78 @@ export default function LibreMap({
                 source: 'intermediate-stops',
                 filter: ['!', ['get', 'hidden']],
                 paint: {
-                    'circle-radius': 5,
+                    'circle-radius': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        10, 3,
+                        12, 4,
+                        14, 5,
+                        16, 6
+                    ],
                     'circle-color': '#007AFF',
                     'circle-stroke-width': 2,
-                    'circle-stroke-color': '#fff'
+                    'circle-stroke-color': '#fff',
+                    'circle-opacity': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        9, 0,
+                        10, 0.3,
+                        12, 1
+                    ]
                 }
             });
 
             map.addLayer({
-                id: 'intermediate-stops-labels', type: 'symbol', source: 'intermediate-stops', layout: {
+                id: 'intermediate-stops-labels',
+                type: 'symbol',
+                source: 'intermediate-stops',
+                filter: ['!', ['get', 'hidden']],
+                layout: {
                     'text-field': ['get', 'name'],
                     'text-font': ['Noto Sans Regular'],
-                    'text-size': 12,
-                    'text-variable-anchor': ['left', 'right'],
-                    'text-radial-offset': 1,
-                    'text-justify': 'auto'
-                }, paint: {'text-color': labelColor}
+                    'text-size': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        10, 10,
+                        12, 11,
+                        14, 12,
+                        16, 13
+                    ],
+                    'text-variable-anchor': ['top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right'],
+                    'text-radial-offset': 0.8,
+                    'text-justify': 'auto',
+                    'symbol-placement': 'point',
+                    'text-allow-overlap': false,
+                    'text-ignore-placement': false,
+                    'icon-allow-overlap': false,
+                    'icon-ignore-placement': false,
+                    'symbol-avoid-edges': true,
+                    'text-padding': 4,
+                    'symbol-sort-key': ['get', 'priority'],
+                    'symbol-z-order': 'auto'
+                },
+                paint: {
+                    'text-color': labelColor,
+                    'text-halo-color': haloColor,
+                    'text-halo-width': 2,
+                    'text-halo-blur': 1,
+                    'text-opacity': [
+                        'interpolate',
+                        ['linear'],
+                        ['zoom'],
+                        10, 0,
+                        11, 0.5,
+                        12, 1
+                    ]
+                }
             });
         }
 
         updateMapBounds();
-    }, [simplifiedStops, mapInitialized, legs, from, to, labelColor]);
+    }, [snappedStops, mapInitialized, legs, from, to, labelColor]);
 
     useEffect(() => {
         if (!mapInitialized || !mapRef.current) return;
@@ -493,7 +647,7 @@ export default function LibreMap({
                 animationFrameRef.current = null;
             }
         };
-    }, [legs, mapInitialized, from?.name, to?.name, simplifiedStops]);
+    }, [legs, mapInitialized, from?.name, to?.name, snappedStops]);
 
     const updateMapBounds = async () => {
         if (!mapRef.current) return;
@@ -520,8 +674,8 @@ export default function LibreMap({
             });
         }
 
-        if (simplifiedStops) {
-            simplifiedStops.forEach(stop => {
+        if (snappedStops) {
+            snappedStops.forEach(stop => {
                 if (!isNaN(stop.lat) && !isNaN(stop.lon)) {
                     allPoints.push([stop.lon, stop.lat]);
                 }

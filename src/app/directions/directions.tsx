@@ -81,9 +81,7 @@ export default function Directions() {
                 lon: selectedLocations.to!.lon,
                 name: selectedLocations.to!.name,
                 address: selectedLocations.to!.address,
-            }, localIsoString,);
-
-            console.log(result)
+            }, localIsoString);
 
             if (!result) {
                 setError("Errore nel recupero dei dati. Riprova più tardi.");
