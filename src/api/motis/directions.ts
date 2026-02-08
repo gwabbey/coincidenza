@@ -280,7 +280,7 @@ const resolvePlace = async (loc: Location): Promise<string> => {
         const stop = data[0];
         const dist = getDistance(Number(loc.lat), Number(loc.lon), Number(stop.lat), Number(stop.lon));
 
-        if (dist <= 50) {
+        if (dist <= 100) {
             return stop.id;
         }
     }
