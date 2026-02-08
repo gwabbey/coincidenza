@@ -280,7 +280,7 @@ const resolvePlace = async (loc: Location): Promise<string> => {
         const stop = data[0];
         const dist = getDistance(Number(loc.lat), Number(loc.lon), Number(stop.lat), Number(stop.lon));
 
-        if (dist <= 100) {
+        if (dist <= 0) {
             return stop.id;
         }
     }
@@ -302,7 +302,6 @@ export async function getDirections(from: Location, to: Location, dateTime: stri
                 maxPostTransitTime: 1800,
                 maxDirectTime: 3600,
                 numItineraries: 5,
-                useRoutedTransfers: true,
                 algorithm: "RAPTOR"
             }
         });
