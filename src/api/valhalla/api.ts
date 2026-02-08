@@ -18,21 +18,15 @@ export async function getRoadPolyline(stops: (From | IntermediateStop | To)[]) {
                     lon: stop.lon,
                     type: i === 0 || i === arr.length - 1 ? "break" : "via",
                     rank_candidates: false,
-                    radius: 15
+                    radius: 10,
                 }));
 
                 const {data} = await axios.post(`${VALHALLA}/route`, {
                     locations, costing: "bus", "costing_options": {
                         "bus": {
-                            "maneuver_penalty": 15,
-                            "private_access_penalty": 450,
                             "ignore_closures": true,
                             "ignore_restrictions": true,
-                            "closure_factor": 9,
-                            "service_penalty": 15,
-                            "service_factor": 1,
                             "top_speed": 90,
-                            "fixed_speed": 0,
                         }
                     }, directions_type: "none", alternates: 0
                 });

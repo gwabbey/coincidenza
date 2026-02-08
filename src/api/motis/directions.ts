@@ -90,7 +90,7 @@ export async function getRealTimeData(leg: Leg): Promise<RealTime> {
                     status: trip?.status ?? "scheduled"
                 }
             case "trenitalia":
-            case "südtirolmobil - altoadigemobilità":
+            case "altoadigemobilità":
             case "trenord":
                 const date = new Date(leg.scheduledStartTime);
                 date.setHours(0, 0, 0, 0);

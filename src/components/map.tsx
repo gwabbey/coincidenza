@@ -1,5 +1,5 @@
 'use client';
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useMemo, useRef, useState} from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -38,11 +38,9 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): nu
     return R * c;
 }
 
-function findClosestPointOnPolyline(
-    targetLat: number,
-    targetLon: number,
-    polylinePoints: Array<[number, number]>
-): { lat: number; lon: number } {
+function findClosestPointOnPolyline(targetLat: number, targetLon: number, polylinePoints: Array<[number, number]>): {
+    lat: number; lon: number
+} {
     let minDistance = Infinity;
     let closestPoint = {lat: targetLat, lon: targetLon};
 
@@ -79,6 +77,10 @@ export default function LibreMap({
     const labelColor = '#000000';
     const haloColor = '#fff';
 
+    const intermediateStopsKey = useMemo(() => JSON.stringify(intermediateStops.map(s => `${s.lat},${s.lon},${s.name || ''}`)), [intermediateStops]);
+    const simplifiedStopsKey = useMemo(() => JSON.stringify(simplifiedStops.map(s => `${s.lat},${s.lon},${s.name || ''}`)), [simplifiedStops]);
+    const legsKey = useMemo(() => JSON.stringify(legs.map(l => l.legGeometry.points)), [legs]);
+
     useEffect(() => {
         if (!intermediateStops || intermediateStops.length === 0) {
             setSimplifiedStops(prev => prev.length === 0 ? prev : []);
@@ -112,7 +114,7 @@ export default function LibreMap({
         }
 
         setSimplifiedStops(simplified);
-    }, [intermediateStops]);
+    }, [intermediateStopsKey]);
 
     useEffect(() => {
         const snapStopsToPolyline = async () => {
@@ -141,23 +143,17 @@ export default function LibreMap({
                     if (isFirst) {
                         const [lat, lon] = allPolylinePoints[0];
                         return {
-                            lat,
-                            lon,
-                            name: stop.name
+                            lat, lon, name: stop.name
                         };
                     } else if (isLast) {
                         const [lat, lon] = allPolylinePoints[allPolylinePoints.length - 1];
                         return {
-                            lat,
-                            lon,
-                            name: stop.name
+                            lat, lon, name: stop.name
                         };
                     } else {
                         const closestPoint = findClosestPointOnPolyline(stop.lat, stop.lon, allPolylinePoints);
                         return {
-                            lat: closestPoint.lat,
-                            lon: closestPoint.lon,
-                            name: stop.name
+                            lat: closestPoint.lat, lon: closestPoint.lon, name: stop.name
                         };
                     }
                 });
@@ -170,7 +166,7 @@ export default function LibreMap({
         };
 
         snapStopsToPolyline();
-    }, [simplifiedStops, legs]);
+    }, [simplifiedStopsKey, legsKey]);
 
     useEffect(() => {
         if (!mapContainerRef.current || mapRef.current) return;
@@ -252,10 +248,7 @@ export default function LibreMap({
                 });
 
                 map.addLayer({
-                    id: 'start-marker-label',
-                    type: 'symbol',
-                    source: 'start-marker',
-                    layout: {
+                    id: 'start-marker-label', type: 'symbol', source: 'start-marker', layout: {
                         'text-field': ['get', 'name'],
                         'text-font': ['Noto Sans Bold'],
                         'text-size': 16,
@@ -266,8 +259,7 @@ export default function LibreMap({
                         'text-allow-overlap': false,
                         'text-ignore-placement': false,
                         'symbol-z-order': 'auto'
-                    },
-                    paint: {
+                    }, paint: {
                         'text-color': labelColor,
                         'text-halo-color': haloColor,
                         'text-halo-width': 2,
@@ -319,10 +311,7 @@ export default function LibreMap({
                 });
 
                 map.addLayer({
-                    id: 'end-marker-label',
-                    type: 'symbol',
-                    source: 'end-marker',
-                    layout: {
+                    id: 'end-marker-label', type: 'symbol', source: 'end-marker', layout: {
                         'text-field': ['get', 'name'],
                         'text-font': ['Noto Sans Bold'],
                         'text-size': 16,
@@ -333,8 +322,7 @@ export default function LibreMap({
                         'text-allow-overlap': false,
                         'text-ignore-placement': false,
                         'symbol-z-order': 'auto'
-                    },
-                    paint: {
+                    }, paint: {
                         'text-color': labelColor,
                         'text-halo-color': haloColor,
                         'text-halo-width': 2,
@@ -356,20 +344,14 @@ export default function LibreMap({
     useEffect(() => {
         if (!mapInitialized || !mapRef.current) return;
 
-        markersRef.current.intermediates.forEach(({marker, label}) => {
-            marker.remove();
-            if (label) label.remove();
-        });
-        markersRef.current.intermediates = [];
-
         const map = mapRef.current;
 
         if (map.getLayer('intermediate-stops-circles')) map.removeLayer('intermediate-stops-circles');
         if (map.getLayer('intermediate-stops-labels')) map.removeLayer('intermediate-stops-labels');
         if (map.getSource('intermediate-stops')) map.removeSource('intermediate-stops');
 
-        if (snappedStops?.length) {
-            const THRESHOLD = 150;
+        if (snappedStops?.length && legs.length > 0) {
+            const THRESHOLD = 50;
 
             const firstStop = snappedStops[0];
             const lastStop = snappedStops.at(-1);
@@ -377,105 +359,93 @@ export default function LibreMap({
             const hideStart = from && firstStop && getDistance(from.lat, from.lon, firstStop.lat, firstStop.lon) < THRESHOLD;
             const hideEnd = to && lastStop && getDistance(to.lat, to.lon, lastStop.lat, lastStop.lon) < THRESHOLD;
 
-            const features = snappedStops.map((stop, index) => {
-                const isStart = index === 0;
-                const isEnd = index === snappedStops.length - 1;
+            const decodeLegsForColors = async () => {
+                const decodedLegs = await Promise.all(legs.map(leg => decodePolyline(leg.legGeometry.points)));
 
-                const hidden = (isStart && hideStart) || (isEnd && hideEnd);
+                const features = snappedStops.map((stop, index) => {
+                    const isStart = index === 0;
+                    const isEnd = index === snappedStops.length - 1;
+                    const hidden = (isStart && hideStart) || (isEnd && hideEnd);
 
-                return {
-                    type: 'Feature', properties: {
-                        name: hidden ? '' : (stop.name || ''),
-                        hidden,
-                        priority: index
-                    }, geometry: {
-                        type: 'Point', coordinates: [stop.lon, stop.lat]
+                    let closestLegIndex = 0;
+                    let minDistance = Infinity;
+
+                    decodedLegs.forEach((legPoints, legIndex) => {
+                        legPoints.forEach(point => {
+                            const [lat, lon] = point;
+                            const distance = getDistance(stop.lat, stop.lon, lat, lon);
+                            if (distance < minDistance) {
+                                minDistance = distance;
+                                closestLegIndex = legIndex;
+                            }
+                        });
+                    });
+
+                    const legColor = legs[closestLegIndex].mode === "WALK" ? "#999999" : legs[closestLegIndex].routeColor ? `#${legs[closestLegIndex].routeColor}` : "#036633";
+
+                    return {
+                        type: 'Feature', properties: {
+                            name: hidden ? '' : (stop.name || ''), hidden, priority: index, color: legColor
+                        }, geometry: {
+                            type: 'Point', coordinates: [stop.lon, stop.lat]
+                        }
+                    };
+                });
+
+                map.addSource('intermediate-stops', {
+                    type: 'geojson', data: {type: 'FeatureCollection', features: features as any}
+                });
+
+                map.addLayer({
+                    id: 'intermediate-stops-circles',
+                    type: 'circle',
+                    source: 'intermediate-stops',
+                    filter: ['!', ['get', 'hidden']],
+                    paint: {
+                        'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 3, 12, 4, 14, 5, 16, 6],
+                        'circle-color': ['get', 'color'],
+                        'circle-stroke-width': 2,
+                        'circle-stroke-color': '#fff',
+                        'circle-opacity': ['interpolate', ['linear'], ['zoom'], 9, 0, 10, 0.3, 12, 1]
                     }
-                };
-            });
+                });
 
-            map.addSource('intermediate-stops', {
-                type: 'geojson', data: {type: 'FeatureCollection', features: features as any}
-            });
+                map.addLayer({
+                    id: 'intermediate-stops-labels',
+                    type: 'symbol',
+                    source: 'intermediate-stops',
+                    filter: ['!', ['get', 'hidden']],
+                    layout: {
+                        'text-field': ['get', 'name'],
+                        'text-font': ['Noto Sans Regular'],
+                        'text-size': 12,
+                        'text-variable-anchor': ['top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right'],
+                        'text-radial-offset': 1.0,
+                        'text-justify': 'auto',
+                        'symbol-placement': 'point',
+                        'text-allow-overlap': false,
+                        'text-ignore-placement': false,
+                        'text-optional': false,
+                        'icon-allow-overlap': false,
+                        'icon-ignore-placement': false,
+                        'symbol-avoid-edges': true,
+                        'text-padding': 2,
+                        'symbol-sort-key': ['get', 'priority'],
+                        'symbol-z-order': 'auto'
+                    },
+                    paint: {
+                        'text-color': labelColor,
+                        'text-halo-color': haloColor,
+                        'text-halo-width': 2,
+                        'text-halo-blur': 1,
+                        'text-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0, 11, 0.5, 12, 1]
+                    }
+                });
+            };
 
-            map.addLayer({
-                id: 'intermediate-stops-circles',
-                type: 'circle',
-                source: 'intermediate-stops',
-                filter: ['!', ['get', 'hidden']],
-                paint: {
-                    'circle-radius': [
-                        'interpolate',
-                        ['linear'],
-                        ['zoom'],
-                        10, 3,
-                        12, 4,
-                        14, 5,
-                        16, 6
-                    ],
-                    'circle-color': '#007AFF',
-                    'circle-stroke-width': 2,
-                    'circle-stroke-color': '#fff',
-                    'circle-opacity': [
-                        'interpolate',
-                        ['linear'],
-                        ['zoom'],
-                        9, 0,
-                        10, 0.3,
-                        12, 1
-                    ]
-                }
-            });
-
-            map.addLayer({
-                id: 'intermediate-stops-labels',
-                type: 'symbol',
-                source: 'intermediate-stops',
-                filter: ['!', ['get', 'hidden']],
-                layout: {
-                    'text-field': ['get', 'name'],
-                    'text-font': ['Noto Sans Regular'],
-                    'text-size': [
-                        'interpolate',
-                        ['linear'],
-                        ['zoom'],
-                        10, 10,
-                        12, 11,
-                        14, 12,
-                        16, 13
-                    ],
-                    'text-variable-anchor': ['top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right'],
-                    'text-radial-offset': 0.8,
-                    'text-justify': 'auto',
-                    'symbol-placement': 'point',
-                    'text-allow-overlap': false,
-                    'text-ignore-placement': false,
-                    'icon-allow-overlap': false,
-                    'icon-ignore-placement': false,
-                    'symbol-avoid-edges': true,
-                    'text-padding': 4,
-                    'symbol-sort-key': ['get', 'priority'],
-                    'symbol-z-order': 'auto'
-                },
-                paint: {
-                    'text-color': labelColor,
-                    'text-halo-color': haloColor,
-                    'text-halo-width': 2,
-                    'text-halo-blur': 1,
-                    'text-opacity': [
-                        'interpolate',
-                        ['linear'],
-                        ['zoom'],
-                        10, 0,
-                        11, 0.5,
-                        12, 1
-                    ]
-                }
-            });
+            decodeLegsForColors();
         }
-
-        updateMapBounds();
-    }, [snappedStops, mapInitialized, legs, from, to, labelColor]);
+    }, [snappedStops, mapInitialized, from, to, labelColor, haloColor, legs]);
 
     useEffect(() => {
         if (!mapInitialized || !mapRef.current) return;

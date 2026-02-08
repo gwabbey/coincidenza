@@ -162,7 +162,7 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                             </div>
 
                             {leg.mode !== "WALK" && (
-                                <div className="pl-8 flex flex-col lg:flex-row w-full justify-between gap-x-2">
+                                <div className="pl-8 flex flex-col xl:flex-row w-full justify-between gap-x-2">
                                     {leg.realTime.status !== "canceled" && <Timeline steps={[{
                                         content: (<div className="flex flex-col">
                                                         <span className="font-bold">
@@ -229,7 +229,7 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
 
                                     {leg.realTime && leg.realTime.info && leg.realTime.info.length > 0 && (
                                         <div
-                                            className={cn("flex flex-row lg:flex-col lg:justify-start justify-between gap-4 lg:mt-0 mt-4", leg.realTime?.info?.length > 0 && "max-w-80 w-full items-center")}>
+                                            className={cn("flex flex-row xl:flex-col xl:justify-start justify-between gap-4 xl:mt-0 mt-4", leg.realTime?.info?.length > 0 && "max-w-80 w-full items-center")}>
                                             <Accordion isCompact
                                                        itemClasses={{base: "-mx-2"}}
                                                        hideIndicator={leg.realTime.status === "canceled"}
