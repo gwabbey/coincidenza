@@ -82,7 +82,8 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                            <IconArrowRight className="shrink-0" />
                                            <span
                                                className={cn(`text-${getDelayColor(trip.legs[trip.legs.length - 1]?.mode !== "WALK" ? trip.legs[trip.legs.length - 1]?.realTime?.delay : trip.legs[trip.legs.length - 1].tripId !== trip.legs[trip.legs.length - 2].tripId ? trip.legs[trip.legs.length - 2]?.realTime?.delay : null)}`)}>
-                                               {format(new Date(trip.endTime), "HH:mm")}
+                                               {format(new Date(trip.endTime), "HH:mm")} {new Date(trip.endTime).getDay() !== new Date().getDay() ?
+                                               `(${new Date(trip.endTime).toLocaleString('it-IT', {weekday: 'short'})})` : ""}
                                            </span>
                                         </span>
                            </div>}

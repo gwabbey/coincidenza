@@ -352,11 +352,17 @@ export default function LibreMap({
             if (!snapped.length || !legs.length) return;
 
             const decoded = await decodedLegs;
-            const firstStop = snapped[0];
-            const lastStop = snapped[snapped.length - 1];
 
-            const hideStart = from && firstStop && getDistance(from.lat, from.lon, firstStop.lat, firstStop.lon) < 50;
-            const hideEnd = to && lastStop && getDistance(to.lat, to.lon, lastStop.lat, lastStop.lon) < 50;
+            const firstLeg = decoded.find(leg => leg.length > 0);
+            const lastLeg = [...decoded].reverse().find(leg => leg.length > 0);
+
+            const actualFromCoords = firstLeg ? {lat: firstLeg[0][0], lon: firstLeg[0][1]} : from;
+            const actualToCoords = lastLeg ? {
+                lat: lastLeg[lastLeg.length - 1][0], lon: lastLeg[lastLeg.length - 1][1]
+            } : to;
+
+            const hideStart = actualFromCoords && snapped[0] && getDistance(actualFromCoords.lat, actualFromCoords.lon, snapped[0].lat, snapped[0].lon) < 1;
+            const hideEnd = actualToCoords && snapped[snapped.length - 1] && getDistance(actualToCoords.lat, actualToCoords.lon, snapped[snapped.length - 1].lat, snapped[snapped.length - 1].lon) < 1;
 
             const visibleStops = snapped
                 .map((stop, originalIndex) => ({stop, originalIndex}))
@@ -366,7 +372,6 @@ export default function LibreMap({
                     const shouldHide = (isStart && hideStart) || (isEnd && hideEnd);
                     return !shouldHide;
                 });
-
 
             if (!visibleStops.length) return;
 
@@ -466,12 +471,9 @@ export default function LibreMap({
 
                 if (from) {
                     const firstLeg = decoded.find(leg => leg.length > 0);
-                    const firstLegIndex = decoded.findIndex(leg => leg.length > 0);
-                    if (firstLeg && firstLegIndex !== -1) {
+                    if (firstLeg) {
                         const [lat, lon] = firstLeg[0];
-                        const isWalk = legs[firstLegIndex]?.mode === "WALK";
-                        const distStart = getDistance(from.lat, from.lon, lat, lon);
-                        const finalStartCoords = (!isWalk && distStart <= 10) ? [lon, lat] : [from.lon, from.lat];
+                        const finalStartCoords = [lon, lat];
 
                         const startSource = map.getSource('start-marker') as maplibregl.GeoJSONSource;
                         if (startSource) {
@@ -485,13 +487,10 @@ export default function LibreMap({
                 }
 
                 if (to) {
-                    const lastLegIndex = decoded.length - 1 - [...decoded].reverse().findIndex(leg => leg.length > 0);
-                    const lastLeg = decoded[lastLegIndex];
-                    if (lastLeg && lastLegIndex !== -1) {
+                    const lastLeg = [...decoded].reverse().find(leg => leg.length > 0);
+                    if (lastLeg) {
                         const [lat, lon] = lastLeg[lastLeg.length - 1];
-                        const isWalk = legs[lastLegIndex]?.mode === "WALK";
-                        const distEnd = getDistance(to.lat, to.lon, lat, lon);
-                        const finalEndCoords = (!isWalk && distEnd <= 10) ? [lon, lat] : [to.lon, to.lat];
+                        const finalEndCoords = [lon, lat];
 
                         const endSource = map.getSource('end-marker') as maplibregl.GeoJSONSource;
                         if (endSource) {
