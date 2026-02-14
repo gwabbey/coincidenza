@@ -163,108 +163,110 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
 
                             {leg.mode !== "WALK" && (
                                 <div className="pl-8 flex flex-col xl:flex-row w-full justify-between gap-x-2">
-                                    {leg.realTime.status !== "canceled" && <Timeline steps={[{
-                                        content: (<div className="flex flex-col">
-                                                        <span className="font-bold">
-                                                            {leg.from.name}
-                                                        </span>
-                                            <div className="flex gap-1 items-center">
-                                                            <span
-                                                                className={`text-sm ${leg.realTime.delay === 0 ? "font-bold text-success" : leg.realTime.delay ? "line-through text-foreground-500" : "text-foreground-500"}`}
-                                                            >
-                                                                {format(new Date(leg.scheduledStartTime), "HH:mm")}
-                                                            </span>
-                                                {leg.realTime && leg.realTime.delay !== 0 && leg.realTime.delay !== null && (
+                                    {leg.realTime.status !== "canceled" && (<div className="w-full xl:w-96 xl:min-w-96">
+                                        <Timeline steps={[{
+                                            content: (<div className="flex flex-col">
+                                                <span className="font-bold">
+                                                    {leg.from.name}
+                                                </span>
+                                                <div className="flex gap-1 items-center">
                                                     <span
-                                                        className={`font-bold text-sm text-${getDelayColor(leg.realTime?.delay)}`}>
-                                                                    {format(new Date(leg.scheduledStartTime).getTime() + (leg.realTime?.delay * 60 * 1000), "HH:mm")}
-                                                                </span>)}
-                                            </div>
+                                                        className={`text-sm ${leg.realTime.delay === 0 ? "font-bold text-success" : leg.realTime.delay ? "line-through text-foreground-500" : "text-foreground-500"}`}
+                                                    >
+                                                        {format(new Date(leg.scheduledStartTime), "HH:mm")}
+                                                    </span>
+                                                    {leg.realTime && leg.realTime.delay !== 0 && leg.realTime.delay !== null && (
+                                                        <span
+                                                            className={`font-bold text-sm text-${getDelayColor(leg.realTime?.delay)}`}>
+                                                            {format(new Date(leg.scheduledStartTime).getTime() + (leg.realTime?.delay * 60 * 1000), "HH:mm")}
+                                                        </span>)}
+                                                </div>
 
-                                            <Accordion>
-                                                <AccordionItem key={1} aria-label="Fermate" isCompact
-                                                               className={cn("text-sm text-foreground-500 -ml-2 py-2", leg.intermediateStops?.length === 0 && "pointer-events-none")}
-                                                               classNames={{
-                                                                   title: "text-sm text-foreground-500",
-                                                                   trigger: "w-auto gap-2",
-                                                                   content: "pl-4 pt-0 pb-2",
-                                                                   indicator: "text-sm text-foreground-500"
-                                                               }}
-                                                               title={leg.intermediateStops && `${leg.intermediateStops.length === 0 ? "nessuna" : leg.intermediateStops.length} 
-                                                                           fermat${leg.intermediateStops.length <= 1 ? "a" : "e"}, ${formatDuration(Math.round(leg.duration / 60))}`}
-                                                               indicator={leg.intermediateStops?.length === 0 && <></>}>
-                                                    <div className="space-y-1">
-                                                        {leg.intermediateStops?.map((stop: IntermediateStop, index) => (
-                                                            <div
-                                                                key={index}
-                                                                className="flex items-center gap-2 text-sm"
-                                                            >
-                                                                <span className="flex-1 truncate">{stop.name}</span>
-                                                                <span
-                                                                    className="tabular-nums text-foreground-500">
-                                                                    {format(new Date(stop.departure).getTime() + ((leg.realTime?.delay || 0) * 60 * 1000), "HH:mm")}</span>
-                                                            </div>))}
-                                                    </div>
-                                                </AccordionItem>
-                                            </Accordion>
-                                        </div>)
-                                    }, {
-                                        content: (<div className="flex flex-col">
-                                                        <span className="font-bold">
-                                                            {leg.to.name}
-                                                        </span>
-                                            <div className="flex gap-1 items-center">
-                                                            <span
-                                                                className={`text-sm ${leg.realTime?.delay === 0 ? "font-bold text-success" : leg.realTime?.delay ? "line-through text-foreground-500" : "text-foreground-500"}`}>
-                                                                {format(new Date(leg.scheduledEndTime), "HH:mm")}
-                                                            </span>
-                                                {leg.realTime && leg.realTime?.delay !== 0 && leg.realTime?.delay !== null && (
-                                                    <span
-                                                        className={`font-bold text-sm text-${getDelayColor(leg.realTime?.delay)}`}>
-                                                                    {format(new Date(leg.scheduledEndTime).getTime() + (leg.realTime?.delay * 60 * 1000), "HH:mm")}
-                                                                </span>)}
-                                            </div>
-                                        </div>)
-                                    }]} active={-1} className="gap-0" />}
+                                                <Accordion>
+                                                    <AccordionItem key={1} aria-label="Fermate" isCompact
+                                                                   className={cn("text-sm text-foreground-500 -ml-2 py-2 overflow-hidden", leg.intermediateStops?.length === 0 && "pointer-events-none")}
+                                                                   classNames={{
+                                                                       title: "text-sm text-foreground-500",
+                                                                       trigger: "w-auto gap-2",
+                                                                       content: "pl-4 pt-0 pb-2 overflow-hidden",
+                                                                       indicator: "text-sm text-foreground-500"
+                                                                   }}
+                                                                   title={leg.intermediateStops && `${leg.intermediateStops.length === 0 ? "nessuna" : leg.intermediateStops.length} fermat${leg.intermediateStops.length <= 1 ? "a" : "e"}, ${formatDuration(Math.round(leg.duration / 60))}`}
+                                                                   indicator={leg.intermediateStops?.length === 0 && <></>}>
+                                                        <div className="space-y-1 overflow-hidden">
+                                                            {leg.intermediateStops?.map((stop: IntermediateStop, index) => (
+                                                                <div
+                                                                    key={index}
+                                                                    className="flex items-center gap-2 text-sm overflow-hidden"
+                                                                >
+                                                                    <span
+                                                                        className="flex-1 truncate min-w-0">{stop.name}</span>
+                                                                    <span
+                                                                        className="tabular-nums text-foreground-500 shrink-0">
+                                                                        {format(new Date(stop.departure).getTime() + ((leg.realTime?.delay || 0) * 60 * 1000), "HH:mm")}
+                                                                    </span>
+                                                                </div>))}
+                                                        </div>
+                                                    </AccordionItem>
+                                                </Accordion>
+                                            </div>)
+                                        }, {
+                                            content: (<div className="flex flex-col">
+                                                <span className="font-bold">
+                                                    {leg.to.name}
+                                                </span>
+                                                <div className="flex gap-1 items-center">
+                                                <span
+                                                    className={`text-sm ${leg.realTime?.delay === 0 ? "font-bold text-success" : leg.realTime?.delay ? "line-through text-foreground-500" : "text-foreground-500"}`}>
+                                                    {format(new Date(leg.scheduledEndTime), "HH:mm")}
+                                                </span>
+                                                    {leg.realTime && leg.realTime?.delay !== 0 && leg.realTime?.delay !== null && (
+                                                        <span
+                                                            className={`font-bold text-sm text-${getDelayColor(leg.realTime?.delay)}`}>
+                                                            {format(new Date(leg.scheduledEndTime).getTime() + (leg.realTime?.delay * 60 * 1000), "HH:mm")}
+                                                        </span>)}
+                                                </div>
+                                            </div>)
+                                        }]} active={-1} className="gap-0" />
+                                    </div>)}
 
-                                    {leg.realTime && leg.realTime.info && leg.realTime.info.length > 0 && (
-                                        <div
-                                            className={cn("flex flex-row xl:flex-col xl:justify-start justify-between gap-4 xl:mt-0 mt-4", leg.realTime?.info?.length > 0 && "max-w-80 w-full items-center")}>
-                                            <Accordion isCompact
-                                                       itemClasses={{base: "-mx-2"}}
-                                                       hideIndicator={leg.realTime.status === "canceled"}
-                                                       defaultExpandedKeys={leg.realTime.status === "canceled" ? ["1"] : []}>
-                                                <AccordionItem key={1} title="Avvisi"
-                                                               classNames={{
-                                                                   indicator: "text-foreground",
-                                                                   title: "font-bold",
-                                                                   trigger: "py-3"
-                                                               }}
-                                                               startContent={<IconAlertTriangle />}
-                                                               className={cn("bg-warning-500/50 px-4 scrollbar-hide rounded-large max-h-64 overflow-scroll", leg.realTime.status === "canceled" && "pointer-events-none max-h-full")}>
-                                                    <div className="pb-2 text-small">
-                                                        {leg && leg.realTime.info && leg.realTime.info.map((alert, index) => (
-                                                            <div key={index}
-                                                                 className="flex flex-col gap-2">
-                                                                {alert.url ? (<div className="flex flex-col">
-                                                                    <Link href={alert.url} isExternal
-                                                                          color="foreground"
-                                                                          className="inline text-small">
-                                                                        {alert.message}
-                                                                        <IconExternalLink
-                                                                            className="shrink-0 ml-1 mb-1 inline text-center"
-                                                                            size={16} />
-                                                                    </Link>
-                                                                </div>) : (<div className="flex flex-col">
-                                                                    <span>{alert.message}</span>
-                                                                </div>)}
-                                                                {index !== leg.realTime.info!.length - 1 &&
-                                                                    <Divider className="mb-2" />}
-                                                            </div>))}
-                                                    </div>
-                                                </AccordionItem>
-                                            </Accordion>
-                                        </div>)}
+                                    {leg.realTime && leg.realTime.info && leg.realTime.info.length > 0 && (<div
+                                        className={cn("flex flex-row xl:flex-col xl:justify-start justify-between gap-4 xl:mt-0 mt-4", leg.realTime?.info?.length > 0 && "max-w-80 w-full items-center")}>
+                                        <Accordion isCompact
+                                                   itemClasses={{base: "-mx-2"}}
+                                                   hideIndicator={leg.realTime.status === "canceled"}
+                                                   defaultExpandedKeys={leg.realTime.status === "canceled" ? ["1"] : []}>
+                                            <AccordionItem key={1} title="Avvisi"
+                                                           classNames={{
+                                                               indicator: "text-foreground",
+                                                               title: "font-bold",
+                                                               trigger: "py-3"
+                                                           }}
+                                                           startContent={<IconAlertTriangle />}
+                                                           className={cn("bg-warning-500/50 px-4 scrollbar-hide rounded-large max-h-64 overflow-scroll", leg.realTime.status === "canceled" && "pointer-events-none max-h-full")}>
+                                                <div className="pb-2 text-small">
+                                                    {leg && leg.realTime.info && leg.realTime.info.map((alert, index) => (
+                                                        <div key={index}
+                                                             className="flex flex-col gap-2">
+                                                            {alert.url ? (<div className="flex flex-col">
+                                                                <Link href={alert.url} isExternal
+                                                                      color="foreground"
+                                                                      className="inline text-small">
+                                                                    {alert.message}
+                                                                    <IconExternalLink
+                                                                        className="shrink-0 ml-1 mb-1 inline text-center"
+                                                                        size={16} />
+                                                                </Link>
+                                                            </div>) : (<div className="flex flex-col">
+                                                                <span>{alert.message}</span>
+                                                            </div>)}
+                                                            {index !== leg.realTime.info!.length - 1 &&
+                                                                <Divider className="mb-2" />}
+                                                        </div>))}
+                                                </div>
+                                            </AccordionItem>
+                                        </Accordion>
+                                    </div>)}
                                 </div>)}
                             {index < trip.legs.length - 1 && <Divider className="my-2" />}
                         </div>))}

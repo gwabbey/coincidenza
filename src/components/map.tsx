@@ -36,17 +36,14 @@ async function decodePolyline(encoded: string): Promise<Array<[number, number]>>
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) ** 2 +
-        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return 6371000 * c;
 }
 
-function findClosestPointOnPolyline(
-    targetLat: number,
-    targetLon: number,
-    polylinePoints: Array<[number, number]>
-): { lat: number; lon: number } {
+function findClosestPointOnPolyline(targetLat: number, targetLon: number, polylinePoints: Array<[number, number]>): {
+    lat: number; lon: number
+} {
     let minDistance = Infinity;
     let closestPoint = {lat: targetLat, lon: targetLon};
 
@@ -62,12 +59,7 @@ function findClosestPointOnPolyline(
 }
 
 export default function LibreMap({
-                                     from,
-                                     to,
-                                     intermediateStops = [],
-                                     legs = [],
-                                     className,
-                                     animationDuration = 2000,
+                                     from, to, intermediateStops = [], legs = [], className, animationDuration = 2000,
                                  }: MapProps) {
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<maplibregl.Map | null>(null);
@@ -93,14 +85,33 @@ export default function LibreMap({
         if (!intermediateStops.length) return [];
 
         const decoded = await decodedLegs;
-        const allPolylinePoints = decoded.flat();
-        if (!allPolylinePoints.length) return intermediateStops;
+        if (!decoded.length) return intermediateStops;
 
         return intermediateStops.map((stop) => {
-            const closestPoint = findClosestPointOnPolyline(stop.lat, stop.lon, allPolylinePoints);
-            return {...closestPoint, name: stop.name};
+            let closestLegIndex = -1;
+            let minDistance = Infinity;
+
+            decoded.forEach((legPoints, legIndex) => {
+                if (legs[legIndex]?.mode === "WALK") return;
+
+                legPoints.forEach(([lat, lon]) => {
+                    const distance = getDistance(stop.lat, stop.lon, lat, lon);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        closestLegIndex = legIndex;
+                    }
+                });
+            });
+
+            if (closestLegIndex !== -1) {
+                const transitLegPoints = decoded[closestLegIndex];
+                const closestPoint = findClosestPointOnPolyline(stop.lat, stop.lon, transitLegPoints);
+                return {...closestPoint, name: stop.name};
+            }
+
+            return stop;
         });
-    }, [intermediateStops, decodedLegs]);
+    }, [intermediateStops, decodedLegs, legs]);
 
     const updateMapBounds = useCallback(async () => {
         if (!mapRef.current) return;
@@ -131,14 +142,10 @@ export default function LibreMap({
         });
 
         if (allPoints.length > 0) {
-            const bounds = allPoints.reduce(
-                (bounds, coord) => bounds.extend(coord),
-                new maplibregl.LngLatBounds(allPoints[0], allPoints[0])
-            );
+            const bounds = allPoints.reduce((bounds, coord) => bounds.extend(coord), new maplibregl.LngLatBounds(allPoints[0], allPoints[0]));
 
             mapRef.current.fitBounds(bounds, {
-                padding: 50,
-                duration: 1000,
+                padding: 50, duration: 1000,
             });
         }
     }, [from, to, decodedLegs, snappedStops]);
@@ -158,8 +165,7 @@ export default function LibreMap({
 
         map.on('load', () => {
             map.addSource('route-source', {
-                type: 'geojson',
-                data: {type: 'FeatureCollection', features: []}
+                type: 'geojson', data: {type: 'FeatureCollection', features: []}
             });
             setMapInitialized(true);
         });
@@ -200,15 +206,11 @@ export default function LibreMap({
 
         if (!map.getSource('start-marker')) {
             map.addSource('start-marker', {
-                type: 'geojson',
-                data: {type: 'FeatureCollection', features: []}
+                type: 'geojson', data: {type: 'FeatureCollection', features: []}
             });
 
             map.addLayer({
-                id: 'start-marker-circle',
-                type: 'circle',
-                source: 'start-marker',
-                paint: {
+                id: 'start-marker-circle', type: 'circle', source: 'start-marker', paint: {
                     'circle-radius': 8,
                     'circle-color': '#0171F8',
                     'circle-stroke-width': 3,
@@ -217,10 +219,7 @@ export default function LibreMap({
             });
 
             map.addLayer({
-                id: 'start-marker-label',
-                type: 'symbol',
-                source: 'start-marker',
-                layout: {
+                id: 'start-marker-label', type: 'symbol', source: 'start-marker', layout: {
                     'text-field': ['get', 'name'],
                     'text-font': ['Noto Sans Bold'],
                     'text-size': 16,
@@ -231,27 +230,19 @@ export default function LibreMap({
                     'text-allow-overlap': false,
                     'text-ignore-placement': false,
                     'symbol-z-order': 'auto'
-                },
-                paint: {
-                    'text-color': "#000000",
-                    'text-halo-color': "#fff",
-                    'text-halo-width': 2,
-                    'text-halo-blur': 1
+                }, paint: {
+                    'text-color': "#000000", 'text-halo-color': "#fff", 'text-halo-width': 2, 'text-halo-blur': 1
                 }
             });
         }
 
         if (!map.getSource('end-marker')) {
             map.addSource('end-marker', {
-                type: 'geojson',
-                data: {type: 'FeatureCollection', features: []}
+                type: 'geojson', data: {type: 'FeatureCollection', features: []}
             });
 
             map.addLayer({
-                id: 'end-marker-circle',
-                type: 'circle',
-                source: 'end-marker',
-                paint: {
+                id: 'end-marker-circle', type: 'circle', source: 'end-marker', paint: {
                     'circle-radius': 8,
                     'circle-color': '#0171F8',
                     'circle-stroke-width': 3,
@@ -260,10 +251,7 @@ export default function LibreMap({
             });
 
             map.addLayer({
-                id: 'end-marker-label',
-                type: 'symbol',
-                source: 'end-marker',
-                layout: {
+                id: 'end-marker-label', type: 'symbol', source: 'end-marker', layout: {
                     'text-field': ['get', 'name'],
                     'text-font': ['Noto Sans Bold'],
                     'text-size': 16,
@@ -274,40 +262,28 @@ export default function LibreMap({
                     'text-allow-overlap': false,
                     'text-ignore-placement': false,
                     'symbol-z-order': 'auto'
-                },
-                paint: {
-                    'text-color': "#000000",
-                    'text-halo-color': "#fff",
-                    'text-halo-width': 2,
-                    'text-halo-blur': 1
+                }, paint: {
+                    'text-color': "#000000", 'text-halo-color': "#fff", 'text-halo-width': 2, 'text-halo-blur': 1
                 }
             });
         }
 
         if (!map.getSource('intermediate-stops')) {
             map.addSource('intermediate-stops', {
-                type: 'geojson',
-                data: {type: 'FeatureCollection', features: []}
+                type: 'geojson', data: {type: 'FeatureCollection', features: []}
             });
 
             map.addLayer({
-                id: 'intermediate-stops-circles',
-                type: 'circle',
-                source: 'intermediate-stops',
-                paint: {
-                    'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 3, 12, 4, 14, 5, 16, 6],
+                id: 'intermediate-stops-circles', type: 'circle', source: 'intermediate-stops', paint: {
+                    'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 3, 12, 4, 14, 5, 16, 7],
                     'circle-color': ['get', 'color'],
                     'circle-stroke-width': 2,
                     'circle-stroke-color': '#fff',
-                    'circle-opacity': ['interpolate', ['linear'], ['zoom'], 9, 0, 10, 0.3, 12, 1]
                 }
             });
 
             map.addLayer({
-                id: 'intermediate-stops-labels',
-                type: 'symbol',
-                source: 'intermediate-stops',
-                layout: {
+                id: 'intermediate-stops-labels', type: 'symbol', source: 'intermediate-stops', layout: {
                     'text-field': ['get', 'name'],
                     'text-font': ['Noto Sans Regular'],
                     'text-size': 12,
@@ -324,12 +300,8 @@ export default function LibreMap({
                     'text-padding': 2,
                     'symbol-sort-key': ['get', 'priority'],
                     'symbol-z-order': 'auto'
-                },
-                paint: {
-                    'text-color': "#000000",
-                    'text-halo-color': "#fff",
-                    'text-halo-width': 2,
-                    'text-halo-blur': 1,
+                }, paint: {
+                    'text-color': "#000000", 'text-halo-color': "#fff", 'text-halo-width': 2, 'text-halo-blur': 1,
                 }
             });
         }
@@ -415,42 +387,29 @@ export default function LibreMap({
                 const legColor = legs[closestLegIndex].routeColor ? `#${legs[closestLegIndex].routeColor}` : "#999";
 
                 return {
-                    type: 'Feature' as const,
-                    properties: {
-                        name: stop.name || '',
-                        priority: originalIndex,
-                        color: legColor
-                    },
-                    geometry: {
-                        type: 'Point' as const,
-                        coordinates: [stop.lon, stop.lat]
+                    type: 'Feature' as const, properties: {
+                        name: stop.name || '', priority: originalIndex, color: legColor
+                    }, geometry: {
+                        type: 'Point' as const, coordinates: [stop.lon, stop.lat]
                     }
                 }
             });
 
             map.addSource('intermediate-stops', {
-                type: 'geojson',
-                data: {type: 'FeatureCollection', features}
+                type: 'geojson', data: {type: 'FeatureCollection', features}
             });
 
             map.addLayer({
-                id: 'intermediate-stops-circles',
-                type: 'circle',
-                source: 'intermediate-stops',
-                paint: {
-                    'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 3, 12, 4, 14, 5, 16, 6],
+                id: 'intermediate-stops-circles', type: 'circle', source: 'intermediate-stops', paint: {
+                    'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 3, 12, 4, 14, 5, 16, 7],
                     'circle-color': ['get', 'color'],
                     'circle-stroke-width': 2,
                     'circle-stroke-color': '#fff',
-                    'circle-opacity': ['interpolate', ['linear'], ['zoom'], 9, 0, 10, 0.3, 12, 1]
                 }
             });
 
             map.addLayer({
-                id: 'intermediate-stops-labels',
-                type: 'symbol',
-                source: 'intermediate-stops',
-                layout: {
+                id: 'intermediate-stops-labels', type: 'symbol', source: 'intermediate-stops', layout: {
                     'text-field': ['get', 'name'],
                     'text-font': ['Noto Sans Regular'],
                     'text-size': 12,
@@ -467,12 +426,8 @@ export default function LibreMap({
                     'text-padding': 2,
                     'symbol-sort-key': ['get', 'priority'],
                     'symbol-z-order': 'auto'
-                },
-                paint: {
-                    'text-color': "#000000",
-                    'text-halo-color': "#fff",
-                    'text-halo-width': 2,
-                    'text-halo-blur': 1,
+                }, paint: {
+                    'text-color': "#000000", 'text-halo-color': "#fff", 'text-halo-width': 2, 'text-halo-blur': 1,
                 }
             });
         })();
@@ -511,10 +466,12 @@ export default function LibreMap({
 
                 if (from) {
                     const firstLeg = decoded.find(leg => leg.length > 0);
-                    if (firstLeg) {
+                    const firstLegIndex = decoded.findIndex(leg => leg.length > 0);
+                    if (firstLeg && firstLegIndex !== -1) {
                         const [lat, lon] = firstLeg[0];
+                        const isWalk = legs[firstLegIndex]?.mode === "WALK";
                         const distStart = getDistance(from.lat, from.lon, lat, lon);
-                        const finalStartCoords = distStart <= 10 ? [lon, lat] : [from.lon, from.lat];
+                        const finalStartCoords = (!isWalk && distStart <= 10) ? [lon, lat] : [from.lon, from.lat];
 
                         const startSource = map.getSource('start-marker') as maplibregl.GeoJSONSource;
                         if (startSource) {
@@ -528,11 +485,13 @@ export default function LibreMap({
                 }
 
                 if (to) {
-                    const lastLeg = [...decoded].reverse().find(leg => leg.length > 0);
-                    if (lastLeg) {
+                    const lastLegIndex = decoded.length - 1 - [...decoded].reverse().findIndex(leg => leg.length > 0);
+                    const lastLeg = decoded[lastLegIndex];
+                    if (lastLeg && lastLegIndex !== -1) {
                         const [lat, lon] = lastLeg[lastLeg.length - 1];
+                        const isWalk = legs[lastLegIndex]?.mode === "WALK";
                         const distEnd = getDistance(to.lat, to.lon, lat, lon);
-                        const finalEndCoords = distEnd <= 10 ? [lon, lat] : [to.lon, to.lat];
+                        const finalEndCoords = (!isWalk && distEnd <= 10) ? [lon, lat] : [to.lon, to.lat];
 
                         const endSource = map.getSource('end-marker') as maplibregl.GeoJSONSource;
                         if (endSource) {
@@ -554,26 +513,15 @@ export default function LibreMap({
                 });
 
                 const layers = map.getStyle().layers;
-                const markerLayer = layers.find(l =>
-                    l.id.includes('intermediate-stops-circles') ||
-                    l.id.includes('start-marker-circle') ||
-                    l.id.includes('end-marker-circle')
-                );
+                const markerLayer = layers.find(l => l.id.includes('intermediate-stops-circles') || l.id.includes('start-marker-circle') || l.id.includes('end-marker-circle'));
                 const beforeId = markerLayer?.id;
 
                 decoded.forEach((_, idx) => {
-                    const legColor = legs[idx].mode === "WALK"
-                        ? "#999"
-                        : legs[idx].routeColor
-                            ? `#${legs[idx].routeColor}`
-                            : "#036633";
+                    const legColor = legs[idx].mode === "WALK" ? "#999" : legs[idx].routeColor ? `#${legs[idx].routeColor}` : "#036633";
 
                     map.addSource(`route-source-${idx}`, {
-                        type: 'geojson',
-                        data: {
-                            type: 'Feature',
-                            properties: {},
-                            geometry: {type: 'LineString', coordinates: []}
+                        type: 'geojson', data: {
+                            type: 'Feature', properties: {}, geometry: {type: 'LineString', coordinates: []}
                         }
                     });
 
@@ -606,9 +554,7 @@ export default function LibreMap({
                             const source = map.getSource(`route-source-${idx}`) as maplibregl.GeoJSONSource;
                             if (source) {
                                 source.setData({
-                                    type: 'Feature',
-                                    properties: {},
-                                    geometry: {type: 'LineString', coordinates}
+                                    type: 'Feature', properties: {}, geometry: {type: 'LineString', coordinates}
                                 });
                             }
                         }
@@ -623,9 +569,7 @@ export default function LibreMap({
                             const source = map.getSource(`route-source-${idx}`) as maplibregl.GeoJSONSource;
                             if (source) {
                                 source.setData({
-                                    type: 'Feature',
-                                    properties: {},
-                                    geometry: {type: 'LineString', coordinates}
+                                    type: 'Feature', properties: {}, geometry: {type: 'LineString', coordinates}
                                 });
                             }
                         });

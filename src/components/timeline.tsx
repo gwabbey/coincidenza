@@ -114,7 +114,7 @@ const Timeline = ({
                         />
                     </div>
 
-                    <div className="leading-none max-w-lg w-full">{step.content}</div>
+                    <div className="leading-none w-full overflow-hidden">{step.content}</div>
                 </div>)
             })}
 
