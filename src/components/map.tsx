@@ -1,5 +1,5 @@
 'use client';
-import {useEffect, useMemo, useRef, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
@@ -24,30 +24,34 @@ interface MapProps {
     animationDuration?: number;
 }
 
+let polylineDecoder: any = null;
+
 async function decodePolyline(encoded: string): Promise<Array<[number, number]>> {
-    const polyline = await import('@mapbox/polyline');
-    return polyline.decode(encoded, 6) as Array<[number, number]>;
+    if (!polylineDecoder) {
+        polylineDecoder = await import('@mapbox/polyline');
+    }
+    return polylineDecoder.decode(encoded, 6) as Array<[number, number]>;
 }
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
-    const R = 6371000;
     const dLat = (lat2 - lat1) * Math.PI / 180;
     const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const a = Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2;
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c;
+    return 6371000 * c;
 }
 
-function findClosestPointOnPolyline(targetLat: number, targetLon: number, polylinePoints: Array<[number, number]>): {
-    lat: number; lon: number
-} {
+function findClosestPointOnPolyline(
+    targetLat: number,
+    targetLon: number,
+    polylinePoints: Array<[number, number]>
+): { lat: number; lon: number } {
     let minDistance = Infinity;
     let closestPoint = {lat: targetLat, lon: targetLon};
 
-    for (const point of polylinePoints) {
-        const [lat, lon] = point;
+    for (const [lat, lon] of polylinePoints) {
         const distance = getDistance(targetLat, targetLon, lat, lon);
-
         if (distance < minDistance) {
             minDistance = distance;
             closestPoint = {lat, lon};
@@ -58,7 +62,12 @@ function findClosestPointOnPolyline(targetLat: number, targetLon: number, polyli
 }
 
 export default function LibreMap({
-                                     from, to, intermediateStops = [], legs = [], className, animationDuration = 2000,
+                                     from,
+                                     to,
+                                     intermediateStops = [],
+                                     legs = [],
+                                     className,
+                                     animationDuration = 2000,
                                  }: MapProps) {
     const mapContainerRef = useRef<HTMLDivElement>(null);
     const mapRef = useRef<maplibregl.Map | null>(null);
@@ -66,107 +75,73 @@ export default function LibreMap({
         start?: { marker: maplibregl.Marker; label?: HTMLElement };
         end?: { marker: maplibregl.Marker; label?: HTMLElement };
         intermediates: { marker: maplibregl.Marker; label?: HTMLElement }[];
-    }>({
-        intermediates: [],
-    });
+    }>({intermediates: []});
     const animationFrameRef = useRef<number | null>(null);
     const [mapInitialized, setMapInitialized] = useState(false);
-    const [simplifiedStops, setSimplifiedStops] = useState<Coordinate[]>([]);
-    const [snappedStops, setSnappedStops] = useState<Coordinate[]>([]);
 
-    const labelColor = '#000000';
-    const haloColor = '#fff';
+    const decodedLegs = useMemo(async () => {
+        if (!legs.length) return [];
+        try {
+            return await Promise.all(legs.map(leg => decodePolyline(leg.legGeometry.points)));
+        } catch (error) {
+            console.error("Error decoding polyline:", error);
+            return [];
+        }
+    }, [legs]);
 
-    const intermediateStopsKey = useMemo(() => JSON.stringify(intermediateStops.map(s => `${s.lat},${s.lon},${s.name || ''}`)), [intermediateStops]);
-    const simplifiedStopsKey = useMemo(() => JSON.stringify(simplifiedStops.map(s => `${s.lat},${s.lon},${s.name || ''}`)), [simplifiedStops]);
-    const legsKey = useMemo(() => JSON.stringify(legs.map(l => l.legGeometry.points)), [legs]);
+    const snappedStops = useMemo(async () => {
+        if (!intermediateStops.length) return [];
 
-    useEffect(() => {
-        if (!intermediateStops || intermediateStops.length === 0) {
-            setSimplifiedStops(prev => prev.length === 0 ? prev : []);
-            return;
+        const decoded = await decodedLegs;
+        const allPolylinePoints = decoded.flat();
+        if (!allPolylinePoints.length) return intermediateStops;
+
+        return intermediateStops.map((stop) => {
+            const closestPoint = findClosestPointOnPolyline(stop.lat, stop.lon, allPolylinePoints);
+            return {...closestPoint, name: stop.name};
+        });
+    }, [intermediateStops, decodedLegs]);
+
+    const updateMapBounds = useCallback(async () => {
+        if (!mapRef.current) return;
+
+        const allPoints: [number, number][] = [];
+
+        if (from && !isNaN(from.lat) && !isNaN(from.lon)) {
+            allPoints.push([from.lon, from.lat]);
+        }
+        if (to && !isNaN(to.lat) && !isNaN(to.lon)) {
+            allPoints.push([to.lon, to.lat]);
         }
 
-        const simplified: Coordinate[] = [];
-        const MERGE_THRESHOLD = 150;
-
-        for (let i = 0; i < intermediateStops.length; i++) {
-            const current = intermediateStops[i];
-            const next = intermediateStops[i + 1];
-
-            if (next) {
-                const distance = getDistance(current.lat, current.lon, next.lat, next.lon);
-
-                if (distance < MERGE_THRESHOLD) {
-                    const mergedStop: Coordinate = {
-                        lat: (current.lat + next.lat) / 2,
-                        lon: (current.lon + next.lon) / 2,
-                        name: current.name || next.name
-                    };
-                    simplified.push(mergedStop);
-                    i++;
-                } else {
-                    simplified.push(current);
+        const decoded = await decodedLegs;
+        decoded.forEach(legPoints => {
+            legPoints.forEach(([lat, lon]) => {
+                if (!isNaN(lat) && !isNaN(lon)) {
+                    allPoints.push([lon, lat]);
                 }
-            } else {
-                simplified.push(current);
+            });
+        });
+
+        const snapped = await snappedStops;
+        snapped.forEach(stop => {
+            if (!isNaN(stop.lat) && !isNaN(stop.lon)) {
+                allPoints.push([stop.lon, stop.lat]);
             }
+        });
+
+        if (allPoints.length > 0) {
+            const bounds = allPoints.reduce(
+                (bounds, coord) => bounds.extend(coord),
+                new maplibregl.LngLatBounds(allPoints[0], allPoints[0])
+            );
+
+            mapRef.current.fitBounds(bounds, {
+                padding: 50,
+                duration: 1000,
+            });
         }
-
-        setSimplifiedStops(simplified);
-    }, [intermediateStopsKey]);
-
-    useEffect(() => {
-        const snapStopsToPolyline = async () => {
-            if (!simplifiedStops || simplifiedStops.length === 0 || legs.length === 0) {
-                setSnappedStops([]);
-                return;
-            }
-
-            try {
-                const decodedLegs = await Promise.all(legs.map(leg => decodePolyline(leg.legGeometry.points)));
-                const allPolylinePoints: Array<[number, number]> = [];
-
-                decodedLegs.forEach(legPoints => {
-                    allPolylinePoints.push(...legPoints);
-                });
-
-                if (allPolylinePoints.length === 0) {
-                    setSnappedStops(simplifiedStops);
-                    return;
-                }
-
-                const snapped = simplifiedStops.map((stop, index) => {
-                    const isFirst = index === 0;
-                    const isLast = index === simplifiedStops.length - 1;
-
-                    if (isFirst) {
-                        const [lat, lon] = allPolylinePoints[0];
-                        return {
-                            lat, lon, name: stop.name
-                        };
-                    } else if (isLast) {
-                        const [lat, lon] = allPolylinePoints[allPolylinePoints.length - 1];
-                        return {
-                            lat, lon, name: stop.name
-                        };
-                    } else {
-                        const closestPoint = findClosestPointOnPolyline(stop.lat, stop.lon, allPolylinePoints);
-                        return {
-                            lat: closestPoint.lat, lon: closestPoint.lon, name: stop.name
-                        };
-                    }
-                });
-
-                setSnappedStops(snapped);
-            } catch (error) {
-                console.error("Error snapping stops to polyline:", error);
-                setSnappedStops(simplifiedStops);
-            }
-        };
-
-        snapStopsToPolyline();
-    }, [simplifiedStopsKey, legsKey]);
+    }, [from, to, decodedLegs, snappedStops]);
 
     useEffect(() => {
         if (!mapContainerRef.current || mapRef.current) return;
@@ -179,16 +154,13 @@ export default function LibreMap({
             zoom: 12,
             minZoom: 5,
             maxZoom: 19,
-
         });
 
         map.on('load', () => {
             map.addSource('route-source', {
-                type: 'geojson', data: {
-                    type: 'FeatureCollection', features: []
-                }
+                type: 'geojson',
+                data: {type: 'FeatureCollection', features: []}
             });
-
             setMapInitialized(true);
         });
 
@@ -208,138 +180,190 @@ export default function LibreMap({
 
         labelLayers.forEach(layerId => {
             if (map.getLayer(layerId)) {
-                map.setPaintProperty(layerId, 'text-color', labelColor);
-                map.setPaintProperty(layerId, 'text-halo-color', haloColor);
+                map.setPaintProperty(layerId, 'text-color', "#000000");
+                map.setPaintProperty(layerId, 'text-halo-color', "#fff");
             }
         });
+    }, [mapInitialized, "#000000", "#fff"]);
 
-    }, [mapInitialized, labelColor, haloColor]);
+    useEffect(() => {
+        if (!mapInitialized) return;
+        updateMapBounds();
+    }, [mapInitialized, from?.lat, from?.lon, to?.lat, to?.lon, updateMapBounds]);
 
     useEffect(() => {
         if (!mapInitialized || !mapRef.current) return;
 
-        if (markersRef.current.start) {
-            markersRef.current.start.marker.remove();
-            if (markersRef.current.start.label) {
-                markersRef.current.start.label.remove();
-            }
-            markersRef.current.start = undefined;
+        const map = mapRef.current;
+        markersRef.current.intermediates.forEach(({marker}) => marker.remove());
+        markersRef.current.intermediates = [];
+
+        if (!map.getSource('start-marker')) {
+            map.addSource('start-marker', {
+                type: 'geojson',
+                data: {type: 'FeatureCollection', features: []}
+            });
+
+            map.addLayer({
+                id: 'start-marker-circle',
+                type: 'circle',
+                source: 'start-marker',
+                paint: {
+                    'circle-radius': 8,
+                    'circle-color': '#0171F8',
+                    'circle-stroke-width': 3,
+                    'circle-stroke-color': '#fff'
+                }
+            });
+
+            map.addLayer({
+                id: 'start-marker-label',
+                type: 'symbol',
+                source: 'start-marker',
+                layout: {
+                    'text-field': ['get', 'name'],
+                    'text-font': ['Noto Sans Bold'],
+                    'text-size': 16,
+                    'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+                    'text-radial-offset': 1.2,
+                    'text-justify': 'auto',
+                    'symbol-placement': 'point',
+                    'text-allow-overlap': false,
+                    'text-ignore-placement': false,
+                    'symbol-z-order': 'auto'
+                },
+                paint: {
+                    'text-color': "#000000",
+                    'text-halo-color': "#fff",
+                    'text-halo-width': 2,
+                    'text-halo-blur': 1
+                }
+            });
         }
 
-        if (from) {
-            const map = mapRef.current;
+        if (!map.getSource('end-marker')) {
+            map.addSource('end-marker', {
+                type: 'geojson',
+                data: {type: 'FeatureCollection', features: []}
+            });
 
-            if (!map.getSource('start-marker')) {
-                map.addSource('start-marker', {
-                    type: 'geojson', data: {
-                        type: 'Feature',
-                        properties: {name: from.name || 'Partenza'},
-                        geometry: {type: 'Point', coordinates: [from.lon, from.lat]}
-                    }
-                });
+            map.addLayer({
+                id: 'end-marker-circle',
+                type: 'circle',
+                source: 'end-marker',
+                paint: {
+                    'circle-radius': 8,
+                    'circle-color': '#0171F8',
+                    'circle-stroke-width': 3,
+                    'circle-stroke-color': '#fff'
+                }
+            });
 
-                map.addLayer({
-                    id: 'start-marker-circle', type: 'circle', source: 'start-marker', paint: {
-                        'circle-radius': 8,
-                        'circle-color': '#0171F8',
-                        'circle-stroke-width': 3,
-                        'circle-stroke-color': '#fff'
-                    }
-                });
-
-                map.addLayer({
-                    id: 'start-marker-label', type: 'symbol', source: 'start-marker', layout: {
-                        'text-field': ['get', 'name'],
-                        'text-font': ['Noto Sans Bold'],
-                        'text-size': 16,
-                        'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
-                        'text-radial-offset': 1.2,
-                        'text-justify': 'auto',
-                        'symbol-placement': 'point',
-                        'text-allow-overlap': false,
-                        'text-ignore-placement': false,
-                        'symbol-z-order': 'auto'
-                    }, paint: {
-                        'text-color': labelColor,
-                        'text-halo-color': haloColor,
-                        'text-halo-width': 2,
-                        'text-halo-blur': 1
-                    }
-                });
-            } else {
-                (map.getSource('start-marker') as maplibregl.GeoJSONSource).setData({
-                    type: 'Feature', properties: {name: from.name || 'Partenza'}, geometry: {
-                        type: 'Point', coordinates: [from.lon, from.lat]
-                    }
-                });
-            }
+            map.addLayer({
+                id: 'end-marker-label',
+                type: 'symbol',
+                source: 'end-marker',
+                layout: {
+                    'text-field': ['get', 'name'],
+                    'text-font': ['Noto Sans Bold'],
+                    'text-size': 16,
+                    'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
+                    'text-radial-offset': 1.2,
+                    'text-justify': 'auto',
+                    'symbol-placement': 'point',
+                    'text-allow-overlap': false,
+                    'text-ignore-placement': false,
+                    'symbol-z-order': 'auto'
+                },
+                paint: {
+                    'text-color': "#000000",
+                    'text-halo-color': "#fff",
+                    'text-halo-width': 2,
+                    'text-halo-blur': 1
+                }
+            });
         }
 
-        updateMapBounds();
-    }, [mapInitialized, from?.name]);
+        if (!map.getSource('intermediate-stops')) {
+            map.addSource('intermediate-stops', {
+                type: 'geojson',
+                data: {type: 'FeatureCollection', features: []}
+            });
+
+            map.addLayer({
+                id: 'intermediate-stops-circles',
+                type: 'circle',
+                source: 'intermediate-stops',
+                paint: {
+                    'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 3, 12, 4, 14, 5, 16, 6],
+                    'circle-color': ['get', 'color'],
+                    'circle-stroke-width': 2,
+                    'circle-stroke-color': '#fff',
+                    'circle-opacity': ['interpolate', ['linear'], ['zoom'], 9, 0, 10, 0.3, 12, 1]
+                }
+            });
+
+            map.addLayer({
+                id: 'intermediate-stops-labels',
+                type: 'symbol',
+                source: 'intermediate-stops',
+                layout: {
+                    'text-field': ['get', 'name'],
+                    'text-font': ['Noto Sans Regular'],
+                    'text-size': 12,
+                    'text-variable-anchor': ['top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right'],
+                    'text-radial-offset': 1.0,
+                    'text-justify': 'auto',
+                    'symbol-placement': 'point',
+                    'text-allow-overlap': false,
+                    'text-ignore-placement': false,
+                    'text-optional': false,
+                    'icon-allow-overlap': false,
+                    'icon-ignore-placement': false,
+                    'symbol-avoid-edges': true,
+                    'text-padding': 2,
+                    'symbol-sort-key': ['get', 'priority'],
+                    'symbol-z-order': 'auto'
+                },
+                paint: {
+                    'text-color': "#000000",
+                    'text-halo-color': "#fff",
+                    'text-halo-width': 2,
+                    'text-halo-blur': 1,
+                }
+            });
+        }
+    }, [mapInitialized]);
 
     useEffect(() => {
-        if (!mapInitialized || !mapRef.current) return;
+        if (!mapInitialized || !mapRef.current || !from) return;
 
-        if (markersRef.current.end) {
-            markersRef.current.end.marker.remove();
-            if (markersRef.current.end.label) {
-                markersRef.current.end.label.remove();
-            }
-            markersRef.current.end = undefined;
+        const map = mapRef.current;
+        const startSource = map.getSource('start-marker') as maplibregl.GeoJSONSource;
+
+        if (startSource) {
+            startSource.setData({
+                type: 'Feature',
+                properties: {name: from.name || 'Partenza'},
+                geometry: {type: 'Point', coordinates: [from.lon, from.lat]}
+            });
         }
+    }, [mapInitialized, from?.lat, from?.lon, from?.name]);
 
-        if (to) {
-            const map = mapRef.current;
+    useEffect(() => {
+        if (!mapInitialized || !mapRef.current || !to) return;
 
-            if (!map.getSource('end-marker')) {
-                map.addSource('end-marker', {
-                    type: 'geojson', data: {
-                        type: 'Feature', properties: {name: to.name || 'Destinazione'}, geometry: {
-                            type: 'Point', coordinates: [to.lon, to.lat]
-                        }
-                    }
-                });
+        const map = mapRef.current;
+        const endSource = map.getSource('end-marker') as maplibregl.GeoJSONSource;
 
-                map.addLayer({
-                    id: 'end-marker-circle', type: 'circle', source: 'end-marker', paint: {
-                        'circle-radius': 8,
-                        'circle-color': '#0171F8',
-                        'circle-stroke-width': 3,
-                        'circle-stroke-color': '#fff'
-                    }
-                });
-
-                map.addLayer({
-                    id: 'end-marker-label', type: 'symbol', source: 'end-marker', layout: {
-                        'text-field': ['get', 'name'],
-                        'text-font': ['Noto Sans Bold'],
-                        'text-size': 16,
-                        'text-variable-anchor': ['top', 'bottom', 'left', 'right'],
-                        'text-radial-offset': 1.2,
-                        'text-justify': 'auto',
-                        'symbol-placement': 'point',
-                        'text-allow-overlap': false,
-                        'text-ignore-placement': false,
-                        'symbol-z-order': 'auto'
-                    }, paint: {
-                        'text-color': labelColor,
-                        'text-halo-color': haloColor,
-                        'text-halo-width': 2,
-                        'text-halo-blur': 1
-                    }
-                });
-            } else {
-                (map.getSource('end-marker') as maplibregl.GeoJSONSource).setData({
-                    type: 'Feature', properties: {name: to.name || 'Destinazione'}, geometry: {
-                        type: 'Point', coordinates: [to.lon, to.lat]
-                    }
-                });
-            }
+        if (endSource) {
+            endSource.setData({
+                type: 'Feature',
+                properties: {name: to.name || 'Destinazione'},
+                geometry: {type: 'Point', coordinates: [to.lon, to.lat]}
+            });
         }
-
-        updateMapBounds();
-    }, [mapInitialized, to?.name]);
+    }, [mapInitialized, to?.lat, to?.lon, to?.name]);
 
     useEffect(() => {
         if (!mapInitialized || !mapRef.current) return;
@@ -350,110 +374,112 @@ export default function LibreMap({
         if (map.getLayer('intermediate-stops-labels')) map.removeLayer('intermediate-stops-labels');
         if (map.getSource('intermediate-stops')) map.removeSource('intermediate-stops');
 
-        if (snappedStops?.length && legs.length > 0) {
-            const THRESHOLD = 50;
+        (async () => {
+            const snapped = await snappedStops;
 
-            const firstStop = snappedStops[0];
-            const lastStop = snappedStops.at(-1);
+            if (!snapped.length || !legs.length) return;
 
-            const hideStart = from && firstStop && getDistance(from.lat, from.lon, firstStop.lat, firstStop.lon) < THRESHOLD;
-            const hideEnd = to && lastStop && getDistance(to.lat, to.lon, lastStop.lat, lastStop.lon) < THRESHOLD;
+            const decoded = await decodedLegs;
+            const firstStop = snapped[0];
+            const lastStop = snapped[snapped.length - 1];
 
-            const decodeLegsForColors = async () => {
-                const decodedLegs = await Promise.all(legs.map(leg => decodePolyline(leg.legGeometry.points)));
+            const hideStart = from && firstStop && getDistance(from.lat, from.lon, firstStop.lat, firstStop.lon) < 50;
+            const hideEnd = to && lastStop && getDistance(to.lat, to.lon, lastStop.lat, lastStop.lon) < 50;
 
-                const features = snappedStops.map((stop, index) => {
-                    const isStart = index === 0;
-                    const isEnd = index === snappedStops.length - 1;
-                    const hidden = (isStart && hideStart) || (isEnd && hideEnd);
+            const visibleStops = snapped
+                .map((stop, originalIndex) => ({stop, originalIndex}))
+                .filter(({originalIndex}) => {
+                    const isStart = originalIndex === 0;
+                    const isEnd = originalIndex === snapped.length - 1;
+                    const shouldHide = (isStart && hideStart) || (isEnd && hideEnd);
+                    return !shouldHide;
+                });
 
-                    let closestLegIndex = 0;
-                    let minDistance = Infinity;
 
-                    decodedLegs.forEach((legPoints, legIndex) => {
-                        legPoints.forEach(point => {
-                            const [lat, lon] = point;
-                            const distance = getDistance(stop.lat, stop.lon, lat, lon);
-                            if (distance < minDistance) {
-                                minDistance = distance;
-                                closestLegIndex = legIndex;
-                            }
-                        });
-                    });
+            if (!visibleStops.length) return;
 
-                    const legColor = legs[closestLegIndex].mode === "WALK" ? "#999999" : legs[closestLegIndex].routeColor ? `#${legs[closestLegIndex].routeColor}` : "#036633";
+            const features = visibleStops.map(({stop, originalIndex}) => {
+                let closestLegIndex = 0;
+                let minDistance = Infinity;
 
-                    return {
-                        type: 'Feature', properties: {
-                            name: hidden ? '' : (stop.name || ''), hidden, priority: index, color: legColor
-                        }, geometry: {
-                            type: 'Point', coordinates: [stop.lon, stop.lat]
+                decoded.forEach((legPoints, legIndex) => {
+                    legPoints.forEach(([lat, lon]) => {
+                        const distance = getDistance(stop.lat, stop.lon, lat, lon);
+                        if (distance < minDistance) {
+                            minDistance = distance;
+                            closestLegIndex = legIndex;
                         }
-                    };
+                    });
                 });
 
-                map.addSource('intermediate-stops', {
-                    type: 'geojson', data: {type: 'FeatureCollection', features: features as any}
-                });
+                const legColor = legs[closestLegIndex].routeColor ? `#${legs[closestLegIndex].routeColor}` : "#999";
 
-                map.addLayer({
-                    id: 'intermediate-stops-circles',
-                    type: 'circle',
-                    source: 'intermediate-stops',
-                    filter: ['!', ['get', 'hidden']],
-                    paint: {
-                        'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 3, 12, 4, 14, 5, 16, 6],
-                        'circle-color': ['get', 'color'],
-                        'circle-stroke-width': 2,
-                        'circle-stroke-color': '#fff',
-                        'circle-opacity': ['interpolate', ['linear'], ['zoom'], 9, 0, 10, 0.3, 12, 1]
-                    }
-                });
-
-                map.addLayer({
-                    id: 'intermediate-stops-labels',
-                    type: 'symbol',
-                    source: 'intermediate-stops',
-                    filter: ['!', ['get', 'hidden']],
-                    layout: {
-                        'text-field': ['get', 'name'],
-                        'text-font': ['Noto Sans Regular'],
-                        'text-size': 12,
-                        'text-variable-anchor': ['top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right'],
-                        'text-radial-offset': 1.0,
-                        'text-justify': 'auto',
-                        'symbol-placement': 'point',
-                        'text-allow-overlap': false,
-                        'text-ignore-placement': false,
-                        'text-optional': false,
-                        'icon-allow-overlap': false,
-                        'icon-ignore-placement': false,
-                        'symbol-avoid-edges': true,
-                        'text-padding': 2,
-                        'symbol-sort-key': ['get', 'priority'],
-                        'symbol-z-order': 'auto'
+                return {
+                    type: 'Feature' as const,
+                    properties: {
+                        name: stop.name || '',
+                        priority: originalIndex,
+                        color: legColor
                     },
-                    paint: {
-                        'text-color': labelColor,
-                        'text-halo-color': haloColor,
-                        'text-halo-width': 2,
-                        'text-halo-blur': 1,
-                        'text-opacity': ['interpolate', ['linear'], ['zoom'], 10, 0, 11, 0.5, 12, 1]
+                    geometry: {
+                        type: 'Point' as const,
+                        coordinates: [stop.lon, stop.lat]
                     }
-                });
-            };
+                }
+            });
 
-            decodeLegsForColors();
-        }
-    }, [snappedStops, mapInitialized, from, to, labelColor, haloColor, legs]);
+            map.addSource('intermediate-stops', {
+                type: 'geojson',
+                data: {type: 'FeatureCollection', features}
+            });
+
+            map.addLayer({
+                id: 'intermediate-stops-circles',
+                type: 'circle',
+                source: 'intermediate-stops',
+                paint: {
+                    'circle-radius': ['interpolate', ['linear'], ['zoom'], 10, 3, 12, 4, 14, 5, 16, 6],
+                    'circle-color': ['get', 'color'],
+                    'circle-stroke-width': 2,
+                    'circle-stroke-color': '#fff',
+                    'circle-opacity': ['interpolate', ['linear'], ['zoom'], 9, 0, 10, 0.3, 12, 1]
+                }
+            });
+
+            map.addLayer({
+                id: 'intermediate-stops-labels',
+                type: 'symbol',
+                source: 'intermediate-stops',
+                layout: {
+                    'text-field': ['get', 'name'],
+                    'text-font': ['Noto Sans Regular'],
+                    'text-size': 12,
+                    'text-variable-anchor': ['top', 'bottom', 'left', 'right', 'top-left', 'top-right', 'bottom-left', 'bottom-right'],
+                    'text-radial-offset': 1.0,
+                    'text-justify': 'auto',
+                    'symbol-placement': 'point',
+                    'text-allow-overlap': false,
+                    'text-ignore-placement': false,
+                    'text-optional': false,
+                    'icon-allow-overlap': false,
+                    'icon-ignore-placement': false,
+                    'symbol-avoid-edges': true,
+                    'text-padding': 2,
+                    'symbol-sort-key': ['get', 'priority'],
+                    'symbol-z-order': 'auto'
+                },
+                paint: {
+                    'text-color': "#000000",
+                    'text-halo-color': "#fff",
+                    'text-halo-width': 2,
+                    'text-halo-blur': 1,
+                }
+            });
+        })();
+    }, [mapInitialized, snappedStops, from, to, legs, decodedLegs]);
 
     useEffect(() => {
         if (!mapInitialized || !mapRef.current) return;
-
-        if (animationFrameRef.current) {
-            cancelAnimationFrame(animationFrameRef.current);
-            animationFrameRef.current = null;
-        }
 
         const map = mapRef.current;
 
@@ -470,7 +496,7 @@ export default function LibreMap({
             }
         });
 
-        if (legs.length === 0) {
+        if (!legs.length) {
             const source = map.getSource('route-source') as maplibregl.GeoJSONSource;
             if (source) {
                 source.setData({type: 'FeatureCollection', features: []});
@@ -480,75 +506,76 @@ export default function LibreMap({
 
         const startAnimation = async () => {
             try {
-                const map = mapRef.current!;
-                const decodedLegs = await Promise.all(legs.map(leg => decodePolyline(leg.legGeometry.points)));
-
-                if (decodedLegs.length === 0) return;
+                const decoded = await decodedLegs;
+                if (!decoded.length) return;
 
                 if (from) {
-                    const firstLeg = decodedLegs.find(leg => leg.length > 0);
+                    const firstLeg = decoded.find(leg => leg.length > 0);
+                    if (firstLeg) {
+                        const [lat, lon] = firstLeg[0];
+                        const distStart = getDistance(from.lat, from.lon, lat, lon);
+                        const finalStartCoords = distStart <= 10 ? [lon, lat] : [from.lon, from.lat];
 
-                    if (!firstLeg) {
-                        return;
-                    }
-
-                    const firstPoint = firstLeg[0];
-                    const [lat, lon] = firstPoint;
-                    const distStart = getDistance(from.lat, from.lon, lat, lon);
-                    const finalStartCoords = distStart <= 50 ? [lon, lat] : [from.lon, from.lat];
-                    const startSource = map.getSource('start-marker') as maplibregl.GeoJSONSource;
-
-                    if (startSource) {
-                        startSource.setData({
-                            type: 'Feature',
-                            properties: {name: from.name || 'Partenza'},
-                            geometry: {type: 'Point', coordinates: finalStartCoords}
-                        });
+                        const startSource = map.getSource('start-marker') as maplibregl.GeoJSONSource;
+                        if (startSource) {
+                            startSource.setData({
+                                type: 'Feature',
+                                properties: {name: from.name || 'Partenza'},
+                                geometry: {type: 'Point', coordinates: finalStartCoords}
+                            });
+                        }
                     }
                 }
 
                 if (to) {
-                    const lastLeg = [...decodedLegs]
-                        .reverse()
-                        .find(leg => leg.length > 0);
+                    const lastLeg = [...decoded].reverse().find(leg => leg.length > 0);
+                    if (lastLeg) {
+                        const [lat, lon] = lastLeg[lastLeg.length - 1];
+                        const distEnd = getDistance(to.lat, to.lon, lat, lon);
+                        const finalEndCoords = distEnd <= 10 ? [lon, lat] : [to.lon, to.lat];
 
-                    if (!lastLeg) return;
-
-                    const lastPoint = lastLeg[lastLeg.length - 1];
-                    const [lat, lon] = lastPoint;
-                    const distEnd = getDistance(to.lat, to.lon, lat, lon);
-                    const finalEndCoords = distEnd <= 50 ? [lon, lat] : [to.lon, to.lat];
-                    const endSource = map.getSource('end-marker') as maplibregl.GeoJSONSource;
-
-                    if (endSource) {
-                        endSource.setData({
-                            type: 'Feature', properties: {name: to.name || 'Destinazione'}, geometry: {
-                                type: 'Point', coordinates: finalEndCoords
-                            }
-                        });
+                        const endSource = map.getSource('end-marker') as maplibregl.GeoJSONSource;
+                        if (endSource) {
+                            endSource.setData({
+                                type: 'Feature',
+                                properties: {name: to.name || 'Destinazione'},
+                                geometry: {type: 'Point', coordinates: finalEndCoords}
+                            });
+                        }
                     }
                 }
 
-                const totalPoints = decodedLegs.reduce((sum, leg) => sum + leg.length, 0);
+                const totalPoints = decoded.reduce((sum, leg) => sum + leg.length, 0);
                 const legEndPoints: number[] = [];
                 let cumulative = 0;
-                decodedLegs.forEach(leg => {
+                decoded.forEach(leg => {
                     cumulative += leg.length;
                     legEndPoints.push(cumulative);
                 });
 
-                decodedLegs.forEach((_, idx) => {
-                    const legColor = legs[idx].mode === "WALK" ? "#999999" : legs[idx].routeColor ? `#${legs[idx].routeColor}` : "#036633";
+                const layers = map.getStyle().layers;
+                const markerLayer = layers.find(l =>
+                    l.id.includes('intermediate-stops-circles') ||
+                    l.id.includes('start-marker-circle') ||
+                    l.id.includes('end-marker-circle')
+                );
+                const beforeId = markerLayer?.id;
+
+                decoded.forEach((_, idx) => {
+                    const legColor = legs[idx].mode === "WALK"
+                        ? "#999"
+                        : legs[idx].routeColor
+                            ? `#${legs[idx].routeColor}`
+                            : "#036633";
 
                     map.addSource(`route-source-${idx}`, {
-                        type: 'geojson', data: {
-                            type: 'Feature', properties: {}, geometry: {type: 'LineString', coordinates: []}
+                        type: 'geojson',
+                        data: {
+                            type: 'Feature',
+                            properties: {},
+                            geometry: {type: 'LineString', coordinates: []}
                         }
                     });
-
-                    const layers = map.getStyle().layers;
-                    const markerLayer = layers.find(l => l.id.includes('intermediate-stops-circles') || l.id.includes('start-marker-circle') || l.id.includes('end-marker-circle'));
-                    const beforeId = markerLayer?.id;
 
                     map.addLayer({
                         id: `route-layer-${idx}`,
@@ -567,34 +594,38 @@ export default function LibreMap({
                     const currentTotalPoint = Math.floor(progress * totalPoints);
 
                     let pointsSoFar = 0;
-                    decodedLegs.forEach((legPoints, idx) => {
+                    decoded.forEach((legPoints, idx) => {
                         const legStartPoint = pointsSoFar;
-                        const legEndPoint = legEndPoints[idx];
 
                         if (currentTotalPoint >= legStartPoint) {
+                            const count = Math.min(currentTotalPoint - legStartPoint + 1, legPoints.length);
                             const coordinates = legPoints
-                                .slice(0, Math.min(currentTotalPoint - legStartPoint, legPoints.length))
-                                .map(p => [p[1], p[0]]);
+                                .slice(0, count)
+                                .map(([lat, lon]) => [lon, lat]);
 
                             const source = map.getSource(`route-source-${idx}`) as maplibregl.GeoJSONSource;
                             if (source) {
                                 source.setData({
-                                    type: 'Feature', properties: {}, geometry: {type: 'LineString', coordinates}
+                                    type: 'Feature',
+                                    properties: {},
+                                    geometry: {type: 'LineString', coordinates}
                                 });
                             }
                         }
-                        pointsSoFar = legEndPoint;
+                        pointsSoFar = legEndPoints[idx];
                     });
 
                     if (progress < 1) {
                         animationFrameRef.current = requestAnimationFrame(animate);
                     } else {
-                        decodedLegs.forEach((legPoints, idx) => {
-                            const coordinates = legPoints.map(p => [p[1], p[0]]);
+                        decoded.forEach((legPoints, idx) => {
+                            const coordinates = legPoints.map(([lat, lon]) => [lon, lat]);
                             const source = map.getSource(`route-source-${idx}`) as maplibregl.GeoJSONSource;
                             if (source) {
                                 source.setData({
-                                    type: 'Feature', properties: {}, geometry: {type: 'LineString', coordinates}
+                                    type: 'Feature',
+                                    properties: {},
+                                    geometry: {type: 'LineString', coordinates}
                                 });
                             }
                         });
@@ -617,52 +648,7 @@ export default function LibreMap({
                 animationFrameRef.current = null;
             }
         };
-    }, [legs, mapInitialized, from?.name, to?.name, snappedStops]);
+    }, [legs, mapInitialized, from, to, animationDuration, decodedLegs, updateMapBounds]);
 
-    const updateMapBounds = async () => {
-        if (!mapRef.current) return;
-
-        const allPoints: [number, number][] = [];
-
-        if (from && !isNaN(from.lat) && !isNaN(from.lon)) {
-            allPoints.push([from.lon, from.lat]);
-        }
-        if (to && !isNaN(to.lat) && !isNaN(to.lon)) {
-            allPoints.push([to.lon, to.lat]);
-        }
-
-        if (legs.length > 0) {
-            const decodedLegs = await Promise.all(legs.map(leg => decodePolyline(leg.legGeometry.points)));
-            decodedLegs.forEach(legPoints => {
-                legPoints.forEach(p => {
-                    const lat = Number(p[0]);
-                    const lon = Number(p[1]);
-                    if (!isNaN(lat) && !isNaN(lon)) {
-                        allPoints.push([lon, lat]);
-                    }
-                });
-            });
-        }
-
-        if (snappedStops) {
-            snappedStops.forEach(stop => {
-                if (!isNaN(stop.lat) && !isNaN(stop.lon)) {
-                    allPoints.push([stop.lon, stop.lat]);
-                }
-            });
-        }
-
-        if (allPoints.length > 0) {
-            const bounds = allPoints.reduce((bounds, coord) => bounds.extend(coord as [number, number]), new maplibregl.LngLatBounds(allPoints[0], allPoints[0]));
-
-            mapRef.current.fitBounds(bounds, {
-                padding: 50, duration: 1000,
-            });
-        }
-    };
-
-    return (<div
-        ref={mapContainerRef}
-        className={className}
-    />);
+    return <div ref={mapContainerRef} className={className} />;
 }

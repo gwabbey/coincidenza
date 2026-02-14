@@ -9,6 +9,7 @@ import {getRailPolyline} from "@/api/signal/api";
 import {getRoadPolyline} from "@/api/valhalla/api";
 import {getTripDetails as getTrentinoTrip} from "../trentino-trasporti/api";
 import {guessTrip} from "@/api/trenitalia/api";
+import {getTrip as getCiceroTrip} from "@/api/cicero/api";
 
 const axios = createAxiosClient();
 
@@ -17,15 +18,12 @@ const MOTIS = process.env.MOTIS || "http://localhost:8080";
 const getStop = (name: string): string => {
     if (!name) return "";
 
-    // case 1: "Luogo, Stazione di Luogo" → "Luogo"
     const stazioneDiMatch = name.match(/Stazione di\s+(.+)/i);
     if (stazioneDiMatch) return capitalize(stazioneDiMatch[1]);
 
-    // case 2: "Luogo, Stazione" → "Luogo"
     const luogoStazioneMatch = name.match(/^(.+?),\s*Stazione$/i);
     if (luogoStazioneMatch) return capitalize(luogoStazioneMatch[1]);
 
-    // case 3: "Luogo (Provincia), Luogo" → "Luogo"
     const parensMatch = name.match(/^([^(]+)\s*\(.*?\),\s*\1$/);
     if (parensMatch) return capitalize(parensMatch[1].trim());
 
@@ -63,10 +61,13 @@ async function getShapes(leg: any): Promise<string> {
 }
 
 function getTrackUrl(leg: Leg) {
-    if (leg.tripId?.includes("sta") && leg.mode !== "BUS") return `/track/trenitalia/${leg.tripShortName}`
+    if (leg.tripId?.includes("sta") && leg.mode !== "BUS") return `/track/trenitalia/${leg.tripShortName}`;
+
     switch (leg.agencyName?.toLowerCase()) {
         case "trentino trasporti s.p.a.":
             return `/track/trentino-trasporti/${leg.tripId?.split("_")[leg.tripId.split("_").length - 1]}`
+        case "azienda trasporti verona s.p.a.":
+            return `/track/atv/${leg.tripId?.split(":")[leg.tripId.split(":").length - 1].replace("_ATV", "")}`
         case "trenitalia":
             return `/track/trenitalia/${leg.tripShortName}`
         case "trenord":
@@ -88,6 +89,16 @@ export async function getRealTimeData(leg: Leg): Promise<RealTime> {
                     tracked: trip ? trip.delay !== null : false,
                     url: getTrackUrl(leg),
                     status: trip?.status ?? "scheduled"
+                }
+
+            case "azienda trasporti verona s.p.a.":
+                const atvTrip = await getCiceroTrip("ATV", leg.tripId.split(":")[leg.tripId.split(":").length - 1].replace("_ATV", ""), new Date().toISOString());
+                return {
+                    delay: atvTrip?.delay ?? null,
+                    info: atvTrip?.info ?? [],
+                    tracked: atvTrip ? atvTrip.delay !== null : false,
+                    url: getTrackUrl(leg),
+                    status: atvTrip?.status ?? "scheduled"
                 }
             case "trenitalia":
             case "altoadigemobilità":
@@ -302,7 +313,6 @@ export async function getDirections(from: Location, to: Location, dateTime: stri
                 maxPostTransitTime: 1800,
                 maxDirectTime: 3600,
                 numItineraries: 5,
-                useRoutedTransfers: true,
                 algorithm: "RAPTOR"
             }
         });

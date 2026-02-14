@@ -29,7 +29,8 @@ export default function Steps({trip}: { trip: Trip }) {
                     style={{
                         backgroundColor: leg.realTime.status === "canceled" ? "gray" : leg.routeColor ? `#${leg.routeColor}` : leg.mode === "BUS" ? "#016FEE" : "red",
                         padding: "0.1rem 0.5rem",
-                    }}> {leg.routeShortName} {leg.mode.includes("RAIL") && leg.tripShortName}
+                    }}>
+                        {leg.routeShortName}
                 </span>)}
                 {index < filteredLegs.length - 1 && (<IconChevronRight size={16} className="self-center" />)}
             </div>))}
