@@ -59,8 +59,7 @@ async function fetchSinglePolyline(stops: any[]): Promise<string> {
     const {data} = await axios.post(`${VALHALLA}/route`, {
         locations, costing: "bus", costing_options: {
             bus: {
-                ignore_restrictions: true,
-                top_speed: 90,
+                ignore_closures: true, ignore_restrictions: true, top_speed: 90,
             }
         }, alternates: 0
     });
