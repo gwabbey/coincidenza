@@ -339,6 +339,7 @@ export default function Directions() {
                     directions={directions}
                     selectedTripIndex={selectedTripIndex}
                     onTripSelect={setSelectedTripIndex}
+                    date={date}
                 />
             </>)}
         </Card>

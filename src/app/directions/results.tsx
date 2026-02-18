@@ -15,6 +15,7 @@ import {format} from "date-fns";
 import {TransportIcon} from "./icons";
 import Steps from "./steps";
 import {trainCategoryLongNames} from "@/train-categories";
+import {DateValue} from "@internationalized/date";
 
 function getMapUrl(from: { lat: number, lon: number }, to: { lat: number, lon: number }) {
     const origin = `${from.lat},${from.lon}`;
@@ -43,13 +44,12 @@ const getLegDescription = (leg: Leg) => {
     return trainCategoryLongNames[leg.routeLongName ?? ""] ?? leg.routeLongName;
 };
 
-interface ResultsProps {
+export default function Results({directions, selectedTripIndex, onTripSelect, date}: {
     directions: Directions;
     selectedTripIndex: number | null;
     onTripSelect: (index: number | null) => void;
-}
-
-export default function Results({directions, selectedTripIndex, onTripSelect}: ResultsProps) {
+    date: DateValue | null;
+}) {
     const handleSelectionChange = (keys: Selection) => {
         if (keys === "all") {
             onTripSelect(null);
@@ -82,8 +82,7 @@ export default function Results({directions, selectedTripIndex, onTripSelect}: R
                                            <IconArrowRight className="shrink-0" />
                                            <span
                                                className={cn(`text-${getDelayColor(trip.legs[trip.legs.length - 1]?.mode !== "WALK" ? trip.legs[trip.legs.length - 1]?.realTime?.delay : trip.legs[trip.legs.length - 1].tripId !== trip.legs[trip.legs.length - 2].tripId ? trip.legs[trip.legs.length - 2]?.realTime?.delay : null)}`)}>
-                                               {format(new Date(trip.endTime), "HH:mm")} {new Date(trip.endTime).getDay() !== new Date().getDay() ?
-                                               `(${new Date(trip.endTime).toLocaleString('it-IT', {weekday: 'short'})})` : ""}
+                                               {format(new Date(trip.endTime), "HH:mm")} {new Date(trip.endTime).toDateString() !== (date ? new Date(date.toString()) : new Date()).toDateString() ? `(${new Date(trip.endTime).toLocaleString('it-IT', {weekday: 'short'})})` : ""}
                                            </span>
                                         </span>
                            </div>}
