@@ -7,7 +7,7 @@ import {getStopsInArea} from "@/api/motis/geocoding";
 export async function getClosestStops(lat: string, lon: string) {
     const latNum = parseFloat(lat);
     const lonNum = parseFloat(lon);
-    const box = getBoundingBox(latNum, lonNum, 50);
+    const box = getBoundingBox(latNum, lonNum, 100);
     const stops = await getStopsInArea(box.minLat, box.minLon, box.maxLat, box.maxLon);
 
     const res = stops

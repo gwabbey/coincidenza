@@ -48,18 +48,20 @@ export async function getRoadPolyline(stops: (From | IntermediateStop | To)[]) {
 }
 
 async function fetchSinglePolyline(stops: any[]): Promise<string> {
-    const locations = stops.map((stop: any, i: number, arr: any[]) => ({
+    const locations = stops.map((stop: any) => ({
         lat: stop.lat,
         lon: stop.lon,
-        type: i === 0 || i === arr.length - 1 ? "break" : "via",
+        type: "via",
         rank_candidates: false,
-        radius: 10,
+        radius: 15,
+        preferred_side: "either",
+        minimum_reachability: 150
     }));
 
     const {data} = await axios.post(`${VALHALLA}/route`, {
         locations, costing: "bus", costing_options: {
             bus: {
-                ignore_closures: true, ignore_restrictions: true, top_speed: 90,
+                ignore_oneways: true, maneuver_penalty: 15
             }
         }, alternates: 0
     });

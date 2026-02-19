@@ -54,7 +54,7 @@ async function getShapes(leg: any): Promise<string> {
     }
 
     if (leg.mode?.includes("BUS")) {
-        return await getRoadPolyline(stops);
+        return await getRoadPolyline(stops, leg.legGeometry.points);
     }
 
     return leg.legGeometry.points ?? "";
